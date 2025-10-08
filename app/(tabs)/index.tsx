@@ -1,11 +1,16 @@
 
-import {  StyleSheet, useColorScheme, ScrollView } from 'react-native';
+import {  StyleSheet, useColorScheme, ScrollView, View } from 'react-native';
 import { useDataTest } from '@/hooks/use-data-test';
 import { Text, Divider, Switch } from 'react-native-paper';
 import TaskItem from '@/components/ui/task-item';
 import EventItem from '@/components/ui/event-item';
 import TimerLogItem from '@/components/ui/timer-log-item';
 import HabitsTracker from '@/components/ui/habits-tracker';
+import { useEffect } from 'react';
+import { Task } from '@/types/task';
+import { CalendarEvent } from '@/types/calendar';
+import { Habit } from '@/types/habits';
+import { TimerLog } from '@/types/timer';
 
 
 
@@ -13,13 +18,15 @@ import HabitsTracker from '@/components/ui/habits-tracker';
 export default function HomeScreen() {
 
   const {tasks, setTasks, events, timerLogs, habits} = useDataTest();
+
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const todaysTasks = tasks.filter(t=>t.dueDate && t.dueDate.toDateString() == new Date().toDateString());
-  const upcomingEvents = events.slice(0,3);
-  const activeHabits = habits.slice(0,3);
-  const recentLogs = timerLogs.slice(0,3);
+  let todaysTasks= tasks.filter(t=>t.dueDate && t.dueDate.toDateString() == new Date().toDateString());
+  let upcomingEvents= events.slice(0,3);
+  let activeHabits= habits.slice(0,3);
+  let recentLogs= timerLogs.slice(0,3);
+
 
   const toggleTaskCompleted =(id: string)=>{
     setTasks(tasks.map(t=> id ===t.id?{...t, completed: !t.completed}:t));

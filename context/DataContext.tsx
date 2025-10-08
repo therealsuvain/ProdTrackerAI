@@ -30,34 +30,45 @@ export default function  DataProvider({children}: {children: ReactNode}){
 
     useEffect(()=>{
         const loadData= async()=>{
-            let loadedTasks = await loadTasks();
-            let loadedEvents = await loadEvents();
-            let loadedLogs = await loadTimerLogs();
-            let loadedHabits = await loadHabits();
+           
+                let loadedTasks = await loadTasks();
+                let loadedEvents = await loadEvents();
+                let loadedLogs = await loadTimerLogs();
+                let loadedHabits = await loadHabits();
             
-            // Initialize with dummy data if enabled and no data exists
-            if (USE_DUMMY_DATA) {
-                if (loadedTasks.length === 0) loadedTasks = dummyTasks;
-                if (loadedEvents.length === 0) loadedEvents = dummyEvents;
-                if (loadedLogs.length === 0) loadedLogs = dummyTimerLogs;
-                if (loadedHabits.length === 0) loadedHabits = dummyHabits;
-            }
+                // Initialize with dummy data if enabled and no data exists
+                if (USE_DUMMY_DATA) {
+                    if (loadedTasks.length === 0) loadedTasks = dummyTasks;
+                    if (loadedEvents.length === 0) loadedEvents = dummyEvents;
+                    if (loadedLogs.length === 0) loadedLogs = dummyTimerLogs;
+                    if (loadedHabits.length === 0) loadedHabits = dummyHabits;
+                }
             
-            setTasks(loadedTasks);
-            setEvents(loadedEvents);
-            setTimerLogs(loadedLogs);
-            setHabits(loadedHabits);
+                setTasks(loadedTasks);
+                setEvents(loadedEvents);
+                setTimerLogs(loadedLogs);
+                setHabits(loadedHabits);
+            
         }
         loadData();
     },[])
 
-    useEffect(()=>{saveTasks(tasks)}, [tasks]);
+    useEffect(()=>{saveTasks(tasks);console.log('Tasks saved');}, [tasks]);
     useEffect(()=>{saveEvents(events)}, [events]);
     useEffect(()=>{saveTimerLogs(timerLogs)}, [timerLogs]);
     useEffect(()=>{saveHabits(habits)}, [habits]);
 
     return(
-        <DataContext.Provider value={{tasks, setTasks, events, setEvents, timerLogs, setTimerLogs, habits, setHabits}}>
+        <DataContext.Provider value={{
+            tasks,
+            setTasks,
+            events,
+            setEvents,
+            timerLogs,
+            setTimerLogs,
+            habits,
+            setHabits,
+        }}>
             {children}
         </DataContext.Provider>
     )
