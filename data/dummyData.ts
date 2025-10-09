@@ -43,6 +43,9 @@ export const dummyEvents: CalendarEvent[] = [
         startTime: new Date(2025, 9, 8, 10, 0),
         endTime: new Date(2025, 9, 8, 11, 0),
         description: 'Weekly sync with the development team',
+        recurrence: 'none', 
+        notificationId: '0', 
+        category: 'none',
         reminder: true
     },
     {
@@ -51,7 +54,10 @@ export const dummyEvents: CalendarEvent[] = [
         startTime: new Date(2025, 9, 9, 15, 30),
         endTime: new Date(2025, 9, 9, 16, 30),
         description: 'Annual checkup',
-        reminder: true
+        reminder: true,
+        recurrence: 'none', 
+        notificationId: '0', 
+        category: 'none',
     },
     {
         id: '3',
@@ -59,7 +65,10 @@ export const dummyEvents: CalendarEvent[] = [
         startTime: new Date(2025, 9, 12, 18, 0),
         endTime: new Date(2025, 9, 12, 22, 0),
         description: "Friend's birthday celebration",
-        reminder: false
+        reminder: false,
+        recurrence: 'none', 
+        notificationId: '0', 
+        category: 'none',
     }
 ];
 
