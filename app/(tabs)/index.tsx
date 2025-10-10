@@ -1,22 +1,19 @@
 
 import {  StyleSheet, useColorScheme, ScrollView, View } from 'react-native';
 import { useDataTest } from '@/hooks/use-data-test';
-import { Text, Divider, Switch, Searchbar,  Button, Portal, Modal } from 'react-native-paper';
+import { Text, Divider, FAB, Searchbar,  Button, Portal, Modal } from 'react-native-paper';
 import TaskItem from '@/components/ui/task-item';
 import EventItem from '@/components/ui/event-item';
 import TimerLogItem from '@/components/ui/timer-log-item';
 import HabitsTracker from '@/components/ui/habits-tracker';
-import { useEffect, useState } from 'react';
-import { Task } from '@/types/task';
-import { CalendarEvent } from '@/types/calendar';
-import { Habit } from '@/types/habits';
-import { TimerLog } from '@/types/timer';
+import {  useState } from 'react';
 import { useSearch } from '@/hooks/use-search';
 import { AnalyticsSection } from '@/components/ui/analytics-section';
 import { SearchResults } from '@/components/ui/search-results';
-
-
-
+import { AIVoiceModal } from '@/components/ui/ai-voice-modal';
+import { IntentConfirmationModal } from '@/components/ui/intent-confirmation-modal';
+import { useVoiceInput } from '@/hooks/use-voice-input';
+import { useIntentProcessor } from '@/hooks/use-intent-processor';
 
 export default function HomeScreen() {
 
@@ -26,6 +23,8 @@ export default function HomeScreen() {
   const isDark = colorScheme === 'dark';
   const [searchVisible, setSearchVisible] = useState(false);
   const {query, performSearch, results}= useSearch();
+  const [aiVisible, setAiVisible]= useState(false);
+  const {intent, confirmExecute} = useIntentProcessor();
 
   let todaysTasks= tasks.filter(t=>t.dueDate && t.dueDate.toDateString() == new Date().toDateString());
   let upcomingEvents= events.slice(0,3);
@@ -66,6 +65,11 @@ export default function HomeScreen() {
           />
         </Modal>
       </Portal>
+      <FAB style={{position: 'absolute', bottom:80, right:16}} 
+      icon='microphone' 
+      onPress={()=>setAiVisible(true)}/>
+      <AIVoiceModal visible={aiVisible} onDismiss={()=>setAiVisible(false)}/>
+      <IntentConfirmationModal intent={intent} onConfirm={confirmExecute} onCancel={()=>{}}/>
     </ScrollView>
   );
 }

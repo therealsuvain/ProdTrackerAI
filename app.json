@@ -46,8 +46,8 @@
     },
 
     "extra":{
-      "GOOGLE_STT_API_KEY": " ",
-      "HUGGING_FACE_API_TOKEN": " "
+      "GOOGLE_STT_API_KEY": "AIzaSyBL69fQHD3h6cia_tghL2SSJTTLXD4l8UA",
+      "HUGGING_FACE_API_TOKEN": "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"
     }
   }
 }
