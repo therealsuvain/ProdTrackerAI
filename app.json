@@ -43,6 +43,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+
+    "extra":{
+      "GOOGLE_STT_API_KEY": " ",
+      "HUGGING_FACE_API_TOKEN": " "
     }
   }
 }
