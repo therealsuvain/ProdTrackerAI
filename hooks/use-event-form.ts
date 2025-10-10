@@ -1,7 +1,7 @@
 import { CalendarEvent } from '@/types/calendar';
 import { useReducer } from 'react';
 import { useEffect } from 'react';
-import { validateEventTimes } from '@/utils/eventUtils';
+import { validateEventTimes } from '@/utils/event-utils';
 import { randomUUID } from 'expo-crypto';
 import { cancelReminder, scheduleReminder } from './use-notifications';
 

@@ -1,6 +1,6 @@
 import { Card, Text, Button, ProgressBar } from "react-native-paper";
 import { Habit } from "@/types/habits";
-import { updateStreak} from "@/utils/habitUtils"
+import { updateStreak} from "@/utils/habit-utils"
 
 interface HabitItemProps {
     habit : Habit;

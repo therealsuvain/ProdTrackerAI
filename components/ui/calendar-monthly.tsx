@@ -1,5 +1,5 @@
 import { CalendarEvent } from "@/types/calendar";
-import { calculateMarketDates } from "@/utils/eventUtils";
+import { calculateMarketDates } from "@/utils/event-utils";
 import { Calendar } from 'react-native-calendars';
 
 interface CalendarMonthlyProps {
