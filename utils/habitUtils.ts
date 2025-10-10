@@ -9,7 +9,7 @@ export const calculateStreak =(habit : Habit): number =>{
     return diff ===  0 || diff === 1? habit.streak : 0;
 }
 
-const updateStreak = (habit: Habit): Habit =>{
+export const updateStreak = (habit: Habit): Habit =>{
     const today= new Date().toDateString();
     if(habit.lastCompleted?.toDateString() ===  today)
         return habit;
