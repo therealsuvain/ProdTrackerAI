@@ -1,52 +1,88 @@
-import { useRef, useState } from "react";
-import { Audio } from "expo-av";
-import * as FileSystem from 'expo-file-system';
+import { useRef, useState, useEffect } from "react";
+import {
+  useAudioRecorder,
+  AudioModule,
+  RecordingPresets,
+  setAudioModeAsync,
+  useAudioRecorderState,
+  AudioQuality,
+  IOSOutputFormat,
+  RecordingOptions
+} from "expo-audio";
 import { transcribeAudio } from "@/utils/ai-utils";
-import { randomUUID } from 'expo-crypto';
+import { Alert } from "react-native";
 
 export const useVoiceInput = () => {
   const [isRecording, setIsRecording] = useState(false);
-  const [transcript, setTranscript] = useState('');
+  const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const recording = useRef<Audio.Recording | null>(null);
 
-  const startRecording = async () => {
-    try {
-      await Audio.requestPermissionsAsync();
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
+  const recordingOptions: RecordingOptions = {
+ extension: '.wav',
+  sampleRate: 44100,
+  numberOfChannels: 2,
+  bitRate: 128000,
+  android: {
+    outputFormat: 'mpeg4',
+    audioEncoder: 'aac',
+  },
+  ios: {
+    outputFormat: IOSOutputFormat.MPEG4AAC,
+    audioQuality: AudioQuality.MAX,
+    linearPCMBitDepth: 16,
+    linearPCMIsBigEndian: false,
+    linearPCMIsFloat: false,
+  },
+  web: {
+    mimeType: 'audio/webm',
+    bitsPerSecond: 128000,
+  },
+};
+
+  const audioRecorder = useAudioRecorder(recordingOptions);
+  const recorderState = useAudioRecorderState(audioRecorder);
+
+  useEffect(() => {
+    (async () => {
+      const status = await AudioModule.requestRecordingPermissionsAsync();
+      if (!status.granted) {
+        Alert.alert("Permission to access microphone was denied");
+        setError("Microphone permission not granted");
+        return;
+      }
+
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        allowsRecording: true,
       });
-      const { recording: newRecording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      recording.current = newRecording;
+    })();
+  }, []);
+const startRecording = async () => {
+    try {
+      await audioRecorder.prepareToRecordAsync();
+      await audioRecorder.record();
       setIsRecording(true);
     } catch (err) {
-      setError("Failed to start recording");
+      setError('Failed to start recording');
     }
   };
 
   const stopRecording = async () => {
     setIsRecording(false);
-    if (!recording.current) return;
-    await recording.current.stopAndUnloadAsync();
-    const uri = recording.current.getURI();
-    console.log("uri")
-    console.log(uri)
-    if (uri) {
-      try {
-            
+    try {
+      await audioRecorder.stop();
+      const uri = audioRecorder.uri;
+      if (uri) {
         const text = await transcribeAudio(uri);
-        console.log("RECORD")
-        console.log(text)
         setTranscript(text);
-      } catch (err) {
-        setError("Transcription failed");
+      } else {
+        setError('No recording URI available');
       }
+    } catch (err) {
+      setError('Transcription failed');
     }
-    recording.current = null;
   };
+
   return {
     isRecording,
     startRecording,
