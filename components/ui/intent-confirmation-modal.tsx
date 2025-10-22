@@ -6,15 +6,19 @@ interface IntentConfirmationModalProps {
     intent: AIIntent | null;
     onConfirm: ()=> void;
     onCancel: ()=> void;
+   
 }
 
 export function IntentConfirmationModal({intent, onConfirm, onCancel}: IntentConfirmationModalProps){
-    if(!intent)
+
+
+    console.log("Is Inten", intent)
+    if(intent==null)
         return null;
     return (
         <Portal>
             <Modal
-            visible={!!intent}
+            visible={true}
             onDismiss={onCancel}>
                 <View style={{padding:3}}>
                     <Text>Intent: {intent.intent}</Text>

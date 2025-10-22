@@ -40,7 +40,6 @@ export const useVoiceInput = () => {
 };
 
   const audioRecorder = useAudioRecorder(recordingOptions);
-  const recorderState = useAudioRecorderState(audioRecorder);
 
   useEffect(() => {
     (async () => {

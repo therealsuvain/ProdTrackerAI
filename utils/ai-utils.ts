@@ -10,7 +10,8 @@ import { Asset } from "expo-asset";
 const GOOGLE_API_KEY = Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
 const HF_TOKEN = Constants.expoConfig?.extra?.HUGGING_FACE_API_TOKEN;
 const HF_ENDPOINT =
-  "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3";
+  "https://router.huggingface.co/v1/chat/completions";
+  
 
 export const transcribeAudio = async (
   input: string,
@@ -58,13 +59,14 @@ export const transcribeAudio = async (
     let data: any;
     try {
       data = JSON.parse(text);
-      console.log(data);
+      console.log(data)
     } catch (e) {
       console.log("STT raw response:", text);
-      throw new Error(`Unexpected STT response: ${text}`);
+      throw new Error(`Unexpected STT response: ${e}`);
     }
 
-    console.log("STT parsed response 2:", data.results?.[0]?.alternatives);
+    console.log("STT parsed response 2:", data);
+    console.log(data.results?.[0]?.alternatives?.[0]?.transcript || "Error")
     return data.results?.[0]?.alternatives?.[0]?.transcript || "";
   } catch (error) {
     console.error("STT error", error);
@@ -90,6 +92,7 @@ export const parseCommandToIntent = async (
   transcript: string
 ): Promise<AIIntent> => {
   try {
+    console.log("Transcript",transcript)
     const prompt = `Parse this user command into JSON with 
     { "intent": "add_task" | "edit_task" | "delete_task" | "complete_task" | 
      "add_event" | "edit_event" | "delete_event" |
@@ -107,14 +110,22 @@ export const parseCommandToIntent = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        inputs: prompt,
-        parameters: { max_new_tokens: 150, return_full_text: false },
+        messages: [
+        {
+            role: "user",
+            content: `${prompt}`,
+        },
+    ],
+    model: "openai/gpt-oss-120b:groq",
+
       }),
     });
 
     const data = await response.json();
-    const jsonStr = data[0]?.generated_text.trim();
-    console.log(JSON.parse(jsonStr));
+    console.log("LLM")
+    console.log(data)
+    const jsonStr = data.choices[0].message.content//?.generated_text.trim();
+    console.log(jsonStr);
     return JSON.parse(jsonStr) as AIIntent;
   } catch (error) {
     console.error("LLM error", error);
@@ -137,6 +148,8 @@ export const executeIntent = (
   }: any
 ) => {
   const { intent: type, params } = intent;
+  console.log("Execution")
+  console.log(intent)
   switch (type) {
     case "add_task":
       const newTask = {
@@ -144,6 +157,7 @@ export const executeIntent = (
         ...params,
         completed: false,
       };
+      console.log(newTask)
       setTasks([...tasks, newTask]);
       break;
     case "edit_task":

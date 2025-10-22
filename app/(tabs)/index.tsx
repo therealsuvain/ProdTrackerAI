@@ -24,7 +24,8 @@ export default function HomeScreen() {
   const [searchVisible, setSearchVisible] = useState(false);
   const {query, performSearch, results}= useSearch();
   const [aiVisible, setAiVisible]= useState(false);
-  const {intent, confirmExecute} = useIntentProcessor();
+  const {intent, processCommand, confirmExecute} = useIntentProcessor();
+  console.log("Index inten", intent)
 
   let todaysTasks= tasks.filter(t=>t.dueDate && t.dueDate.toDateString() == new Date().toDateString());
   let upcomingEvents= events.slice(0,3);
@@ -68,7 +69,7 @@ export default function HomeScreen() {
       <FAB style={{position: 'absolute', bottom:80, right:16}} 
       icon='microphone' 
       onPress={()=>setAiVisible(true)}/>
-      <AIVoiceModal visible={aiVisible} onDismiss={()=>setAiVisible(false)}/>
+      <AIVoiceModal visible={aiVisible} onDismiss={()=>setAiVisible(false)} IntentProcessor = {processCommand}/>
       <IntentConfirmationModal intent={intent} onConfirm={confirmExecute} onCancel={()=>{}}/>
     </ScrollView>
   );

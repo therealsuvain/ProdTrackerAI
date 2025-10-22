@@ -16,6 +16,7 @@ export const useIntentProcessor = () => {
             setProcessingError(null);
             const parsedIntent = await parseCommandToIntent(transcript);
             setIntent(parsedIntent)
+            console.log("intent processor", intent)
         } catch (err){
             setProcessingError('Failed to process command')
         }

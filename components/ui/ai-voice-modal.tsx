@@ -6,14 +6,15 @@ import { Modal, Portal } from "react-native-paper";
 interface AIVoiceModalProps {
     visible: boolean;
     onDismiss: () => void;
+     IntentProcessor : (transcript:string)=>void;
 }
 
-export function AIVoiceModal({visible, onDismiss}:AIVoiceModalProps) {
+export function AIVoiceModal({visible, onDismiss, IntentProcessor}:AIVoiceModalProps) {
     const {isRecording, startRecording, stopRecording, transcript, error, setTranscript} = useVoiceInput();
-    const {processCommand} = useIntentProcessor();
 
-    const handleSubmit = ()=>{
-        processCommand(transcript);
+    const handleSubmit = async ()=>{
+        console.log("handleSubmit", transcript)
+        await IntentProcessor(transcript);
         onDismiss();
     };
 
