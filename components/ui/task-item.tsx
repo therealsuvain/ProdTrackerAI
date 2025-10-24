@@ -1,14 +1,18 @@
 import { Task } from "@/types/task";
-import { Badge, Button, Card, Checkbox } from "react-native-paper";
-import { StyleSheet, View, Text } from "react-native";
+import { Badge, Card, Checkbox } from "react-native-paper";
+import { StyleSheet, View, Text, Button } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import XButton from "./XButton";
 
 interface TaskItemProps{
     task: Task;
     onToggleComplete: (id: string) => void;
+    onEdit? : () => void;
+    onDelete? : () => void
+    
 }
 
-export default function TaskItem({ task, onToggleComplete }: TaskItemProps) {
+export default function TaskItem({ task, onToggleComplete, onEdit, onDelete }: TaskItemProps) {
     const priorityColor = {
         low: 'green',
         medium:'orange',
@@ -29,26 +33,21 @@ export default function TaskItem({ task, onToggleComplete }: TaskItemProps) {
                     </Text>
                     {task.dueDate && <Text>Due : {task.dueDate.toDateString()}</Text>}
                 </View>
-                
-                <Button style={styles.button}  onPress={() => {}}>
-                    <Ionicons name="pencil" size={16} color="white" />
-                </Button>
-                <Button style={styles.button} onPress={() => {}}>
-                    <Ionicons name="trash" size={16} color="white" />
-                </Button>
-                <Badge style={{backgroundColor: priorityColor}}>
-                    {task.priority}
-                </Badge>
+                <XButton icon="pencil-outline" onPress={onEdit}/>
+                <XButton icon="trash-outline" onPress={onDelete}/>
+                <Badge size={7.5} style={[styles.badge, {backgroundColor: priorityColor}]} />
+
             </Card.Content>
         </Card>
     )
 }
 
 const styles = StyleSheet.create({
-    card:{ marginVertical:8},
-    content:{flexDirection: 'row', alignItems: 'center'},
+    card:{ marginVertical:8, position:"relative"},
+    content:{flexDirection: 'row', alignItems: 'center', justifyContent:'center'},
     textContainer:{flex:1, marginLeft:8},
     text:{fontSize:16, color:'#fff'},
     completedText:{fontSize:16, textDecorationLine:'line-through', color:'gray'},
-    button:{ backgroundColor:'blue', height:20, width:20, borderRadius:10, marginHorizontal:2}
+    button:{ backgroundColor:'blue', height:20, width:20, borderRadius:10, marginHorizontal:2},
+    badge:{ position:"absolute", top:0, right:0, marginHorizontal:2.5}
 })

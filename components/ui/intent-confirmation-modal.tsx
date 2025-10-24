@@ -11,8 +11,6 @@ interface IntentConfirmationModalProps {
 
 export function IntentConfirmationModal({intent, onConfirm, onCancel}: IntentConfirmationModalProps){
 
-
-    console.log("Is Inten", intent)
     if(intent==null)
         return null;
     return (

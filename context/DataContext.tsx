@@ -53,7 +53,7 @@ export default function  DataProvider({children}: {children: ReactNode}){
         loadData();
     },[])
 
-    useEffect(()=>{saveTasks(tasks);console.log('Tasks saved');}, [tasks]);
+    useEffect(()=>{saveTasks(tasks)}, [tasks]);
     useEffect(()=>{saveEvents(events)}, [events]);
     useEffect(()=>{saveTimerLogs(timerLogs)}, [timerLogs]);
     useEffect(()=>{saveHabits(habits)}, [habits]);

@@ -12,7 +12,6 @@ import { AnalyticsSection } from '@/components/ui/analytics-section';
 import { SearchResults } from '@/components/ui/search-results';
 import { AIVoiceModal } from '@/components/ui/ai-voice-modal';
 import { IntentConfirmationModal } from '@/components/ui/intent-confirmation-modal';
-import { useVoiceInput } from '@/hooks/use-voice-input';
 import { useIntentProcessor } from '@/hooks/use-intent-processor';
 
 export default function HomeScreen() {
@@ -25,7 +24,6 @@ export default function HomeScreen() {
   const {query, performSearch, results}= useSearch();
   const [aiVisible, setAiVisible]= useState(false);
   const {intent, processCommand, confirmExecute} = useIntentProcessor();
-  console.log("Index inten", intent)
 
   let todaysTasks= tasks.filter(t=>t.dueDate && t.dueDate.toDateString() == new Date().toDateString());
   let upcomingEvents= events.slice(0,3);

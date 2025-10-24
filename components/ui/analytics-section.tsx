@@ -12,7 +12,7 @@ export function AnalyticsSection(){
     const chartData= habitProgres.map((h,i)=>({
         name:h.name,
         progress: h.progress,
-        color: `rdg${Math.random()*256}, ${Math.random() * 255}, ${Math.random() * 255})`,
+        color: `rgb(${Math.random()*256}, ${Math.random() * 255}, ${Math.random() * 255})`,
         legendFontColor: '#7F7F7F',
     }))
 

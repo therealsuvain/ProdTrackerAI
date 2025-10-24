@@ -36,8 +36,6 @@ export const transcribeAudio = async (
   });
 
    const dataWav = await responseWav.json();
-   console.log("YOO")
-   console.log(dataWav)
     const response = await fetch(
       `https://speech.googleapis.com/v1/speech:recognize?key=${GOOGLE_API_KEY}`,
       {
@@ -59,13 +57,11 @@ export const transcribeAudio = async (
     let data: any;
     try {
       data = JSON.parse(text);
-      console.log(data)
     } catch (e) {
       console.log("STT raw response:", text);
       throw new Error(`Unexpected STT response: ${e}`);
     }
 
-    console.log("STT parsed response 2:", data);
     console.log(data.results?.[0]?.alternatives?.[0]?.transcript || "Error")
     return data.results?.[0]?.alternatives?.[0]?.transcript || "";
   } catch (error) {
@@ -80,7 +76,6 @@ const blobToBase64 = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
     reader.onloadend = () => {
       const base64WithPrefix = reader.result as string;
-      console.log(base64WithPrefix);
       const base64 = base64WithPrefix.split(",")[1]; // Remove "data:...;base64,"
       resolve(base64);
     };
@@ -122,8 +117,6 @@ export const parseCommandToIntent = async (
     });
 
     const data = await response.json();
-    console.log("LLM")
-    console.log(data)
     const jsonStr = data.choices[0].message.content//?.generated_text.trim();
     console.log(jsonStr);
     return JSON.parse(jsonStr) as AIIntent;
@@ -148,8 +141,6 @@ export const executeIntent = (
   }: any
 ) => {
   const { intent: type, params } = intent;
-  console.log("Execution")
-  console.log(intent)
   switch (type) {
     case "add_task":
       const newTask = {
@@ -157,7 +148,6 @@ export const executeIntent = (
         ...params,
         completed: false,
       };
-      console.log(newTask)
       setTasks([...tasks, newTask]);
       break;
     case "edit_task":

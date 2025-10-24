@@ -1,6 +1,6 @@
 import { CalendarEvent } from "@/types/calendar";
 import { calculateMarketDates } from "@/utils/event-utils";
-import { Calendar } from 'react-native-calendars';
+import { ExpandableCalendar, AgendaList, CalendarProvider } from 'react-native-calendars';
 
 interface CalendarMonthlyProps {
     events : CalendarEvent[];
@@ -14,13 +14,17 @@ export default function CalendarMonthly({events, onDateSelect, selectedDate}: Ca
     markedDates[selectedStr]= { ...markedDates[selectedStr], marked: true, dotColor: 'blue' };
 
     return (
-        <Calendar
+        <CalendarProvider date={new Date().toDateString()}>
+        <ExpandableCalendar
         markedDates={markedDates}
         onDayPress={(day)=>onDateSelect(new Date(day.timestamp))}
         theme={{
             selectedDayBackgroundColor: 'blue',
             todayTextColor: 'red',
         }}
+        style={{borderRadius:20}}
         />
+        
+        </CalendarProvider>
     )
 }
