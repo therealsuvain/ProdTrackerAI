@@ -20,20 +20,20 @@ export default function TabLayout() {
       <PaperProvider theme={theme}>
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#ffd33d",
         tabBarStyle: {
           backgroundColor: "#25292e",
         },
         headerShadowVisible: false,
         headerTintColor: "#fff",
-        headerStyle: {
-          backgroundColor: "#25292e",
-        },
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: "Home",
+          tabBarActiveTintColor: "#c7c7c7ff",
+          headerStyle: {
+          backgroundColor: "#25292e",
+        },
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "home-sharp" : "home-outline"}
@@ -47,6 +47,10 @@ export default function TabLayout() {
         name="task-screen"
         options={{
           title: "Tasks",
+          tabBarActiveTintColor:"#673AB7",
+          headerStyle: {
+          backgroundColor: "#673AB7",
+        },
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "list" : "list-outline"}
@@ -60,6 +64,10 @@ export default function TabLayout() {
         name="calendar-screen"
         options={{
           title: "Calendar",
+          tabBarActiveTintColor:"#F44336",
+          headerStyle: {
+          backgroundColor: "#F44336",
+        },
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "calendar" : "calendar-outline"}
@@ -73,6 +81,10 @@ export default function TabLayout() {
         name="habits-screen"
         options={{
           title: "Habits",
+          tabBarActiveTintColor:"#f1b718ff",
+          headerStyle: {
+          backgroundColor: "#f1b718ff",
+        },
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "document-text" : "document-text-outline"}
@@ -86,6 +98,10 @@ export default function TabLayout() {
         name="timer-screen"
         options={{
           title: "Timer",
+          tabBarActiveTintColor:"#05ce9cff",
+          headerStyle: {
+          backgroundColor: "#05ce9cff",
+        },
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "alarm" : "alarm-outline"}

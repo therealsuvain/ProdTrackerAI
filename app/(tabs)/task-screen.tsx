@@ -26,7 +26,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useDataTest } from "@/hooks/use-data-test";
 import { Task } from "@/types/task";
 import TaskItem from "@/components/ui/task-item";
-import { SafeAreaView } from "react-native-safe-area-context";
+
 
 export default function TaskScreen() {
   const { tasks, setTasks } = useDataTest();
@@ -118,7 +118,7 @@ export default function TaskScreen() {
   const handleDragEnd = ({ data }: { data: Task[] }) => {
     setTasks(data);
   };
-  console.log("menu", menuVisible);
+  //console.log("menu", menuVisible);
   return (
     <Provider>
       <GestureHandlerRootView>

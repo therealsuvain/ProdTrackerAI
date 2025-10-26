@@ -19,9 +19,7 @@ export default function DayView({events, onEventSelect, onDelete}: DayViewProps)
         keyExtractor={item=>item.id}
         renderItem={({item})=>(
             <View>
-                <EventItem event={item}/>
-                <Button onPress={()=>onEventSelect(item)}>Edit</Button>
-                <Button onPress={()=>onDelete(item.id)} buttonColor="red">Delete</Button>
+                <EventItem event={item} onEdit={()=>onEventSelect(item)} onDelete={()=>onDelete(item.id)}/>
             </View>
         )}
         />

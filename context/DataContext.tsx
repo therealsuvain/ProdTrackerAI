@@ -20,13 +20,14 @@ interface DataContextType{
 export const DataContext = createContext<DataContextType | undefined>(undefined);
 
 // Feature flag for using dummy data - can be moved to environment variables or config
-const USE_DUMMY_DATA = true;
+const USE_DUMMY_DATA = false;
 
 export default function  DataProvider({children}: {children: ReactNode}){
     const [tasks, setTasks] = useState<Task[]>([]);
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [timerLogs, setTimerLogs] = useState<TimerLog[]>([]);
     const [habits, setHabits] = useState<Habit[]>([]);
+    const [loaded, setLoaded] = useState(false);
 
     useEffect(()=>{
         const loadData= async()=>{
@@ -48,15 +49,32 @@ export default function  DataProvider({children}: {children: ReactNode}){
                 setEvents(loadedEvents);
                 setTimerLogs(loadedLogs);
                 setHabits(loadedHabits);
+                // mark that initial load finished so save effects don't overwrite storage during startup
+                setLoaded(true);
             
         }
         loadData();
     },[])
 
-    useEffect(()=>{saveTasks(tasks)}, [tasks]);
-    useEffect(()=>{saveEvents(events)}, [events]);
-    useEffect(()=>{saveTimerLogs(timerLogs)}, [timerLogs]);
-    useEffect(()=>{saveHabits(habits)}, [habits]);
+    useEffect(()=>{
+        if(!loaded) return;
+        saveTasks(tasks);
+    }, [tasks, loaded]);
+
+    useEffect(()=>{
+        if(!loaded) return;
+        saveEvents(events);
+    }, [events, loaded]);
+
+    useEffect(()=>{
+        if(!loaded) return;
+        saveTimerLogs(timerLogs);
+    }, [timerLogs, loaded]);
+
+    useEffect(()=>{
+        if(!loaded) return;
+        saveHabits(habits);
+    }, [habits, loaded]);
 
     return(
         <DataContext.Provider value={{

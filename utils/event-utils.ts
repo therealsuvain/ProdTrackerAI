@@ -31,7 +31,7 @@ export const calculateMarketDates= (events: CalendarEvent[]) : Record<string,{ma
                 nextDate=new Date(nextDate);
                 nextDate.setDate(nextDate.getDate()+ (event.recurrence === 'daily'?1:7));
                 const nextStr= nextDate.toISOString().split('T')[0];
-                marked[nextStr] = {marked : true, dotColor: 'blue'}
+                marked[nextStr] = {marked : true, dotColor: "#F44336"}
 
             }
         }

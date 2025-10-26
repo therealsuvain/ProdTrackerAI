@@ -13,6 +13,8 @@ import { SearchResults } from '@/components/ui/search-results';
 import { AIVoiceModal } from '@/components/ui/ai-voice-modal';
 import { IntentConfirmationModal } from '@/components/ui/intent-confirmation-modal';
 import { useIntentProcessor } from '@/hooks/use-intent-processor';
+import HabitItem from '@/components/ui/habit-item';
+import { Provider } from 'react-native-paper';
 
 export default function HomeScreen() {
 
@@ -35,25 +37,26 @@ export default function HomeScreen() {
     setTasks(tasks.map(t=> id ===t.id?{...t, completed: !t.completed}:t));
   }
   return (
-    <ScrollView style={{backgroundColor:'white'}}>
-      <Searchbar placeholder='Search Everything' onChangeText={performSearch} value={query}/>
+    <Provider>
+    <ScrollView>
+      <Searchbar style={{marginVertical:4}} placeholder='Search Everything' onChangeText={performSearch} value={query}/>
       {results.length>0 && <Button onPress={()=> setSearchVisible(true)}> View Results ({results.length})</Button>}
-     <Text variant="headlineLarge">Today's Task</Text>
+     <Text style={{color:"#673AB7"}} variant="headlineLarge">Today's Task</Text>
      {todaysTasks.length? 
      todaysTasks.map(task=>(<TaskItem key={task.id} task={task} onToggleComplete={toggleTaskCompleted} />))
-     :<Text>No task Today</Text>}
+     :<Text style={{color:"#673AB7"}} >No task Today</Text>}
       <Divider style={styles.divider}/>
 
-      <Text variant='headlineLarge'>Upcoming Events</Text>
-      {upcomingEvents.length?upcomingEvents.map(event=>(<EventItem key={event.id} event={event}></EventItem>)):<Text>No Upcoming Events</Text>}
+      <Text style={{color:"#F44336"}} variant='headlineLarge'>Upcoming Events</Text>
+      {upcomingEvents.length?upcomingEvents.map(event=>(<EventItem key={event.id} event={event}></EventItem>)):<Text style={{color:"#F44336"}} >No Upcoming Events</Text>}
       <Divider style={styles.divider}/>
       
-      <Text variant='headlineLarge'>Recent Timer Logs</Text>
-      {recentLogs.length? recentLogs.map(log=>(<TimerLogItem key={log.id} log={log}/>)):<Text>No Recent Logs</Text>}
+      <Text style={{color:"#05ce9cff"}} variant='headlineLarge'>Recent Timer Logs</Text>
+      {recentLogs.length? recentLogs.map(log=>(<TimerLogItem key={log.id} log={log}/>)):<Text style={{color:"#05ce9cff"}}>No Recent Logs</Text>}
       <Divider style={styles.divider}/>
       
-      <Text variant='headlineLarge'>Active Habits</Text>
-      {activeHabits.length? activeHabits.map(habit=>(<HabitsTracker key={habit.id} habit={habit}/>)):<Text>No Active Habits</Text>}
+      <Text style={{color:"#f1b718ff"}} variant='headlineLarge'>Active Habits</Text>
+      {activeHabits.length? activeHabits.map(habit=>(<HabitItem key={habit.id} habit={habit}/>)):<Text style={{color:"#f1b718ff"}} >No Active Habits</Text>}
       <Divider style={styles.divider}/>
       <AnalyticsSection/>
       <Portal>
@@ -64,12 +67,14 @@ export default function HomeScreen() {
           />
         </Modal>
       </Portal>
-      <FAB style={{position: 'absolute', bottom:80, right:16}} 
-      icon='microphone' 
-      onPress={()=>setAiVisible(true)}/>
+       
+      
       <AIVoiceModal visible={aiVisible} onDismiss={()=>setAiVisible(false)} IntentProcessor = {processCommand}/>
-      <IntentConfirmationModal intent={intent} onConfirm={confirmExecute} onCancel={()=>{}}/>
+      <IntentConfirmationModal intent={intent} onConfirm={confirmExecute}/>
     </ScrollView>
+    <FAB style={{position: 'absolute', bottom:80, right:16 , backgroundColor:"grey"}} color="white" icon='microphone' 
+      onPress={()=>setAiVisible(true)}/>
+    </Provider>
   );
 }
 

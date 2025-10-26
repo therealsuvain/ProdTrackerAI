@@ -1,9 +1,14 @@
 import TimerDisplay from "@/components/ui/time-display";
 import TimerLogItem from "@/components/ui/timer-log-item";
+import XButton from "@/components/ui/XButton";
 import { useDataTest } from "@/hooks/use-data-test";
 import { useTimer } from "@/hooks/use-timer";
 import { TimerLog } from "@/types/timer";
-import { View, Text, Alert, StyleSheet, TextInput, Button, FlatList } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { View, Text, Alert, StyleSheet,  Button, FlatList } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { TextInput } from "react-native-paper";
+import { Provider } from "react-native-paper";
 
 export default function TimerScreen() {
   const {timerLogs,setTimerLogs} = useDataTest();
@@ -18,36 +23,46 @@ export default function TimerScreen() {
   }
 
   return (
+    <Provider>
+    <GestureHandlerRootView>
     <View style={styles.container}>
       <TextInput
         placeholder="Activity name"
         value={activity}
         onChangeText={setActivity}
         style={styles.input}
+        mode="outlined"
+        activeOutlineColor="#05ce9cff"
       />
       <TimerDisplay time={time}/>
       <View style={styles.buttons}>
-        {!isRunning?<Button title ="Start" onPress={start}/>:<Button title ="Stop" onPress={stop}/>}
-        <Button title="Stop & Log" onPress={stop} disabled={!isRunning && time === 0}/>
-        <Button title="Reset" onPress={reset}/>
-        <Text>Recent Logs</Text>
+        {!isRunning?<XButton icon ="play" mode="timer" size="big" onPress={start} />
+
+        :(<> 
+        <XButton icon ="pause" mode='timer' size="big"  onPress={pause}/>
+        <XButton icon ="stop" mode="timer" size="big"  onPress={stop}/>
+        <XButton icon ="refresh" mode="timer" size="big" onPress={reset}/>
+        </>)}
+       
       </View>
+      <Text style={{color:'white'}}>Recent Logs</Text>
         <FlatList
         data= {timerLogs.slice(-10)}
         keyExtractor={item=>item.id}
+        style={{width:"95%"}}
+        showsVerticalScrollIndicator={false}
         renderItem={({item})=>(
-          <View>
-            <TimerLogItem log={item}/>
-            <Button title="Delete" onPress={()=> handleDelete(item.id)} color="red"/>
-          </View>
+            <TimerLogItem log={item} onDelete={()=> handleDelete(item.id)}/>
         )}
        />
       </View>
+      </GestureHandlerRootView>
+      </Provider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, alignItems: 'center' },
+  container: {  flex: 1,padding: 16, alignItems: 'center' },
   input: { width: '100%', borderBottomWidth: 1, marginBottom: 16 },
-  buttons: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginVertical: 16 },
+  buttons: { flexDirection: 'row', justifyContent: 'center', width: '100%', marginVertical: 16 },
 });

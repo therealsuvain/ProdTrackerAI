@@ -29,6 +29,7 @@ export const transcribeAudio = async (
       base64Audio = await blobToBase64(audioData);
     }
 
+    console.log("wav",base64Audio.length)
     const responseWav = await fetch("http://m4a-to-wav-to-base64.vercel.app/api/convert", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -61,9 +62,28 @@ export const transcribeAudio = async (
       console.log("STT raw response:", text);
       throw new Error(`Unexpected STT response: ${e}`);
     }
+    if (data.error) {
+    const { code, message, status } = data.error;
+    const formattedError = `Google STT Error (${status || code}): ${message}`;
+    console.error(formattedError);
+    throw new Error(formattedError);
+  }
 
-    console.log(data.results?.[0]?.alternatives?.[0]?.transcript || "Error")
-    return data.results?.[0]?.alternatives?.[0]?.transcript || "";
+  if (!data.results || !Array.isArray(data.results) || data.results.length === 0) {
+    console.warn("No transcription results returned:", data);
+    return "";
+  }
+
+
+  const transcript = data.results
+    .map((r: any) => r.alternatives?.[0]?.transcript)
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  console.log("Full Transcript:", transcript || "(empty)");
+
+  return transcript;
   } catch (error) {
     console.error("STT error", error);
     throw new Error("Transcription failed");
@@ -76,6 +96,7 @@ const blobToBase64 = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
     reader.onloadend = () => {
       const base64WithPrefix = reader.result as string;
+      console.log(base64WithPrefix.length)
       const base64 = base64WithPrefix.split(",")[1]; // Remove "data:...;base64,"
       resolve(base64);
     };
@@ -95,7 +116,12 @@ export const parseCommandToIntent = async (
       | "add_log" | "edit_log" | "delete_log" |
        "start_timer" | "stop_timer" | "search", 
        "params": { ...relevant fields like title, id, dueDate, activity, query... } }.
-        Output ONLY valid JSON. 
+        Ruleset (MUST follow exactly):
+1. For dates: Convert 'today' to YYYY-MM-DD (local timezone). 'Tomorrow' to next day. Invalid days (e.g., 38th) → default to today. Use ISO format only (no words).
+2. For priorities: Only 'low', 'medium', 'high'—default 'medium' if invalid.
+3. For frequencies: Only 'daily', 'weekly'—default 'daily'.
+4. For IDs/references: If editing/deleting, suggest approximate title/description for matching (e.g., "edit task about groceries").
+5. Output ONLY valid JSON—no explanations. 
         Command: "${transcript}"`;
 
     const response = await fetch(HF_ENDPOINT, {

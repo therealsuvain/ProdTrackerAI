@@ -1,6 +1,6 @@
 import { useDataTest } from "@/hooks/use-data-test";
 import { getHabitProgress, getTaskCompletion, getTotalTimeTracked } from "@/utils/analytics-utils";
-import { Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { PieChart } from "react-native-chart-kit";
 
 export function AnalyticsSection(){
@@ -17,10 +17,10 @@ export function AnalyticsSection(){
     }))
 
     return(
-        <View>
-            <Text>Task Completion: {taskCompletion.toFixed(0)}</Text>
-            <Text>Time Tracked (Week) : {timeTracked} min</Text>
-            <Text>Habits Progress</Text>
+        <View style={{justifyContent:"center", alignItems:"center"}}>
+            <Text style={styles.text}>Task Completion: {taskCompletion.toFixed(0)}%</Text>
+            <Text style={styles.text}>Time Tracked (Week) : {timeTracked} min</Text>
+            <Text style={styles.text}>Habits Progress</Text>
             <PieChart
             data={chartData}
             width={300}
@@ -33,3 +33,7 @@ export function AnalyticsSection(){
         </View>
     )
 }
+
+const styles = StyleSheet.create({
+    text:{color:"#ffffff"}
+})
