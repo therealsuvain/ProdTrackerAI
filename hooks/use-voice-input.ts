@@ -16,6 +16,7 @@ export const useVoiceInput = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const recordingOptions: RecordingOptions = {
  extension: '.wav',
@@ -68,12 +69,14 @@ const startRecording = async () => {
 
   const stopRecording = async () => {
     setIsRecording(false);
+    setIsLoading(true)
     try {
       await audioRecorder.stop();
       const uri = audioRecorder.uri;
       if (uri) {
         const text = await transcribeAudio(uri);
         setTranscript(text);
+        setIsLoading(false)
       } else {
         setError('No recording URI available');
       }
@@ -83,6 +86,7 @@ const startRecording = async () => {
   };
 
   return {
+    isLoading,
     isRecording,
     startRecording,
     stopRecording,

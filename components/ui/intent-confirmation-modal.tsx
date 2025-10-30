@@ -14,6 +14,8 @@ export function IntentConfirmationModal({
   onConfirm,
 }: IntentConfirmationModalProps) {
   const [visible, setVisible] = useState(true);
+  //console.log("modal intent", intent)
+  //console.log(intent===null)
   if (intent == null) return null;
   return (
     <Portal>

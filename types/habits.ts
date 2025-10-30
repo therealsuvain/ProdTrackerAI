@@ -1,6 +1,6 @@
 export interface Habit {
   id: string;
-  name: string;
+  title: string;
   frequency: string;
   streak: number;
   lastCompleted?: Date;

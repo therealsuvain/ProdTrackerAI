@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Alert,
   Platform,
   TouchableOpacity,
   View,
   StyleSheet,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { randomUUID } from "expo-crypto";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -18,18 +19,18 @@ import {
   Searchbar,
   Text,
   TextInput,
-  SegmentedButtons
+  SegmentedButtons,
 } from "react-native-paper";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import { useDataTest } from "@/hooks/use-data-test";
+import { useData } from "@/hooks/use-data";
 import { Task } from "@/types/task";
 import TaskItem from "@/components/ui/task-item";
-
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function TaskScreen() {
-  const { tasks, setTasks } = useDataTest();
+  const { tasks, setTasks } = useData();
   const [visible, setVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -42,7 +43,6 @@ export default function TaskScreen() {
   const [sortBy, setSortBy] = useState<"priority" | "duedate" | "manual">(
     "manual"
   );
-
   const filteredTasks = tasks
     .filter(
       (t) =>
@@ -119,7 +119,10 @@ export default function TaskScreen() {
     setTasks(data);
   };
   //console.log("menu", menuVisible);
+  const [showSortOptions, setShowSortOptions] = useState(false);
   return (
+    // <SafeAreaProvider>
+    //   <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
     <Provider>
       <GestureHandlerRootView>
         <View style={styles.container}>
@@ -129,14 +132,68 @@ export default function TaskScreen() {
             value={searchQuery}
             style={styles.searchbar}
           />
+          <View style={{ zIndex: 1000 }}>
+            <Button onPress={() => setShowSortOptions(!showSortOptions)}>
+              Sort By
+            </Button>
 
-          <Menu
+            {showSortOptions && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: 40,
+                  left: 160,
+                  backgroundColor: "#2d2a30ff",
+                  borderRadius: 8,
+                  padding: 8,
+                  width: 150,
+                  zIndex: 1001,
+                  elevation: 5,
+                }}
+              >
+                <Button
+                  mode="text"
+                  onPress={() => {
+                    setSortBy("priority");
+                    setShowSortOptions(false);
+                  }}
+                >
+                  Priority
+                </Button>
+                <Button
+                  mode="text"
+                  onPress={() => {
+                    setSortBy("duedate");
+                    setShowSortOptions(false);
+                  }}
+                >
+                  Due Date
+                </Button>
+                <Button
+                  mode="text"
+                  onPress={() => {
+                    setSortBy("manual");
+                    setShowSortOptions(false);
+                  }}
+                >
+                  Manual
+                </Button>
+              </View>
+            )}
+          </View>
+          {/* <Menu
             visible={menuVisible}
             onDismiss={() => setMenuVisible(false)}
             anchor={
-              <Button onPress={() => setMenuVisible(true)}>Sort By</Button>
+              <TouchableWithoutFeedback>
+                <View>
+                  <Button onPress={() => setMenuVisible(!menuVisible)}>
+                    Sort By
+                  </Button>
+                </View>
+              </TouchableWithoutFeedback>
             }
-            style={{ flexDirection: "column", width: "100%" }}
+            style={{ flexDirection: "column", flex: 1, width: "100%" }}
           >
             <Menu.Item
               onPress={() => {
@@ -159,79 +216,111 @@ export default function TaskScreen() {
               }}
               title="Manual"
             />
-          </Menu>
+          </Menu> */}
 
           {filteredTasks.length === 0 ? (
             <Text style={styles.noTasks}>No tasks found, Add one</Text>
           ) : (
-            <DraggableFlatList
-              data={filteredTasks}
-              renderItem={({ item, drag }) => (
-                <TouchableOpacity onLongPress={drag}>
-                  <TaskItem
-                    task={item}
-                    onToggleComplete={toggleComplete}
-                    onEdit={() => showModal(item)}
-                    onDelete={() => handleDelete(item.id)}
-                  />
-                </TouchableOpacity>
-              )}
-              keyExtractor={(item) => item.id}
-              onDragEnd={handleDragEnd}
-              showsVerticalScrollIndicator={false}
-            />
+            <View
+              style={{
+                flex: 1,
+              }}
+            >
+              <DraggableFlatList
+                data={filteredTasks}
+                renderItem={({ item, drag }) => (
+                  <TouchableOpacity onLongPress={drag}>
+                    <TaskItem
+                      task={item}
+                      onToggleComplete={toggleComplete}
+                      onEdit={() => showModal(item)}
+                      onDelete={() => handleDelete(item.id)}
+                    />
+                  </TouchableOpacity>
+                )}
+                keyExtractor={(item) => item.id}
+                onDragEnd={handleDragEnd}
+                showsVerticalScrollIndicator={false}
+              />
+            </View>
           )}
           <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
         </View>
         <Portal>
-          <View style={{ position: "relative", width: "100%", height: "100%" }}>
-            <Modal
-              visible={visible}
-              onDismiss={hideModal}
-              contentContainerStyle={styles.modal}
+          <Modal
+            visible={visible}
+            onDismiss={hideModal}
+            contentContainerStyle={styles.modal}
+          >
+            <TextInput
+              mode="outlined"
+              label="Title"
+              value={title}
+              onChangeText={setTitle}
+            />
+            <TextInput
+              mode="outlined"
+              label="Description"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+            />
+            <SegmentedButtons
+              value={priority}
+              onValueChange={(v) => setPriority(v as "low" | "medium" | "high")}
+              buttons={[
+                { value: "low", label: "Low" },
+                { value: "medium", label: "Medium" },
+                { value: "high", label: "High" },
+              ]}
+              style={{ marginVertical: 8 }}
+            />
+            <Button
+              mode="elevated"
+              style={{ marginVertical: 2.5 }}
+              onPress={() => setShowDatePicker(true)}
             >
-              <TextInput
-                mode="outlined"
-                label="Title"
-                value={title}
-                onChangeText={setTitle}
+              Pick Due Date
+            </Button>
+            {dueDate && (
+              <Text
+                style={{
+                  alignSelf: "center",
+                  marginVertical: 2.5,
+                  fontSize: 20,
+                }}
+              >
+                {dueDate.toDateString()}
+              </Text>
+            )}
+            {showDatePicker && (
+              <DateTimePicker
+                value={dueDate || new Date()}
+                mode="date"
+                display="default"
+                onChange={onDataChange}
               />
-              <TextInput
-                mode="outlined"
-                label="Description"
-                value={description}
-                onChangeText={setDescription}
-                multiline
-              />
-              <SegmentedButtons
-                value={priority}
-                onValueChange={(v) => setPriority(v as 'low' | 'medium' | 'high')}
-                buttons={[
-                  { value: 'low', label: 'Low' },
-                  { value: 'medium', label: 'Medium' },
-                  { value: 'high', label: 'High' },
-                ]}
-                style={{ marginVertical: 8 }}
-              />
-              <Button mode="elevated" style={{marginVertical:2.5}} onPress={() => setShowDatePicker(true)}>
-                Pick Due Date
-              </Button>
-              {dueDate && <Text style={{alignSelf:"center", marginVertical:2.5, fontSize:20}}>{dueDate.toDateString()}</Text>}
-              {showDatePicker && (
-                <DateTimePicker
-                  value={dueDate || new Date()}
-                  mode="date"
-                  display="default"
-                  onChange={onDataChange}
-                />
-              )}
-              <Button mode="elevated" style={{marginVertical:2.5}} onPress={handleSave}>Save</Button>
-              <Button mode="elevated" style={{marginVertical:2.5}} onPress={hideModal}>Cancel</Button>
-            </Modal>
-          </View>
+            )}
+            <Button
+              mode="elevated"
+              style={{ marginVertical: 2.5 }}
+              onPress={handleSave}
+            >
+              Save
+            </Button>
+            <Button
+              mode="elevated"
+              style={{ marginVertical: 2.5 }}
+              onPress={hideModal}
+            >
+              Cancel
+            </Button>
+          </Modal>
         </Portal>
       </GestureHandlerRootView>
     </Provider>
+    // </SafeAreaView>
+    // </SafeAreaProvider>
   );
 }
 
@@ -253,8 +342,8 @@ const styles = StyleSheet.create({
     padding: 20,
     margin: 20,
     borderRadius: 20,
-    borderWidth:1,
-    borderColor:"#1e1c20ff"
+    borderWidth: 1,
+    borderColor: "#1e1c20ff",
   },
   noTasks: { textAlign: "center", marginTop: 20 },
 });

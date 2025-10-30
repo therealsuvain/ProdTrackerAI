@@ -1,7 +1,8 @@
 import { useIntentProcessor } from "@/hooks/use-intent-processor";
 import { useVoiceInput } from "@/hooks/use-voice-input";
 import { Text, View, StyleSheet } from "react-native";
-import { Modal, TextInput, Portal, Button } from "react-native-paper";
+import { Modal, TextInput, Portal, Button, ActivityIndicator } from "react-native-paper";
+import LoadingIndicator from "../loading-indicator";
 
 interface AIVoiceModalProps {
   visible: boolean;
@@ -15,6 +16,7 @@ export function AIVoiceModal({
   IntentProcessor,
 }: AIVoiceModalProps) {
   const {
+    isLoading,
     isRecording,
     startRecording,
     stopRecording,
@@ -23,14 +25,14 @@ export function AIVoiceModal({
     setTranscript,
   } = useVoiceInput();
 
-  const handleSubmit = async () => {
-    console.log("handleSubmit", transcript);
-    await IntentProcessor(transcript);
+  const handleSubmit = () => {
+    IntentProcessor(transcript);
     onDismiss();
   };
 
   return (
     <Portal>
+      {isLoading && <LoadingIndicator/>}
       <View style={styles.container}>
         <Modal
           visible={visible}
@@ -55,6 +57,7 @@ export function AIVoiceModal({
               value={transcript}
               onChangeText={setTranscript}
               mode="outlined"
+              multiline
             />
             {error && <Text>Error : {error}</Text>}
             <Button

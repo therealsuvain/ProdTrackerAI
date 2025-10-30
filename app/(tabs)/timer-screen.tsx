@@ -1,7 +1,7 @@
 import TimerDisplay from "@/components/ui/time-display";
 import TimerLogItem from "@/components/ui/timer-log-item";
 import XButton from "@/components/ui/XButton";
-import { useDataTest } from "@/hooks/use-data-test";
+import { useData } from "@/hooks/use-data";
 import { useTimer } from "@/hooks/use-timer";
 import { TimerLog } from "@/types/timer";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,9 +11,9 @@ import { TextInput } from "react-native-paper";
 import { Provider } from "react-native-paper";
 
 export default function TimerScreen() {
-  const {timerLogs,setTimerLogs} = useDataTest();
-  const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
-  const { time, isRunning, activity, setActivity, start, pause, stop, reset }= useTimer(addLog);
+  const {timerLogs,setTimerLogs} = useData();
+  //const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
+  const { time, isRunning, title, setTitle, start, pause, stop, reset }= useTimer();
 
   const handleDelete = (id:string) => {
     Alert.alert('Delete Log', 'Are you sure?', [
@@ -28,8 +28,8 @@ export default function TimerScreen() {
     <View style={styles.container}>
       <TextInput
         placeholder="Activity name"
-        value={activity}
-        onChangeText={setActivity}
+        value={title}
+        onChangeText={setTitle}
         style={styles.input}
         mode="outlined"
         activeOutlineColor="#05ce9cff"

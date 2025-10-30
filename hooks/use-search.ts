@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useDataTest } from "./use-data-test"
+import { useData } from "./use-data"
 import { globalSearch, SearchResult } from "@/utils/search-utils";
 
 export const useSearch =() =>{
-    const {tasks,events, habits, timerLogs}= useDataTest();
+    const {tasks,events, habits, timerLogs}= useData();
     const [query,setQuery] = useState('');
     const [results, setResults]= useState<SearchResult[]>([]);
 

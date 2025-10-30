@@ -20,7 +20,7 @@ export default function HabitItem({habit, onUpdate, onDelete}:HabitItemProps){
     return (
         <Card style= {styles.container}>
             <Card.Content>
-                <Text variant='titleMedium'>{habit.name}</Text>
+                <Text variant='titleMedium'>{habit.title}</Text>
                 <Text>Streak: {habit.streak} / Goal: {habit.goal || 'OnGoing'}</Text>
                 <ProgressBar progress={progress} color="#ffbb00ff"/>
                 <View style={styles.buttons}>
@@ -35,5 +35,5 @@ export default function HabitItem({habit, onUpdate, onDelete}:HabitItemProps){
 
 const styles=StyleSheet.create({
     container:{flexDirection:"column",marginVertical: 8, backgroundColor:"#3b3525ff", position:"relative"},
-    buttons:{ position:"relative", flexDirection:"row" , flex:1,right:0, top:5, justifyContent:"space-between"}
+    buttons:{ position:"relative", flexDirection:"row" , top:5, justifyContent:"space-between"}
 })

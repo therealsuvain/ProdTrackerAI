@@ -14,9 +14,9 @@ export const getTotalTimeTracked = (logs: TimerLog[], period: 'week' | 'month'):
     return logs.filter(log => log.startTime >=start).reduce ((sum , log)=> sum + (log.duration || 0),0)/60;
 }
 
-export const getHabitProgress = ( habits: Habit[]) : { name : string; progress:number}[] => {
+export const getHabitProgress = ( habits: Habit[]) : { title : string; progress:number}[] => {
     return habits.map( h=> ({
-        name: h.name,
+        title: h.title,
         progress: h.goal? (h.streak/h.goal)*100 : h.streak,
     }))
 }

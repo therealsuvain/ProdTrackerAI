@@ -31,13 +31,13 @@ export const globalSearch = (
     })
 
     habits.forEach( habit => {
-        if(habit.name.toLowerCase().includes(lowerQuery)){
+        if(habit.title.toLowerCase().includes(lowerQuery)){
             results.push({type:'habit', item:habit})
         }
     })
 
     logs.forEach( log => {
-        if(log.activity.toLowerCase().includes(lowerQuery)){
+        if(log.title.toLowerCase().includes(lowerQuery)){
             results.push({type:'log', item:log})
         }
     })

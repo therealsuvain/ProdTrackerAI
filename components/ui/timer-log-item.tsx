@@ -18,7 +18,7 @@ export default function TimerLogItem({log, onDelete}:TimerLogItemProps){
     return (
         <Card style={{marginVertical:8, width:"100%", position:"relative", backgroundColor:"#2e3b38ff"}}>
             <Card.Content style={{position:"relative"}}>
-                <Text  style={styles.text} variant="titleMedium">{log.activity}</Text>
+                <Text  style={styles.text} variant="titleMedium">{log.title}</Text>
                 <Text style={styles.text} >Duration: {duration}</Text>
                 <Text style={styles.text} >Started: {log.startTime.toLocaleString()}</Text>
                 <View style={{position:"absolute", right:10, top:25}}>

@@ -1,6 +1,6 @@
 import { View, StyleSheet, FlatList, Alert } from "react-native";
 import { useState } from "react";
-import { useDataTest } from "@/hooks/use-data-test";
+import { useData } from "@/hooks/use-data";
 import { Habit } from "@/types/habits";
 import {
   Button,
@@ -16,16 +16,16 @@ import { LineChart } from "react-native-chart-kit";
 import HabitItem from "@/components/ui/habit-item";
 
 export default function HabitsScreen() {
-  const { habits, setHabits } = useDataTest();
+  const { habits, setHabits } = useData();
   const [visible, setVisible] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
-  const [name, setName] = useState("");
+  const [title, setTitle] = useState("");
   const [frequency, setFrequency] = useState("daily");
   const [goal, setGoal] = useState("");
 
   const showModal = (habit?: Habit) => {
     setEditingHabit(habit || null);
-    setName(habit?.name || "");
+    setTitle(habit?.title || "");
     setFrequency(habit?.frequency || "daily");
     setGoal(habit?.goal?.toString() || "");
     setVisible(true);
@@ -34,10 +34,10 @@ export default function HabitsScreen() {
   const hideModal = () => setVisible(false);
 
   const handleSave = () => {
-    if (!name) return Alert.alert("Error", "Name is required");
+    if (!title) return Alert.alert("Error", "Name is required");
     const newHabit: Habit = {
       id: editingHabit ? editingHabit.id : Date.now().toString(),
-      name,
+      title,
       frequency,
       streak: editingHabit ? editingHabit.streak : 0,
       lastCompleted: editingHabit ? editingHabit.lastCompleted : undefined,
@@ -88,7 +88,6 @@ export default function HabitsScreen() {
         <FAB style={styles.fab} icon="plus"  onPress={() => showModal()} />
       </View>
       <Portal>
-        <View style={{ position: "relative", width: "100%", height: "100%" }}>
           <Modal
             visible={visible}
             onDismiss={hideModal}
@@ -99,8 +98,8 @@ export default function HabitsScreen() {
               label="Habit Name"
               mode="outlined"
               activeOutlineColor="#f1b718ff"
-              value={name}
-              onChangeText={setName}
+              value={title}
+              onChangeText={setTitle}
             />
 
             <SegmentedButtons
@@ -150,7 +149,6 @@ export default function HabitsScreen() {
               Cancel
             </Button>
           </Modal>
-        </View>
       </Portal>
     </Provider>
   );

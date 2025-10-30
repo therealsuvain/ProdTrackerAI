@@ -1,16 +1,16 @@
-import { useDataTest } from "@/hooks/use-data-test";
+import { useData } from "@/hooks/use-data";
 import { getHabitProgress, getTaskCompletion, getTotalTimeTracked } from "@/utils/analytics-utils";
 import { StyleSheet, Text, View } from "react-native";
 import { PieChart } from "react-native-chart-kit";
 
 export function AnalyticsSection(){
-    const {tasks, timerLogs, habits}= useDataTest();
+    const {tasks, timerLogs, habits}= useData();
     const taskCompletion= getTaskCompletion(tasks);
     const timeTracked= getTotalTimeTracked(timerLogs, 'week');
     const habitProgres = getHabitProgress(habits);
 
     const chartData= habitProgres.map((h,i)=>({
-        name:h.name,
+        name:h.title,
         progress: h.progress,
         color: `rgb(${Math.random()*256}, ${Math.random() * 255}, ${Math.random() * 255})`,
         legendFontColor: '#7F7F7F',

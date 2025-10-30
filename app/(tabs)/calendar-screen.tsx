@@ -15,11 +15,10 @@ import {
   Provider,
   TextInput,
   Button,
-  Appbar,
   SegmentedButtons,
 } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useDataTest } from "../../hooks/use-data-test";
+import { useData } from "../../hooks/use-data";
 import CalendarMonthly from "../../components/ui/calendar-monthly";
 import DayView from "../../components/ui/day-view";
 import ViewSwitcher from "../../components/ui/view-switcher-event";
@@ -33,7 +32,7 @@ import { CalendarEvent } from "@/types/calendar";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function CalendarScreen() {
-  const { events, setEvents } = useDataTest();
+  const { events, setEvents } = useData();
   useNotifications();
   const {
     currentView,
@@ -116,7 +115,6 @@ export default function CalendarScreen() {
         <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
       </View>
       <Portal>
-        <View style={{ position: "relative", width: "100%", height: "100%" }}>
           <Modal
             visible={visible}
             onDismiss={hideModal}
@@ -266,7 +264,6 @@ export default function CalendarScreen() {
               Cancel
             </Button>
           </Modal>
-        </View>
       </Portal>
     </Provider>
   );

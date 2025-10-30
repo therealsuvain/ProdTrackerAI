@@ -1,11 +1,10 @@
 
 import {  StyleSheet, useColorScheme, ScrollView, View } from 'react-native';
-import { useDataTest } from '@/hooks/use-data-test';
-import { Text, Divider, FAB, Searchbar,  Button, Portal, Modal } from 'react-native-paper';
+import { useData } from '@/hooks/use-data';
+import { Text, Divider, FAB, Searchbar,  Button, Portal, Modal, ActivityIndicator } from 'react-native-paper';
 import TaskItem from '@/components/ui/task-item';
 import EventItem from '@/components/ui/event-item';
 import TimerLogItem from '@/components/ui/timer-log-item';
-import HabitsTracker from '@/components/ui/habits-tracker';
 import {  useState } from 'react';
 import { useSearch } from '@/hooks/use-search';
 import { AnalyticsSection } from '@/components/ui/analytics-section';
@@ -15,29 +14,32 @@ import { IntentConfirmationModal } from '@/components/ui/intent-confirmation-mod
 import { useIntentProcessor } from '@/hooks/use-intent-processor';
 import HabitItem from '@/components/ui/habit-item';
 import { Provider } from 'react-native-paper';
+import LoadingIndicator from '@/components/loading-indicator';
 
 export default function HomeScreen() {
 
-  const {tasks, setTasks, events, timerLogs, habits} = useDataTest();
+  const {tasks, setTasks, events, timerLogs, habits} = useData();
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const [searchVisible, setSearchVisible] = useState(false);
   const {query, performSearch, results}= useSearch();
   const [aiVisible, setAiVisible]= useState(false);
-  const {intent, processCommand, confirmExecute} = useIntentProcessor();
+  const {isLoading, intent, processCommand, confirmExecute} = useIntentProcessor();
 
   let todaysTasks= tasks.filter(t=>t.dueDate && t.dueDate.toDateString() == new Date().toDateString());
   let upcomingEvents= events.slice(0,3);
   let activeHabits= habits.slice(0,3);
   let recentLogs= timerLogs.slice(0,3);
 
-
+  //console.log("index", intent)
+  //console.log("isloading", isLoading)
   const toggleTaskCompleted =(id: string)=>{
     setTasks(tasks.map(t=> id ===t.id?{...t, completed: !t.completed}:t));
   }
   return (
     <Provider>
+      {isLoading && <LoadingIndicator/>}
     <ScrollView>
       <Searchbar style={{marginVertical:4}} placeholder='Search Everything' onChangeText={performSearch} value={query}/>
       {results.length>0 && <Button onPress={()=> setSearchVisible(true)}> View Results ({results.length})</Button>}
@@ -67,10 +69,8 @@ export default function HomeScreen() {
           />
         </Modal>
       </Portal>
-       
-      
       <AIVoiceModal visible={aiVisible} onDismiss={()=>setAiVisible(false)} IntentProcessor = {processCommand}/>
-      <IntentConfirmationModal intent={intent} onConfirm={confirmExecute}/>
+      { !isLoading &&  <IntentConfirmationModal intent={intent} onConfirm={confirmExecute}/>}
     </ScrollView>
     <FAB style={{position: 'absolute', bottom:80, right:16 , backgroundColor:"grey"}} color="white" icon='microphone' 
       onPress={()=>setAiVisible(true)}/>
