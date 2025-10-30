@@ -12,8 +12,7 @@ import { Task } from "@/types/task";
 import Fuse from "fuse.js";
 import { CalendarEvent } from "@/types/calendar";
 import { Habit } from "@/types/habits";
-import { useErrorBoundary } from "react-error-boundary";
-import { useTimer } from "@/hooks/use-timer";
+
 
 const GOOGLE_API_KEY = Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
 const HF_TOKEN = Constants.expoConfig?.extra?.HUGGING_FACE_API_TOKEN;

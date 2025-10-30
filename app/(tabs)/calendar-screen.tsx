@@ -30,6 +30,7 @@ import {
 } from "../../hooks/use-notifications";
 import { CalendarEvent } from "@/types/calendar";
 import { Ionicons } from "@expo/vector-icons";
+import CalendarAgenda from "@/components/ui/calendar-agenda-view";
 
 export default function CalendarScreen() {
   const { events, setEvents } = useData();
@@ -97,7 +98,7 @@ export default function CalendarScreen() {
           {selectedDate.toDateString()}
         </Text>
       </View>
-      <View style={styles.container}>
+      {/* <View style={styles.container}> */}
         <ViewSwitcher currentView={currentView} onChange={setCurrentView} />
         {currentView === "month" ? (
           <CalendarMonthly
@@ -106,14 +107,18 @@ export default function CalendarScreen() {
             selectedDate={selectedDate}
           />
         ) : (
-          <DayView
-            events={filteredEvents}
-            onEventSelect={showModal}
-            onDelete={handleDelete}
-          />
+          // <DayView
+          //   events={filteredEvents}
+          //   onEventSelect={showModal}
+          //   onDelete={handleDelete}
+          // />
+          <CalendarAgenda
+          events={events}
+          //onEventSelect={showModal}
+          onDelete={handleDelete}/>
         )}
         <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
-      </View>
+      {/* </View> */}
       <Portal>
           <Modal
             visible={visible}
