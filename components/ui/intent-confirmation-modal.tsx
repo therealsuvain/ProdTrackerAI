@@ -4,9 +4,9 @@ import { useState } from "react";
 import { Text, View, StyleSheet } from "react-native";
 import { Modal, Portal } from "react-native-paper";
 import { Button } from "react-native-paper";
-import TaskItem from "./task-item";
-import EventItem from "./event-item";
-import HabitItem from "./habit-item";
+import TaskItem from "./tasks/task-item";
+import EventItem from "./calendar-events/event-item";
+import HabitItem from "./habits/habit-item";
 import { createTask, createEvent, createHabit } from "@/utils/model-factory-utils";
 import { Task } from "@/types/task";
 import Fuse from "fuse.js";
@@ -14,7 +14,7 @@ import { CalendarEvent } from "@/types/calendar";
 import { Habit } from "@/types/habits";
 
 interface IntentConfirmationModalProps {
-  intent: AIIntent ;
+  intent: AIIntent|null ;
   onConfirm: () => void;
 }
 
@@ -26,6 +26,8 @@ export function IntentConfirmationModal({
    const { tasks, events, habits } = useData();
 
    const renderPreview = () => {
+    if(intent===null)
+      return null;
     const { intent: type, params } = intent;
 
     // Task intents

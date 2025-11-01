@@ -13,7 +13,7 @@ import {
   TextInput,
 } from "react-native-paper";
 import { LineChart } from "react-native-chart-kit";
-import HabitItem from "@/components/ui/habit-item";
+import HabitItem from "@/components/ui/habits/habit-item";
 
 export default function HabitsScreen() {
   const { habits, setHabits } = useData();

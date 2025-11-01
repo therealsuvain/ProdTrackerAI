@@ -27,7 +27,11 @@ export const calculateMarketDates= (events: CalendarEvent[]) : Record<string,{ma
         marked[dateStr] ={ marked : true, dotColor: 'blue'};
         if (event.recurrence === 'daily' || event.recurrence === 'weekly'){
             let nextDate = new Date(event.startTime);
-            for(let i=0; i< 365; i++){
+            let endDate = new Date(event.endTime?event.endTime:event.recurrence==='daily'?event.startTime.getDate()+1:event.startTime.getDate()+7);
+            let endPoint = Math.ceil((endDate.getDate()-nextDate.getDate())/(1000*60*60*24))
+            console.log("endtime", endDate)
+            console.log("days", endPoint)
+            for(let i=0; i< endPoint; i++){
                 nextDate=new Date(nextDate);
                 nextDate.setDate(nextDate.getDate()+ (event.recurrence === 'daily'?1:7));
                 const nextStr= nextDate.toISOString().split('T')[0];

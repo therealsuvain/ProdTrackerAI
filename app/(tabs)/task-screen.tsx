@@ -26,7 +26,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { useData } from "@/hooks/use-data";
 import { Task } from "@/types/task";
-import TaskItem from "@/components/ui/task-item";
+import TaskItem from "@/components/ui/tasks/task-item";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function TaskScreen() {

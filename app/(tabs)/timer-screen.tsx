@@ -1,5 +1,5 @@
-import TimerDisplay from "@/components/ui/time-display";
-import TimerLogItem from "@/components/ui/timer-log-item";
+import TimerDisplay from "@/components/ui/timer-logs/time-display";
+import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
 import XButton from "@/components/ui/XButton";
 import { useData } from "@/hooks/use-data";
 import { useTimer } from "@/hooks/use-timer";

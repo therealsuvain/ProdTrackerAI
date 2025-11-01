@@ -2,7 +2,7 @@ export interface CalendarEvent {
   id: string;
   title: string;
   startTime: Date;
-  endTime: Date | undefined;
+  endTime: Date ;
   description: string | undefined;
   reminder: boolean; // For notifications
   recurrence: string | undefined; //  For repeating events

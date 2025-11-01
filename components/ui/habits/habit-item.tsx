@@ -2,7 +2,7 @@ import { Card, Text, Button, ProgressBar } from "react-native-paper";
 import { StyleSheet, View } from "react-native";
 import { Habit } from "@/types/habits";
 import { updateStreak} from "@/utils/habit-utils"
-import XButton from "./XButton";
+import XButton from "../XButton";
 import { useRoute } from '@react-navigation/native';
 
 interface HabitItemProps {

@@ -19,8 +19,7 @@ import {
 } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useData } from "../../hooks/use-data";
-import CalendarMonthly from "../../components/ui/calendar-monthly";
-import DayView from "../../components/ui/day-view";
+import CalendarMonthly from "../../components/ui/calendar-events/calendar-monthly";
 import ViewSwitcher from "../../components/ui/view-switcher-event";
 import { useCalendarState } from "../../hooks/use-calendar-state";
 import { useEventForm } from "../../hooks/use-event-form";
@@ -30,7 +29,9 @@ import {
 } from "../../hooks/use-notifications";
 import { CalendarEvent } from "@/types/calendar";
 import { Ionicons } from "@expo/vector-icons";
-import CalendarAgenda from "@/components/ui/calendar-agenda-view";
+import Timeline from "@/components/ui/calendar-events/calendar-timeline-view";
+import CalendarListAgenda from "@/components/ui/calendar-events/calendar-list-agenda-view";
+import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-list-agenda-view-main";
 
 export default function CalendarScreen() {
   const { events, setEvents } = useData();
@@ -46,6 +47,9 @@ export default function CalendarScreen() {
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [showAndroidStartTimePicker, setShowAndroidStartTimerPicker]=useState(false)
+  const [showAndroidEndTimePicker, setShowAndroidEndTimerPicker]=useState(false)
+  const [androidDate, setAndroidDate]=useState<Date>();
 
   const { state, updateField, onSubmit } = useEventForm({
     events,
@@ -76,15 +80,37 @@ export default function CalendarScreen() {
   };
 
   const onStartChange = (event: any, selected?: Date) => {
-    setShowStartPicker(Platform.OS === "ios");
-    if (selected) updateField("startTime", selected);
+    setShowStartPicker(false);
+    if(Platform.OS=== 'android'){
+      setShowAndroidStartTimerPicker(true)
+      setAndroidDate(selected)
+      return;
+    }
+    if (selected) updateField("startTime", new Date(selected.toLocaleString()));
   };
 
+  const onStartTimeChangeAndroid = (event: any, selected?:Date) => {
+    setShowAndroidStartTimerPicker(false)
+    let androidDateVar;
+    if(androidDate) androidDateVar = new Date(androidDate.toISOString().split('T')[0]+'T'+ selected?.toISOString().split('T')[1])
+     updateField("startTime",androidDateVar);
+  }
   const onEndChange = (event: any, selected?: Date) => {
-    setShowEndPicker(Platform.OS === "ios");
-    if (selected) updateField("endTime", selected);
-  };
+    setShowEndPicker(false);
+    if(Platform.OS=== 'android'){
+      setShowAndroidEndTimerPicker(true)
+      setAndroidDate(selected)
+      return;
+    }       
+    if (selected) updateField("endTime", new Date(selected.toLocaleString()));
+};
 
+const onEndTimeChangeAndroid = (event: any, selected?:Date) => {
+    setShowAndroidEndTimerPicker(false)
+    let androidDateVar;
+    if(androidDate) androidDateVar = new Date(androidDate.toISOString().split('T')[0]+'T'+ selected?.toISOString().split('T')[1])
+      updateField("endTime", androidDateVar);
+  }
   return (
     <Provider>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -98,27 +124,30 @@ export default function CalendarScreen() {
           {selectedDate.toDateString()}
         </Text>
       </View>
-      {/* <View style={styles.container}> */}
         <ViewSwitcher currentView={currentView} onChange={setCurrentView} />
         {currentView === "month" ? (
-          <CalendarMonthly
-            events={events}
-            onDateSelect={setSelectedDate}
-            selectedDate={selectedDate}
-          />
+          
+           <CalendarListAgendaMain
+           events={events}
+              selectedDate={selectedDate}
+              onDateSelect={(date: Date) => {
+                setSelectedDate(date);
+                // Uncomment below to auto-switch to day view
+                // setCurrentView("day");
+              }}
+              onEventSelect={showModal}
+              onDelete={handleDelete}
+            />
+
         ) : (
-          // <DayView
-          //   events={filteredEvents}
-          //   onEventSelect={showModal}
-          //   onDelete={handleDelete}
-          // />
-          <CalendarAgenda
-          events={events}
-          //onEventSelect={showModal}
-          onDelete={handleDelete}/>
+          <Timeline
+            events={filteredEvents}
+            selectedDate={selectedDate}
+            onEventSelect={showModal}
+            onDelete={handleDelete}
+          />
         )}
         <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
-      {/* </View> */}
       <Portal>
           <Modal
             visible={visible}
@@ -141,9 +170,9 @@ export default function CalendarScreen() {
               buttonColor="#411310ff"
               textColor="#F44336"
               style={{ marginVertical: 2.5 }}
-              onPress={() => setShowStartPicker(true)}
+              onPress={() => {setShowStartPicker(true)}}
             >
-              Pick Start Time
+              Pick Start Time 
             </Button>
             <Text style={styles.text}>
               Start: {state.startTime?.toLocaleString() || ""}
@@ -159,18 +188,25 @@ export default function CalendarScreen() {
                   onChange={onStartChange}
                 />
               ) : (
+                
                 <DateTimePicker
                   value={state.startTime || new Date()}
                   mode="date"
                   onChange={onStartChange}
-                />
+                /> 
               ))}
+              {showAndroidStartTimePicker && 
+                <DateTimePicker
+                  value={state.startTime || new Date()}
+                  mode="time"
+                  onChange={onStartTimeChangeAndroid}
+                />}
             <Button
               mode="elevated"
               buttonColor="#411310ff"
               textColor="#F44336"
               style={{ marginVertical: 2.5 }}
-              onPress={() => setShowEndPicker(true)}
+              onPress={() => {setShowEndPicker(true)}}
             >
               Pick End Time
             </Button>
@@ -188,12 +224,19 @@ export default function CalendarScreen() {
                   onChange={onEndChange}
                 />
               ) : (
+                
                 <DateTimePicker
-                  value={state.endTime || new Date()}
+                  value={state.startTime || new Date()}
                   mode="date"
                   onChange={onEndChange}
                 />
               ))}
+               {showAndroidEndTimePicker && 
+                <DateTimePicker
+                  value={state.startTime || new Date()}
+                  mode="time"
+                  onChange={onEndTimeChangeAndroid}
+                />}
             <TextInput
               label="Description"
               value={state.description || ""}
@@ -209,7 +252,7 @@ export default function CalendarScreen() {
                 value={state.reminder}
                 thumbColor="#F44336"
                 trackColor={{ false: "#ffffffff", true: "#f443367a" }}
-                onValueChange={(val) => updateField("reminder", val)}
+                onValueChange={(val) => {updateField("reminder", val); console.log(val)}}
               />
             </View>
             <Text style={styles.text}>Recurrence</Text>

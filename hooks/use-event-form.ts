@@ -18,7 +18,7 @@ type FormAction =
 const initialState: FormState = {
   title: '',
   startTime: new Date(),
-  endTime: undefined,
+  endTime: new Date(),
   description: '',
   reminder: false,
   recurrence: 'none',
@@ -112,6 +112,7 @@ export const useEventForm = ({ events, setEvents, editingEvent, onClose }: UseEv
     if (newEvent.reminder) {
       const notifId = await scheduleReminder(newEvent);
       newEvent.notificationId = notifId;
+      console.log(notifId)
     }
 
     if (editingEvent) {

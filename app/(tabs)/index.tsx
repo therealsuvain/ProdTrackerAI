@@ -2,9 +2,9 @@
 import {  StyleSheet, useColorScheme, ScrollView, View } from 'react-native';
 import { useData } from '@/hooks/use-data';
 import { Text, Divider, FAB, Searchbar,  Button, Portal, Modal, ActivityIndicator } from 'react-native-paper';
-import TaskItem from '@/components/ui/task-item';
-import EventItem from '@/components/ui/event-item';
-import TimerLogItem from '@/components/ui/timer-log-item';
+import TaskItem from '@/components/ui/tasks/task-item';
+import EventItem from '@/components/ui/calendar-events/event-item';
+import TimerLogItem from '@/components/ui/timer-logs/timer-log-item';
 import {  useState } from 'react';
 import { useSearch } from '@/hooks/use-search';
 import { AnalyticsSection } from '@/components/ui/analytics-section';
@@ -12,7 +12,7 @@ import { SearchResults } from '@/components/ui/search-results';
 import { AIVoiceModal } from '@/components/ui/ai-voice-modal';
 import { IntentConfirmationModal } from '@/components/ui/intent-confirmation-modal';
 import { useIntentProcessor } from '@/hooks/use-intent-processor';
-import HabitItem from '@/components/ui/habit-item';
+import HabitItem from '@/components/ui/habits/habit-item';
 import { Provider } from 'react-native-paper';
 import LoadingIndicator from '@/components/loading-indicator';
 
@@ -32,8 +32,6 @@ export default function HomeScreen() {
   let activeHabits= habits.slice(0,3);
   let recentLogs= timerLogs.slice(0,3);
 
-  //console.log("index", intent)
-  //console.log("isloading", isLoading)
   const toggleTaskCompleted =(id: string)=>{
     setTasks(tasks.map(t=> id ===t.id?{...t, completed: !t.completed}:t));
   }

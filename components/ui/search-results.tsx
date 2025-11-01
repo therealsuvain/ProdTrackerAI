@@ -1,9 +1,9 @@
 import { SearchResult } from "@/utils/search-utils";
 import { FlatList, TouchableOpacity, View, Text } from "react-native";
-import TaskItem from "./task-item";
-import EventItem from "./event-item";
-import TimerLogItem from "./timer-log-item";
-import HabitItem from "./habit-item";
+import TaskItem from "./tasks/task-item";
+import EventItem from "./calendar-events/event-item";
+import TimerLogItem from "./timer-logs/timer-log-item";
+import HabitItem from "./habits/habit-item";
 
 interface SearchResultsProps {
     results: SearchResult[];
