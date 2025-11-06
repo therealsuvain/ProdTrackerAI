@@ -1,86 +1,242 @@
-
-import {  StyleSheet, useColorScheme, ScrollView, View } from 'react-native';
-import { useData } from '@/hooks/use-data';
-import { Text, Divider, FAB, Searchbar,  Button, Portal, Modal, ActivityIndicator } from 'react-native-paper';
-import TaskItem from '@/components/ui/tasks/task-item';
-import EventItem from '@/components/ui/calendar-events/event-item';
-import TimerLogItem from '@/components/ui/timer-logs/timer-log-item';
-import {  useState } from 'react';
-import { useSearch } from '@/hooks/use-search';
-import { AnalyticsSection } from '@/components/ui/analytics-section';
-import { SearchResults } from '@/components/ui/search-results';
-import { AIVoiceModal } from '@/components/ui/ai-voice-modal';
-import { IntentConfirmationModal } from '@/components/ui/intent-confirmation-modal';
-import { useIntentProcessor } from '@/hooks/use-intent-processor';
-import HabitItem from '@/components/ui/habits/habit-item';
-import { Provider } from 'react-native-paper';
-import LoadingIndicator from '@/components/loading-indicator';
+import { StyleSheet, useColorScheme, ScrollView, View } from "react-native";
+import { useData } from "@/hooks/use-data";
+import {
+  Text,
+  Divider,
+  FAB,
+  Searchbar,
+  Button,
+  Portal,
+  Modal,
+  ActivityIndicator,
+  SegmentedButtons,
+} from "react-native-paper";
+import TaskItem from "@/components/ui/tasks/task-item";
+import EventItem from "@/components/ui/calendar-events/event-item";
+import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
+import { useState } from "react";
+import { useSearch } from "@/hooks/use-search";
+import { AnalyticsSection } from "@/components/ui/analytics-section";
+import { SearchResults } from "@/components/ui/search-results";
+import { AIVoiceModal } from "@/components/ui/ai-voice-modal";
+import { IntentConfirmationModal } from "@/components/ui/intent-confirmation-modal";
+import { useIntentProcessor } from "@/hooks/use-intent-processor";
+import HabitItem from "@/components/ui/habits/habit-item";
+import { Provider } from "react-native-paper";
+import LoadingIndicator from "@/components/loading-indicator";
+import UnifiedTimeline from "@/components/ui/home-timeline";
 
 export default function HomeScreen() {
-
-  const {tasks, setTasks, events, timerLogs, habits} = useData();
+  const { tasks, setTasks, events, timerLogs, habits } = useData();
 
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
   const [searchVisible, setSearchVisible] = useState(false);
-  const {query, performSearch, results}= useSearch();
-  const [aiVisible, setAiVisible]= useState(false);
-  const {isLoading, intent, processCommand, confirmExecute} = useIntentProcessor();
+  const { query, performSearch, results } = useSearch();
+  const [aiVisible, setAiVisible] = useState(false);
+  const { isLoading, intent, processCommand, confirmExecute } = useIntentProcessor();
+  const [viewMode, setViewMode] = useState<'overview' | 'timeline'>('overview');
+   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  let todaysTasks= tasks.filter(t=>t.dueDate && t.dueDate.toDateString() == new Date().toDateString());
-  let upcomingEvents= events.slice(0,3);
-  let activeHabits= habits.slice(0,3);
-  let recentLogs= timerLogs.slice(0,3);
+  let todaysTasks = tasks.filter(
+    (t) => t.dueDate && t.dueDate.toDateString() == new Date().toDateString()
+  );
+  let upcomingEvents = events.slice(0, 3);
+  let activeHabits = habits.slice(0, 3);
+  let recentLogs = timerLogs.slice(0, 3);
 
-  const toggleTaskCompleted =(id: string)=>{
-    setTasks(tasks.map(t=> id ===t.id?{...t, completed: !t.completed}:t));
-  }
+  const toggleTaskCompleted = (id: string) => {
+    setTasks(
+      tasks.map((t) => (id === t.id ? { ...t, completed: !t.completed } : t))
+    );
+  };
   return (
     <Provider>
-      {isLoading && <LoadingIndicator/>}
-    <ScrollView>
-      <Searchbar style={{marginVertical:4}} placeholder='Search Everything' onChangeText={performSearch} value={query}/>
-      {results.length>0 && <Button onPress={()=> setSearchVisible(true)}> View Results ({results.length})</Button>}
-     <Text style={{color:"#673AB7"}} variant="headlineLarge">Today's Task</Text>
-     {todaysTasks.length? 
-     todaysTasks.map(task=>(<TaskItem key={task.id} task={task} onToggleComplete={toggleTaskCompleted} />))
-     :<Text style={{color:"#673AB7"}} >No task Today</Text>}
-      <Divider style={styles.divider}/>
+      {isLoading && <LoadingIndicator />}
+      <SegmentedButtons
+          value={viewMode}
+          onValueChange={(value) => setViewMode(value as 'overview' | 'timeline')}
+          buttons={[
+            {
+              value: 'overview',
+              label: 'Overview',
+              icon: 'view-dashboard',
+              checkedColor: '#673AB7',
+              style: { backgroundColor: viewMode === 'overview' ? '#673AB722' : 'transparent' },
+            },
+            {
+              value: 'timeline',
+              label: "Today's Timeline",
+              icon: 'timeline',
+              checkedColor: '#673AB7',
+              style: { backgroundColor: viewMode === 'timeline' ? '#673AB722' : 'transparent' },
+            },
+          ]}
+          style={styles.viewSwitcher}
+        />
+      {viewMode === 'overview' ?(<ScrollView>
+        <Searchbar
+          style={{ marginVertical: 4 }}
+          placeholder="Search Everything"
+          onChangeText={performSearch}
+          value={query}
+        />
+        {results.length > 0 && (
+          <Button onPress={() => setSearchVisible(true)}>
+            {" "}
+            View Results ({results.length})
+          </Button>
+        )}
+        
 
-      <Text style={{color:"#F44336"}} variant='headlineLarge'>Upcoming Events</Text>
-      {upcomingEvents.length?upcomingEvents.map(event=>(<EventItem key={event.id} event={event}></EventItem>)):<Text style={{color:"#F44336"}} >No Upcoming Events</Text>}
-      <Divider style={styles.divider}/>
-      
-      <Text style={{color:"#05ce9cff"}} variant='headlineLarge'>Recent Timer Logs</Text>
-      {recentLogs.length? recentLogs.map(log=>(<TimerLogItem key={log.id} log={log}/>)):<Text style={{color:"#05ce9cff"}}>No Recent Logs</Text>}
-      <Divider style={styles.divider}/>
-      
-      <Text style={{color:"#f1b718ff"}} variant='headlineLarge'>Active Habits</Text>
-      {activeHabits.length? activeHabits.map(habit=>(<HabitItem key={habit.id} habit={habit}/>)):<Text style={{color:"#f1b718ff"}} >No Active Habits</Text>}
-      <Divider style={styles.divider}/>
-      <AnalyticsSection/>
-      <Portal>
-        <Modal visible={searchVisible} onDismiss={()=>setSearchVisible(false)}>
-          <SearchResults results={results} onItemPress={(result) =>{
-            setSearchVisible(false);
-          }}
-          />
-        </Modal>
-      </Portal>
-      <AIVoiceModal visible={aiVisible} onDismiss={()=>setAiVisible(false)} IntentProcessor = {processCommand}/>
-      { !isLoading &&  <IntentConfirmationModal intent={intent} onConfirm={confirmExecute}/>}
-    </ScrollView>
-    <FAB style={{position: 'absolute', bottom:80, right:16 , backgroundColor:"grey"}} color="white" icon='microphone' 
-      onPress={()=>setAiVisible(true)}/>
+        <Text style={{ color: "#673AB7" }} variant="headlineLarge">
+          Today's Task
+        </Text>
+        {todaysTasks.length ? (
+          todaysTasks.map((task) => (
+            <TaskItem
+              key={task.id}
+              task={task}
+              onToggleComplete={toggleTaskCompleted}
+            />
+          ))
+        ) : (
+          <Text style={{ color: "#673AB7" }}>No task Today</Text>
+        )}
+        <Divider style={styles.divider} />
+
+        <Text style={{ color: "#F44336" }} variant="headlineLarge">
+          Upcoming Events
+        </Text>
+        {upcomingEvents.length ? (
+          upcomingEvents.map((event) => (
+            <EventItem key={event.id} event={event}></EventItem>
+          ))
+        ) : (
+          <Text style={{ color: "#F44336" }}>No Upcoming Events</Text>
+        )}
+        <Divider style={styles.divider} />
+
+        <Text style={{ color: "#05ce9cff" }} variant="headlineLarge">
+          Recent Timer Logs
+        </Text>
+        {recentLogs.length ? (
+          recentLogs.map((log) => <TimerLogItem key={log.id} log={log} />)
+        ) : (
+          <Text style={{ color: "#05ce9cff" }}>No Recent Logs</Text>
+        )}
+        <Divider style={styles.divider} />
+
+        <Text style={{ color: "#f1b718ff" }} variant="headlineLarge">
+          Active Habits
+        </Text>
+        {activeHabits.length ? (
+          activeHabits.map((habit) => (
+            <HabitItem key={habit.id} habit={habit} />
+          ))
+        ) : (
+          <Text style={{ color: "#f1b718ff" }}>No Active Habits</Text>
+        )}
+        <Divider style={styles.divider} />
+        <AnalyticsSection />
+        <Portal>
+          <Modal
+            visible={searchVisible}
+            onDismiss={() => setSearchVisible(false)}
+          >
+            <SearchResults
+              results={results}
+              onItemPress={(result) => {
+                setSearchVisible(false);
+              }}
+            />
+          </Modal>
+        </Portal>
+        <AIVoiceModal
+          visible={aiVisible}
+          onDismiss={() => setAiVisible(false)}
+          IntentProcessor={processCommand}
+        />
+        {!isLoading && (
+          <IntentConfirmationModal intent={intent} onConfirm={confirmExecute} />
+        )}
+      </ScrollView>):(
+        <View style={styles.timelineContainer}>
+            {/* Date selector */}
+            <View style={styles.dateSelector}>
+              <Button
+                icon="chevron-left"
+                onPress={() => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setDate(newDate.getDate() - 1);
+                  setSelectedDate(newDate);
+                }}
+              >
+                Previous
+              </Button>
+              <Button
+                mode="contained"
+                buttonColor="#673AB7"
+                onPress={() => setSelectedDate(new Date())}
+              >
+                {selectedDate.toDateString() === new Date().toDateString()
+                  ? 'Today'
+                  : selectedDate.toDateString()}
+              </Button>
+              <Button
+                icon="chevron-right"
+                onPress={() => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setDate(newDate.getDate() + 1);
+                  setSelectedDate(newDate);
+                }}
+              >
+                Next
+              </Button>
+            </View>
+
+            <UnifiedTimeline
+              events={events}
+              tasks={tasks}
+              timerLogs={timerLogs}
+              habits={habits}
+              selectedDate={selectedDate}
+              onTaskToggle={toggleTaskCompleted}
+              onHabitCheckIn={()=>{}}
+            />
+          </View>
+      )}
+      <FAB
+        style={{
+          position: "absolute",
+          bottom: 80,
+          right: 16,
+          backgroundColor: "grey",
+        }}
+        color="white"
+        icon="microphone"
+        onPress={() => setAiVisible(true)}
+      />
     </Provider>
   );
 }
 
 const styles = StyleSheet.create({
-  text: { color: '#fff', fontSize: 24 },
+  text: { color: "#fff", fontSize: 24 },
   container: { flex: 1, padding: 16 },
   sectionTitle: { marginVertical: 8 },
   divider: { marginVertical: 16 },
-  toggleContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  toggleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  viewSwitcher: { marginVertical: 12 },
+  timelineContainer: { flex: 1 },
+  dateSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
 });
-

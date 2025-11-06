@@ -5,7 +5,7 @@ export const calculateStreak =(habit : Habit): number =>{
         return 0;
     const today = new Date();
     const last = new Date(habit.lastCompleted);
-    const diff = Math.floor((today.getTime()-last.getTime())/(1000*60*60))
+    const diff = Math.floor((today.getTime()-last.getTime())/(24*1000*60*60))
     return diff ===  0 || diff === 1? habit.streak : 0;
 }
 

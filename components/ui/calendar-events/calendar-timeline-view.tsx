@@ -129,6 +129,7 @@ export default function Timeline({
         onPress={() => onEventSelect?.(event)}
       >
         <View style={styles.eventContent}>
+          <View style={{flexDirection:'row', justifyContent:"space-between"}}>
           <Text style={styles.eventTitle} numberOfLines={2}>
             {event.title}
           </Text>
@@ -143,6 +144,7 @@ export default function Timeline({
                 minute: "2-digit",
               })}`}
           </Text>
+          </View>
           {event.description && (
             <Text style={styles.eventDescription} numberOfLines={1}>
               {event.description}
