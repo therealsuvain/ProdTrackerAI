@@ -9,42 +9,36 @@ import {
 } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
-
 interface Props {
   visible: boolean;
   onDismiss: () => void;
-  title: string;
-  setTitle: (s: string) => void;
-  frequency: "daily" | "weekly";
-  setFrequency: (v: "daily" | "weekly") => void;
-  goal: string;
-  setGoal: (s: string) => void;
-  reminder: boolean;
-  setReminder: (b: boolean) => void;
-  reminderDate?: Date;
-  showTimePicker: boolean;
-  setShowTimePicker: (b: boolean) => void;
-  onTimeChange: (event: any, selected?: Date) => void;
-  handleSave: () => Promise<void> | void;
+  state: any;
+  updateField: (
+    field:
+      | "title"
+      | "frequency"
+      | "reminder"
+      | "reminderDate"
+      | "goal"
+      | "errors",
+    value: any
+  ) => void;
+  onSubmit: () => Promise<void> | void;
 }
 
 export default function HabitModal({
   visible,
   onDismiss,
-  title,
-  setTitle,
-  frequency,
-  setFrequency,
-  goal,
-  setGoal,
-  reminder,
-  setReminder,
-  reminderDate,
-  showTimePicker,
-  setShowTimePicker,
-  onTimeChange,
-  handleSave,
+  state,
+  updateField,
+  onSubmit,
 }: Props) {
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  const onTimeChange = (event: any, selectedDate?: Date) => {
+    setShowTimePicker(false);
+    if (selectedDate) updateField("reminderDate", selectedDate);
+  };
   return (
     <Modal
       visible={visible}
@@ -56,14 +50,14 @@ export default function HabitModal({
         label="Habit Name"
         mode="outlined"
         activeOutlineColor="#f1b718ff"
-        value={title}
-        onChangeText={setTitle}
+        value={state.title}
+        onChangeText={(text) => updateField("title", text)}
       />
 
       <SegmentedButtons
         style={{ marginVertical: 2.5 }}
-        value={frequency}
-        onValueChange={(val) => setFrequency(val as "daily" | "weekly")}
+        value={state.frequency}
+        onValueChange={(val) => updateField("frequency", val as "daily" | "weekly")}
         buttons={[
           {
             value: "daily",
@@ -84,21 +78,21 @@ export default function HabitModal({
         label="Goal"
         mode="outlined"
         activeOutlineColor="#f1b718ff"
-        value={goal}
-        onChangeText={setGoal}
+        value={state.goal}
+        onChangeText={(text) => updateField("goal", text)}
         keyboardType="numeric"
       />
       <View style={styles.switchContainer}>
         <Text style={styles.text}>Set Reminder</Text>
         <Switch
-          value={reminder}
+          value={state.reminder}
           thumbColor="#f1b718ff"
           trackColor={{ false: "#ffffff", true: "#f1b7187a" }}
           onValueChange={(val) => {
-            setReminder(val);
+            updateField("reminder", val);
           }}
         />
-        {reminder && (
+        {state.reminder && (
           <>
             <Button
               mode="elevated"
@@ -111,11 +105,11 @@ export default function HabitModal({
             </Button>
 
             <Text style={styles.text}>
-              {reminderDate?.toLocaleTimeString()}
+              {state.reminderDate?.toLocaleTimeString()}
             </Text>
             {showTimePicker && (
               <DateTimePicker
-                value={reminderDate || new Date()}
+                value={state.reminderDate || new Date()}
                 mode="time"
                 onChange={onTimeChange}
               />
@@ -128,7 +122,7 @@ export default function HabitModal({
         mode="elevated"
         buttonColor="#503c06ff"
         textColor="#f1b718ff"
-        onPress={handleSave}
+        onPress={onSubmit}
       >
         Save
       </Button>

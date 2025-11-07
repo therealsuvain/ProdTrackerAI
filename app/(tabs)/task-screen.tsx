@@ -1,26 +1,18 @@
-import { useRef, useState } from "react";
+import {  useState } from "react";
 import {
   Alert,
-  Platform,
   TouchableOpacity,
   View,
   StyleSheet,
-  TouchableWithoutFeedback,
 } from "react-native";
 import { randomUUID } from "expo-crypto";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   Button,
   FAB,
-  Menu,
-  Modal,
   Portal,
   Provider,
   Searchbar,
   Text,
-  TextInput,
-  SegmentedButtons,
-  Switch,
 } from "react-native-paper";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -28,29 +20,23 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useData } from "@/hooks/use-data";
 import { Task } from "@/types/task";
 import TaskItem from "@/components/ui/tasks/task-item";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import {
   cancelReminder,
   scheduleReminderTasks,
 } from "@/hooks/use-notifications";
 import TaskModal from "@/components/modal/task-modal";
+import { useTaskForm } from "@/hooks/use-task-form";
 
 export default function TaskScreen() {
   const { tasks, setTasks } = useData();
   const [visible, setVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [reminder, setReminder] = useState(false);
-  const [reminderDate, setReminderDate] = useState<Date | undefined>(undefined);
-  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
-  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"priority" | "duedate" | "manual">(
     "manual"
   );
+  const {state, updateField, onSubmit}= useTaskForm({tasks, setTasks, editingTask, onClose:() => setVisible(false)});
+  
   const filteredTasks = tasks
     .filter(
       (t) =>
@@ -73,10 +59,6 @@ export default function TaskScreen() {
 
   const showModal = (task?: Task) => {
     setEditingTask(task || null);
-    setTitle(task?.title || "");
-    setDescription(task?.description || "");
-    setPriority(task?.priority || "medium");
-    setDueDate(task?.dueDate);
     setVisible(true);
   };
 
@@ -84,30 +66,6 @@ export default function TaskScreen() {
     setVisible(false);
   };
 
-  const handleSave = async () => {
-    if (!title) return Alert.alert("Title is required");
-    const newTask: Task = {
-      id: editingTask ? editingTask.id : randomUUID(),
-      title,
-      description,
-      reminder,
-      reminderDate,
-      notificationId: editingTask ? editingTask.notificationId : undefined,
-      priority,
-      dueDate,
-      completed: editingTask ? editingTask.completed : false,
-    };
-    if (editingTask) {
-      setTasks(tasks.map((t) => (t.id === editingTask.id ? newTask : t)));
-    } else {
-      if (newTask.reminder) {
-        const notifId = await scheduleReminderTasks(newTask);
-        newTask.notificationId = notifId;
-      }
-      setTasks([...tasks, newTask]);
-    }
-    hideModal();
-  };
 
   const handleDelete = (id: string) => {
     Alert.alert("Delete Task", "Are you sure you want to delete this task?", [
@@ -133,20 +91,10 @@ export default function TaskScreen() {
     );
   };
 
-  const onDataChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) setDueDate(selectedDate);
-  };
-
-  const onTimeChange = (event: any, selectedDate?: Date) => {
-    setShowTimePicker(false);
-    if (selectedDate) setReminderDate(selectedDate);
-  };
-
   const handleDragEnd = ({ data }: { data: Task[] }) => {
     setTasks(data);
   };
-  //console.log("menu", menuVisible);
+  
   const [showSortOptions, setShowSortOptions] = useState(false);
   return (
     <Provider>
@@ -240,23 +188,9 @@ export default function TaskScreen() {
           <TaskModal
             visible={visible}
             onDismiss={hideModal}
-            title={title}
-            setTitle={setTitle}
-            description={description}
-            setDescription={setDescription}
-            priority={priority}
-            setPriority={setPriority}
-            dueDate={dueDate}
-            showDatePicker={showDatePicker}
-            setShowDatePicker={setShowDatePicker}
-            onDateChange={onDataChange}
-            reminder={reminder}
-            setReminder={setReminder}
-            reminderDate={reminderDate}
-            showTimePicker={showTimePicker}
-            setShowTimePicker={setShowTimePicker}
-            onTimeChange={onTimeChange}
-            handleSave={handleSave}
+            state={state}
+            updateField={updateField}
+            onSubmit={onSubmit}
           />
         </Portal>
       </GestureHandlerRootView>

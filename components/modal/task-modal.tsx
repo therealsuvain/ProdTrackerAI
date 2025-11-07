@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import {
@@ -12,46 +12,42 @@ import {
 interface Props {
   visible: boolean;
   onDismiss: () => void;
-  title: string;
-  setTitle: (s: string) => void;
-  description: string;
-  setDescription: (s: string) => void;
-  priority: "low" | "medium" | "high";
-  setPriority: (v: "low" | "medium" | "high") => void;
-  dueDate?: Date;
-  showDatePicker: boolean;
-  setShowDatePicker: (b: boolean) => void;
-  onDateChange: (event: any, selected?: Date) => void;
-  reminder: boolean;
-  setReminder: (b: boolean) => void;
-  reminderDate?: Date;
-  showTimePicker: boolean;
-  setShowTimePicker: (b: boolean) => void;
-  onTimeChange: (event: any, selected?: Date) => void;
-  handleSave: () => void;
+  state: any;
+  updateField: (
+    field:
+      | "title"
+      | "description"
+      | "priority"
+      | "dueDate"
+      | "reminder"
+      | "reminderDate"
+      | "category"
+      | "tags"
+      | "errors",
+    value: any
+  ) => void;
+  onSubmit: () => Promise<void> | void;
 }
 
 export default function TaskModal({
   visible,
   onDismiss,
-  title,
-  setTitle,
-  description,
-  setDescription,
-  priority,
-  setPriority,
-  dueDate,
-  showDatePicker,
-  setShowDatePicker,
-  onDateChange,
-  reminder,
-  setReminder,
-  reminderDate,
-  showTimePicker,
-  setShowTimePicker,
-  onTimeChange,
-  handleSave,
+  state,
+  updateField,
+  onSubmit,
 }: Props) {
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) updateField("dueDate", selectedDate);
+  };
+
+  const onTimeChange = (event: any, selectedDate?: Date) => {
+    setShowTimePicker(false);
+    if (selectedDate) updateField("reminderDate", selectedDate);
+  };
   return (
     <Modal
       visible={visible}
@@ -61,19 +57,21 @@ export default function TaskModal({
       <TextInput
         mode="outlined"
         label="Title"
-        value={title}
-        onChangeText={setTitle}
+        value={state.title}
+        onChangeText={(text) => updateField("title", text)}
       />
       <TextInput
         mode="outlined"
         label="Description"
-        value={description}
-        onChangeText={setDescription}
+        value={state.description}
+        onChangeText={(text) => updateField("description", text)}
         multiline
       />
       <SegmentedButtons
-        value={priority}
-        onValueChange={(v) => setPriority(v as "low" | "medium" | "high")}
+        value={state.priority}
+        onValueChange={(v) =>
+          updateField("priority", v as "low" | "medium" | "high")
+        }
         buttons={[
           { value: "low", label: "Low" },
           { value: "medium", label: "Medium" },
@@ -88,16 +86,21 @@ export default function TaskModal({
       >
         Pick Due Date
       </Button>
-      {dueDate && (
+      {state.dueDate && (
         <Text
-          style={{ alignSelf: "center", marginVertical: 2.5, fontSize: 20 , color:"#c7b6f1ff" }}
+          style={{
+            alignSelf: "center",
+            marginVertical: 2.5,
+            fontSize: 20,
+            color: "#c7b6f1ff",
+          }}
         >
-          {dueDate.toDateString()}
+          {state.dueDate.toDateString()}
         </Text>
       )}
       {showDatePicker && (
         <DateTimePicker
-          value={dueDate || new Date()}
+          value={state.dueDate || new Date()}
           mode="date"
           display="default"
           onChange={onDateChange}
@@ -106,14 +109,14 @@ export default function TaskModal({
       <View style={styles.switchContainer}>
         <Text style={styles.text}>Set Reminder</Text>
         <Switch
-          value={reminder}
+          value={state.reminder}
           thumbColor="#c7b6f1ff"
           trackColor={{ false: "#ffffff", true: "#7957b383" }}
           onValueChange={(val) => {
-            setReminder(val);
+            updateField("reminder", val);
           }}
         />
-        {reminder && (
+        {state.reminder && (
           <>
             <Button
               mode="elevated"
@@ -126,11 +129,11 @@ export default function TaskModal({
             </Button>
 
             <Text style={styles.text}>
-              {reminderDate?.toLocaleTimeString()}
+              {state.reminderDate?.toLocaleTimeString()}
             </Text>
             {showTimePicker && (
               <DateTimePicker
-                value={reminderDate || new Date()}
+                value={state.reminderDate || new Date()}
                 mode="time"
                 onChange={onTimeChange}
               />
@@ -141,7 +144,7 @@ export default function TaskModal({
       <Button
         mode="elevated"
         style={{ marginVertical: 2.5 }}
-        onPress={handleSave}
+        onPress={onSubmit}
       >
         Save
       </Button>
