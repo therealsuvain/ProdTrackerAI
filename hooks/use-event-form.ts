@@ -3,7 +3,7 @@ import { useReducer } from 'react';
 import { useEffect } from 'react';
 import { validateEventTimes } from '@/utils/event-utils';
 import { randomUUID } from 'expo-crypto';
-import { cancelReminder, scheduleReminder } from './use-notifications';
+import { cancelReminder, scheduleReminderEvents } from './use-notifications';
 
 type FormState = Omit<CalendarEvent, 'id' | 'notificationId'> & {
   errors: Partial<Record<keyof Omit<CalendarEvent, 'id' | 'notificationId'>, string>>;
@@ -17,6 +17,8 @@ type FormAction =
 
 const initialState: FormState = {
   title: '',
+  startDate: new Date(),
+  endDate: new Date(),
   startTime: new Date(),
   endTime: new Date(),
   description: '',
@@ -64,6 +66,8 @@ export const useEventForm = ({ events, setEvents, editingEvent, onClose }: UseEv
         type: 'RESET',
         payload: {
           title: editingEvent.title,
+          startDate: editingEvent.startDate,
+          endDate: editingEvent.endDate,
           startTime: editingEvent.startTime,
           endTime: editingEvent.endTime,
           description: editingEvent.description,
@@ -89,8 +93,16 @@ export const useEventForm = ({ events, setEvents, editingEvent, onClose }: UseEv
       dispatch({ type: 'SET_ERROR', payload: { field: 'title', message: 'Title is required' } });
       hasError = true;
     }
+    if (!state.startDate) {
+      dispatch({ type: 'SET_ERROR', payload: { field: 'startDate', message: 'Start time is required' } });
+      hasError = true;
+    }
     if (!state.startTime) {
       dispatch({ type: 'SET_ERROR', payload: { field: 'startTime', message: 'Start time is required' } });
+      hasError = true;
+    }
+    if (!state.endTime) {
+      dispatch({ type: 'SET_ERROR', payload: { field: 'endTime', message: 'Start time is required' } });
       hasError = true;
     }
     if (!validateEventTimes(state.startTime, state.endTime)) {
@@ -110,7 +122,7 @@ export const useEventForm = ({ events, setEvents, editingEvent, onClose }: UseEv
       await cancelReminder(editingEvent.notificationId);
     }
     if (newEvent.reminder) {
-      const notifId = await scheduleReminder(newEvent);
+      const notifId = await scheduleReminderEvents(newEvent);
       newEvent.notificationId = notifId;
       console.log(notifId)
     }

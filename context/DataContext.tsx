@@ -28,9 +28,9 @@ import {
 
 interface DataContextType {
   tasks: Task[];
-  setTasks: (tasks: Task[]) => void;
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   events: CalendarEvent[];
-  setEvents: (events: CalendarEvent[]) => void;
+  setEvents:  React.Dispatch<React.SetStateAction<CalendarEvent[]>>;
   timerLogs: TimerLog[];
   setTimerLogs: (timerLogs: TimerLog[]) => void;
   habits: Habit[];
@@ -108,6 +108,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveEvents(events);
+    console.log("Events saved:", events);
   }, [events, loaded]);
 
   useEffect(() => {

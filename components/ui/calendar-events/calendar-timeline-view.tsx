@@ -64,9 +64,9 @@ export default function Timeline({
   const eventPositions = useMemo(() => {
     return sortedTimedEvents.map((event) => {
       const startHour =
-        event.startTime.getHours() + event.startTime.getMinutes() / 60;
+        event.startTime.getHours() ;
       const endHour = event.endTime
-        ? event.endTime.getHours() + event.endTime.getMinutes() / 60
+        ? event.endTime.getHours() 
         : startHour + 1; // Default 1 hour if no end time
 
       return {
@@ -124,6 +124,7 @@ export default function Timeline({
             top,
             height,
             backgroundColor: getCategoryColor(event.category),
+            opacity:0.75
           },
         ]}
         onPress={() => onEventSelect?.(event)}
@@ -226,12 +227,19 @@ export default function Timeline({
 
 // Helper function to get color based on category
 const getCategoryColor = (category?: string): string => {
+
+
+  // Generate random shade of red (R: 200-255, G: 0-100, B: 0-100)
+  const red = Math.floor(Math.random() * 56) + 200;    // 200-255
+  const green = Math.floor(Math.random() * 100);       // 0-100
+  const blue = Math.floor(Math.random() * 100);        // 0-100
+
   const colorMap: Record<string, string> = {
     work: "#FF6B6B",
     personal: "#4ECDC4",
     health: "#45B7D1",
     social: "#FFA07A",
-    default: "#F44336",
+    default: `#${red.toString(16).padStart(2, "0")}${green.toString(16).padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`,
   };
   return colorMap[category || "default"] || colorMap.default;
 };

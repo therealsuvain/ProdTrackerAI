@@ -20,6 +20,7 @@ import {
   Text,
   TextInput,
   SegmentedButtons,
+  Switch,
 } from "react-native-paper";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -28,6 +29,7 @@ import { useData } from "@/hooks/use-data";
 import { Task } from "@/types/task";
 import TaskItem from "@/components/ui/tasks/task-item";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { cancelReminder, scheduleReminderTasks } from "@/hooks/use-notifications";
 
 export default function TaskScreen() {
   const { tasks, setTasks } = useData();
@@ -36,9 +38,14 @@ export default function TaskScreen() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [reminder, setReminder] = useState(false);
+  const [reminderDate, setReminderDate] = useState<Date | undefined>(
+    undefined
+  );
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"priority" | "duedate" | "manual">(
     "manual"
@@ -76,12 +83,15 @@ export default function TaskScreen() {
     setVisible(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title) return Alert.alert("Title is required");
     const newTask: Task = {
       id: editingTask ? editingTask.id : randomUUID(),
       title,
       description,
+      reminder,
+      reminderDate,
+      notificationId: editingTask ? editingTask.notificationId : undefined,
       priority,
       dueDate,
       completed: editingTask ? editingTask.completed : false,
@@ -89,6 +99,8 @@ export default function TaskScreen() {
     if (editingTask) {
       setTasks(tasks.map((t) => (t.id === editingTask.id ? newTask : t)));
     } else {
+      const notifId = await scheduleReminderTasks(newTask);
+      newTask.notificationId = notifId;
       setTasks([...tasks, newTask]);
     }
     hideModal();
@@ -99,7 +111,15 @@ export default function TaskScreen() {
       { text: "Cancel" },
       {
         text: "Delete",
-        onPress: () => setTasks(tasks.filter((t) => t.id !== id)),
+        onPress: async () => {
+                setTasks((currentTasks) => {
+                  const task = currentTasks.find((e:Task) => e.id === id);
+                  if (task?.notificationId) {
+                    cancelReminder(task.notificationId);
+                  }
+                  return currentTasks.filter((e:Task) => e.id !== id);
+                });
+              },
       },
     ]);
   };
@@ -111,8 +131,13 @@ export default function TaskScreen() {
   };
 
   const onDataChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(Platform.OS === "ios");
+    setShowDatePicker(false);
     if (selectedDate) setDueDate(selectedDate);
+  };
+
+  const onTimeChange= (event: any, selectedDate?: Date) => {
+    setShowTimePicker(false);
+    if (selectedDate) setReminderDate(selectedDate);
   };
 
   const handleDragEnd = ({ data }: { data: Task[] }) => {
@@ -181,42 +206,6 @@ export default function TaskScreen() {
               </View>
             )}
           </View>
-          {/* <Menu
-            visible={menuVisible}
-            onDismiss={() => setMenuVisible(false)}
-            anchor={
-              <TouchableWithoutFeedback>
-                <View>
-                  <Button onPress={() => setMenuVisible(!menuVisible)}>
-                    Sort By
-                  </Button>
-                </View>
-              </TouchableWithoutFeedback>
-            }
-            style={{ flexDirection: "column", flex: 1, width: "100%" }}
-          >
-            <Menu.Item
-              onPress={() => {
-                setSortBy("priority");
-                setMenuVisible(false);
-              }}
-              title="Priority"
-            />
-            <Menu.Item
-              onPress={() => {
-                setSortBy("duedate");
-                setMenuVisible(false);
-              }}
-              title="Due Date"
-            />
-            <Menu.Item
-              onPress={() => {
-                setSortBy("manual");
-                setMenuVisible(false);
-              }}
-              title="Manual"
-            />
-          </Menu> */}
 
           {filteredTasks.length === 0 ? (
             <Text style={styles.noTasks}>No tasks found, Add one</Text>
@@ -301,6 +290,36 @@ export default function TaskScreen() {
                 onChange={onDataChange}
               />
             )}
+            <View style={styles.switchContainer}>
+              <Text style={styles.text}>Set Reminder</Text>
+              <Switch
+                value={reminder}
+                thumbColor="#8f67d4ff"
+                trackColor={{ false: "#ffffff", true: "#7957b383" }}
+                onValueChange={(val) => {
+                  setReminder(val)
+                }}
+              />
+              <Button
+              mode="elevated"
+              buttonColor="#2F2C37"
+              textColor="#8f67d4ff"
+              style={{ marginVertical: 2.5 }}
+              onPress={() => {setShowTimePicker(true)}}
+            >
+              Pick Time
+            </Button>
+            <Text style={styles.text}>
+                  {reminderDate?.toLocaleTimeString()}
+            </Text>
+            {showTimePicker &&
+              <DateTimePicker
+                  value={reminderDate || new Date()}
+                  mode="time"
+                  onChange={onTimeChange}
+                />
+              }
+            </View>
             <Button
               mode="elevated"
               style={{ marginVertical: 2.5 }}
@@ -346,4 +365,11 @@ const styles = StyleSheet.create({
     borderColor: "#1e1c20ff",
   },
   noTasks: { textAlign: "center", marginTop: 20 },
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 8,
+    marginHorizontal: 5,
+  },
+  text: { color: "#8f67d4ff", marginLeft:10 },
 });

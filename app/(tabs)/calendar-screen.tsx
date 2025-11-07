@@ -69,47 +69,49 @@ export default function CalendarScreen() {
     Alert.alert("Delete Event", "Are you sure?", [
       { text: "Cancel" },
       {
-        text: "Delete",
-        onPress: async () => {
-          const event = events.find((e) => e.id === id);
-          if (event?.notificationId) await cancelReminder(event.notificationId);
-          setEvents(events.filter((e) => e.id !== id));
-        },
+      text: "Delete",
+      onPress: async () => {
+        setEvents((currentEvents) => {
+          const event = currentEvents.find((e:CalendarEvent) => e.id === id);
+          if (event?.notificationId) {
+            cancelReminder(event.notificationId);
+          }
+          return currentEvents.filter((e:CalendarEvent) => e.id !== id);
+        });
       },
+    },
     ]);
   };
 
   const onStartChange = (event: any, selected?: Date) => {
     setShowStartPicker(false);
-    if(Platform.OS=== 'android'){
-      setShowAndroidStartTimerPicker(true)
-      setAndroidDate(selected)
-      return;
-    }
-    if (selected) updateField("startTime", new Date(selected.toLocaleString()));
+    setAndroidDate(selected);
+    console.log(selected)
+    console.log(new Date(selected?selected.toLocaleString():''))
+    if (selected) updateField("startDate", selected);
   };
 
   const onStartTimeChangeAndroid = (event: any, selected?:Date) => {
     setShowAndroidStartTimerPicker(false)
-    let androidDateVar;
-    if(androidDate) androidDateVar = new Date(androidDate.toISOString().split('T')[0]+'T'+ selected?.toISOString().split('T')[1])
-     updateField("startTime",androidDateVar);
+    let varTime;
+    console.log(selected)
+    if (selected) varTime=androidDate?.toISOString().split('T')[0]+'T'+selected.toISOString().split('T')[1]
+    console.log(selected?.toISOString().split('T')[1])
+    console.log(varTime)
+    console.log(new Date(varTime!))
+    updateField("startTime",new Date(varTime!));
   }
   const onEndChange = (event: any, selected?: Date) => {
-    setShowEndPicker(false);
-    if(Platform.OS=== 'android'){
-      setShowAndroidEndTimerPicker(true)
-      setAndroidDate(selected)
-      return;
-    }       
-    if (selected) updateField("endTime", new Date(selected.toLocaleString()));
+    setShowEndPicker(false);  
+    setAndroidDate(selected);
+    if (selected) updateField("endDate", selected);
 };
 
 const onEndTimeChangeAndroid = (event: any, selected?:Date) => {
     setShowAndroidEndTimerPicker(false)
-    let androidDateVar;
-    if(androidDate) androidDateVar = new Date(androidDate.toISOString().split('T')[0]+'T'+ selected?.toISOString().split('T')[1])
-      updateField("endTime", androidDateVar);
+    let varTime;
+    if (selected) varTime=androidDate?.toISOString().split('T')[0]+'T'+selected.toISOString().split('T')[1]
+    updateField("endTime",new Date(varTime!));
   }
   return (
     <Provider>
@@ -172,34 +174,65 @@ const onEndTimeChangeAndroid = (event: any, selected?:Date) => {
               style={{ marginVertical: 2.5 }}
               onPress={() => {setShowStartPicker(true)}}
             >
-              Pick Start Time 
+              Pick Date 
             </Button>
             <Text style={styles.text}>
-              Start: {state.startTime?.toLocaleString() || ""}
+              Start: {state.startDate.toDateString() || ""}
             </Text>
-            {state.errors.startTime && (
-              <Text style={styles.error}>{state.errors.startTime}</Text>
+            {state.errors.startDate && (
+              <Text style={styles.error}>{state.errors.startDate}</Text>
             )}
-            {showStartPicker &&
-              (Platform.OS === "ios" ? (
-                <DateTimePicker
-                  value={state.startTime || new Date()}
-                  mode="datetime"
-                  onChange={onStartChange}
-                />
-              ) : (
-                
-                <DateTimePicker
-                  value={state.startTime || new Date()}
+            {showStartPicker && <DateTimePicker
+                  value={state.startDate || new Date()}
                   mode="date"
                   onChange={onStartChange}
                 /> 
-              ))}
+              }
+            <View style={{flexDirection:'row'}}>
+              <Button
+              mode="elevated"
+              buttonColor="#411310ff"
+              textColor="#F44336"
+              style={{ marginVertical: 2.5 , width:'50%'}}
+              onPress={() => {setShowAndroidStartTimerPicker(true)}}
+            >
+              Pick Start Time
+            </Button>
+            <Button
+              mode="elevated"
+              buttonColor="#411310ff"
+              textColor="#F44336"
+              style={{ marginVertical: 2.5 , width:'50%'}}
+              onPress={() => {setShowAndroidEndTimerPicker(true)}}
+            >
+              Pick End Time
+            </Button>
+            </View>
+             <View style={{flexDirection:'row', justifyContent:'space-between'}}>
+              <Text style={styles.text}>
+              Start: {state.startTime.toLocaleTimeString() || ""}
+            </Text>
+            {state.errors.startTime && (
+              <Text style={styles.error}>{state.errors.startTime}</Text>
+            )}      
+            <Text style={styles.text}>
+              End: {state.endTime?.toLocaleTimeString() || ""}
+            </Text>
+            {state.errors.endTime && (
+              <Text style={styles.error}>{state.errors.endTime}</Text>
+            )} 
+             </View>
               {showAndroidStartTimePicker && 
                 <DateTimePicker
                   value={state.startTime || new Date()}
                   mode="time"
                   onChange={onStartTimeChangeAndroid}
+                />}
+               {showAndroidEndTimePicker && 
+                <DateTimePicker
+                  value={state.endTime || new Date()}
+                  mode="time"
+                  onChange={onEndTimeChangeAndroid}
                 />}
             <Button
               mode="elevated"
@@ -208,35 +241,22 @@ const onEndTimeChangeAndroid = (event: any, selected?:Date) => {
               style={{ marginVertical: 2.5 }}
               onPress={() => {setShowEndPicker(true)}}
             >
-              Pick End Time
+              Pick End Date
             </Button>
             <Text style={styles.text}>
-              End: {state.endTime?.toLocaleString() || ""}
+              End: {state.endDate.toDateString() || ""}
             </Text>
-            {state.errors.endTime && (
-              <Text style={styles.error}>{state.errors.endTime}</Text>
+            {state.errors.endDate && (
+              <Text style={styles.error}>{state.errors.endDate}</Text>
             )}
             {showEndPicker &&
-              (Platform.OS === "ios" ? (
-                <DateTimePicker
-                  value={state.endTime || new Date()}
-                  mode="datetime"
-                  onChange={onEndChange}
-                />
-              ) : (
-                
-                <DateTimePicker
-                  value={state.startTime || new Date()}
+              <DateTimePicker
+                  value={state.endDate || new Date()}
                   mode="date"
                   onChange={onEndChange}
                 />
-              ))}
-               {showAndroidEndTimePicker && 
-                <DateTimePicker
-                  value={state.startTime || new Date()}
-                  mode="time"
-                  onChange={onEndTimeChangeAndroid}
-                />}
+              }
+             
             <TextInput
               label="Description"
               value={state.description || ""}
@@ -251,7 +271,7 @@ const onEndTimeChangeAndroid = (event: any, selected?:Date) => {
               <Switch
                 value={state.reminder}
                 thumbColor="#F44336"
-                trackColor={{ false: "#ffffffff", true: "#f443367a" }}
+                trackColor={{ false: "#ffffff", true: "#f443367a" }}
                 onValueChange={(val) => {updateField("reminder", val); console.log(val)}}
               />
             </View>

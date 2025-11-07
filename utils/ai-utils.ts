@@ -130,8 +130,9 @@ export const parseCommandToIntent = async (
 3. For frequencies of habits: Only 'daily', 'weekly'—default 'daily'; For 'recurrence' of calendar events: Only 'none' , 'daily' and 'weekly' -default 'none'.
 4. For IDs/references: If editing/deleting, suggest approximate title/description for matching (e.g., "edit task about groceries").
 5. For Habits there should be a 'goal' which is the number of repetitions to complete it
-6. For events there are just 2 fields for time/date, startTime and endTime. Both date and time should a single field. default time for startTime is 6:00am and for endtime is 6:00pm. Output in ISO format
-7. All title fields should be capitalized
+6. For events there are just 4 fields for time/date, startTime , startDate, endDate and endTime. the date for both startTime and endTime should be equal to the startDate. Output in ISO format
+7. All names/labels/etc should be called title, title fields should be capitalized
+8. Tasks, Habits, Events all have a reminder boolean, but only tasks and habits have a field reminderDate. All commands suggesting to be reminded should set the reminder to true. reminderDate field only accepts a date.
 8. Output ONLY valid JSON—no explanations. 
         Command: "${transcript}"`;
 

@@ -32,57 +32,7 @@ export default function CalendarListAgendaMain({
     return date.toISOString().split("T")[0];
   };
 
-  // Load items for the month when user scrolls or on initial load
-//   const loadItems = useCallback((day: DateData) => {
-//     const newItems: AgendaSchedule = {};
 
-//     // Load events for 2 months range (1 month before and 1 month after)
-//     for (let i = -30; i < 30; i++) {
-//       const time = day.timestamp + i * 24 * 60 * 60 * 1000;
-//       const strTime = timeToString(time);
-
-//       if (!newItems[strTime]) {
-//         // Find events for this date
-//         const dayEvents = events.filter((event) => {
-//           const eventDate = event.startTime.toISOString().split("T")[0];
-//           const eventEndDate=event.endTime.toISOString().split("T")[0];
-//           const eventDay = new Date(event.startTime);
-//           const eventEndDay = new Date(eventEndDate)
-//           //console.log(event.title)
-//           console.log("end", eventEndDay.getTime()-time)
-//           console.log(timeToString(time))
-//           if(eventEndDay.getTime()<time || eventDay.getTime()>time){
-//             return false;
-//           }
-//           const currentDay = new Date(time);
-
-//           // Check if event is on this date or recurring
-//           const isExactDate = eventDate === strTime;
-//           const isDailyRecurrence = event.recurrence === "daily";
-//           const isWeeklyRecurrence =
-//             event.recurrence === "weekly" && eventDay.getDay() === currentDay.getDay();
-
-//           return isExactDate || isDailyRecurrence || isWeeklyRecurrence;
-//         });
-
-//         if (dayEvents.length > 0) {
-//           newItems[strTime] = dayEvents
-//             .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
-//             .map((event) => ({
-//               name: event.title,
-//               height: 80,
-//               day: strTime,
-//               event: event, // Store full event object
-//             }));
-//         } else {
-//           // Empty array for days with no events
-//           newItems[strTime] = [];
-//         }
-//       }
-//     }
-
-//     setItems(newItems);
-//   }, [events]);
 const loadItems = useCallback((day: DateData) => {
     // We must use the functional form of setItems to prevent an infinite loop
     setItems((prevItems) => {
@@ -106,36 +56,34 @@ const loadItems = useCallback((day: DateData) => {
             const currentDay = new Date(time);
             currentDay.setHours(0, 0, 0, 0);
             const currentDayTimestamp = currentDay.getTime();
+            const currentDayEndTimestamp = currentDayTimestamp + (24*60*60*1000)-1
 
             // Get the event's start *date* (normalized to midnight)
-            const eventStartDate = new Date(event.startTime);
-            eventStartDate.setHours(0, 0, 0, 0);
+            const eventStartDate = new Date(event.startDate);
+            eventStartDate.setHours(0,0,0,0)
             const eventStartDateTimestamp = eventStartDate.getTime();
             
             // Get the event's end *date* (normalized to midnight)
-            const eventEndDate = new Date(event.endTime);
-            eventEndDate.setHours(0, 0, 0, 0);
+            const eventEndDate = new Date(event.endDate);
+            eventEndDate.setHours(0,0,0,0)
             const eventEndDateTimestamp = eventEndDate.getTime();
 
-            // --- THE TWO NEW "GUARD" CONDITIONS ---
 
-            // 1. If the day we're checking is *before* the event started, skip it.
-            if (currentDayTimestamp < eventStartDateTimestamp) {
+            if (currentDayTimestamp < eventStartDateTimestamp ) {
               return false;
             }
-            
-            // 2. If the day we're checking is *after* the event ended, skip it.
+
             if (currentDayTimestamp > eventEndDateTimestamp) {
               return false;
             }
             
-            // --- END OF NEW CONDITIONS ---
+
 
 
             // Now we know the currentDay is *within* the event's start/end range.
             // We can proceed with the recurrence logic.
 
-            const eventStartDateString = eventStartDate.toISOString().split("T")[0];
+            const eventStartDateString = event.startDate.toISOString().split("T")[0];
 
             // Check 1: Is it a non-recurring event on its exact start date?
             if (event.recurrence === "none" || !event.recurrence) {
@@ -182,6 +130,7 @@ const loadItems = useCallback((day: DateData) => {
       }
       
       // Otherwise, return the new object
+      //console.log(newItems);
       return newItems;
     });
   }, [events]); // Only depend on `events`
@@ -197,7 +146,9 @@ const loadItems = useCallback((day: DateData) => {
     dateString: today.toISOString().split("T")[0],
   };
   loadItems(dateData);
-}, [loadItems]);
+}, [events, loadItems]);
+
+
 
   const renderItem = (reservation: AgendaEntry, isFirst: boolean) => {
     const event = (reservation as any).event as CalendarEvent;

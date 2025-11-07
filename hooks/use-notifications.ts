@@ -1,11 +1,12 @@
 import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
 import { CalendarEvent } from "@/types/calendar";
+import { Task } from "@/types/task";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
-    shouldPlaySound: false,
+    shouldPlaySound: true,
     shouldSetBadge: false,
     shouldShowList: true,
   }),
@@ -58,7 +59,7 @@ const getTriggerOptions = (time: Date, event: CalendarEvent) => {
   } as Notifications.DateTriggerInput
 
 }
-export const scheduleReminder = async (
+export const scheduleReminderEvents = async (
   event: CalendarEvent
 ): Promise<string> => {
   const triggerDate = new Date(event.startTime.getTime());
@@ -69,6 +70,25 @@ export const scheduleReminder = async (
       body: `${event.title} starts soon`,
     },
     trigger:getTriggerOptions(triggerDate, event),
+  });
+  return id;
+};
+
+export const scheduleReminderTasks = async (
+  task: Task
+): Promise<string> => {
+
+  const triggerDate = new Date(task.reminderDate?.getTime()|| Date.now());
+  
+  const id = await Notifications.scheduleNotificationAsync({
+    content: {
+      title: "Upcoming event",
+      body: `${task.title} starts soon`,
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: triggerDate,
+    },
   });
   return id;
 };
