@@ -3,6 +3,9 @@ export interface Habit {
   title: string;
   frequency: string;
   streak: number;
+  reminder : boolean;
+  reminderDate? : Date;
   lastCompleted?: Date;
   goal?: number; // e.g., 7 days in a row
+  notificationId?: string;
 }

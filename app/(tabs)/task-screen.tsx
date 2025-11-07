@@ -29,19 +29,20 @@ import { useData } from "@/hooks/use-data";
 import { Task } from "@/types/task";
 import TaskItem from "@/components/ui/tasks/task-item";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
-import { cancelReminder, scheduleReminderTasks } from "@/hooks/use-notifications";
+import {
+  cancelReminder,
+  scheduleReminderTasks,
+} from "@/hooks/use-notifications";
+import TaskModal from "@/components/modal/task-modal";
 
 export default function TaskScreen() {
   const { tasks, setTasks } = useData();
   const [visible, setVisible] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [reminder, setReminder] = useState(false);
-  const [reminderDate, setReminderDate] = useState<Date | undefined>(
-    undefined
-  );
+  const [reminderDate, setReminderDate] = useState<Date | undefined>(undefined);
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -99,8 +100,10 @@ export default function TaskScreen() {
     if (editingTask) {
       setTasks(tasks.map((t) => (t.id === editingTask.id ? newTask : t)));
     } else {
-      const notifId = await scheduleReminderTasks(newTask);
-      newTask.notificationId = notifId;
+      if (newTask.reminder) {
+        const notifId = await scheduleReminderTasks(newTask);
+        newTask.notificationId = notifId;
+      }
       setTasks([...tasks, newTask]);
     }
     hideModal();
@@ -112,14 +115,14 @@ export default function TaskScreen() {
       {
         text: "Delete",
         onPress: async () => {
-                setTasks((currentTasks) => {
-                  const task = currentTasks.find((e:Task) => e.id === id);
-                  if (task?.notificationId) {
-                    cancelReminder(task.notificationId);
-                  }
-                  return currentTasks.filter((e:Task) => e.id !== id);
-                });
-              },
+          setTasks((currentTasks) => {
+            const task = currentTasks.find((e: Task) => e.id === id);
+            if (task?.notificationId) {
+              cancelReminder(task.notificationId);
+            }
+            return currentTasks.filter((e: Task) => e.id !== id);
+          });
+        },
       },
     ]);
   };
@@ -135,7 +138,7 @@ export default function TaskScreen() {
     if (selectedDate) setDueDate(selectedDate);
   };
 
-  const onTimeChange= (event: any, selectedDate?: Date) => {
+  const onTimeChange = (event: any, selectedDate?: Date) => {
     setShowTimePicker(false);
     if (selectedDate) setReminderDate(selectedDate);
   };
@@ -146,8 +149,6 @@ export default function TaskScreen() {
   //console.log("menu", menuVisible);
   const [showSortOptions, setShowSortOptions] = useState(false);
   return (
-    // <SafeAreaProvider>
-    //   <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
     <Provider>
       <GestureHandlerRootView>
         <View style={styles.container}>
@@ -236,110 +237,30 @@ export default function TaskScreen() {
           <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
         </View>
         <Portal>
-          <Modal
+          <TaskModal
             visible={visible}
             onDismiss={hideModal}
-            contentContainerStyle={styles.modal}
-          >
-            <TextInput
-              mode="outlined"
-              label="Title"
-              value={title}
-              onChangeText={setTitle}
-            />
-            <TextInput
-              mode="outlined"
-              label="Description"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-            />
-            <SegmentedButtons
-              value={priority}
-              onValueChange={(v) => setPriority(v as "low" | "medium" | "high")}
-              buttons={[
-                { value: "low", label: "Low" },
-                { value: "medium", label: "Medium" },
-                { value: "high", label: "High" },
-              ]}
-              style={{ marginVertical: 8 }}
-            />
-            <Button
-              mode="elevated"
-              style={{ marginVertical: 2.5 }}
-              onPress={() => setShowDatePicker(true)}
-            >
-              Pick Due Date
-            </Button>
-            {dueDate && (
-              <Text
-                style={{
-                  alignSelf: "center",
-                  marginVertical: 2.5,
-                  fontSize: 20,
-                }}
-              >
-                {dueDate.toDateString()}
-              </Text>
-            )}
-            {showDatePicker && (
-              <DateTimePicker
-                value={dueDate || new Date()}
-                mode="date"
-                display="default"
-                onChange={onDataChange}
-              />
-            )}
-            <View style={styles.switchContainer}>
-              <Text style={styles.text}>Set Reminder</Text>
-              <Switch
-                value={reminder}
-                thumbColor="#8f67d4ff"
-                trackColor={{ false: "#ffffff", true: "#7957b383" }}
-                onValueChange={(val) => {
-                  setReminder(val)
-                }}
-              />
-              <Button
-              mode="elevated"
-              buttonColor="#2F2C37"
-              textColor="#8f67d4ff"
-              style={{ marginVertical: 2.5 }}
-              onPress={() => {setShowTimePicker(true)}}
-            >
-              Pick Time
-            </Button>
-            <Text style={styles.text}>
-                  {reminderDate?.toLocaleTimeString()}
-            </Text>
-            {showTimePicker &&
-              <DateTimePicker
-                  value={reminderDate || new Date()}
-                  mode="time"
-                  onChange={onTimeChange}
-                />
-              }
-            </View>
-            <Button
-              mode="elevated"
-              style={{ marginVertical: 2.5 }}
-              onPress={handleSave}
-            >
-              Save
-            </Button>
-            <Button
-              mode="elevated"
-              style={{ marginVertical: 2.5 }}
-              onPress={hideModal}
-            >
-              Cancel
-            </Button>
-          </Modal>
+            title={title}
+            setTitle={setTitle}
+            description={description}
+            setDescription={setDescription}
+            priority={priority}
+            setPriority={setPriority}
+            dueDate={dueDate}
+            showDatePicker={showDatePicker}
+            setShowDatePicker={setShowDatePicker}
+            onDateChange={onDataChange}
+            reminder={reminder}
+            setReminder={setReminder}
+            reminderDate={reminderDate}
+            showTimePicker={showTimePicker}
+            setShowTimePicker={setShowTimePicker}
+            onTimeChange={onTimeChange}
+            handleSave={handleSave}
+          />
         </Portal>
       </GestureHandlerRootView>
     </Provider>
-    // </SafeAreaView>
-    // </SafeAreaProvider>
   );
 }
 
@@ -371,5 +292,5 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     marginHorizontal: 5,
   },
-  text: { color: "#8f67d4ff", marginLeft:10 },
+  text: { color: "#8f67d4ff", marginLeft: 10 },
 });
