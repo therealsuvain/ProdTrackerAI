@@ -13,7 +13,6 @@ import Fuse from "fuse.js";
 import { CalendarEvent } from "@/types/calendar";
 import { Habit } from "@/types/habits";
 
-
 const GOOGLE_API_KEY = Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
 const HF_TOKEN = Constants.expoConfig?.extra?.HUGGING_FACE_API_TOKEN;
 const HF_ENDPOINT = "https://router.huggingface.co/v1/chat/completions";
@@ -123,17 +122,47 @@ export const parseCommandToIntent = async (
       "add_habit" | "edit_habit" | "delete_habit" | "checkin_habit" 
       | "add_log" | "edit_log" | "delete_log" |
        "start_timer" | "stop_timer" | "search", 
-       "params": { ...relevant fields like title, id, dueDate, activity, query... } }.
+       "params": { ...relevant fields from data models below }.
+
+       Use the following Data Models:
+A. CalendarEvent {
+  title: string;
+  startDate: Date;
+  endDate: Date ;
+  startTime: Date;
+  endTime: Date ;
+  description: string | undefined;
+  reminder: boolean; // For notifications
+  recurrence: 'none'|'daily'|'weekly' //  For repeating events
+  category: string | undefined; // e.g., 'work', 'personal' for colors
+}
+
+B. Habit {
+  title: string;
+  frequency: 'daily'|'weekly';
+  streak: number;
+  reminder : boolean;
+  reminderDate? : Date;
+  lastCompleted?: Date;
+  goal?: number; // e.g., 7 days in a row
+}
+
+C. Task {
+  title: string;
+  description?: string;
+  category?: string;
+  dueDate?: Date;
+  reminder: boolean;
+  reminderDate?: Date;
+  priority: "low" | "medium" | "high";
+  completed: boolean;
+  tags?: string[];
+}
         Ruleset (MUST follow exactly):
 1. For dates: Convert 'today' to YYYY-MM-DD (local timezone). 'Tomorrow' to next day. Invalid days (e.g., 38th) → default to today. Use ISO format only (no words).
-2. For priorities: Only 'low', 'medium', 'high'—default 'medium' if invalid.
-3. For frequencies of habits: Only 'daily', 'weekly'—default 'daily'; For 'recurrence' of calendar events: Only 'none' , 'daily' and 'weekly' -default 'none'.
-4. For IDs/references: If editing/deleting, suggest approximate title/description for matching (e.g., "edit task about groceries").
-5. For Habits there should be a 'goal' which is the number of repetitions to complete it
-6. For events there are just 4 fields for time/date, startTime , startDate, endDate and endTime. the date for both startTime and endTime should be equal to the startDate. Output in ISO format
-7. All names/labels/etc should be called title, title fields should be capitalized
-8. Tasks, Habits, Events all have a reminder boolean, but only tasks and habits have a field reminderDate. All commands suggesting to be reminded should set the reminder to true. reminderDate field only accepts a date.
-8. Output ONLY valid JSON—no explanations. 
+2. If editing/deleting, suggest approximate title/description for matching (e.g., "edit task about groceries").
+3. For reminderDate in both tasks and habits, and startTime, endTime should only be in HH:MM:SS format
+4. Output ONLY valid JSON—no explanations. 
         Command: "${transcript}"`;
 
     const response = await fetch(HF_ENDPOINT, {
@@ -181,7 +210,6 @@ export const executeIntent = (
     navigation,
   }: any
 ) => {
-  
   try {
     const { intent: type, params } = intent;
     switch (type) {
@@ -198,7 +226,7 @@ export const executeIntent = (
           throw new Error("Provide title or description to identify task");
         const fuse = new Fuse<Task>(tasks, {
           keys: ["title", "description"],
-          threshold: 0.3,
+          threshold: 0.6,
         }); // Loose match
         const matches = fuse.search(searchKey);
         if (matches.length === 0) throw new Error("No matching task found");
@@ -227,7 +255,7 @@ export const executeIntent = (
         const eventSearchKey = params.title || params.description || "";
         const eventFuse = new Fuse<CalendarEvent>(events, {
           keys: ["title", "description"],
-          threshold: 0.3,
+          threshold: 0.6,
         });
         const eventMatches = eventFuse.search(eventSearchKey);
         if (eventMatches.length === 0)
@@ -256,7 +284,7 @@ export const executeIntent = (
         const habitSearchKey = params.title || "";
         const habitFuse = new Fuse<Habit>(habits, {
           keys: ["title"],
-          threshold: 0.3,
+          threshold: 0.6,
         });
         const habitMatches = habitFuse.search(habitSearchKey);
         if (habitMatches.length === 0)
@@ -287,21 +315,21 @@ export const executeIntent = (
       case "edit_log":
       case "delete_log":
       case "start_timer":
-        setTitle(params.title)
-        start()
-        console.log("In it")
+        setTitle(params.title);
+        start();
+        console.log("In it");
         navigation.navigate("timer-screen");
         break;
       case "stop_timer":
-        stop()
-        navigation.navigate("timer-screen")
+        stop();
+        navigation.navigate("timer-screen");
         break;
       //case "search":
       default:
         Alert.alert("Unknown intent");
     }
   } catch (e) {
-    console.log(e)
+    console.log(e);
   }
   //expo.speech.speak(`Action ${type} executed`)
 };

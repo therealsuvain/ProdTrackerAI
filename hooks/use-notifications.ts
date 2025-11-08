@@ -97,7 +97,7 @@ export const scheduleReminderTasks = async (task: Task): Promise<string> => {
 
   const id = await Notifications.scheduleNotificationAsync({
     content: {
-      title: "Upcoming event",
+      title: "Upcoming Task",
       body: `${task.title} starts soon`,
     },
     trigger: {
@@ -109,7 +109,6 @@ export const scheduleReminderTasks = async (task: Task): Promise<string> => {
 };
 
 export const scheduleReminderHabits = async (habit: Habit): Promise<string> => {
-  const triggerDate = new Date(habit.reminderDate?.getTime() || Date.now());
 
   const id = await Notifications.scheduleNotificationAsync({
     content: {

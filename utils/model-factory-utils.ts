@@ -4,6 +4,7 @@ import { CalendarEvent } from '../types/calendar';
 import { TimerLog } from '../types/timer';
 import { Habit } from '../types/habits';
 import {randomUUID } from 'expo-crypto';
+import { scheduleReminderHabits, scheduleReminderTasks } from '@/hooks/use-notifications';
 
 // Helper for date parsing
 const parseDate = (dateStr: any): Date | undefined => {
@@ -18,22 +19,56 @@ const parseDate = (dateStr: any): Date | undefined => {
   throw new Error('Invalid date format');
 };
 
+const validDate = (date: any): boolean => {
+  date= new Date(date);
+  return date instanceof Date && !isNaN(date.getTime());
+}
 // Task factory
 export const createTask = (params: Record<string, any>): Task => {
   try {
+    console.log("params",params)
     if(!params.title || params.title.trim() === '' ){
         throw new Error('Title missing')
     }
     if(!params.dueDate){
         throw new Error('DueDate is missing')
     }
+    console.log("parsing due date",params.dueDate)
     const dueDate = parseDate(params.dueDate);
-    
+    console.log("dueDate",dueDate);
+    let reminderDate;
+    if(params.reminderDate)
+    {
+      if(!validDate(params.reminderDate)){
+      reminderDate = parseDate(dueDate?.toISOString().split('T')[0]+'T'+params.reminderDate);
+      console.log("reminderDate",reminderDate);
+    }
+  }
+    let notificationId;
+    if(!params.notificationId && params.reminder){
+      notificationId = scheduleReminderTasks({reminderDate, title: params.title} as Task);
+      console.log("scheduled notificationId",notificationId);
+    }
+    console.log({
+      id: params.id || randomUUID(),
+      title: params.title || '',
+      description: params.description || '',
+      dueDate,
+      reminder: params.reminder,
+      reminderDate,
+      notificationId: params.notificationId || notificationId,
+      priority: ['low', 'medium', 'high'].includes(params.priority) ? params.priority : 'medium',
+      completed: params.completed ?? false,
+      tags: params.tags || [],
+    })
     return {
       id: params.id || randomUUID(),
       title: params.title || '',
       description: params.description || '',
       dueDate,
+      reminder: params.reminder,
+      reminderDate,
+      notificationId: params.notificationId || notificationId,
       priority: ['low', 'medium', 'high'].includes(params.priority) ? params.priority : 'medium',
       completed: params.completed ?? false,
       tags: params.tags || [],
@@ -52,16 +87,21 @@ export const createEvent = (params: Record<string, any>): CalendarEvent => {
     if(!params.startTime || !params.endTime){
         throw new Error("Time is missing")
     }
-    const startTime = parseDate(params.startTime);
-    const endTime = parseDate(params.endTime);
+
+    const startDate = parseDate(params.startDate)
+    const endDate = parseDate(params.endDate)
+    const startTime = parseDate(startDate?.toISOString().split('T')[0]+'T'+params.startTime);
+    const endTime = parseDate(startDate?.toISOString().split('T')[0]+'T'+params.endTime);
     if (startTime && endTime && startTime > endTime) throw new Error('End time before start');
     return {
       id: params.id || randomUUID(),
       title: params.title || '',
+      startDate : startDate? startDate: new Date(),
+      endDate : endDate? endDate: new Date(),
       startTime: startTime? startTime: new Date(),
-      endTime,
+      endTime: endTime? endTime: new Date(),
       description: params.description || '',
-      reminder: params.reminder ?? false,
+      reminder: params.reminder,
       recurrence: ['none', 'daily', 'weekly'].includes(params.recurrence) ? params.recurrence : 'none',
       category: params.category || '',
       notificationId: undefined,
@@ -80,6 +120,17 @@ export const createHabit = (params: Record<string, any>): Habit => {
     if(!params.goal){
         throw new Error("End Goal is missing")
     }
+    let reminderDate;
+    if(params.reminderDate)
+    {
+      if(!validDate(params.reminderDate)){
+      reminderDate = parseDate(new Date().toISOString().split('T')[0]+'T'+params.reminderDate);
+    }
+  }
+     let notificationId;
+    if(!params.notificationId && params.reminder){
+      notificationId = scheduleReminderHabits({reminderDate, title: params.title} as Habit);
+    }
     const goal = params.goal ? parseInt(params.goal) : undefined;
     if (goal && isNaN(goal)) throw new Error('Goal must be a number');
     return {
@@ -88,6 +139,9 @@ export const createHabit = (params: Record<string, any>): Habit => {
       frequency: ['daily', 'weekly'].includes(params.frequency) ? params.frequency : 'daily',
       streak: params.streak ?? 0,
       goal,
+      reminder: params.reminder,
+      reminderDate,
+      notificationId: params.notificationId || notificationId,
     };
   } catch (err : any ) {
     throw new Error(`Invalid Habit params: ${err.message}`);

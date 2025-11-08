@@ -108,6 +108,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveEvents(events);
+    console.log(events)
   }, [events, loaded]);
 
   useEffect(() => {

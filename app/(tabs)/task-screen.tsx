@@ -5,7 +5,6 @@ import {
   View,
   StyleSheet,
 } from "react-native";
-import { randomUUID } from "expo-crypto";
 import {
   Button,
   FAB,
@@ -22,7 +21,6 @@ import { Task } from "@/types/task";
 import TaskItem from "@/components/ui/tasks/task-item";
 import {
   cancelReminder,
-  scheduleReminderTasks,
 } from "@/hooks/use-notifications";
 import TaskModal from "@/components/modal/task-modal";
 import { useTaskForm } from "@/hooks/use-task-form";

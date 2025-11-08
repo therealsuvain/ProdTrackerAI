@@ -53,7 +53,7 @@ export function IntentConfirmationModal({
 
       const fuse = new Fuse<Task>(tasks, {
         keys: ["title", "description"],
-        threshold: 0.3,
+        threshold: 0.6,
       });
       const matches = fuse.search(searchKey);
 
@@ -72,8 +72,8 @@ export function IntentConfirmationModal({
               <TaskItem task={updatedTask} onToggleComplete={() => {}} />
             </View>
           );
-        } catch (error) {
-          return <Text style={styles.errorText}>Invalid edit data</Text>;
+        } catch (error:any) {
+          return <Text style={styles.errorText}>{error.message}</Text>;
         }
       }
 
@@ -104,8 +104,8 @@ export function IntentConfirmationModal({
             <EventItem event={newEvent} />
           </View>
         );
-      } catch (error) {
-        return <Text style={styles.errorText}>Invalid event data</Text>;
+      } catch (error:any) {
+        return <Text style={styles.errorText}>{error.message}</Text>;
       }
     }
 
@@ -117,7 +117,7 @@ export function IntentConfirmationModal({
 
       const eventFuse = new Fuse<CalendarEvent>(events, {
         keys: ["title", "description"],
-        threshold: 0.3,
+        threshold: 0.6,
       });
       const matches = eventFuse.search(searchKey);
 
@@ -172,7 +172,7 @@ export function IntentConfirmationModal({
 
       const habitFuse = new Fuse<Habit>(habits, {
         keys: ["title"],
-        threshold: 0.3,
+        threshold: 0.6,
       });
       const matches = habitFuse.search(searchKey);
 

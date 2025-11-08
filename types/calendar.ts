@@ -7,7 +7,7 @@ export interface CalendarEvent {
   endTime: Date ;
   description: string | undefined;
   reminder: boolean; // For notifications
-  recurrence: string | undefined; //  For repeating events
+  recurrence: 'none'|'daily'|'weekly'  //  For repeating events
   notificationId: string | undefined; // To track/cancel reminders
   category: string | undefined; // e.g., 'work', 'personal' for colors
 }
