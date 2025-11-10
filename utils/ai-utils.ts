@@ -12,6 +12,12 @@ import { Task } from "@/types/task";
 import Fuse from "fuse.js";
 import { CalendarEvent } from "@/types/calendar";
 import { Habit } from "@/types/habits";
+import {
+  scheduleReminderEvents,
+  scheduleReminderHabits,
+  scheduleReminderTasks,
+} from "@/hooks/use-notifications";
+
 
 const GOOGLE_API_KEY = Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
 const HF_TOKEN = Constants.expoConfig?.extra?.HUGGING_FACE_API_TOKEN;
@@ -193,8 +199,9 @@ C. Task {
   }
 };
 
-export const executeIntent = (
+export const executeIntent = async (
   intent: AIIntent,
+  setIsProcessing: (value: boolean) => void,
   {
     tasks,
     setTasks,
@@ -212,10 +219,14 @@ export const executeIntent = (
 ) => {
   try {
     const { intent: type, params } = intent;
+    setIsProcessing(true);
     switch (type) {
       case "add_task":
         const newTask = createTask(params);
-        console.log(newTask);
+        if(newTask.reminder){
+          const notifId = await scheduleReminderTasks(newTask);
+          newTask.notificationId = notifId;
+        }
         setTasks([...tasks, newTask]);
         break;
       case "edit_task":
@@ -232,7 +243,13 @@ export const executeIntent = (
         if (matches.length === 0) throw new Error("No matching task found");
         const targetTask = matches[0].item; // Best match
         if (type === "edit_task") {
-          const updated = createTask({ ...targetTask, ...params });
+          const updated = createTask(
+            { ...targetTask, ...params },
+          );
+          if(updated.reminder && !updated.notificationId){
+            const notifId = await scheduleReminderTasks(updated);
+            updated.notificationId = notifId;
+          }
           setTasks(
             tasks.map((t: any) => (t.id === targetTask.id ? updated : t))
           );
@@ -248,7 +265,12 @@ export const executeIntent = (
         break;
       case "add_event":
         const newEvent = createEvent(params);
+        if(newEvent.reminder){
+          const notifId = await scheduleReminderEvents(newEvent);
+          newEvent.notificationId = notifId;
+        }
         setEvents([...events, newEvent]);
+        
         break;
       case "edit_event":
       case "delete_event":
@@ -262,7 +284,13 @@ export const executeIntent = (
           throw new Error("No matching event found");
         const targetEvent = eventMatches[0].item;
         if (type === "edit_event") {
-          const updatedEvent = createEvent({ ...targetEvent, ...params });
+          const updatedEvent = createEvent(
+            { ...targetEvent, ...params },
+          );
+          if(updatedEvent.reminder && !updatedEvent.notificationId){
+            const notifId = await scheduleReminderEvents(updatedEvent);
+            updatedEvent.notificationId = notifId;
+          }
           setEvents(
             events.map((e: CalendarEvent) =>
               e.id === targetEvent.id ? updatedEvent : e
@@ -276,6 +304,10 @@ export const executeIntent = (
         break;
       case "add_habit":
         const newHabit = createHabit(params);
+        if(newHabit.reminder){
+          const notifId = await scheduleReminderHabits(newHabit);
+          newHabit.notificationId = notifId;
+        }
         setHabits([...habits, newHabit]);
         break;
       case "edit_habit":
@@ -298,7 +330,13 @@ export const executeIntent = (
             )
           );
         } else if (type === "edit_habit") {
-          const updatedHabit = createHabit({ ...targetHabit, ...params });
+          const updatedHabit = createHabit(
+            { ...targetHabit, ...params }
+          );
+          if(updatedHabit.reminder && !updatedHabit.notificationId){
+            const notifId = await scheduleReminderHabits(updatedHabit);
+            updatedHabit.notificationId = notifId;
+          }
           setHabits(
             habits.map((h: Habit) =>
               h.id === targetHabit.id ? updatedHabit : h
@@ -330,6 +368,9 @@ export const executeIntent = (
     }
   } catch (e) {
     console.log(e);
+  }
+  finally {
+    setIsProcessing(false);
   }
   //expo.speech.speak(`Action ${type} executed`)
 };

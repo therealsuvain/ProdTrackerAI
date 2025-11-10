@@ -12,7 +12,11 @@ import {
 import { transcribeAudio } from "@/utils/ai-utils";
 import { Alert } from "react-native";
 
-export const useVoiceInput = () => {
+interface Props{
+  IntentProcessor: (transcript: string) => void;
+  onDismiss: () => void;
+}
+export const useVoiceInput = ({IntentProcessor, onDismiss}:Props) => {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +64,7 @@ export const useVoiceInput = () => {
 const startRecording = async () => {
     try {
       await audioRecorder.prepareToRecordAsync();
-      await audioRecorder.record();
+      audioRecorder.record();
       setIsRecording(true);
     } catch (err) {
       setError('Failed to start recording');
@@ -68,15 +72,20 @@ const startRecording = async () => {
   };
 
   const stopRecording = async () => {
+onDismiss();
     setIsRecording(false);
     setIsLoading(true)
+
     try {
       await audioRecorder.stop();
       const uri = audioRecorder.uri;
+
       if (uri) {
         const text = await transcribeAudio(uri);
         setTranscript(text);
         setIsLoading(false)
+        IntentProcessor(text);
+        
       } else {
         setError('No recording URI available');
       }

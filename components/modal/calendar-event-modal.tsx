@@ -62,9 +62,6 @@ export default function CalendarEventModal({
         androidDate?.toISOString().split("T")[0] +
         "T" +
         selected.toISOString().split("T")[1];
-    console.log(selected?.toISOString().split("T")[1]);
-    console.log(varTime);
-    console.log(new Date(varTime!));
     updateField("startTime", new Date(varTime!));
   };
   const onEndChange = (event: any, selected?: Date) => {

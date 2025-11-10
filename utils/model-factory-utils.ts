@@ -1,174 +1,196 @@
 // src/utils/modelFactories.ts
-import { Task } from '../types/task';
-import { CalendarEvent } from '../types/calendar';
-import { TimerLog } from '../types/timer';
-import { Habit } from '../types/habits';
-import {randomUUID } from 'expo-crypto';
-import { scheduleReminderHabits, scheduleReminderTasks } from '@/hooks/use-notifications';
+import { Task } from "../types/task";
+import { CalendarEvent } from "../types/calendar";
+import { TimerLog } from "../types/timer";
+import { Habit } from "../types/habits";
+import { randomUUID } from "expo-crypto";
+
 
 // Helper for date parsing
 const parseDate = (dateStr: any): Date | undefined => {
   if (!dateStr) return undefined;
   if (dateStr instanceof Date) return dateStr;
-  if (typeof dateStr === 'string') {
-    if (dateStr.toLowerCase() === 'today') return new Date();
-    if (dateStr.toLowerCase() === 'tomorrow') return new Date(Date.now() + 86400000);
+  if (typeof dateStr === "string") {
+    if (dateStr.toLowerCase() === "today") return new Date();
+    if (dateStr.toLowerCase() === "tomorrow")
+      return new Date(Date.now() + 86400000);
     const parsed = new Date(dateStr);
     if (!isNaN(parsed.getTime())) return parsed;
   }
-  throw new Error('Invalid date format');
+  throw new Error("Invalid date format");
 };
 
 const validDate = (date: any): boolean => {
-  date= new Date(date);
+  date = new Date(date);
   return date instanceof Date && !isNaN(date.getTime());
-}
+};
 // Task factory
-export const createTask = (params: Record<string, any>): Task => {
+export const createTask =  (
+  params: Record<string, any>,
+)=> {
   try {
-    console.log("params",params)
-    if(!params.title || params.title.trim() === '' ){
-        throw new Error('Title missing')
+    let id;
+    if (params.id) {
+      id = params.id;
+    } else {
+      id = randomUUID();
     }
-    if(!params.dueDate){
-        throw new Error('DueDate is missing')
+    if (!params.title || params.title.trim() === "") {
+      throw new Error("Title missing");
     }
-    console.log("parsing due date",params.dueDate)
+    if (!params.dueDate) {
+      throw new Error("DueDate is missing");
+    }
+
     const dueDate = parseDate(params.dueDate);
-    console.log("dueDate",dueDate);
+
     let reminderDate;
-    if(params.reminderDate)
-    {
-      if(!validDate(params.reminderDate)){
-      reminderDate = parseDate(dueDate?.toISOString().split('T')[0]+'T'+params.reminderDate);
-      console.log("reminderDate",reminderDate);
+    if (params.reminderDate) {
+      if (!validDate(params.reminderDate)) {
+        reminderDate = parseDate(
+          dueDate?.toISOString().split("T")[0] + "T" + params.reminderDate
+        );
+      }
     }
-  }
-    let notificationId;
-    if(!params.notificationId && params.reminder){
-      notificationId = scheduleReminderTasks({reminderDate, title: params.title} as Task);
-      console.log("scheduled notificationId",notificationId);
-    }
-    console.log({
-      id: params.id || randomUUID(),
-      title: params.title || '',
-      description: params.description || '',
-      dueDate,
-      reminder: params.reminder,
-      reminderDate,
-      notificationId: params.notificationId || notificationId,
-      priority: ['low', 'medium', 'high'].includes(params.priority) ? params.priority : 'medium',
-      completed: params.completed ?? false,
-      tags: params.tags || [],
-    })
     return {
-      id: params.id || randomUUID(),
-      title: params.title || '',
-      description: params.description || '',
+      id,
+      title: params.title || "",
+      description: params.description || "",
       dueDate,
       reminder: params.reminder,
       reminderDate,
-      notificationId: params.notificationId || notificationId,
-      priority: ['low', 'medium', 'high'].includes(params.priority) ? params.priority : 'medium',
+      notificationId: params.notificationId || undefined,
+      priority: ["low", "medium", "high"].includes(params.priority)
+        ? params.priority
+        : "medium",
       completed: params.completed ?? false,
       tags: params.tags || [],
-    };
-  } catch (err : any) {
+    } as Task;
+  } catch (err: any) {
     throw new Error(`Invalid Task params: ${err.message}`);
   }
 };
 
-// Event factory (similar)
-export const createEvent = (params: Record<string, any>): CalendarEvent => {
+export const createEvent = (
+  params: Record<string, any>,
+): CalendarEvent => {
   try {
-    if(!params.title || params.title.trim() === '' ){
-        throw new Error('Title missing')
+    let id;
+    if (params.id) {
+      id = params.id;
+    } else {
+      id = randomUUID();
     }
-    if(!params.startTime || !params.endTime){
-        throw new Error("Time is missing")
+    if (!params.title || params.title.trim() === "") {
+      throw new Error("Title missing");
+    }
+    if (!params.startTime || !params.endTime) {
+      throw new Error("Time is missing");
     }
 
-    const startDate = parseDate(params.startDate)
-    const endDate = parseDate(params.endDate)
-    const startTime = parseDate(startDate?.toISOString().split('T')[0]+'T'+params.startTime);
-    const endTime = parseDate(startDate?.toISOString().split('T')[0]+'T'+params.endTime);
-    if (startTime && endTime && startTime > endTime) throw new Error('End time before start');
+    const startDate = parseDate(params.startDate);
+    const endDate = parseDate(params.endDate);
+    let startTime, endTime;
+    if (!validDate(params.startTime))
+      startTime = parseDate(
+        startDate?.toISOString().split("T")[0] + "T" + params.startTime
+      );
+    if (!validDate(params.endTime))
+      endTime = parseDate(
+        startDate?.toISOString().split("T")[0] + "T" + params.endTime
+      );
+    if (startTime && endTime && startTime > endTime)
+      throw new Error("End time before start");
     return {
-      id: params.id || randomUUID(),
-      title: params.title || '',
-      startDate : startDate? startDate: new Date(),
-      endDate : endDate? endDate: new Date(),
-      startTime: startTime? startTime: new Date(),
-      endTime: endTime? endTime: new Date(),
-      description: params.description || '',
+      id,
+      title: params.title || "",
+      startDate: startDate ? startDate : new Date(),
+      endDate: endDate ? endDate : new Date(),
+      startTime: startTime ? startTime : new Date(),
+      endTime: endTime ? endTime : new Date(),
+      description: params.description || "",
       reminder: params.reminder,
-      recurrence: ['none', 'daily', 'weekly'].includes(params.recurrence) ? params.recurrence : 'none',
-      category: params.category || '',
+      recurrence: ["none", "daily", "weekly"].includes(params.recurrence)
+        ? params.recurrence
+        : "none",
+      category: params.category || "",
       notificationId: undefined,
     };
-  } catch (err : any) {
+  } catch (err: any) {
     throw new Error(`Invalid Event params: ${err.message}`);
   }
 };
 
-// Habit factory
-export const createHabit = (params: Record<string, any>): Habit => {
+export const createHabit = (
+  params: Record<string, any>
+): Habit => {
   try {
-      if(!params.title || params.title.trim() === '' ){
-        throw new Error('Title missing')
+    let id;
+    if (params.id) {
+      id = params.id;
+    } else {
+      id = randomUUID();
     }
-    if(!params.goal){
-        throw new Error("End Goal is missing")
+    if (!params.title || params.title.trim() === "") {
+      throw new Error("Title missing");
+    }
+    if (!params.goal) {
+      throw new Error("End Goal is missing");
     }
     let reminderDate;
-    if(params.reminderDate)
-    {
-      if(!validDate(params.reminderDate)){
-      reminderDate = parseDate(new Date().toISOString().split('T')[0]+'T'+params.reminderDate);
-    }
-  }
-     let notificationId;
-    if(!params.notificationId && params.reminder){
-      notificationId = scheduleReminderHabits({reminderDate, title: params.title} as Habit);
+    if (params.reminderDate) {
+      if (!validDate(params.reminderDate)) {
+        reminderDate = parseDate(
+          new Date().toISOString().split("T")[0] + "T" + params.reminderDate
+        );
+      }
     }
     const goal = params.goal ? parseInt(params.goal) : undefined;
-    if (goal && isNaN(goal)) throw new Error('Goal must be a number');
+    if (goal && isNaN(goal)) throw new Error("Goal must be a number");
     return {
-      id: params.id || randomUUID(),
-      title: params.title || '',
-      frequency: ['daily', 'weekly'].includes(params.frequency) ? params.frequency : 'daily',
+      id,
+      title: params.title || "",
+      frequency: ["daily", "weekly"].includes(params.frequency)
+        ? params.frequency
+        : "daily",
       streak: params.streak ?? 0,
       goal,
       reminder: params.reminder,
       reminderDate,
-      notificationId: params.notificationId || notificationId,
+      notificationId: params.notificationId || undefined,
     };
-  } catch (err : any ) {
+  } catch (err: any) {
     throw new Error(`Invalid Habit params: ${err.message}`);
   }
 };
 
-// TimerLog factory
 export const createTimerLog = (params: Record<string, any>): TimerLog => {
   try {
-      if(!params.title || params.title.trim() === '' ){
-        throw new Error('Title missing')
+    let id;
+    if (params.id) {
+      id = params.id;
+    } else {
+      id = randomUUID();
     }
-    if(!params.startTime || !params.endTime){
-        throw new Error("Time is missing")
+    if (!params.title || params.title.trim() === "") {
+      throw new Error("Title missing");
+    }
+    if (!params.startTime || !params.endTime) {
+      throw new Error("Time is missing");
     }
     const startTime = parseDate(params.startTime);
     const endTime = parseDate(params.endTime);
     const duration = params.duration ? parseInt(params.duration) : undefined;
-    if (duration && isNaN(duration)) throw new Error('Duration must be a number');
+    if (duration && isNaN(duration))
+      throw new Error("Duration must be a number");
     return {
-      id: params.id || randomUUID(),
-      title: params.title || '',
-      startTime: startTime? startTime: new Date(),
+      id,
+      title: params.title || "",
+      startTime: startTime ? startTime : new Date(),
       endTime,
       duration,
     };
-  } catch (err: any ) {
+  } catch (err: any) {
     throw new Error(`Invalid TimerLog params: ${err.message}`);
   }
 };

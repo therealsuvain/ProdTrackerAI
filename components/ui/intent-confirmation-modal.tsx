@@ -16,6 +16,7 @@ import { Habit } from "@/types/habits";
 interface IntentConfirmationModalProps {
   intent: AIIntent|null ;
   onConfirm: () => void;
+  
 }
 
 export function IntentConfirmationModal({
@@ -25,7 +26,7 @@ export function IntentConfirmationModal({
   const [visible, setVisible] = useState(true);
    const { tasks, events, habits } = useData();
 
-   const renderPreview = () => {
+   const renderPreview =  () => {
     if(intent===null)
       return null;
     const { intent: type, params } = intent;
@@ -33,7 +34,7 @@ export function IntentConfirmationModal({
     // Task intents
     if (type === "add_task") {
       try {
-        const newTask = createTask(params);
+        const newTask =  createTask(params);
         return (
           <View>
             <Text style={styles.label}>New Task Preview:</Text>
@@ -233,10 +234,10 @@ export function IntentConfirmationModal({
           contentContainerStyle={styles.modal}
         >
           <View style={{ padding: 3 }}>
-            <Text style={{ color: "#ffffff" }}>Intent: {intent.intent}</Text>
+            {/* <Text style={{ color: "#ffffff" }}>Intent: {intent.intent}</Text>
             <Text style={{ color: "#ffffff" }}>
               Params: {JSON.stringify(intent.params, null, 2)}
-            </Text>
+            </Text> */}
             {renderPreview()}
             <Button
               mode="contained"

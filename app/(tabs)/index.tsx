@@ -19,24 +19,27 @@ import { useSearch } from "@/hooks/use-search";
 import { AnalyticsSection } from "@/components/ui/analytics-section";
 import { SearchResults } from "@/components/ui/search-results";
 import { AIVoiceModal } from "@/components/ui/ai-voice-modal";
+import  AiModalUpdated  from "@/components/ui/ai-modal-updated";
 import { IntentConfirmationModal } from "@/components/ui/intent-confirmation-modal";
 import { useIntentProcessor } from "@/hooks/use-intent-processor";
 import HabitItem from "@/components/ui/habits/habit-item";
 import { Provider } from "react-native-paper";
 import LoadingIndicator from "@/components/loading-indicator";
 import UnifiedTimeline from "@/components/ui/home-timeline";
+import { useNotifications } from "@/hooks/use-notifications";
 
 export default function HomeScreen() {
   const { tasks, setTasks, events, timerLogs, habits } = useData();
-
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const [searchVisible, setSearchVisible] = useState(false);
   const { query, performSearch, results } = useSearch();
   const [aiVisible, setAiVisible] = useState(false);
-  const { isLoading, intent, processCommand, confirmExecute } = useIntentProcessor();
+  useNotifications();
+  const { isLoading, isProcessing, intent, processCommand, confirmExecute } = useIntentProcessor();
   const [viewMode, setViewMode] = useState<'overview' | 'timeline'>('overview');
    const [selectedDate, setSelectedDate] = useState(new Date());
+
 
   let todaysTasks = tasks.filter(
     (t) => t.dueDate && t.dueDate.toDateString() == new Date().toDateString()
@@ -52,7 +55,7 @@ export default function HomeScreen() {
   };
   return (
     <Provider>
-      {isLoading && <LoadingIndicator />}
+      {(isLoading || isProcessing) && <LoadingIndicator />}
       <SegmentedButtons
           value={viewMode}
           onValueChange={(value) => setViewMode(value as 'overview' | 'timeline')}
@@ -152,13 +155,19 @@ export default function HomeScreen() {
             />
           </Modal>
         </Portal>
-        <AIVoiceModal
+        {/* <AIVoiceModal
+          visible={aiVisible}
+          onDismiss={() => setAiVisible(false)}
+          IntentProcessor={processCommand}
+        /> */}
+        <AiModalUpdated
           visible={aiVisible}
           onDismiss={() => setAiVisible(false)}
           IntentProcessor={processCommand}
         />
+
         {!isLoading && (
-          <IntentConfirmationModal intent={intent} onConfirm={confirmExecute} />
+          <IntentConfirmationModal intent={intent} onConfirm={confirmExecute}/>
         )}
       </ScrollView>):(
         <View style={styles.timelineContainer}>
@@ -214,7 +223,7 @@ export default function HomeScreen() {
           backgroundColor: "grey",
         }}
         color="white"
-        icon="microphone"
+        icon="brain"
         onPress={() => setAiVisible(true)}
       />
     </Provider>

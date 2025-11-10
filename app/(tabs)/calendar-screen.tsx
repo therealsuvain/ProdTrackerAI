@@ -3,40 +3,29 @@ import {
   View,
   StyleSheet,
   Alert,
-  Platform,
-  Switch,
   Text,
   Pressable,
 } from "react-native";
 import {
   FAB,
   Portal,
-  Modal,
   Provider,
-  TextInput,
-  Button,
-  SegmentedButtons,
 } from "react-native-paper";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { useData } from "../../hooks/use-data";
-import CalendarMonthly from "../../components/ui/calendar-events/calendar-monthly";
 import ViewSwitcher from "../../components/ui/view-switcher-event";
 import { useCalendarState } from "../../hooks/use-calendar-state";
 import { useEventForm } from "../../hooks/use-event-form";
 import {
   cancelReminder,
-  useNotifications,
 } from "../../hooks/use-notifications";
 import { CalendarEvent } from "@/types/calendar";
 import { Ionicons } from "@expo/vector-icons";
 import Timeline from "@/components/ui/calendar-events/calendar-timeline-view";
-import CalendarListAgenda from "@/components/ui/calendar-events/calendar-list-agenda-view";
 import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-list-agenda-view-main";
 import CalendarEventModal from "@/components/modal/calendar-event-modal";
 
 export default function CalendarScreen() {
   const { events, setEvents } = useData();
-  useNotifications();
   const {
     currentView,
     setCurrentView,

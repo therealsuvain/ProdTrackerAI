@@ -23,7 +23,7 @@ export function AIVoiceModal({
     transcript,
     error,
     setTranscript,
-  } = useVoiceInput();
+  } = useVoiceInput({IntentProcessor, onDismiss});
 
   const handleSubmit = () => {
     IntentProcessor(transcript);
@@ -48,7 +48,8 @@ export function AIVoiceModal({
               buttonColor="#999999ff"
               textColor="white"
               style={{ marginVertical: 4 }}
-              onPress={isRecording ? stopRecording : startRecording}
+              onLongPress={startRecording}
+              onPressOut = {()=>{stopRecording()}}
             >
               {isRecording ? "Stop" : "Start"}
             </Button>

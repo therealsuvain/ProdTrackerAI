@@ -3,6 +3,7 @@ import * as Notifications from "expo-notifications";
 import { CalendarEvent } from "@/types/calendar";
 import { Task } from "@/types/task";
 import { Habit } from "@/types/habits";
+import { useData } from "./use-data";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -13,8 +14,10 @@ Notifications.setNotificationHandler({
   }),
 });
 
+
 export const useNotifications = () => {
   const notificationListener = useRef<any>(undefined);
+const { tasks, setTasks, events, setEvents, habits, setHabits } = useData();
 
   const requestPermissions = async () => {
     const { status } = await Notifications.requestPermissionsAsync();
@@ -22,6 +25,7 @@ export const useNotifications = () => {
       alert("Notification permission not granted");
     }
   };
+
 
   useEffect(() => {
     requestPermissions();
@@ -80,6 +84,7 @@ const getTriggerOptionsHabit = (habit: Habit) => {
 export const scheduleReminderEvents = async (
   event: CalendarEvent
 ): Promise<string> => {
+  console.log("scheduling notification for event:", event);
   const triggerDate = new Date(event.startTime.getTime());
 
   const id = await Notifications.scheduleNotificationAsync({
@@ -109,7 +114,6 @@ export const scheduleReminderTasks = async (task: Task): Promise<string> => {
 };
 
 export const scheduleReminderHabits = async (habit: Habit): Promise<string> => {
-
   const id = await Notifications.scheduleNotificationAsync({
     content: {
       title: "Check in on your habit",

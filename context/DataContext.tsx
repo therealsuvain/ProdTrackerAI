@@ -103,12 +103,13 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveTasks(tasks);
+    console.log("DATA TASKS",tasks)
   }, [tasks, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
     saveEvents(events);
-    console.log(events)
+    console.log("DATA EVENTS",events)
   }, [events, loaded]);
 
   useEffect(() => {
