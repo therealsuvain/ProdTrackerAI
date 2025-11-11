@@ -38,7 +38,6 @@ export const transcribeAudio = async (
       base64Audio = await blobToBase64(audioData);
     }
 
-    console.log("wav", base64Audio.length);
     const responseWav = await fetch(
       "http://m4a-to-wav-to-base64.vercel.app/api/convert",
       {
@@ -111,7 +110,6 @@ const blobToBase64 = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
     reader.onloadend = () => {
       const base64WithPrefix = reader.result as string;
-      console.log(base64WithPrefix.length);
       const base64 = base64WithPrefix.split(",")[1]; // Remove "data:...;base64,"
       resolve(base64);
     };
@@ -321,7 +319,7 @@ export const executeSingleIntent = async (
         const notifId = await scheduleReminderHabits(newHabit);
         newHabit.notificationId = notifId;
       }
-      setHabits((phabits:Habit[])=>[...habits, newHabit]);
+      setHabits((phabits:Habit[])=>[...phabits, newHabit]);
       break;
     case "edit_habit":
     case "delete_habit":

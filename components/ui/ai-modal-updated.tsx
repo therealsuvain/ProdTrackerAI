@@ -48,35 +48,10 @@ export default function AiModalUpdated({
 
   // Animated rotation for spinner
   const rotate = useRef(new Animated.Value(0)).current;
-  const [hue, setHue] = useState(200);
-  const soundRef = useRef<any>(null);
   const playedSoundRef = useRef(false);
   const audioSource = require("../../assets/audio/record.wav");
   const player = useAudioPlayer(audioSource);
 
-  useEffect(() => {
-    let anim: Animated.CompositeAnimation | null = null;
-    if (isRecording) {
-      rotate.setValue(0);
-      anim = Animated.loop(
-        Animated.timing(rotate, {
-          toValue: 1,
-          duration: 1200,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        })
-      );
-      anim.start();
-
-      // hue cycling interval
-      const id = setInterval(() => setHue((h) => (h + 10) % 360), 200);
-      return () => {
-        anim && anim.stop();
-        clearInterval(id);
-      };
-    }
-    return () => {};
-  }, [isRecording, rotate]);
 
   // best-effort sound play (attempt expo-av) then fallback to haptics
   const playStartCue = async () => {
@@ -124,16 +99,6 @@ export default function AiModalUpdated({
         >
           <View style={styles.container}>
             <View style={styles.centerArea} pointerEvents="box-none">
-              {/* <Animated.View
-              style={[
-                styles.spinner,
-                {
-                  transform: [{ rotate: rotateInterpolate }],
-                  borderColor: `hsl(${hue}, 100%, 50%)`,
-                  shadowColor: `hsl(${hue}, 100%, 60%)`,
-                },
-              ]}
-            /> */}
               {isRecording && (
                 <AnimatedLottieView
                   source={require("../../assets/lottie/GradientLoading.json")}
