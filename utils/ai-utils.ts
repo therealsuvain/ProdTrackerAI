@@ -1,5 +1,5 @@
 import Constants from "expo-constants";
-import { AIIntent } from "@/types/ai-intent";
+import { AIIntent, SingleAIIntent } from "@/types/ai-intent";
 import { Alert } from "react-native";
 import { updateStreak } from "./habit-utils";
 import {
@@ -17,7 +17,6 @@ import {
   scheduleReminderHabits,
   scheduleReminderTasks,
 } from "@/hooks/use-notifications";
-
 
 const GOOGLE_API_KEY = Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
 const HF_TOKEN = Constants.expoConfig?.extra?.HUGGING_FACE_API_TOKEN;
@@ -199,6 +198,155 @@ C. Task {
   }
 };
 
+export const executeSingleIntent = async (
+  intent: SingleAIIntent,
+  {
+    tasks,
+    setTasks,
+    events,
+    setEvents,
+    habits,
+    setHabits,
+    timerLogs,
+    setTimerLogs,
+    setTitle,
+    start,
+    stop,
+    navigation,
+  }: any
+) => {
+  const { intent: type, params } = intent;
+  switch (type) {
+    case "add_task":
+      const newTask = createTask(params);
+      if (newTask.reminder) {
+        const notifId = await scheduleReminderTasks(newTask);
+        newTask.notificationId = notifId;
+      }
+      setTasks([...tasks, newTask]);
+      break;
+    case "edit_task":
+    case "delete_task":
+    case "complete_task":
+      const searchKey = params.title || params.description || "";
+      if (!searchKey)
+        throw new Error("Provide title or description to identify task");
+      const fuse = new Fuse<Task>(tasks, {
+        keys: ["title", "description"],
+        threshold: 0.6,
+      }); // Loose match
+      const matches = fuse.search(searchKey);
+      if (matches.length === 0) throw new Error("No matching task found");
+      const targetTask = matches[0].item; // Best match
+      if (type === "edit_task") {
+        const updated = createTask({ ...targetTask, ...params });
+        if (updated.reminder && !updated.notificationId) {
+          const notifId = await scheduleReminderTasks(updated);
+          updated.notificationId = notifId;
+        }
+        setTasks(tasks.map((t: any) => (t.id === targetTask.id ? updated : t)));
+      } else if (type === "delete_task") {
+        setTasks(tasks.filter((t: any) => t.id !== targetTask.id));
+      } else if (type === "complete_task") {
+        setTasks(
+          tasks.map((t: any) =>
+            t.id === targetTask.id ? { ...t, completed: true } : t
+          )
+        );
+      }
+      break;
+    case "add_event":
+      const newEvent = createEvent(params);
+      if (newEvent.reminder) {
+        const notifId = await scheduleReminderEvents(newEvent);
+        newEvent.notificationId = notifId;
+      }
+      setEvents([...events, newEvent]);
+
+      break;
+    case "edit_event":
+    case "delete_event":
+      const eventSearchKey = params.title || params.description || "";
+      const eventFuse = new Fuse<CalendarEvent>(events, {
+        keys: ["title", "description"],
+        threshold: 0.6,
+      });
+      const eventMatches = eventFuse.search(eventSearchKey);
+      if (eventMatches.length === 0) throw new Error("No matching event found");
+      const targetEvent = eventMatches[0].item;
+      if (type === "edit_event") {
+        const updatedEvent = createEvent({ ...targetEvent, ...params });
+        if (updatedEvent.reminder && !updatedEvent.notificationId) {
+          const notifId = await scheduleReminderEvents(updatedEvent);
+          updatedEvent.notificationId = notifId;
+        }
+        setEvents(
+          events.map((e: CalendarEvent) =>
+            e.id === targetEvent.id ? updatedEvent : e
+          )
+        );
+      } else {
+        setEvents(events.filter((e: CalendarEvent) => e.id !== targetEvent.id));
+      }
+      break;
+    case "add_habit":
+      const newHabit = createHabit(params);
+      if (newHabit.reminder) {
+        const notifId = await scheduleReminderHabits(newHabit);
+        newHabit.notificationId = notifId;
+      }
+      setHabits([...habits, newHabit]);
+      break;
+    case "edit_habit":
+    case "delete_habit":
+    case "checkin_habit":
+      const habitSearchKey = params.title || "";
+      const habitFuse = new Fuse<Habit>(habits, {
+        keys: ["title"],
+        threshold: 0.6,
+      });
+      const habitMatches = habitFuse.search(habitSearchKey);
+      if (habitMatches.length === 0) throw new Error("No matching habit found");
+      const targetHabit = habitMatches[0].item;
+      if (type === "checkin_habit") {
+        const updatedHabit = updateStreak(targetHabit); // From habitUtils
+        setHabits(
+          habits.map((h: Habit) => (h.id === targetHabit.id ? updatedHabit : h))
+        );
+      } else if (type === "edit_habit") {
+        const updatedHabit = createHabit({ ...targetHabit, ...params });
+        if (updatedHabit.reminder && !updatedHabit.notificationId) {
+          const notifId = await scheduleReminderHabits(updatedHabit);
+          updatedHabit.notificationId = notifId;
+        }
+        setHabits(
+          habits.map((h: Habit) => (h.id === targetHabit.id ? updatedHabit : h))
+        );
+      } else {
+        setHabits(habits.filter((h: Habit) => h.id !== targetHabit.id));
+      }
+      break;
+    case "add_log":
+      const newLog = createTimerLog(params);
+      setTimerLogs([...timerLogs, newLog]);
+      break;
+    case "edit_log":
+    case "delete_log":
+    case "start_timer":
+      setTitle(params.title);
+      start();
+      console.log("In it");
+      navigation.navigate("timer-screen");
+      break;
+    case "stop_timer":
+      stop();
+      navigation.navigate("timer-screen");
+      break;
+    //case "search":
+    default:
+      Alert.alert("Unknown intent");
+  }
+};
 export const executeIntent = async (
   intent: AIIntent,
   setIsProcessing: (value: boolean) => void,
@@ -218,158 +366,43 @@ export const executeIntent = async (
   }: any
 ) => {
   try {
-    const { intent: type, params } = intent;
     setIsProcessing(true);
-    switch (type) {
-      case "add_task":
-        const newTask = createTask(params);
-        if(newTask.reminder){
-          const notifId = await scheduleReminderTasks(newTask);
-          newTask.notificationId = notifId;
-        }
-        setTasks([...tasks, newTask]);
-        break;
-      case "edit_task":
-      case "delete_task":
-      case "complete_task":
-        const searchKey = params.title || params.description || "";
-        if (!searchKey)
-          throw new Error("Provide title or description to identify task");
-        const fuse = new Fuse<Task>(tasks, {
-          keys: ["title", "description"],
-          threshold: 0.6,
-        }); // Loose match
-        const matches = fuse.search(searchKey);
-        if (matches.length === 0) throw new Error("No matching task found");
-        const targetTask = matches[0].item; // Best match
-        if (type === "edit_task") {
-          const updated = createTask(
-            { ...targetTask, ...params },
-          );
-          if(updated.reminder && !updated.notificationId){
-            const notifId = await scheduleReminderTasks(updated);
-            updated.notificationId = notifId;
-          }
-          setTasks(
-            tasks.map((t: any) => (t.id === targetTask.id ? updated : t))
-          );
-        } else if (type === "delete_task") {
-          setTasks(tasks.filter((t: any) => t.id !== targetTask.id));
-        } else if (type === "complete_task") {
-          setTasks(
-            tasks.map((t: any) =>
-              t.id === targetTask.id ? { ...t, completed: true } : t
-            )
-          );
-        }
-        break;
-      case "add_event":
-        const newEvent = createEvent(params);
-        if(newEvent.reminder){
-          const notifId = await scheduleReminderEvents(newEvent);
-          newEvent.notificationId = notifId;
-        }
-        setEvents([...events, newEvent]);
-        
-        break;
-      case "edit_event":
-      case "delete_event":
-        const eventSearchKey = params.title || params.description || "";
-        const eventFuse = new Fuse<CalendarEvent>(events, {
-          keys: ["title", "description"],
-          threshold: 0.6,
+    if (intent.intent === "multi_action") {
+      for (const action of intent.actions) {
+        await executeSingleIntent(action, {
+          tasks,
+          setTasks,
+          events,
+          setEvents,
+          habits,
+          setHabits,
+          timerLogs,
+          setTimerLogs,
+          setTitle,
+          start,
+          stop,
+          navigation,
         });
-        const eventMatches = eventFuse.search(eventSearchKey);
-        if (eventMatches.length === 0)
-          throw new Error("No matching event found");
-        const targetEvent = eventMatches[0].item;
-        if (type === "edit_event") {
-          const updatedEvent = createEvent(
-            { ...targetEvent, ...params },
-          );
-          if(updatedEvent.reminder && !updatedEvent.notificationId){
-            const notifId = await scheduleReminderEvents(updatedEvent);
-            updatedEvent.notificationId = notifId;
-          }
-          setEvents(
-            events.map((e: CalendarEvent) =>
-              e.id === targetEvent.id ? updatedEvent : e
-            )
-          );
-        } else {
-          setEvents(
-            events.filter((e: CalendarEvent) => e.id !== targetEvent.id)
-          );
-        }
-        break;
-      case "add_habit":
-        const newHabit = createHabit(params);
-        if(newHabit.reminder){
-          const notifId = await scheduleReminderHabits(newHabit);
-          newHabit.notificationId = notifId;
-        }
-        setHabits([...habits, newHabit]);
-        break;
-      case "edit_habit":
-      case "delete_habit":
-      case "checkin_habit":
-        const habitSearchKey = params.title || "";
-        const habitFuse = new Fuse<Habit>(habits, {
-          keys: ["title"],
-          threshold: 0.6,
-        });
-        const habitMatches = habitFuse.search(habitSearchKey);
-        if (habitMatches.length === 0)
-          throw new Error("No matching habit found");
-        const targetHabit = habitMatches[0].item;
-        if (type === "checkin_habit") {
-          const updatedHabit = updateStreak(targetHabit); // From habitUtils
-          setHabits(
-            habits.map((h: Habit) =>
-              h.id === targetHabit.id ? updatedHabit : h
-            )
-          );
-        } else if (type === "edit_habit") {
-          const updatedHabit = createHabit(
-            { ...targetHabit, ...params }
-          );
-          if(updatedHabit.reminder && !updatedHabit.notificationId){
-            const notifId = await scheduleReminderHabits(updatedHabit);
-            updatedHabit.notificationId = notifId;
-          }
-          setHabits(
-            habits.map((h: Habit) =>
-              h.id === targetHabit.id ? updatedHabit : h
-            )
-          );
-        } else {
-          setHabits(habits.filter((h: Habit) => h.id !== targetHabit.id));
-        }
-        break;
-      case "add_log":
-        const newLog = createTimerLog(params);
-        setTimerLogs([...timerLogs, newLog]);
-        break;
-      case "edit_log":
-      case "delete_log":
-      case "start_timer":
-        setTitle(params.title);
-        start();
-        console.log("In it");
-        navigation.navigate("timer-screen");
-        break;
-      case "stop_timer":
-        stop();
-        navigation.navigate("timer-screen");
-        break;
-      //case "search":
-      default:
-        Alert.alert("Unknown intent");
+      }
+    } else {
+      await executeSingleIntent(intent, {
+        tasks,
+        setTasks,
+        events,
+        setEvents,
+        habits,
+        setHabits,
+        timerLogs,
+        setTimerLogs,
+        setTitle,
+        start,
+        stop,
+        navigation,
+      });
     }
   } catch (e) {
     console.log(e);
-  }
-  finally {
+  } finally {
     setIsProcessing(false);
   }
   //expo.speech.speak(`Action ${type} executed`)

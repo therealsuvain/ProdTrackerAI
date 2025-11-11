@@ -120,6 +120,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveHabits(habits);
+    console.log("DATA HABITS",habits)
   }, [habits, loaded]);
 
   return (

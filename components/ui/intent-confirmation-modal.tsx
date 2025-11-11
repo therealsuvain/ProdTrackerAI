@@ -1,5 +1,5 @@
 import { useData } from "@/hooks/use-data";
-import { AIIntent } from "@/types/ai-intent";
+import { AIIntent, SingleAIIntent } from "@/types/ai-intent";
 import { useState } from "react";
 import { Text, View, StyleSheet } from "react-native";
 import { Modal, Portal } from "react-native-paper";
@@ -7,16 +7,19 @@ import { Button } from "react-native-paper";
 import TaskItem from "./tasks/task-item";
 import EventItem from "./calendar-events/event-item";
 import HabitItem from "./habits/habit-item";
-import { createTask, createEvent, createHabit } from "@/utils/model-factory-utils";
+import {
+  createTask,
+  createEvent,
+  createHabit,
+} from "@/utils/model-factory-utils";
 import { Task } from "@/types/task";
 import Fuse from "fuse.js";
 import { CalendarEvent } from "@/types/calendar";
 import { Habit } from "@/types/habits";
 
 interface IntentConfirmationModalProps {
-  intent: AIIntent|null ;
+  intent: AIIntent | null;
   onConfirm: () => void;
-  
 }
 
 export function IntentConfirmationModal({
@@ -24,17 +27,43 @@ export function IntentConfirmationModal({
   onConfirm,
 }: IntentConfirmationModalProps) {
   const [visible, setVisible] = useState(true);
-   const { tasks, events, habits } = useData();
+  const { tasks, events, habits } = useData();
 
-   const renderPreview =  () => {
-    if(intent===null)
-      return null;
+  const renderPreview = () => {
+    if (!intent) return null;
+
+    if (intent.intent === "multi_action") {
+      return (
+        <View>
+          <Text style={styles.label}>Multiple Actions</Text>
+          {(intent.actions || []).map((act: any, idx: number) => (
+            <View
+              key={idx}
+              style={{
+                marginTop: 8,
+                paddingVertical: 6,
+                borderTopWidth: idx === 0 ? 0 : 1,
+                borderColor: "#333",
+              }}
+            >
+              {renderSinglePreview(act)}
+            </View>
+          ))}
+        </View>
+      );
+    }
+
+    // Single intent
+    return renderSinglePreview(intent);
+  };
+  const renderSinglePreview = (intent: SingleAIIntent) => {
+    if (intent === null) return null;
     const { intent: type, params } = intent;
 
     // Task intents
     if (type === "add_task") {
       try {
-        const newTask =  createTask(params);
+        const newTask = createTask(params);
         return (
           <View>
             <Text style={styles.label}>New Task Preview:</Text>
@@ -46,10 +75,16 @@ export function IntentConfirmationModal({
       }
     }
 
-    if (type === "edit_task" || type === "delete_task" || type === "complete_task") {
+    if (
+      type === "edit_task" ||
+      type === "delete_task" ||
+      type === "complete_task"
+    ) {
       const searchKey = params.title || params.description || "";
       if (!searchKey) {
-        return <Text style={styles.errorText}>No task identifier provided</Text>;
+        return (
+          <Text style={styles.errorText}>No task identifier provided</Text>
+        );
       }
 
       const fuse = new Fuse<Task>(tasks, {
@@ -63,7 +98,7 @@ export function IntentConfirmationModal({
       }
 
       const targetTask = matches[0].item;
-      
+
       if (type === "edit_task") {
         try {
           const updatedTask = createTask({ ...targetTask, ...params });
@@ -73,7 +108,7 @@ export function IntentConfirmationModal({
               <TaskItem task={updatedTask} onToggleComplete={() => {}} />
             </View>
           );
-        } catch (error:any) {
+        } catch (error: any) {
           return <Text style={styles.errorText}>{error.message}</Text>;
         }
       }
@@ -82,7 +117,10 @@ export function IntentConfirmationModal({
         return (
           <View>
             <Text style={styles.label}>Task to Complete:</Text>
-            <TaskItem task={{ ...targetTask, completed: true }} onToggleComplete={() => {}} />
+            <TaskItem
+              task={{ ...targetTask, completed: true }}
+              onToggleComplete={() => {}}
+            />
           </View>
         );
       }
@@ -105,7 +143,7 @@ export function IntentConfirmationModal({
             <EventItem event={newEvent} />
           </View>
         );
-      } catch (error:any) {
+      } catch (error: any) {
         return <Text style={styles.errorText}>{error.message}</Text>;
       }
     }
@@ -113,7 +151,9 @@ export function IntentConfirmationModal({
     if (type === "edit_event" || type === "delete_event") {
       const searchKey = params.title || params.description || "";
       if (!searchKey) {
-        return <Text style={styles.errorText}>No event identifier provided</Text>;
+        return (
+          <Text style={styles.errorText}>No event identifier provided</Text>
+        );
       }
 
       const eventFuse = new Fuse<CalendarEvent>(events, {
@@ -165,10 +205,16 @@ export function IntentConfirmationModal({
       }
     }
 
-    if (type === "edit_habit" || type === "delete_habit" || type === "checkin_habit") {
+    if (
+      type === "edit_habit" ||
+      type === "delete_habit" ||
+      type === "checkin_habit"
+    ) {
       const searchKey = params.title || "";
       if (!searchKey) {
-        return <Text style={styles.errorText}>No habit identifier provided</Text>;
+        return (
+          <Text style={styles.errorText}>No habit identifier provided</Text>
+        );
       }
 
       const habitFuse = new Fuse<Habit>(habits, {
