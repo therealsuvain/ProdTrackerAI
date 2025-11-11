@@ -17,6 +17,7 @@ import {
   scheduleReminderHabits,
   scheduleReminderTasks,
 } from "@/hooks/use-notifications";
+import { TimerLog } from "@/types/timer";
 
 const GOOGLE_API_KEY = Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
 const HF_TOKEN = Constants.expoConfig?.extra?.HUGGING_FACE_API_TOKEN;
@@ -121,16 +122,40 @@ export const parseCommandToIntent = async (
   transcript: string
 ): Promise<AIIntent> => {
   try {
-    const prompt = `Parse this user command into JSON with 
-    { "intent": "add_task" | "edit_task" | "delete_task" | "complete_task" | 
-     "add_event" | "edit_event" | "delete_event" |
-      "add_habit" | "edit_habit" | "delete_habit" | "checkin_habit" 
-      | "add_log" | "edit_log" | "delete_log" |
-       "start_timer" | "stop_timer" | "search", 
-       "params": { ...relevant fields from data models below }.
+    const prompt = `Parse this user command into JSON following the format for AIIntent from Data Model A below. 
+    Use the other Data Models B, C, D for reference on fields.
 
-       Use the following Data Models:
-A. CalendarEvent {
+ Data Models (MUST FOLLOW EXACTLY):
+A.  type BaseIntent =
+  | "add_task"
+  | "edit_task"
+  | "delete_task"
+  | "complete_task"
+  | "add_event"
+  | "edit_event"
+  | "delete_event"
+  | "add_habit"
+  | "edit_habit"
+  | "delete_habit"
+  | "checkin_habit"
+  | "add_log"
+  | "edit_log"
+  | "delete_log";
+ type ExtraIntent = "start_timer" | "stop_timer" | "search";
+ type SingleAIIntent = {
+  intent: BaseIntent| ExtraIntent;
+  params: Record<string, any>;
+  searchQuery?: string;
+};
+ type CompoundAIIntent = {
+  intent: "multi_action";
+  actions: (Omit<SingleAIIntent, "intent"> & { intent: BaseIntent})[];
+};
+ type AIIntent =
+  | SingleAIIntent
+  | CompoundAIIntent;
+
+B. CalendarEvent {
   title: string;
   startDate: Date;
   endDate: Date ;
@@ -142,7 +167,7 @@ A. CalendarEvent {
   category: string | undefined; // e.g., 'work', 'personal' for colors
 }
 
-B. Habit {
+C. Habit {
   title: string;
   frequency: 'daily'|'weekly';
   streak: number;
@@ -152,7 +177,7 @@ B. Habit {
   goal?: number; // e.g., 7 days in a row
 }
 
-C. Task {
+D. Task {
   title: string;
   description?: string;
   category?: string;
@@ -164,8 +189,9 @@ C. Task {
   tags?: string[];
 }
         Ruleset (MUST follow exactly):
+0. All titles must be capitalized semantically.
 1. For dates: Convert 'today' to YYYY-MM-DD (local timezone). 'Tomorrow' to next day. Invalid days (e.g., 38th) → default to today. Use ISO format only (no words).
-2. If editing/deleting, suggest approximate title/description for matching (e.g., "edit task about groceries").
+2. For all intents except add_x intents, there HAS to be a searchQuery paramter for matching to existing items.
 3. For reminderDate in both tasks and habits, and startTime, endTime should only be in HH:MM:SS format
 4. Output ONLY valid JSON—no explanations. 
         Command: "${transcript}"`;
@@ -215,7 +241,7 @@ export const executeSingleIntent = async (
     navigation,
   }: any
 ) => {
-  const { intent: type, params } = intent;
+  const { intent: type, params , searchQuery} = intent;
   switch (type) {
     case "add_task":
       const newTask = createTask(params);
@@ -223,12 +249,12 @@ export const executeSingleIntent = async (
         const notifId = await scheduleReminderTasks(newTask);
         newTask.notificationId = notifId;
       }
-      setTasks([...tasks, newTask]);
+      setTasks((prevTasks:Task[])=>[...prevTasks, newTask]);
       break;
     case "edit_task":
     case "delete_task":
     case "complete_task":
-      const searchKey = params.title || params.description || "";
+      const searchKey = searchQuery || "";
       if (!searchKey)
         throw new Error("Provide title or description to identify task");
       const fuse = new Fuse<Task>(tasks, {
@@ -244,12 +270,12 @@ export const executeSingleIntent = async (
           const notifId = await scheduleReminderTasks(updated);
           updated.notificationId = notifId;
         }
-        setTasks(tasks.map((t: any) => (t.id === targetTask.id ? updated : t)));
+        setTasks((ptasks:Task[])=>ptasks.map((t: any) => (t.id === targetTask.id ? updated : t)));
       } else if (type === "delete_task") {
-        setTasks(tasks.filter((t: any) => t.id !== targetTask.id));
+        setTasks((ptasks:Task[])=>ptasks.filter((t: any) => t.id !== targetTask.id));
       } else if (type === "complete_task") {
         setTasks(
-          tasks.map((t: any) =>
+          (ptasks:Task[])=>ptasks.map((t: any) =>
             t.id === targetTask.id ? { ...t, completed: true } : t
           )
         );
@@ -261,12 +287,12 @@ export const executeSingleIntent = async (
         const notifId = await scheduleReminderEvents(newEvent);
         newEvent.notificationId = notifId;
       }
-      setEvents([...events, newEvent]);
+      setEvents((pevents:CalendarEvent[])=>[...pevents, newEvent]);
 
       break;
     case "edit_event":
     case "delete_event":
-      const eventSearchKey = params.title || params.description || "";
+      const eventSearchKey =  searchQuery || "";
       const eventFuse = new Fuse<CalendarEvent>(events, {
         keys: ["title", "description"],
         threshold: 0.6,
@@ -281,12 +307,12 @@ export const executeSingleIntent = async (
           updatedEvent.notificationId = notifId;
         }
         setEvents(
-          events.map((e: CalendarEvent) =>
+          (pevents:CalendarEvent[])=>pevents.map((e: CalendarEvent) =>
             e.id === targetEvent.id ? updatedEvent : e
           )
         );
       } else {
-        setEvents(events.filter((e: CalendarEvent) => e.id !== targetEvent.id));
+        setEvents((pevents:CalendarEvent[])=>pevents.filter((e: CalendarEvent) => e.id !== targetEvent.id));
       }
       break;
     case "add_habit":
@@ -295,12 +321,12 @@ export const executeSingleIntent = async (
         const notifId = await scheduleReminderHabits(newHabit);
         newHabit.notificationId = notifId;
       }
-      setHabits([...habits, newHabit]);
+      setHabits((phabits:Habit[])=>[...habits, newHabit]);
       break;
     case "edit_habit":
     case "delete_habit":
     case "checkin_habit":
-      const habitSearchKey = params.title || "";
+      const habitSearchKey =  searchQuery || "";
       const habitFuse = new Fuse<Habit>(habits, {
         keys: ["title"],
         threshold: 0.6,
@@ -320,15 +346,15 @@ export const executeSingleIntent = async (
           updatedHabit.notificationId = notifId;
         }
         setHabits(
-          habits.map((h: Habit) => (h.id === targetHabit.id ? updatedHabit : h))
+          (phabits:Habit[])=>phabits.map((h: Habit) => (h.id === targetHabit.id ? updatedHabit : h))
         );
       } else {
-        setHabits(habits.filter((h: Habit) => h.id !== targetHabit.id));
+        setHabits((phabits:Habit[])=>phabits.filter((h: Habit) => h.id !== targetHabit.id));
       }
       break;
     case "add_log":
       const newLog = createTimerLog(params);
-      setTimerLogs([...timerLogs, newLog]);
+      setTimerLogs((ptimerLogs:TimerLog[])=>[...ptimerLogs, newLog]);
       break;
     case "edit_log":
     case "delete_log":

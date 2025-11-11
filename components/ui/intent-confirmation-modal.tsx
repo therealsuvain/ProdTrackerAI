@@ -58,7 +58,7 @@ export function IntentConfirmationModal({
   };
   const renderSinglePreview = (intent: SingleAIIntent) => {
     if (intent === null) return null;
-    const { intent: type, params } = intent;
+    const { intent: type, params, searchQuery } = intent;
 
     // Task intents
     if (type === "add_task") {
@@ -80,7 +80,7 @@ export function IntentConfirmationModal({
       type === "delete_task" ||
       type === "complete_task"
     ) {
-      const searchKey = params.title || params.description || "";
+      const searchKey =  searchQuery || "";
       if (!searchKey) {
         return (
           <Text style={styles.errorText}>No task identifier provided</Text>
@@ -149,7 +149,7 @@ export function IntentConfirmationModal({
     }
 
     if (type === "edit_event" || type === "delete_event") {
-      const searchKey = params.title || params.description || "";
+      const searchKey =  searchQuery || "";
       if (!searchKey) {
         return (
           <Text style={styles.errorText}>No event identifier provided</Text>
@@ -210,7 +210,7 @@ export function IntentConfirmationModal({
       type === "delete_habit" ||
       type === "checkin_habit"
     ) {
-      const searchKey = params.title || "";
+      const searchKey =  searchQuery || "";
       if (!searchKey) {
         return (
           <Text style={styles.errorText}>No habit identifier provided</Text>
