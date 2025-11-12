@@ -14,7 +14,7 @@ interface CalendarListAgendaAltProps {
   onDateSelect: (date: Date) => void;
   selectedDate: Date;
   onEventSelect?: (event: CalendarEvent) => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string, date: string) => void;
 }
 
 export default function CalendarListAgendaMain({
@@ -32,8 +32,7 @@ export default function CalendarListAgendaMain({
     return date.toISOString().split("T")[0];
   };
 
-
-const loadItems = useCallback((day: DateData) => {
+  const loadItems = (day: DateData) => {
     // We must use the functional form of setItems to prevent an infinite loop
     setItems((prevItems) => {
       const newItems: AgendaSchedule = { ...prevItems };
@@ -43,47 +42,54 @@ const loadItems = useCallback((day: DateData) => {
       for (let i = -30; i < 30; i++) {
         const time = day.timestamp + i * 24 * 60 * 60 * 1000;
         const strTime = timeToString(time);
-
+        //console.log("strTime", strTime)
         // Only load if we haven't already
         if (!newItems[strTime]) {
           itemsWereAdded = true; // Mark that we're adding new days
-          
+
           // --- START OF FILTER FIX ---
 
           const dayEvents = events.filter((event) => {
             // Get the day we are *currently checking* (from the loop)
             // Normalized to midnight
+            //console.log("i:",i)
             const currentDay = new Date(time);
             currentDay.setHours(0, 0, 0, 0);
+            // console.log("current", currentDay)
             const currentDayTimestamp = currentDay.getTime();
-            const currentDayEndTimestamp = currentDayTimestamp + (24*60*60*1000)-1
+            const currentDayEndTimestamp =
+              currentDayTimestamp + 24 * 60 * 60 * 1000 - 1;
 
             // Get the event's start *date* (normalized to midnight)
             const eventStartDate = new Date(event.startDate);
-            eventStartDate.setHours(0,0,0,0)
+            eventStartDate.setHours(0, 0, 0, 0);
+            // console.log("start", eventStartDate)
             const eventStartDateTimestamp = eventStartDate.getTime();
-            
+
             // Get the event's end *date* (normalized to midnight)
             const eventEndDate = new Date(event.endDate);
-            eventEndDate.setHours(0,0,0,0)
+            eventEndDate.setHours(0, 0, 0, 0);
+            //console.log("end", eventEndDate)
             const eventEndDateTimestamp = eventEndDate.getTime();
 
-
-            if (currentDayTimestamp < eventStartDateTimestamp ) {
+            if (currentDayTimestamp < eventStartDateTimestamp) {
               return false;
             }
 
             if (currentDayTimestamp > eventEndDateTimestamp) {
               return false;
             }
-            
 
-
+            if (event.deletedOccurrences?.includes(strTime)) {
+              return false;
+            }
 
             // Now we know the currentDay is *within* the event's start/end range.
             // We can proceed with the recurrence logic.
 
-            const eventStartDateString = event.startDate.toISOString().split("T")[0];
+            const eventStartDateString = event.startDate
+              .toISOString()
+              .split("T")[0];
 
             // Check 1: Is it a non-recurring event on its exact start date?
             if (event.recurrence === "none" || !event.recurrence) {
@@ -106,15 +112,16 @@ const loadItems = useCallback((day: DateData) => {
           });
 
           // --- END OF FILTER FIX ---
-          
+
           if (dayEvents.length > 0) {
             newItems[strTime] = dayEvents
               .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
               .map((event) => ({
                 name: event.title,
-                height: 80,
+                height: 40,
                 day: strTime,
-                event: event, // Store full event object
+                event: event,
+                occurence: strTime, // Store full event object
               }));
           } else {
             // Empty array for days with no events
@@ -128,30 +135,35 @@ const loadItems = useCallback((day: DateData) => {
       if (!itemsWereAdded) {
         return prevItems;
       }
-      
+
       // Otherwise, return the new object
       //console.log(newItems);
       return newItems;
     });
-  }, [events]); // Only depend on `events`
+  }; // Only depend on `events`
 
   useEffect(() => {
-  const today = new Date();
-  const timestamp = today.getTime();
-  const dateData: DateData = {
-    year: today.getFullYear(),
-    month: today.getMonth() + 1,
-    day: today.getDate(),
-    timestamp,
-    dateString: today.toISOString().split("T")[0],
-  };
-  loadItems(dateData);
-}, [events, loadItems]);
+    const today = new Date();
+    const timestamp = today.getTime();
+    const dateData: DateData = {
+      year: today.getFullYear(),
+      month: today.getMonth() + 1,
+      day: today.getDate(),
+      timestamp,
+      dateString: today.toISOString().split("T")[0],
+    };
+    loadItems(dateData);
+  }, [events, loadItems]);
+  /* const [refreshKey, setRefreshKey] = useState(0);
 
-
+useEffect(() => {
+  setRefreshKey(k => k + 1);
+  console.log(refreshKey)
+}, [events]); */
 
   const renderItem = (reservation: AgendaEntry, isFirst: boolean) => {
     const event = (reservation as any).event as CalendarEvent;
+    const occurence = (reservation as any).occurence;
 
     if (!event) {
       return null;
@@ -162,7 +174,7 @@ const loadItems = useCallback((day: DateData) => {
         <EventItem
           event={event}
           onEdit={() => onEventSelect?.(event)}
-          onDelete={() => onDelete?.(event.id)}
+          onDelete={() => onDelete?.(event.id, occurence)}
         />
       </View>
     );
@@ -181,6 +193,8 @@ const loadItems = useCallback((day: DateData) => {
   };
 
   const selectedStr = selectedDate.toISOString().split("T")[0];
+
+
 
   return (
     <View style={styles.container}>
@@ -221,13 +235,13 @@ const styles = StyleSheet.create({
   },
   itemContainer: {
     marginRight: 10,
-    marginTop: 17,
+    marginTop: 1,
     marginLeft: 10,
   },
   emptyDate: {
     height: 15,
     flex: 1,
-    paddingTop: 30,
+
     alignItems: "center",
     justifyContent: "center",
   },

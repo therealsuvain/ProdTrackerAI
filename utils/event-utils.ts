@@ -7,8 +7,10 @@ export const getEventsForDate = (
 ): CalendarEvent[] => {
   const filtered: CalendarEvent[] = [];
   events.forEach((event) => {
-    const eventDate = new Date(event.startDate);
-    if (eventDate.toDateString() === date.toDateString()) {
+    const eventDate = new Date(event.startDate).setHours(5,30,0,0);
+    const eventEndDate = new Date(event.endDate).setHours(23,59,0,0);
+    if (date.getTime() <=eventEndDate && date.getTime() >= eventDate && !event.deletedOccurrences?.includes(date.toISOString().split('T')[0])) {
+
       filtered.push(event);
     }
   });

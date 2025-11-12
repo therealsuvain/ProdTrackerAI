@@ -14,10 +14,9 @@ Notifications.setNotificationHandler({
   }),
 });
 
-
 export const useNotifications = () => {
   const notificationListener = useRef<any>(undefined);
-const { tasks, setTasks, events, setEvents, habits, setHabits } = useData();
+  const { tasks, setTasks, events, setEvents, habits, setHabits } = useData();
 
   const requestPermissions = async () => {
     const { status } = await Notifications.requestPermissionsAsync();
@@ -25,7 +24,6 @@ const { tasks, setTasks, events, setEvents, habits, setHabits } = useData();
       alert("Notification permission not granted");
     }
   };
-
 
   useEffect(() => {
     requestPermissions();
@@ -41,28 +39,6 @@ const { tasks, setTasks, events, setEvents, habits, setHabits } = useData();
   }, []);
 };
 
-const getTriggerOptionsEvent = (time: Date, event: CalendarEvent) => {
-  if (event.recurrence === "daily") {
-    return {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour: time.getHours(),
-      minute: time.getMinutes(),
-    } as Notifications.DailyTriggerInput;
-  }
-  if (event.recurrence === "weekly") {
-    return {
-      type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-      weekday: time.getDay() + 1,
-      hour: time.getHours(),
-      minute: time.getMinutes(),
-    } as Notifications.WeeklyTriggerInput;
-  }
-
-  return {
-    type: Notifications.SchedulableTriggerInputTypes.DATE,
-    date: time,
-  } as Notifications.DateTriggerInput;
-};
 
 const getTriggerOptionsHabit = (habit: Habit) => {
   if (habit.frequency === "weekly") {
@@ -81,20 +57,39 @@ const getTriggerOptionsHabit = (habit: Habit) => {
   } as Notifications.DailyTriggerInput;
 };
 
-export const scheduleReminderEvents = async (
-  event: CalendarEvent
-): Promise<string> => {
-  console.log("scheduling notification for event:", event);
-  const triggerDate = new Date(event.startTime.getTime());
+export const scheduleReminderEvents = async (event: CalendarEvent) => {
+  let ids: { date: string; id: string }[] = [];
 
-  const id = await Notifications.scheduleNotificationAsync({
-    content: {
-      title: "Upcoming event",
-      body: `${event.title} starts soon`,
-    },
-    trigger: getTriggerOptionsEvent(triggerDate, event),
-  });
-  return id;
+  let current = event.startTime;
+  const maxScheduledNotifications = 30; // optional limit (to avoid infinite scheduling)
+  for (
+    let i = 0;
+    i < maxScheduledNotifications &&
+     current.getTime() < event.endDate.getTime();
+    i++
+  ) {
+    if (!event.deletedOccurrences?.includes(current.toISOString().split('T')[0])) {
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Upcoming event",
+          body: `${event.title} starts soon`,
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: current,
+        },
+      });
+      ids.push({ date: current.toISOString().split('T')[0], id });
+    }
+
+    if (event.recurrence === "daily")
+      current = new Date(current.getTime() + 24 * 60 * 60 * 1000);
+    else if (event.recurrence === "weekly")
+      current = new Date(current.getTime() + 7 * 24 * 60 * 60 * 1000);
+    else break;
+  }
+
+  return ids;
 };
 
 export const scheduleReminderTasks = async (task: Task): Promise<string> => {
@@ -128,3 +123,4 @@ export const cancelReminder = async (id: string) => {
   console.log("canclled notification");
   await Notifications.cancelScheduledNotificationAsync(id);
 };
+

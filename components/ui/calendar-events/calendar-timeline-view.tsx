@@ -13,7 +13,7 @@ import EventItem from "./event-item";
 interface TimelineProps {
   events: CalendarEvent[];
   onEventSelect?: (event: CalendarEvent) => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string, date:string) => void;
   selectedDate: Date;
 }
 
@@ -49,7 +49,6 @@ export default function Timeline({
         timed.push(event);
       }
     });
-
     return { allDayEvents: allDay, timedEvents: timed };
   }, [events]);
 
@@ -158,6 +157,8 @@ export default function Timeline({
 
   const hasEvents = events.length > 0;
 
+  const date = selectedDate.toISOString().split('T')[0]
+
   return (
     <View style={styles.container}>
       {/* All-day events section */}
@@ -174,7 +175,7 @@ export default function Timeline({
                 <EventItem
                   event={event}
                   onEdit={() => onEventSelect?.(event)}
-                  onDelete={() => onDelete?.(event.id)}
+                  onDelete={() => onDelete?.(event.id, date)}
                 />
               </TouchableOpacity>
             ))}

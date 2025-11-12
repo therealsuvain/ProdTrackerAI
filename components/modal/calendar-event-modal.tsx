@@ -48,18 +48,15 @@ export default function CalendarEventModal({
   const onStartChange = (event: any, selected?: Date) => {
     setShowStartPicker(false);
     setAndroidDate(selected);
-    console.log(selected);
-    console.log(new Date(selected ? selected.toLocaleString() : ""));
     if (selected) updateField("startDate", selected);
   };
 
   const onStartTimeChangeAndroid = (event: any, selected?: Date) => {
     setShowAndroidStartTimerPicker(false);
     let varTime;
-    console.log(selected);
     if (selected)
       varTime =
-        androidDate?.toISOString().split("T")[0] +
+        androidDate?androidDate:state.startDate.toISOString().split("T")[0] +
         "T" +
         selected.toISOString().split("T")[1];
     updateField("startTime", new Date(varTime!));
@@ -75,7 +72,7 @@ export default function CalendarEventModal({
     let varTime;
     if (selected)
       varTime =
-        androidDate?.toISOString().split("T")[0] +
+        androidDate?androidDate:state.startDate.toISOString().split("T")[0] +
         "T" +
         selected.toISOString().split("T")[1];
     updateField("endTime", new Date(varTime!));
@@ -91,7 +88,7 @@ export default function CalendarEventModal({
         label="Title"
         value={state.title}
         mode="outlined"
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         activeOutlineColor="#F44336"
         onChangeText={(text) => updateField("title", text)}
       />
@@ -102,7 +99,7 @@ export default function CalendarEventModal({
         mode="elevated"
         buttonColor="#411310ff"
         textColor="#F44336"
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         onPress={() => {
           setShowStartPicker(true);
         }}
@@ -178,7 +175,7 @@ export default function CalendarEventModal({
         mode="elevated"
         buttonColor="#411310ff"
         textColor="#F44336"
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         onPress={() => {
           setShowEndPicker(true);
         }}
@@ -203,7 +200,7 @@ export default function CalendarEventModal({
         value={state.description || ""}
         mode="outlined"
         activeOutlineColor="#F44336"
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         onChangeText={(text) => updateField("description", text)}
         multiline
       />
@@ -220,7 +217,7 @@ export default function CalendarEventModal({
       </View>
       <Text style={styles.text}>Recurrence</Text>
       <SegmentedButtons
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         value={state.recurrence ? state.recurrence : "none"}
         onValueChange={(val) =>
           updateField("recurrence", val as "none" | "daily" | "weekly")
@@ -251,14 +248,14 @@ export default function CalendarEventModal({
         value={state.category || ""}
         mode="outlined"
         activeOutlineColor="#F44336"
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         onChangeText={(text) => updateField("category", text)}
       />
       <Button
         mode="elevated"
         buttonColor="#411310ff"
         textColor="#F44336"
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         onPress={onSubmit}
       >
         Save
@@ -267,7 +264,7 @@ export default function CalendarEventModal({
         mode="elevated"
         buttonColor="#411310ff"
         textColor="#F44336"
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         onPress={onDismiss}
       >
         Cancel
@@ -292,4 +289,5 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   text: { color: "#F44336", marginVertical: 2.5 },
+  verticalMargin:{marginVertical:2.5},
 });

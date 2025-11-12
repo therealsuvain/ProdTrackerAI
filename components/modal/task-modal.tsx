@@ -60,6 +60,9 @@ export default function TaskModal({
         value={state.title}
         onChangeText={(text) => updateField("title", text)}
       />
+      {state.errors?.title && (
+        <Text style={styles.error}>{state.errors.title}</Text>
+      )}
       <TextInput
         mode="outlined"
         label="Description"
@@ -81,22 +84,13 @@ export default function TaskModal({
       />
       <Button
         mode="elevated"
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         onPress={() => setShowDatePicker(true)}
       >
         Pick Due Date
       </Button>
       {state.dueDate && (
-        <Text
-          style={{
-            alignSelf: "center",
-            marginVertical: 2.5,
-            fontSize: 20,
-            color: "#c7b6f1ff",
-          }}
-        >
-          {state.dueDate.toDateString()}
-        </Text>
+        <Text style={styles.date}>{state.dueDate.toDateString()}</Text>
       )}
       {showDatePicker && (
         <DateTimePicker
@@ -122,7 +116,7 @@ export default function TaskModal({
               mode="elevated"
               buttonColor="#2F2C37"
               textColor="#887CA6"
-              style={{ marginVertical: 2.5 }}
+              style={styles.verticalMargin}
               onPress={() => setShowTimePicker(true)}
             >
               Pick Time
@@ -131,6 +125,9 @@ export default function TaskModal({
             <Text style={styles.text}>
               {state.reminderDate?.toLocaleTimeString()}
             </Text>
+            {state.errors?.reminderDate && (
+              <Text style={styles.error}>{state.errors.reminderDate}</Text>
+            )}
             {showTimePicker && (
               <DateTimePicker
                 value={state.reminderDate || new Date()}
@@ -141,18 +138,10 @@ export default function TaskModal({
           </>
         )}
       </View>
-      <Button
-        mode="elevated"
-        style={{ marginVertical: 2.5 }}
-        onPress={onSubmit}
-      >
+      <Button mode="elevated" style={styles.verticalMargin} onPress={onSubmit}>
         Save
       </Button>
-      <Button
-        mode="elevated"
-        style={{ marginVertical: 2.5 }}
-        onPress={onDismiss}
-      >
+      <Button mode="elevated" style={styles.verticalMargin} onPress={onDismiss}>
         Cancel
       </Button>
     </Modal>
@@ -174,5 +163,13 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     marginHorizontal: 5,
   },
+  date: {
+    alignSelf: "center",
+    marginVertical: 2.5,
+    fontSize: 20,
+    color: "#c7b6f1ff",
+  },
+  error: { color: "#ff6b6b", fontSize: 12 },
   text: { color: "#c7b6f1ff", marginLeft: 10 },
+  verticalMargin: { marginVertical: 2.5 },
 });

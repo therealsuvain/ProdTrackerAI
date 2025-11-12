@@ -1,9 +1,10 @@
-import {  useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   TouchableOpacity,
   View,
   StyleSheet,
+  FlatList,
 } from "react-native";
 import {
   Button,
@@ -19,9 +20,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useData } from "@/hooks/use-data";
 import { Task } from "@/types/task";
 import TaskItem from "@/components/ui/tasks/task-item";
-import {
-  cancelReminder,
-} from "@/hooks/use-notifications";
+import { cancelReminder } from "@/hooks/use-notifications";
 import TaskModal from "@/components/modal/task-modal";
 import { useTaskForm } from "@/hooks/use-task-form";
 
@@ -33,8 +32,13 @@ export default function TaskScreen() {
   const [sortBy, setSortBy] = useState<"priority" | "duedate" | "manual">(
     "manual"
   );
-  const {state, updateField, onSubmit}= useTaskForm({tasks, setTasks, editingTask, onClose:() => setVisible(false)});
-  
+  const { state, updateField, onSubmit } = useTaskForm({
+    tasks,
+    setTasks,
+    editingTask,
+    onClose: () => setVisible(false),
+  });
+
   const filteredTasks = tasks
     .filter(
       (t) =>
@@ -64,7 +68,6 @@ export default function TaskScreen() {
     setVisible(false);
   };
 
-
   const handleDelete = (id: string) => {
     Alert.alert("Delete Task", "Are you sure you want to delete this task?", [
       { text: "Cancel" },
@@ -92,7 +95,7 @@ export default function TaskScreen() {
   const handleDragEnd = ({ data }: { data: Task[] }) => {
     setTasks(data);
   };
-  
+
   const [showSortOptions, setShowSortOptions] = useState(false);
   return (
     <Provider>
@@ -104,25 +107,13 @@ export default function TaskScreen() {
             value={searchQuery}
             style={styles.searchbar}
           />
-          <View style={{ zIndex: 1000 }}>
+          <View style={styles.menuButton}>
             <Button onPress={() => setShowSortOptions(!showSortOptions)}>
               Sort By
             </Button>
 
             {showSortOptions && (
-              <View
-                style={{
-                  position: "absolute",
-                  top: 40,
-                  left: 160,
-                  backgroundColor: "#2d2a30ff",
-                  borderRadius: 8,
-                  padding: 8,
-                  width: 150,
-                  zIndex: 1001,
-                  elevation: 5,
-                }}
-              >
+              <View style={styles.menu}>
                 <Button
                   mode="text"
                   onPress={() => {
@@ -156,12 +147,8 @@ export default function TaskScreen() {
 
           {filteredTasks.length === 0 ? (
             <Text style={styles.noTasks}>No tasks found, Add one</Text>
-          ) : (
-            <View
-              style={{
-                flex: 1,
-              }}
-            >
+          ) : sortBy === "manual" ? (
+            <View style={styles.flatlist}>
               <DraggableFlatList
                 data={filteredTasks}
                 renderItem={({ item, drag }) => (
@@ -176,6 +163,22 @@ export default function TaskScreen() {
                 )}
                 keyExtractor={(item) => item.id}
                 onDragEnd={handleDragEnd}
+                showsVerticalScrollIndicator={false}
+              />
+            </View>
+          ) : (
+            <View style={styles.flatlist}>
+              <FlatList
+                data={filteredTasks}
+                renderItem={({ item }) => (
+                  <TaskItem
+                    task={item}
+                    onToggleComplete={toggleComplete}
+                    onEdit={() => showModal(item)}
+                    onDelete={() => handleDelete(item.id)}
+                  />
+                )}
+                keyExtractor={(item) => item.id}
                 showsVerticalScrollIndicator={false}
               />
             </View>
@@ -201,6 +204,23 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     position: "relative",
+  },
+  menu: {
+    position: "absolute",
+    top: 40,
+    left: 160,
+    backgroundColor: "#2d2a30ff",
+    borderRadius: 8,
+    padding: 8,
+    width: 150,
+    zIndex: 1001,
+    elevation: 5,
+  },
+  flatlist: {
+    flex: 1,
+  },
+  menuButton: {
+    zIndex:1
   },
   searchbar: { marginBottom: 16 },
   fab: {

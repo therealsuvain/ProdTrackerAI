@@ -25,7 +25,7 @@ import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-lis
 import CalendarEventModal from "@/components/modal/calendar-event-modal";
 
 export default function CalendarScreen() {
-  const { events, setEvents } = useData();
+  const { events, setEvents , deleteEventOccurrence} = useData();
   const {
     currentView,
     setCurrentView,
@@ -49,34 +49,35 @@ export default function CalendarScreen() {
 
   const hideModal = () => setVisible(false);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: string, date:string) => {
     Alert.alert("Delete Event", "Are you sure?", [
       { text: "Cancel" },
       {
-        text: "Delete",
+        text: "Delete Current Occurrence",
         onPress: async () => {
-          setEvents((currentEvents) => {
-            const event = currentEvents.find((e: CalendarEvent) => e.id === id);
-            if (event?.notificationId) {
-              cancelReminder(event.notificationId);
-            }
-            return currentEvents.filter((e: CalendarEvent) => e.id !== id);
-          });
+          const eventId = events.filter((e)=>e.id===id) 
+          deleteEventOccurrence(id, date, false)
+        },
+      },
+      {
+        text: "Delete All Occurrences",
+        onPress: async () => {
+          const eventId = events.filter((e)=>e.id===id) 
+          deleteEventOccurrence(id, date, true)
         },
       },
     ]);
   };
-
   return (
     <Provider>
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
+      <View style={styles.container}>
         <Pressable
           style={styles.header}
           onPress={() => setSelectedDate(new Date())}
         >
           <Ionicons size={40} name="calendar"></Ionicons>
         </Pressable>
-        <Text style={{ fontSize: 30, color: "white" }}>
+        <Text style={styles.date}>
           {selectedDate.toDateString()}
         </Text>
       </View>
@@ -87,8 +88,6 @@ export default function CalendarScreen() {
           selectedDate={selectedDate}
           onDateSelect={(date: Date) => {
             setSelectedDate(date);
-            // Uncomment below to auto-switch to day view
-            // setCurrentView("day");
           }}
           onEventSelect={showModal}
           onDelete={handleDelete}
@@ -125,7 +124,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  container: { flex: 1, padding: 16 },
+  container: { flexDirection: "row", alignItems: "center" },
+  date:{ fontSize: 30, color: "white" },
   fab: {
     position: "absolute",
     margin: 16,

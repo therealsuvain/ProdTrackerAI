@@ -50,6 +50,7 @@ export default function UnifiedTimeline({
   const filteredData = useMemo(() => {
     const dateStr = selectedDate.toDateString();
     
+    
     // Filter tasks due on this date
     const dayTasks = tasks.filter(
       (task) => task.dueDate?.toDateString() === dateStr && !task.completed
@@ -63,6 +64,8 @@ export default function UnifiedTimeline({
     // Filter events
     const dayEvents = events.filter((event) => {
       const eventDate = event.startTime.toDateString();
+      const todayDateIso= selectedDate.toISOString().split('T')[0]
+      if(event.deletedOccurrences?.includes(todayDateIso)) return false;
       if (eventDate === dateStr) return true;
       if (event.recurrence === "daily") return true;
       if (
@@ -109,12 +112,12 @@ export default function UnifiedTimeline({
   const taskPositions = useMemo(() => {
     return filteredData.tasks.map((task, index) => {
       // Stack tasks at 9 AM, slightly offset
-      const baseHour = 9;
+      const baseHour = task.reminderDate?.getHours();
       const offset = index * 50; // Offset each task by 50px
       
       return {
         task,
-        top: baseHour * HOUR_HEIGHT + offset,
+        top: baseHour?baseHour:9 * HOUR_HEIGHT + offset,
         height: 45,
       };
     });
@@ -181,11 +184,12 @@ export default function UnifiedTimeline({
             top,
             height,
             backgroundColor: getCategoryColor(event.category),
+            opacity:0.75,
           },
         ]}
         onPress={() => onEventSelect?.(event)}
       >
-        <View style={styles.blockContent}>
+        <View>
           <View style={styles.blockHeader}>
             <Ionicons name="calendar" size={14} color="#fff" />
             <Text style={styles.blockTitle} numberOfLines={1}>
@@ -222,7 +226,7 @@ export default function UnifiedTimeline({
         ]}
         onPress={() => onTaskToggle?.(task.id)}
       >
-        <View style={styles.blockContent}>
+        <View>
           <View style={styles.blockHeader}>
             <Checkbox
               status={task.completed ? "checked" : "unchecked"}
@@ -233,9 +237,9 @@ export default function UnifiedTimeline({
               {task.title}
             </Text>
           </View>
-          <Text style={styles.taskSubtext}>
+          {/* <Text style={styles.taskSubtext}>
             Due: {task.dueDate?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) || "Today"}
-          </Text>
+          </Text> */}
         </View>
       </TouchableOpacity>
     ));
@@ -253,14 +257,13 @@ export default function UnifiedTimeline({
           },
         ]}
       >
-        <View style={styles.blockContent}>
+        
           <View style={styles.blockHeader}>
             <Ionicons name="timer" size={14} color="#05ce9c" />
             <Text style={styles.logTitle} numberOfLines={1}>
               {log.title}
             </Text>
-          </View>
-          <Text style={styles.logTime}>
+            <Text style={styles.logTime}>
             {log.startTime.toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
@@ -276,7 +279,9 @@ export default function UnifiedTimeline({
               {Math.floor(log.duration / 60)}m {log.duration % 60}s
             </Text>
           )}
-        </View>
+          </View>
+          
+        
       </View>
     ));
   };
@@ -429,12 +434,17 @@ export default function UnifiedTimeline({
 }
 
 const getCategoryColor = (category?: string): string => {
+
+  const red = Math.floor(Math.random() * 56) + 200;    // 200-255
+  const green = Math.floor(Math.random() * 100);       // 0-100
+  const blue = Math.floor(Math.random() * 100); 
+
   const colorMap: Record<string, string> = {
     work: "#FF6B6B",
     personal: "#4ECDC4",
     health: "#45B7D1",
     social: "#FFA07A",
-    default: "#F44336",
+    default: `#${red.toString(16).padStart(2, "0")}${green.toString(16).padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`,
   };
   return colorMap[category || "default"] || colorMap.default;
 };
@@ -564,6 +574,7 @@ const styles = StyleSheet.create({
   },
   taskBlock: {
     position: "absolute",
+    justifyContent:'center',
     left: 8,
     right: 8,
     borderRadius: 8,
@@ -583,7 +594,7 @@ const styles = StyleSheet.create({
     borderLeftColor: "#05ce9c",
   },
   blockContent: {
-    flex: 1,
+    
   },
   blockHeader: {
     flexDirection: "row",

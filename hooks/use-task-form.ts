@@ -1,43 +1,51 @@
-import { Task } from '@/types/task';
-import { useReducer, useEffect } from 'react';
-import { randomUUID } from 'expo-crypto';
-import { cancelReminder, scheduleReminderTasks } from './use-notifications';
+import { Task } from "@/types/task";
+import { useReducer, useEffect } from "react";
+import { randomUUID } from "expo-crypto";
+import { cancelReminder, scheduleReminderTasks } from "./use-notifications";
 
-type FormState = Omit<Task, 'id' | 'notificationId' | 'completed'> & {
-  errors: Partial<Record<keyof Omit<Task, 'id' | 'notificationId' | 'completed'>, string>>;
+type FormState = Omit<Task, "id" | "notificationId" | "completed"> & {
+  errors: Partial<
+    Record<keyof Omit<Task, "id" | "notificationId" | "completed">, string>
+  >;
 };
 
 type FormAction =
-  | { type: 'UPDATE_FIELD'; payload: { field: keyof FormState; value: any } }
-  | { type: 'SET_ERROR'; payload: { field: keyof FormState; message: string } }
-  | { type: 'CLEAR_ERRORS' }
-  | { type: 'RESET'; payload?: Partial<FormState> };
+  | { type: "UPDATE_FIELD"; payload: { field: keyof FormState; value: any } }
+  | { type: "SET_ERROR"; payload: { field: keyof FormState; message: string } }
+  | { type: "CLEAR_ERRORS" }
+  | { type: "RESET"; payload?: Partial<FormState> };
 
 const initialState: FormState = {
-  title: '',
-  description: '',
-  category: '',
+  title: "",
+  description: "",
+  category: "",
   dueDate: undefined,
   reminder: false,
   reminderDate: undefined,
-  priority: 'medium',
+  priority: "medium",
   tags: undefined,
   errors: {},
 };
 
 const formReducer = (state: FormState, action: FormAction): FormState => {
   switch (action.type) {
-    case 'UPDATE_FIELD':
+    case "UPDATE_FIELD":
       return {
         ...state,
         [action.payload.field]: action.payload.value,
         errors: { ...state.errors, [action.payload.field]: undefined },
       };
-    case 'SET_ERROR':
-      return { ...state, errors: { ...state.errors, [action.payload.field]: action.payload.message } };
-    case 'CLEAR_ERRORS':
+    case "SET_ERROR":
+      return {
+        ...state,
+        errors: {
+          ...state.errors,
+          [action.payload.field]: action.payload.message,
+        },
+      };
+    case "CLEAR_ERRORS":
       return { ...state, errors: {} };
-    case 'RESET':
+    case "RESET":
       return { ...initialState, ...action.payload };
     default:
       return state;
@@ -51,13 +59,18 @@ interface UseTaskFormProps {
   onClose: () => void;
 }
 
-export const useTaskForm = ({ tasks, setTasks, editingTask, onClose }: UseTaskFormProps) => {
+export const useTaskForm = ({
+  tasks,
+  setTasks,
+  editingTask,
+  onClose,
+}: UseTaskFormProps) => {
   const [state, dispatch] = useReducer(formReducer, initialState);
 
   useEffect(() => {
     if (editingTask) {
       dispatch({
-        type: 'RESET',
+        type: "RESET",
         payload: {
           title: editingTask.title,
           description: editingTask.description,
@@ -70,21 +83,39 @@ export const useTaskForm = ({ tasks, setTasks, editingTask, onClose }: UseTaskFo
         },
       });
     } else {
-      dispatch({ type: 'RESET' });
+      dispatch({ type: "RESET" });
     }
   }, [editingTask]);
 
   const updateField = (field: keyof FormState, value: any) => {
-    dispatch({ type: 'UPDATE_FIELD', payload: { field, value } });
+    dispatch({ type: "UPDATE_FIELD", payload: { field, value } });
   };
 
   const onSubmit = async () => {
-    dispatch({ type: 'CLEAR_ERRORS' });
+    dispatch({ type: "CLEAR_ERRORS" });
+    let hasError = false;
     if (!state.title) {
-      dispatch({ type: 'SET_ERROR', payload: { field: 'title', message: 'Title is required' } });
+      dispatch({
+        type: "SET_ERROR",
+        payload: { field: "title", message: "Title is required" },
+      });
+      hasError = true;
       return;
     }
 
+    if (state.reminder && !state.reminderDate) {
+      dispatch({
+        type: "SET_ERROR",
+        payload: {
+          field: "reminderDate",
+          message: "For reminders, time is required",
+        },
+      });
+      hasError = true;
+      return;
+    }
+
+    if (hasError) return;
     let newTask: Task = {
       id: editingTask ? editingTask.id : randomUUID(),
       title: state.title,
@@ -94,13 +125,19 @@ export const useTaskForm = ({ tasks, setTasks, editingTask, onClose }: UseTaskFo
       reminder: state.reminder,
       reminderDate: state.reminderDate,
       notificationId: editingTask ? editingTask.notificationId : undefined,
-      priority: state.priority as Task['priority'],
+      priority: state.priority as Task["priority"],
       completed: editingTask ? editingTask.completed : false,
       tags: state.tags,
     };
 
-    if (editingTask && editingTask.notificationId) {
-      await cancelReminder(editingTask.notificationId);
+    if(editingTask && editingTask.reminder && !newTask.reminder){
+      if(editingTask.notificationId)
+      await cancelReminder(editingTask.notificationId)
+    }
+
+    if(editingTask && editingTask.reminderDate?.toTimeString()!==newTask.reminderDate?.toTimeString()){
+    if(editingTask.notificationId)
+      await cancelReminder(editingTask.notificationId)
     }
 
     if (newTask.reminder) {
@@ -115,7 +152,7 @@ export const useTaskForm = ({ tasks, setTasks, editingTask, onClose }: UseTaskFo
     }
 
     onClose();
-    dispatch({ type: 'RESET' });
+    dispatch({ type: "RESET" });
   };
 
   return { state, updateField, onSubmit, dispatch };

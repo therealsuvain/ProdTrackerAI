@@ -46,18 +46,23 @@ export default function HabitModal({
       contentContainerStyle={styles.modal}
     >
       <TextInput
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         label="Habit Name"
         mode="outlined"
         activeOutlineColor="#f1b718ff"
         value={state.title}
         onChangeText={(text) => updateField("title", text)}
       />
+          {state.errors?.title && (
+            <Text style={styles.error}>{state.errors.title}</Text>
+          )}
 
       <SegmentedButtons
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         value={state.frequency}
-        onValueChange={(val) => updateField("frequency", val as "daily" | "weekly")}
+        onValueChange={(val) =>
+          updateField("frequency", val as "daily" | "weekly")
+        }
         buttons={[
           {
             value: "daily",
@@ -74,7 +79,7 @@ export default function HabitModal({
         ]}
       />
       <TextInput
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         label="Goal"
         mode="outlined"
         activeOutlineColor="#f1b718ff"
@@ -98,7 +103,7 @@ export default function HabitModal({
               mode="elevated"
               buttonColor="#503c06ff"
               textColor="#f1b718ff"
-              style={{ marginVertical: 2.5 }}
+              style={styles.verticalMargin}
               onPress={() => setShowTimePicker(true)}
             >
               Pick Time
@@ -107,6 +112,9 @@ export default function HabitModal({
             <Text style={styles.text}>
               {state.reminderDate?.toLocaleTimeString()}
             </Text>
+            {state.errors?.reminderDate && (
+              <Text style={styles.error}>{state.errors.reminderDate}</Text>
+            )}
             {showTimePicker && (
               <DateTimePicker
                 value={state.reminderDate || new Date()}
@@ -118,7 +126,7 @@ export default function HabitModal({
         )}
       </View>
       <Button
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         mode="elevated"
         buttonColor="#503c06ff"
         textColor="#f1b718ff"
@@ -127,7 +135,7 @@ export default function HabitModal({
         Save
       </Button>
       <Button
-        style={{ marginVertical: 2.5 }}
+        style={styles.verticalMargin}
         mode="elevated"
         buttonColor="#503c06ff"
         textColor="#f1b718ff"
@@ -155,4 +163,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   text: { color: "#f1b718ff", marginLeft: 10 },
+  error: { color: "#ff6b6b", fontSize: 12 },
+  verticalMargin: { marginVertical: 2.5 },
 });

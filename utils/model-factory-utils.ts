@@ -114,7 +114,8 @@ export const createEvent = (
         ? params.recurrence
         : "none",
       category: params.category || "",
-      notificationId: undefined,
+      deletedOccurrences:params.deletedOccurrences||[],
+      notificationIds: params.notificationIds || undefined,
     };
   } catch (err: any) {
     throw new Error(`Invalid Event params: ${err.message}`);

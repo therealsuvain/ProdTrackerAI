@@ -25,6 +25,7 @@ import {
   dummyTimerLogs,
   dummyHabits,
 } from "../data/dummyData";
+import { cancelReminder } from "@/hooks/use-notifications";
 
 interface DataContextType {
   tasks: Task[];
@@ -41,6 +42,7 @@ interface DataContextType {
   } | null;
   dispatchError:(err: Error | string, type: "warning" | "fatal") => void
   clearError: () => void
+  deleteEventOccurrence: (eventId: string, date: string, all: boolean) => Promise<void>
 }
 
 export const DataContext = createContext<DataContextType | undefined>(
@@ -74,6 +76,36 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   );
 
   const clearError = useCallback(() => setError(null), []);
+
+   const deleteEventOccurrence = async (eventId: string, date: string, all: boolean) => {
+    setEvents(prev => {
+      const updated = prev.map(event => {
+        if (event.id !== eventId) return event;
+
+        if (all) {
+          // cancel all notifications
+          event.notificationIds?.forEach(n => cancelReminder(n.id));
+          return null; // mark for deletion
+        }
+
+        // cancel only the notification for that date
+        const notifId = event.notificationIds?.find(n => n.date === date)?.id;
+        if (notifId) cancelReminder(notifId);
+
+        return {
+          ...event,
+          deletedOccurrences: [
+            ...(event.deletedOccurrences || []),
+            date,
+          ],
+          notificationIds: event.notificationIds?.filter(n => n.date !== date),
+        };
+      });
+
+      // remove nulls if "all" deleted
+      return updated.filter((e): e is CalendarEvent => e !== null);
+    });
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -109,7 +141,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveEvents(events);
-    console.log("DATA EVENTS",events)
+    console.log("DATA EVENTS",events/* [0]?.notificationIds */)
   }, [events, loaded]);
 
   useEffect(() => {
@@ -137,6 +169,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         error,
         dispatchError,
         clearError,
+        deleteEventOccurrence
       }}
     >
       {children}

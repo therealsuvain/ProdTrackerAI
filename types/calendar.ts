@@ -5,10 +5,11 @@ export interface CalendarEvent {
   endDate: Date ;
   startTime: Date;
   endTime: Date ;
-  description: string | undefined;
+  description?: string ;
   reminder: boolean; // For notifications
   recurrence: 'none'|'daily'|'weekly'  //  For repeating events
-  notificationId: string | undefined; // To track/cancel reminders
-  category: string | undefined; // e.g., 'work', 'personal' for colors
+  notificationIds?: {date: string, id:string}[]; // To track/cancel reminders
+  category?: string  // e.g., 'work', 'personal' for colors
+  deletedOccurrences?: string[]; // To track deleted instances in recurring events
 }
 

@@ -13,6 +13,7 @@ import Fuse from "fuse.js";
 import { CalendarEvent } from "@/types/calendar";
 import { Habit } from "@/types/habits";
 import {
+  cancelReminder,
   scheduleReminderEvents,
   scheduleReminderHabits,
   scheduleReminderTasks,
@@ -239,7 +240,7 @@ export const executeSingleIntent = async (
     navigation,
   }: any
 ) => {
-  const { intent: type, params , searchQuery} = intent;
+  const { intent: type, params, searchQuery } = intent;
   switch (type) {
     case "add_task":
       const newTask = createTask(params);
@@ -247,7 +248,7 @@ export const executeSingleIntent = async (
         const notifId = await scheduleReminderTasks(newTask);
         newTask.notificationId = notifId;
       }
-      setTasks((prevTasks:Task[])=>[...prevTasks, newTask]);
+      setTasks((prevTasks: Task[]) => [...prevTasks, newTask]);
       break;
     case "edit_task":
     case "delete_task":
@@ -268,12 +269,16 @@ export const executeSingleIntent = async (
           const notifId = await scheduleReminderTasks(updated);
           updated.notificationId = notifId;
         }
-        setTasks((ptasks:Task[])=>ptasks.map((t: any) => (t.id === targetTask.id ? updated : t)));
+        setTasks((ptasks: Task[]) =>
+          ptasks.map((t: any) => (t.id === targetTask.id ? updated : t))
+        );
       } else if (type === "delete_task") {
-        setTasks((ptasks:Task[])=>ptasks.filter((t: any) => t.id !== targetTask.id));
+        setTasks((ptasks: Task[]) =>
+          ptasks.filter((t: any) => t.id !== targetTask.id)
+        );
       } else if (type === "complete_task") {
-        setTasks(
-          (ptasks:Task[])=>ptasks.map((t: any) =>
+        setTasks((ptasks: Task[]) =>
+          ptasks.map((t: any) =>
             t.id === targetTask.id ? { ...t, completed: true } : t
           )
         );
@@ -282,15 +287,15 @@ export const executeSingleIntent = async (
     case "add_event":
       const newEvent = createEvent(params);
       if (newEvent.reminder) {
-        const notifId = await scheduleReminderEvents(newEvent);
-        newEvent.notificationId = notifId;
+        const notifIds = await scheduleReminderEvents(newEvent);
+        newEvent.notificationIds = notifIds;
       }
-      setEvents((pevents:CalendarEvent[])=>[...pevents, newEvent]);
+      setEvents((pevents: CalendarEvent[]) => [...pevents, newEvent]);
 
       break;
     case "edit_event":
     case "delete_event":
-      const eventSearchKey =  searchQuery || "";
+      const eventSearchKey = searchQuery || "";
       const eventFuse = new Fuse<CalendarEvent>(events, {
         keys: ["title", "description"],
         threshold: 0.6,
@@ -300,17 +305,36 @@ export const executeSingleIntent = async (
       const targetEvent = eventMatches[0].item;
       if (type === "edit_event") {
         const updatedEvent = createEvent({ ...targetEvent, ...params });
-        if (updatedEvent.reminder && !updatedEvent.notificationId) {
-          const notifId = await scheduleReminderEvents(updatedEvent);
-          updatedEvent.notificationId = notifId;
+
+        if (updatedEvent.reminder && !updatedEvent.notificationIds) {
+          const notifIds = await scheduleReminderEvents(updatedEvent);
+          updatedEvent.notificationIds = notifIds;
         }
-        setEvents(
-          (pevents:CalendarEvent[])=>pevents.map((e: CalendarEvent) =>
+        if (
+          (updatedEvent.startDate.toDateString() !==
+            targetEvent.startDate.toDateString() ||
+          updatedEvent.endDate.toDateString() !==
+            targetEvent.endDate.toDateString() ||
+          updatedEvent.startTime.toTimeString() !==
+            targetEvent.startTime.toTimeString() ||
+          updatedEvent.endTime.toTimeString() !==
+            targetEvent.endTime.toTimeString() ||
+          updatedEvent.recurrence !== targetEvent.recurrence) &&
+          targetEvent.notificationIds
+        ) {
+          targetEvent.notificationIds.forEach((n) => cancelReminder(n.id));
+          const notifIds = await scheduleReminderEvents(updatedEvent);
+          updatedEvent.notificationIds = notifIds;
+        }
+        setEvents((pevents: CalendarEvent[]) =>
+          pevents.map((e: CalendarEvent) =>
             e.id === targetEvent.id ? updatedEvent : e
           )
         );
       } else {
-        setEvents((pevents:CalendarEvent[])=>pevents.filter((e: CalendarEvent) => e.id !== targetEvent.id));
+        setEvents((pevents: CalendarEvent[]) =>
+          pevents.filter((e: CalendarEvent) => e.id !== targetEvent.id)
+        );
       }
       break;
     case "add_habit":
@@ -319,12 +343,12 @@ export const executeSingleIntent = async (
         const notifId = await scheduleReminderHabits(newHabit);
         newHabit.notificationId = notifId;
       }
-      setHabits((phabits:Habit[])=>[...phabits, newHabit]);
+      setHabits((phabits: Habit[]) => [...phabits, newHabit]);
       break;
     case "edit_habit":
     case "delete_habit":
     case "checkin_habit":
-      const habitSearchKey =  searchQuery || "";
+      const habitSearchKey = searchQuery || "";
       const habitFuse = new Fuse<Habit>(habits, {
         keys: ["title"],
         threshold: 0.6,
@@ -343,23 +367,26 @@ export const executeSingleIntent = async (
           const notifId = await scheduleReminderHabits(updatedHabit);
           updatedHabit.notificationId = notifId;
         }
-        setHabits(
-          (phabits:Habit[])=>phabits.map((h: Habit) => (h.id === targetHabit.id ? updatedHabit : h))
+        setHabits((phabits: Habit[]) =>
+          phabits.map((h: Habit) =>
+            h.id === targetHabit.id ? updatedHabit : h
+          )
         );
       } else {
-        setHabits((phabits:Habit[])=>phabits.filter((h: Habit) => h.id !== targetHabit.id));
+        setHabits((phabits: Habit[]) =>
+          phabits.filter((h: Habit) => h.id !== targetHabit.id)
+        );
       }
       break;
     case "add_log":
       const newLog = createTimerLog(params);
-      setTimerLogs((ptimerLogs:TimerLog[])=>[...ptimerLogs, newLog]);
+      setTimerLogs((ptimerLogs: TimerLog[]) => [...ptimerLogs, newLog]);
       break;
     case "edit_log":
     case "delete_log":
     case "start_timer":
       setTitle(params.title);
       start();
-      console.log("In it");
       navigation.navigate("timer-screen");
       break;
     case "stop_timer":
