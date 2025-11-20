@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -15,16 +15,15 @@ import { useData } from "../../hooks/use-data";
 import ViewSwitcher from "../../components/ui/view-switcher-event";
 import { useCalendarState } from "../../hooks/use-calendar-state";
 import { useEventForm } from "../../hooks/use-event-form";
-import {
-  cancelReminder,
-} from "../../hooks/use-notifications";
 import { CalendarEvent } from "@/types/calendar";
 import { Ionicons } from "@expo/vector-icons";
 import Timeline from "@/components/ui/calendar-events/calendar-timeline-view";
 import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-list-agenda-view-main";
 import CalendarEventModal from "@/components/modal/calendar-event-modal";
+import { ThemeContext } from "@/context/ThemeContext";
 
 export default function CalendarScreen() {
+  const {theme } = useContext(ThemeContext)
   const { events, setEvents , deleteEventOccurrence} = useData();
   const {
     currentView,
@@ -72,7 +71,7 @@ export default function CalendarScreen() {
     <Provider>
       <View style={styles.container}>
         <Pressable
-          style={styles.header}
+          style={[styles.header,{backgroundColor:theme.eventBase}]}
           onPress={() => setSelectedDate(new Date())}
         >
           <Ionicons size={40} name="calendar"></Ionicons>
@@ -100,7 +99,7 @@ export default function CalendarScreen() {
           onDelete={handleDelete}
         />
       )}
-      <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
+      <FAB style={[styles.fab,{backgroundColor:theme.eventBase}]} icon="plus" onPress={() => showModal()} />
       <Portal>
         <CalendarEventModal
           visible={visible}
@@ -116,7 +115,6 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: "#f86055ff",
     borderRadius: 30,
     width: 60,
     height: 60,
@@ -131,6 +129,5 @@ const styles = StyleSheet.create({
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: "#F44336",
   },
 });

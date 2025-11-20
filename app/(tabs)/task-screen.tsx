@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import {
   Alert,
   TouchableOpacity,
@@ -23,8 +23,12 @@ import TaskItem from "@/components/ui/tasks/task-item";
 import { cancelReminder } from "@/hooks/use-notifications";
 import TaskModal from "@/components/modal/task-modal";
 import { useTaskForm } from "@/hooks/use-task-form";
+import {ThemeContext} from "@/context/ThemeContext";
+
+
 
 export default function TaskScreen() {
+  const {theme} = useContext(ThemeContext)
   const { tasks, setTasks } = useData();
   const [visible, setVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -113,7 +117,7 @@ export default function TaskScreen() {
             </Button>
 
             {showSortOptions && (
-              <View style={styles.menu}>
+              <View style={[styles.menu,{backgroundColor:theme.taskDarkSecondary}]}>
                 <Button
                   mode="text"
                   onPress={() => {
@@ -209,7 +213,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 40,
     left: 160,
-    backgroundColor: "#2d2a30ff",
     borderRadius: 8,
     padding: 8,
     width: 150,
@@ -229,14 +232,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  modal: {
-    backgroundColor: "#2d2a30ff",
-    padding: 20,
-    margin: 20,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#1e1c20ff",
-  },
   noTasks: { textAlign: "center", marginTop: 20 },
   switchContainer: {
     flexDirection: "row",
@@ -244,5 +239,4 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     marginHorizontal: 5,
   },
-  text: { color: "#8f67d4ff", marginLeft: 10 },
 });

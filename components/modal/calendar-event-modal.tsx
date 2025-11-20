@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import {
   Modal,
@@ -8,6 +8,7 @@ import {
   Switch,
 } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { ThemeContext } from "@/context/ThemeContext";
 
 interface Props {
   visible: boolean;
@@ -37,6 +38,7 @@ export default function CalendarEventModal({
   updateField,
   onSubmit,
 }: Props) {
+  const { theme } = useContext(ThemeContext);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [showAndroidStartTimePicker, setShowAndroidStartTimerPicker] =
@@ -55,10 +57,11 @@ export default function CalendarEventModal({
     setShowAndroidStartTimerPicker(false);
     let varTime;
     if (selected)
-      varTime =
-        androidDate?androidDate:state.startDate.toISOString().split("T")[0] +
-        "T" +
-        selected.toISOString().split("T")[1];
+      varTime = androidDate
+        ? androidDate
+        : state.startDate.toISOString().split("T")[0] +
+          "T" +
+          selected.toISOString().split("T")[1];
     updateField("startTime", new Date(varTime!));
   };
   const onEndChange = (event: any, selected?: Date) => {
@@ -71,10 +74,11 @@ export default function CalendarEventModal({
     setShowAndroidEndTimerPicker(false);
     let varTime;
     if (selected)
-      varTime =
-        androidDate?androidDate:state.startDate.toISOString().split("T")[0] +
-        "T" +
-        selected.toISOString().split("T")[1];
+      varTime = androidDate
+        ? androidDate
+        : state.startDate.toISOString().split("T")[0] +
+          "T" +
+          selected.toISOString().split("T")[1];
     updateField("endTime", new Date(varTime!));
   };
 
@@ -82,23 +86,29 @@ export default function CalendarEventModal({
     <Modal
       visible={visible}
       onDismiss={onDismiss}
-      contentContainerStyle={styles.modal}
+      contentContainerStyle={[
+        styles.modal,
+        {
+          backgroundColor: theme.eventDarkPrimary,
+          borderColor: theme.eventDarkSecondary,
+        },
+      ]}
     >
       <TextInput
         label="Title"
         value={state.title}
         mode="outlined"
         style={styles.verticalMargin}
-        activeOutlineColor="#F44336"
+        activeOutlineColor={theme.eventBase}
         onChangeText={(text) => updateField("title", text)}
       />
       {state.errors?.title && (
-        <Text style={styles.error}>{state.errors.title}</Text>
+        <Text style={[styles.error,{color:theme.error}]}>{state.errors.title}</Text>
       )}
       <Button
         mode="elevated"
-        buttonColor="#411310ff"
-        textColor="#F44336"
+        buttonColor={theme.eventDarkSecondary}
+        textColor={theme.eventBase}
         style={styles.verticalMargin}
         onPress={() => {
           setShowStartPicker(true);
@@ -106,11 +116,11 @@ export default function CalendarEventModal({
       >
         Pick Date
       </Button>
-      <Text style={styles.text}>
+      <Text style={[styles.text,{color:theme.eventBase}]}>
         Start: {state.startDate?.toDateString() || ""}
       </Text>
       {state.errors?.startDate && (
-        <Text style={styles.error}>{state.errors.startDate}</Text>
+        <Text style={[styles.error,{color:theme.error}]}>{state.errors.startDate}</Text>
       )}
       {showStartPicker && (
         <DateTimePicker
@@ -122,8 +132,8 @@ export default function CalendarEventModal({
       <View style={{ flexDirection: "row" }}>
         <Button
           mode="elevated"
-          buttonColor="#411310ff"
-          textColor="#F44336"
+          buttonColor={theme.eventDarkSecondary}
+          textColor={theme.eventBase}
           style={{ marginVertical: 2.5, width: "50%" }}
           onPress={() => {
             setShowAndroidStartTimerPicker(true);
@@ -133,8 +143,8 @@ export default function CalendarEventModal({
         </Button>
         <Button
           mode="elevated"
-          buttonColor="#411310ff"
-          textColor="#F44336"
+          buttonColor={theme.eventDarkSecondary}
+          textColor={theme.eventBase}
           style={{ marginVertical: 2.5, width: "50%" }}
           onPress={() => {
             setShowAndroidEndTimerPicker(true);
@@ -144,17 +154,17 @@ export default function CalendarEventModal({
         </Button>
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={styles.text}>
+        <Text style={[styles.text,{color:theme.eventBase}]}>
           Start: {state.startTime?.toLocaleTimeString() || ""}
         </Text>
         {state.errors?.startTime && (
-          <Text style={styles.error}>{state.errors.startTime}</Text>
+          <Text style={[styles.error,{color:theme.error}]}>{state.errors.startTime}</Text>
         )}
-        <Text style={styles.text}>
+        <Text style={[styles.text,{color:theme.eventBase}]}>
           End: {state.endTime?.toLocaleTimeString() || ""}
         </Text>
         {state.errors?.endTime && (
-          <Text style={styles.error}>{state.errors.endTime}</Text>
+          <Text style={[styles.error,{color:theme.error}]}>{state.errors.endTime}</Text>
         )}
       </View>
       {showAndroidStartTimePicker && (
@@ -173,8 +183,8 @@ export default function CalendarEventModal({
       )}
       <Button
         mode="elevated"
-        buttonColor="#411310ff"
-        textColor="#F44336"
+        buttonColor={theme.eventDarkSecondary}
+        textColor={theme.eventBase}
         style={styles.verticalMargin}
         onPress={() => {
           setShowEndPicker(true);
@@ -182,11 +192,11 @@ export default function CalendarEventModal({
       >
         Pick End Date
       </Button>
-      <Text style={styles.text}>
+      <Text style={[styles.text,{color:theme.eventBase}]}>
         End: {state.endDate?.toDateString() || ""}
       </Text>
       {state.errors?.endDate && (
-        <Text style={styles.error}>{state.errors.endDate}</Text>
+        <Text style={[styles.error,{color:theme.error}]}>{state.errors.endDate}</Text>
       )}
       {showEndPicker && (
         <DateTimePicker
@@ -199,23 +209,23 @@ export default function CalendarEventModal({
         label="Description"
         value={state.description || ""}
         mode="outlined"
-        activeOutlineColor="#F44336"
+        activeOutlineColor={theme.eventBase}
         style={styles.verticalMargin}
         onChangeText={(text) => updateField("description", text)}
         multiline
       />
       <View style={styles.switchContainer}>
-        <Text style={styles.text}>Set Reminder</Text>
+        <Text style={[styles.text,{color:theme.eventBase}]}>Set Reminder</Text>
         <Switch
           value={state.reminder}
-          thumbColor="#F44336"
-          trackColor={{ false: "#ffffff", true: "#f443367a" }}
+          thumbColor={theme.eventBase}
+          trackColor={{ false: theme.whiteBase, true: theme.eventBase }}
           onValueChange={(val) => {
             updateField("reminder", val);
           }}
         />
       </View>
-      <Text style={styles.text}>Recurrence</Text>
+      <Text style={[styles.text,{color:theme.eventBase}]}>Recurrence</Text>
       <SegmentedButtons
         style={styles.verticalMargin}
         value={state.recurrence ? state.recurrence : "none"}
@@ -226,20 +236,20 @@ export default function CalendarEventModal({
           {
             value: "none",
             label: "None",
-            checkedColor: "#F44336",
-            style: { backgroundColor: "#411310ff" },
+            checkedColor: theme.eventBase,
+            style: { backgroundColor: theme.eventDarkSecondary },
           },
           {
             value: "daily",
             label: "Daily",
-            checkedColor: "#F44336",
-            style: { backgroundColor: "#411310ff" },
+            checkedColor: theme.eventBase,
+            style: { backgroundColor: theme.eventDarkSecondary },
           },
           {
             value: "weekly",
             label: "Weekly",
-            checkedColor: "#F44336",
-            style: { backgroundColor: "#411310ff" },
+            checkedColor: theme.eventBase,
+            style: { backgroundColor: theme.eventDarkSecondary },
           },
         ]}
       />
@@ -247,14 +257,14 @@ export default function CalendarEventModal({
         label="Category"
         value={state.category || ""}
         mode="outlined"
-        activeOutlineColor="#F44336"
+        activeOutlineColor={theme.eventBase}
         style={styles.verticalMargin}
         onChangeText={(text) => updateField("category", text)}
       />
       <Button
         mode="elevated"
-        buttonColor="#411310ff"
-        textColor="#F44336"
+        buttonColor={theme.eventDarkSecondary}
+        textColor={theme.eventBase}
         style={styles.verticalMargin}
         onPress={onSubmit}
       >
@@ -262,8 +272,8 @@ export default function CalendarEventModal({
       </Button>
       <Button
         mode="elevated"
-        buttonColor="#411310ff"
-        textColor="#F44336"
+        buttonColor={theme.eventDarkSecondary}
+        textColor={theme.eventBase}
         style={styles.verticalMargin}
         onPress={onDismiss}
       >
@@ -275,19 +285,17 @@ export default function CalendarEventModal({
 
 const styles = StyleSheet.create({
   modal: {
-    backgroundColor: "#36100dff",
     padding: 20,
     margin: 20,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#411310ff",
   },
-  error: { color: "red", fontSize: 12 },
+  error: { fontSize: 12 },
   switchContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginVertical: 8,
   },
-  text: { color: "#F44336", marginVertical: 2.5 },
-  verticalMargin:{marginVertical:2.5},
+  text: { marginVertical: 2.5 },
+  verticalMargin: { marginVertical: 2.5 },
 });

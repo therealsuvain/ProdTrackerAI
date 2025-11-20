@@ -1,4 +1,6 @@
+import { ThemeContext } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
+import { useContext } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 type XButtonProps = {
@@ -9,28 +11,29 @@ type XButtonProps = {
 };
 
 export default function XButton({ icon, onPress, mode, size }: XButtonProps) {
+  const {theme }= useContext(ThemeContext)
   const light = () => {
     if (mode === "timer") {
-      return "#6ac9b1ff";
+      return theme.timerBaseTrans;
     } else if(mode === "habit"){
-      return "#f1b71879"
+      return theme.habitBaseTrans
     }else if(mode === "calendar"){
-      return "#f4433677"
+      return theme.eventBaseTrans
     }else {
-      return "#7957b3ff";
+      return theme.taskBaseTrans;
     }
   };
 
   
   const dark = () => {
     if (mode === "timer") {
-      return "#05ce9cff";
+      return theme.timerBase;
     } else if(mode === "habit"){
-      return "#f1b718ff"
+      return theme.habitBase
     }else if(mode === "calendar"){
-      return "#F44336"
+      return theme.eventBase
     }else {
-      return "#673AB7";
+      return theme.taskBase;
     }
   };
   const pressedFunc = ({ pressed }: { pressed: boolean }) => [

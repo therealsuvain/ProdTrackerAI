@@ -1,19 +1,18 @@
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useRef, useEffect, useContext } from "react";
 import {
   View,
   StyleSheet,
   ScrollView,
   Text,
-  Dimensions,
   TouchableOpacity,
 } from "react-native";
 import { CalendarEvent } from "@/types/calendar";
-import EventItem from "./event-item";
+import { ThemeContext } from "@/context/ThemeContext";
 
 interface TimelineProps {
   events: CalendarEvent[];
   onEventSelect?: (event: CalendarEvent) => void;
-  onDelete?: (id: string, date:string) => void;
+  onDelete?: (id: string, date: string) => void;
   selectedDate: Date;
 }
 
@@ -27,29 +26,16 @@ export default function Timeline({
   onDelete,
   selectedDate,
 }: TimelineProps) {
+  const { theme } = useContext(ThemeContext);
   const scrollViewRef = useRef<ScrollView>(null);
-
   // Separate all-day events and timed events
-  const { allDayEvents, timedEvents } = useMemo(() => {
-    const allDay: CalendarEvent[] = [];
+  const { timedEvents } = useMemo(() => {
     const timed: CalendarEvent[] = [];
 
     events.forEach((event) => {
-      // Check if event is all-day (endTime is missing or starts at midnight)
-      const isAllDay =
-        !event.endTime ||
-        (event.startTime.getHours() === 0 &&
-          event.startTime.getMinutes() === 0 &&
-          event.endTime.getHours() === 0 &&
-          event.endTime.getMinutes() === 0);
-
-      if (isAllDay) {
-        allDay.push(event);
-      } else {
-        timed.push(event);
-      }
+      timed.push(event);
     });
-    return { allDayEvents: allDay, timedEvents: timed };
+    return { timedEvents: timed };
   }, [events]);
 
   // Sort timed events by start time
@@ -62,11 +48,8 @@ export default function Timeline({
   // Calculate position and height for each event
   const eventPositions = useMemo(() => {
     return sortedTimedEvents.map((event) => {
-      const startHour =
-        event.startTime.getHours() ;
-      const endHour = event.endTime
-        ? event.endTime.getHours() 
-        : startHour + 1; // Default 1 hour if no end time
+      const startHour = event.startTime.getHours();
+      const endHour = event.endTime ? event.endTime.getHours() : startHour + 1; // Default 1 hour if no end time
 
       return {
         event,
@@ -79,8 +62,7 @@ export default function Timeline({
   // Scroll to current time or first event on mount
   useEffect(() => {
     const now = new Date();
-    const isToday =
-      now.toDateString() === selectedDate.toDateString();
+    const isToday = now.toDateString() === selectedDate.toDateString();
 
     setTimeout(() => {
       if (isToday) {
@@ -103,10 +85,15 @@ export default function Timeline({
     const hours = [];
     for (let i = TIMELINE_START; i < TIMELINE_END; i++) {
       hours.push(
-        <View key={`slot-${i}`} style={[styles.timeSlot, styles.hourSlot]}>
-          <Text style={styles.timeText}>
-            {String(i).padStart(2, "0")}:00
-          </Text>
+        <View
+          key={`slot-${i}`}
+          style={[
+            styles.timeSlot,
+            styles.hourSlot,
+            { borderBottomColor: theme.greyBaseSecondary },
+          ]}
+        >
+          <Text style={[styles.timeText,{color:theme.greyBasePrimary}]}>{String(i).padStart(2, "0")}:00</Text>
         </View>
       );
     }
@@ -123,30 +110,32 @@ export default function Timeline({
             top,
             height,
             backgroundColor: getCategoryColor(event.category),
-            opacity:0.75
+            opacity: 0.75,
           },
         ]}
         onPress={() => onEventSelect?.(event)}
       >
         <View style={styles.eventContent}>
-          <View style={{flexDirection:'row', justifyContent:"space-between"}}>
-          <Text style={styles.eventTitle} numberOfLines={2}>
-            {event.title}
-          </Text>
-          <Text style={styles.eventTime} numberOfLines={1}>
-            {event.startTime.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-            {event.endTime &&
-              ` - ${event.endTime.toLocaleTimeString([], {
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <Text style={[styles.eventTitle,{color:theme.whiteBase}]} numberOfLines={2}>
+              {event.title}
+            </Text>
+            <Text style={[styles.eventTime,{color:theme.whiteBaseTrans}]} numberOfLines={1}>
+              {event.startTime.toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
-              })}`}
-          </Text>
+              })}
+              {event.endTime &&
+                ` - ${event.endTime.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}`}
+            </Text>
           </View>
           {event.description && (
-            <Text style={styles.eventDescription} numberOfLines={1}>
+            <Text style={[styles.eventDescription,{color:theme.whiteBaseTrans}]} numberOfLines={1}>
               {event.description}
             </Text>
           )}
@@ -157,32 +146,12 @@ export default function Timeline({
 
   const hasEvents = events.length > 0;
 
-  const date = selectedDate.toISOString().split('T')[0]
+  const date = selectedDate.toISOString().split("T")[0];
 
   return (
-    <View style={styles.container}>
-      {/* All-day events section */}
-      {allDayEvents.length > 0 && (
-        <View style={styles.allDayContainer}>
-          <Text style={styles.allDayHeader}>All Day</Text>
-          <View style={styles.allDayEvents}>
-            {allDayEvents.map((event) => (
-              <TouchableOpacity
-                key={event.id}
-                onPress={() => onEventSelect?.(event)}
-                style={styles.allDayEventItem}
-              >
-                <EventItem
-                  event={event}
-                  onEdit={() => onEventSelect?.(event)}
-                  onDelete={() => onDelete?.(event.id, date)}
-                />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      )}
-
+    <View
+      style={[styles.container, { backgroundColor: theme.modalDarkPrimary }]}
+    >
       {/* Timed events timeline */}
       <ScrollView
         ref={scrollViewRef}
@@ -190,9 +159,18 @@ export default function Timeline({
         scrollEnabled={true}
         showsVerticalScrollIndicator={true}
       >
-        <View style={styles.timeline}>
+        <View
+          style={[styles.timeline, { backgroundColor: theme.modalDarkPrimary }]}
+        >
           {/* Time slots */}
-          <View style={styles.timeColumn}>{renderTimeSlots()}</View>
+          <View
+            style={[
+              styles.timeColumn,
+              { borderRightColor: theme.greyBaseSecondary, backgroundColor:theme.greyTimeline },
+            ]}
+          >
+            {renderTimeSlots()}
+          </View>
 
           {/* Events container */}
           <View style={styles.eventsColumn}>
@@ -204,19 +182,25 @@ export default function Timeline({
                   style={[
                     styles.timeSlot,
                     styles.gridLine,
-                    i === 0 ? styles.firstGridLine : {},
+                    {borderBottomColor:theme.greyBaseSecondary}
+                    
                   ]}
                 />
               )
             )}
 
-            {/* Events */}
             {renderEvents()}
 
-            {/* No events message */}
             {!hasEvents && (
               <View style={styles.noEventsContainer}>
-                <Text style={styles.noEventsText}>No events scheduled</Text>
+                <Text
+                  style={[
+                    styles.noEventsText,
+                    { color: theme.greyBasePrimary },
+                  ]}
+                >
+                  No events scheduled
+                </Text>
               </View>
             )}
           </View>
@@ -226,21 +210,20 @@ export default function Timeline({
   );
 }
 
-// Helper function to get color based on category
 const getCategoryColor = (category?: string): string => {
-
-
   // Generate random shade of red (R: 200-255, G: 0-100, B: 0-100)
-  const red = Math.floor(Math.random() * 56) + 200;    // 200-255
-  const green = Math.floor(Math.random() * 100);       // 0-100
-  const blue = Math.floor(Math.random() * 100);        // 0-100
+  const red = Math.floor(Math.random() * 56) + 200; // 200-255
+  const green = Math.floor(Math.random() * 100); // 0-100
+  const blue = Math.floor(Math.random() * 100); // 0-100
 
   const colorMap: Record<string, string> = {
     work: "#FF6B6B",
     personal: "#4ECDC4",
     health: "#45B7D1",
     social: "#FFA07A",
-    default: `#${red.toString(16).padStart(2, "0")}${green.toString(16).padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`,
+    default: `#${red.toString(16).padStart(2, "0")}${green
+      .toString(16)
+      .padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`,
   };
   return colorMap[category || "default"] || colorMap.default;
 };
@@ -248,37 +231,16 @@ const getCategoryColor = (category?: string): string => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1a1a1a",
-  },
-  allDayContainer: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
-    padding: 8,
-  },
-  allDayHeader: {
-    color: "#F44336",
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  allDayEvents: {
-    gap: 4,
-  },
-  allDayEventItem: {
-    marginBottom: 4,
   },
   timelineContainer: {
     flex: 1,
   },
   timeline: {
     flexDirection: "row",
-    backgroundColor: "#1a1a1a",
   },
   timeColumn: {
     width: 60,
     borderRightWidth: 1,
-    borderRightColor: "#333",
-    backgroundColor: "#2d2a30",
   },
   eventsColumn: {
     flex: 1,
@@ -292,16 +254,13 @@ const styles = StyleSheet.create({
   },
   hourSlot: {
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
   },
   timeText: {
-    color: "#888",
     fontSize: 12,
     fontWeight: "500",
   },
   gridLine: {
     borderBottomWidth: 1,
-    borderBottomColor: "#2a2a2a",
   },
   firstGridLine: {
     borderBottomWidth: 0,
@@ -319,18 +278,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   eventTitle: {
-    color: "#fff",
     fontSize: 13,
     fontWeight: "600",
     marginBottom: 2,
   },
   eventTime: {
-    color: "rgba(255, 255, 255, 0.8)",
     fontSize: 11,
     marginBottom: 4,
   },
   eventDescription: {
-    color: "rgba(255, 255, 255, 0.6)",
     fontSize: 10,
   },
   noEventsContainer: {
@@ -340,7 +296,6 @@ const styles = StyleSheet.create({
     minHeight: HOUR_HEIGHT * 6,
   },
   noEventsText: {
-    color: "#888",
     fontSize: 14,
   },
 });

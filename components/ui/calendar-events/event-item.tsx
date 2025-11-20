@@ -3,6 +3,8 @@ import { Card, Text } from "react-native-paper";
 import XButton from "../XButton";
 import { View, StyleSheet } from "react-native";
 import { useRoute } from '@react-navigation/native';
+import { useContext } from "react";
+import { ThemeContext } from "@/context/ThemeContext";
 
 interface EventItemProps{
     event: CalendarEvent;
@@ -11,15 +13,16 @@ interface EventItemProps{
 }
 
 export default function EventItem({event, onEdit, onDelete}: EventItemProps) {
+    const {theme} = useContext(ThemeContext)
     const route = useRoute();
     const isNotHome = route.name!=="index" 
     return(
-        <Card style={styles.card}>
+        <Card style={[styles.card,{backgroundColor:theme.eventDarkPrimary}]}>
             <Card.Content style={styles.content}>
                 <View>
-                <Text variant='titleMedium'>{event.title}</Text>
-                { !isNotHome && <Text>Start:{event.startTime.toLocaleTimeString()}</Text>}
-                { !isNotHome && <Text>End:{event.endTime.toLocaleTimeString()}</Text>}
+                <Text style={{color:theme.text}}variant='titleMedium'>{event.title}</Text>
+                { !isNotHome && <Text style={{color:theme.text}}>Start:{event.startTime.toLocaleTimeString()}</Text>}
+                { !isNotHome && <Text style={{color:theme.text}}>End:{event.endTime.toLocaleTimeString()}</Text>}
                 </View>
                 <View style={styles.buttonContainer}>
                 { isNotHome && <XButton icon="pencil-outline" mode="calendar" onPress={onEdit}/>}
@@ -31,8 +34,7 @@ export default function EventItem({event, onEdit, onDelete}: EventItemProps) {
 }
 
 const styles = StyleSheet.create({
-    card:{ marginVertical:8, position:"relative" , backgroundColor:"#3b302fff"},
+    card:{ marginVertical:8, position:"relative"},
     content:{flexDirection: 'row', alignItems: 'center', justifyContent:'space-between'},
     buttonContainer:{flexDirection:'row', marginLeft:8},
-    text:{fontSize:16, color:'#fff'},
 })

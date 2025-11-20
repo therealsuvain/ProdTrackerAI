@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -30,6 +30,7 @@ import * as Haptics from "expo-haptics";
 import { useAudioPlayer } from "expo-audio";
 import { Ionicons } from "@expo/vector-icons";
 import LoadingIndicator from "../loading-indicator";
+import { ThemeContext } from "@/context/ThemeContext";
 
 export default function AIVoiceModal({
   visible,
@@ -47,11 +48,11 @@ export default function AIVoiceModal({
   } = useVoiceInput({ IntentProcessor, onDismiss });
 
   // Animated rotation for spinner
+  const { theme } = useContext(ThemeContext);
   const rotate = useRef(new Animated.Value(0)).current;
   const playedSoundRef = useRef(false);
   const audioSource = require("../../assets/audio/record.wav");
   const player = useAudioPlayer(audioSource);
-
 
   // best-effort sound play (attempt expo-av) then fallback to haptics
   const playStartCue = async () => {
@@ -95,7 +96,13 @@ export default function AIVoiceModal({
         <Modal
           visible={visible}
           onDismiss={onDismiss}
-          contentContainerStyle={styles.overlay}
+          contentContainerStyle={[
+            styles.overlay,
+            {
+              backgroundColor: theme.modalBase,
+              borderColor: theme.modalDarkPrimary,
+            },
+          ]}
         >
           <View style={styles.container}>
             <View style={styles.centerArea} pointerEvents="box-none">
@@ -115,11 +122,11 @@ export default function AIVoiceModal({
 
               <TouchableOpacity
                 activeOpacity={0.85}
-                style={styles.micButton}
+                style={[styles.micButton,{backgroundColor:theme.blueDarkPrimary}]}
                 onLongPress={handleStart}
                 onPressOut={handleStop}
               >
-                <Ionicons name="mic" style={styles.micIcon} />
+                <Ionicons name="mic" style={[styles.micIcon,{color:theme.whiteBase}]} />
               </TouchableOpacity>
             </View>
 
@@ -137,8 +144,8 @@ export default function AIVoiceModal({
               <Button
                 mode="contained"
                 style={styles.button}
-                buttonColor="#333"
-                textColor="#fff"
+                buttonColor={theme.greyBasePrimary}
+                textColor={theme.whiteBase}
                 onPress={() => {
                   IntentProcessor(transcript);
                   onDismiss();
@@ -149,8 +156,8 @@ export default function AIVoiceModal({
               <Button
                 mode="contained"
                 style={styles.button}
-                buttonColor="#333"
-                textColor="#fff"
+                buttonColor={theme.greyBasePrimary}
+                textColor={theme.whiteBase}
                 onPress={() => {
                   onDismiss();
                 }}
@@ -159,7 +166,11 @@ export default function AIVoiceModal({
               </Button>
             </View>
 
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            {error ? (
+              <Text style={[styles.errorText, { color: theme.error }]}>
+                {error}
+              </Text>
+            ) : null}
           </View>
         </Modal>
       </KeyboardAvoidingView>
@@ -169,12 +180,10 @@ export default function AIVoiceModal({
 
 const styles = StyleSheet.create({
   overlay: {
-    backgroundColor: "#0d0c0ea2",
     padding: 20,
     margin: 20,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#1e1c20ff",
   },
   container: {
     width: "100%",
@@ -200,18 +209,12 @@ const styles = StyleSheet.create({
     height: 210,
     width: 210,
     borderRadius: 105,
-    backgroundColor: "#0b1220",
     alignItems: "center",
     justifyContent: "center",
     elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
   },
   micIcon: {
     fontSize: 100,
-    color: "#fff",
   },
   inputRow: {
     marginTop: 24,
@@ -224,14 +227,12 @@ const styles = StyleSheet.create({
     marginTop: 16,
     width: "100%",
     justifyContent: "center",
-    
   },
   button: {
-    width:'50%',
+    width: "50%",
     marginHorizontal: 8,
-    borderWidth:2,
-    borderColor: "#00000096"
+    borderWidth: 2,
   },
   loadingRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
-  errorText: { color: "#ff6b6b", marginTop: 8 },
+  errorText: { marginTop: 8 },
 });

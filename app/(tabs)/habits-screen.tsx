@@ -1,5 +1,5 @@
 import { View, StyleSheet, FlatList, Alert } from "react-native";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useData } from "@/hooks/use-data";
 import { Habit } from "@/types/habits";
 import { FAB, Portal, Provider, Text } from "react-native-paper";
@@ -7,8 +7,10 @@ import { LineChart } from "react-native-chart-kit";
 import HabitItem from "@/components/ui/habits/habit-item";
 import HabitModal from "@/components/modal/habit-modal";
 import { useHabitForm } from "@/hooks/use-habit-form";
+import { ThemeContext } from "@/context/ThemeContext";
 
 export default function HabitsScreen() {
+  const {theme}= useContext(ThemeContext)
   const { habits, setHabits } = useData();
   const [visible, setVisible] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
@@ -60,7 +62,7 @@ export default function HabitsScreen() {
           )}
           ListEmptyComponent={<Text>No habits yet-add one</Text>}
         />
-        <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
+        <FAB style={[styles.fab,{backgroundColor:theme.habitBase, borderColor:theme.habitDarkSecondary}]} icon="plus" onPress={() => showModal()} />
       </View>
       <Portal>
         <HabitModal
@@ -82,6 +84,6 @@ const styles = StyleSheet.create({
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: "#f1b718ff",
+    borderWidth:1,
   },
 });

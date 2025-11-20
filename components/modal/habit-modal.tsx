@@ -1,4 +1,9 @@
-import React, { useState, forwardRef, useImperativeHandle } from "react";
+import React, {
+  useState,
+  forwardRef,
+  useImperativeHandle,
+  useContext,
+} from "react";
 import { StyleSheet, View, Text } from "react-native";
 import {
   Button,
@@ -8,6 +13,7 @@ import {
   TextInput,
 } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { ThemeContext } from "@/context/ThemeContext";
 
 interface Props {
   visible: boolean;
@@ -34,7 +40,7 @@ export default function HabitModal({
   onSubmit,
 }: Props) {
   const [showTimePicker, setShowTimePicker] = useState(false);
-
+  const { theme } = useContext(ThemeContext);
   const onTimeChange = (event: any, selectedDate?: Date) => {
     setShowTimePicker(false);
     if (selectedDate) updateField("reminderDate", selectedDate);
@@ -43,19 +49,25 @@ export default function HabitModal({
     <Modal
       visible={visible}
       onDismiss={onDismiss}
-      contentContainerStyle={styles.modal}
+      contentContainerStyle={[
+        styles.modal,
+        {
+          backgroundColor: theme.habitDarkPrimary,
+          borderColor: theme.habitDarkSecondary,
+        },
+      ]}
     >
       <TextInput
         style={styles.verticalMargin}
         label="Habit Name"
         mode="outlined"
-        activeOutlineColor="#f1b718ff"
+        activeOutlineColor={theme.habitBase}
         value={state.title}
         onChangeText={(text) => updateField("title", text)}
       />
-          {state.errors?.title && (
-            <Text style={styles.error}>{state.errors.title}</Text>
-          )}
+      {state.errors?.title && (
+        <Text style={styles.error}>{state.errors.title}</Text>
+      )}
 
       <SegmentedButtons
         style={styles.verticalMargin}
@@ -67,14 +79,14 @@ export default function HabitModal({
           {
             value: "daily",
             label: "Daily",
-            checkedColor: "#f1b718ff",
-            style: { backgroundColor: "#423205ff" },
+            checkedColor: theme.habitBase,
+            style: { backgroundColor: theme.habitDarkSecondary },
           },
           {
             value: "weekly",
             label: "Weekly",
-            checkedColor: "#f1b718ff",
-            style: { backgroundColor: "#423205ff" },
+            checkedColor: theme.habitBase,
+            style: { backgroundColor: theme.habitDarkSecondary },
           },
         ]}
       />
@@ -82,17 +94,19 @@ export default function HabitModal({
         style={styles.verticalMargin}
         label="Goal"
         mode="outlined"
-        activeOutlineColor="#f1b718ff"
+        activeOutlineColor={theme.habitBase}
         value={state.goal}
         onChangeText={(text) => updateField("goal", text)}
         keyboardType="numeric"
       />
       <View style={styles.switchContainer}>
-        <Text style={styles.text}>Set Reminder</Text>
+        <Text style={[styles.text, { color: theme.habitBase }]}>
+          Set Reminder
+        </Text>
         <Switch
           value={state.reminder}
-          thumbColor="#f1b718ff"
-          trackColor={{ false: "#ffffff", true: "#f1b7187a" }}
+          thumbColor={theme.habitBase}
+          trackColor={{ false: theme.whiteBase, true: theme.habitDarkSecondary }}
           onValueChange={(val) => {
             updateField("reminder", val);
           }}
@@ -101,8 +115,8 @@ export default function HabitModal({
           <>
             <Button
               mode="elevated"
-              buttonColor="#503c06ff"
-              textColor="#f1b718ff"
+              buttonColor={theme.habitDarkSecondary}
+              textColor={theme.habitBase}
               style={styles.verticalMargin}
               onPress={() => setShowTimePicker(true)}
             >
@@ -113,7 +127,7 @@ export default function HabitModal({
               {state.reminderDate?.toLocaleTimeString()}
             </Text>
             {state.errors?.reminderDate && (
-              <Text style={styles.error}>{state.errors.reminderDate}</Text>
+              <Text style={[styles.error,{color:theme.error}]}>{state.errors.reminderDate}</Text>
             )}
             {showTimePicker && (
               <DateTimePicker
@@ -128,8 +142,8 @@ export default function HabitModal({
       <Button
         style={styles.verticalMargin}
         mode="elevated"
-        buttonColor="#503c06ff"
-        textColor="#f1b718ff"
+        buttonColor={theme.habitDarkSecondary}
+        textColor={theme.habitBase}
         onPress={onSubmit}
       >
         Save
@@ -137,8 +151,8 @@ export default function HabitModal({
       <Button
         style={styles.verticalMargin}
         mode="elevated"
-        buttonColor="#503c06ff"
-        textColor="#f1b718ff"
+        buttonColor={theme.habitDarkSecondary}
+        textColor={theme.habitBase}
         onPress={onDismiss}
       >
         Cancel
@@ -149,12 +163,10 @@ export default function HabitModal({
 
 const styles = StyleSheet.create({
   modal: {
-    backgroundColor: "#3b3525ff",
     padding: 20,
     margin: 20,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#2b2001ff",
   },
   switchContainer: {
     flexDirection: "row",
@@ -162,7 +174,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     marginHorizontal: 5,
   },
-  text: { color: "#f1b718ff", marginLeft: 10 },
-  error: { color: "#ff6b6b", fontSize: 12 },
+  text: { marginLeft: 10 },
+  error: {  fontSize: 12 },
   verticalMargin: { marginVertical: 2.5 },
 });

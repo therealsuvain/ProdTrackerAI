@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import {
@@ -8,6 +8,7 @@ import {
   SegmentedButtons,
   Switch,
 } from "react-native-paper";
+import { ThemeContext } from "@/context/ThemeContext";
 
 interface Props {
   visible: boolean;
@@ -36,6 +37,7 @@ export default function TaskModal({
   updateField,
   onSubmit,
 }: Props) {
+  const {theme} = useContext(ThemeContext)
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
@@ -52,7 +54,7 @@ export default function TaskModal({
     <Modal
       visible={visible}
       onDismiss={onDismiss}
-      contentContainerStyle={styles.modal}
+      contentContainerStyle={[styles.modal, {backgroundColor: theme.taskDarkPrimary, borderColor: theme.taskDarkSecondary}]}
     >
       <TextInput
         mode="outlined"
@@ -61,7 +63,7 @@ export default function TaskModal({
         onChangeText={(text) => updateField("title", text)}
       />
       {state.errors?.title && (
-        <Text style={styles.error}>{state.errors.title}</Text>
+        <Text style={[styles.error,{color:theme.error}]}>{state.errors.title}</Text>
       )}
       <TextInput
         mode="outlined"
@@ -84,13 +86,13 @@ export default function TaskModal({
       />
       <Button
         mode="elevated"
-        style={styles.verticalMargin}
+        style={[styles.verticalMargin,{backgroundColor:theme.taskDarkSecondary}]}
         onPress={() => setShowDatePicker(true)}
       >
         Pick Due Date
       </Button>
       {state.dueDate && (
-        <Text style={styles.date}>{state.dueDate.toDateString()}</Text>
+        <Text style={[styles.date,{color:theme.taskLightPrimary}]}>{state.dueDate.toDateString()}</Text>
       )}
       {showDatePicker && (
         <DateTimePicker
@@ -101,11 +103,11 @@ export default function TaskModal({
         />
       )}
       <View style={styles.switchContainer}>
-        <Text style={styles.text}>Set Reminder</Text>
+        <Text style={[styles.text,{color:theme.taskLightPrimary}]}>Set Reminder</Text>
         <Switch
           value={state.reminder}
-          thumbColor="#c7b6f1ff"
-          trackColor={{ false: "#ffffff", true: "#7957b383" }}
+          thumbColor={theme.taskLightPrimary}
+          trackColor={{ false: theme.whiteBase, true: theme.taskDarkSecondary }}
           onValueChange={(val) => {
             updateField("reminder", val);
           }}
@@ -114,19 +116,18 @@ export default function TaskModal({
           <>
             <Button
               mode="elevated"
-              buttonColor="#2F2C37"
-              textColor="#887CA6"
-              style={styles.verticalMargin}
+              textColor={theme.taskLightPrimary}
+              style={[styles.verticalMargin,{backgroundColor:theme.taskDarkSecondary}]}
               onPress={() => setShowTimePicker(true)}
             >
               Pick Time
             </Button>
 
-            <Text style={styles.text}>
+            <Text style={[styles.text,{color:theme.taskLightPrimary}]}>
               {state.reminderDate?.toLocaleTimeString()}
             </Text>
             {state.errors?.reminderDate && (
-              <Text style={styles.error}>{state.errors.reminderDate}</Text>
+              <Text style={[styles.error,{color:theme.error}]}>{state.errors.reminderDate}</Text>
             )}
             {showTimePicker && (
               <DateTimePicker
@@ -138,10 +139,10 @@ export default function TaskModal({
           </>
         )}
       </View>
-      <Button mode="elevated" style={styles.verticalMargin} onPress={onSubmit}>
+      <Button mode="elevated" style={[styles.verticalMargin,{backgroundColor:theme.taskDarkSecondary}]} onPress={onSubmit}>
         Save
       </Button>
-      <Button mode="elevated" style={styles.verticalMargin} onPress={onDismiss}>
+      <Button mode="elevated" style={[styles.verticalMargin,{backgroundColor:theme.taskDarkSecondary}]} onPress={onDismiss}>
         Cancel
       </Button>
     </Modal>
@@ -150,12 +151,10 @@ export default function TaskModal({
 
 const styles = StyleSheet.create({
   modal: {
-    backgroundColor: "#2d2a30ff",
     padding: 20,
     margin: 20,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#1e1c20ff",
   },
   switchContainer: {
     flexDirection: "row",
@@ -167,9 +166,8 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginVertical: 2.5,
     fontSize: 20,
-    color: "#c7b6f1ff",
   },
-  error: { color: "#ff6b6b", fontSize: 12 },
-  text: { color: "#c7b6f1ff", marginLeft: 10 },
+  error: { fontSize: 12 },
+  text: { marginLeft: 10 },
   verticalMargin: { marginVertical: 2.5 },
 });

@@ -10,6 +10,7 @@ import { randomUUID } from 'expo-crypto';
 import { TimerLog } from '@/types/timer';
 import { useData } from '@/hooks/use-data';
 
+
 interface TimerContextType {
   time: number;
   isRunning: boolean;

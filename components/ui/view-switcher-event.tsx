@@ -1,3 +1,5 @@
+import { ThemeContext } from "@/context/ThemeContext";
+import { useContext } from "react";
 import { SegmentedButtons } from "react-native-paper";
 
 interface ViewSwitcherProps {
@@ -9,6 +11,7 @@ export default function ViewSwitcher({
   currentView,
   onChange,
 }: ViewSwitcherProps) {
+  const {theme} = useContext(ThemeContext)
   return (
     <SegmentedButtons
       value={currentView}
@@ -18,14 +21,14 @@ export default function ViewSwitcher({
         {
           value: "month",
           label: "Month",
-          checkedColor: "#F44336",
-          style: { backgroundColor: "#411310ff" },
+          checkedColor: theme.eventBase,
+          style: { backgroundColor: theme.eventDarkSecondary },
         },
         {
           value: "day",
           label: "Day",
-          checkedColor: "#F44336",
-          style: { backgroundColor: "#411310ff" },
+          checkedColor: theme.eventBase,
+          style: { backgroundColor: theme.eventDarkSecondary },
         },
       ]}
     />

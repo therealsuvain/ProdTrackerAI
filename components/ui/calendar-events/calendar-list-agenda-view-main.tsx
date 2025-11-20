@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState, useEffect } from "react";
+import React, { useMemo, useCallback, useState, useEffect, useContext } from "react";
 import { View, StyleSheet, Text } from "react-native";
 import {
   Agenda,
@@ -8,6 +8,7 @@ import {
 } from "react-native-calendars";
 import { CalendarEvent } from "@/types/calendar";
 import EventItem from "./event-item";
+import { ThemeContext } from "@/context/ThemeContext";
 
 interface CalendarListAgendaAltProps {
   events: CalendarEvent[];
@@ -24,6 +25,7 @@ export default function CalendarListAgendaMain({
   onEventSelect,
   onDelete,
 }: CalendarListAgendaAltProps) {
+  const {theme} = useContext(ThemeContext)
   const [items, setItems] = useState<AgendaSchedule>({});
 
   // Convert timestamp to date string
@@ -183,7 +185,7 @@ useEffect(() => {
   const renderEmptyDate = () => {
     return (
       <View style={styles.emptyDate}>
-        <Text style={styles.emptyText}>No events scheduled</Text>
+        <Text style={[styles.emptyText,{color:theme.greyBasePrimary}]}>No events scheduled</Text>
       </View>
     );
   };
@@ -208,19 +210,18 @@ useEffect(() => {
         onDayPress={(day) => onDateSelect(new Date(day.timestamp))}
         onDayChange={(day) => onDateSelect(new Date(day.timestamp))}
         theme={{
-          agendaDayTextColor: "#F44336",
-          agendaDayNumColor: "#F44336",
-          agendaTodayColor: "#F44336",
-          agendaKnobColor: "#F44336",
-          selectedDayBackgroundColor: "#8f251dff",
-          dotColor: "#F44336",
-          todayTextColor: "#F44336",
-          backgroundColor: "#1a1a1a",
-          calendarBackground: "#2d2a30",
-          textSectionTitleColor: "#ffffff",
-          dayTextColor: "#ffffff",
-          monthTextColor: "#ffffff",
-          textDisabledColor: "#6e6e6e",
+          agendaDayTextColor: theme.eventBase,
+          agendaDayNumColor: theme.eventBase,
+          agendaTodayColor: theme.eventBase,
+          agendaKnobColor: theme.eventBase,
+          selectedDayBackgroundColor: theme.eventBase,
+          dotColor: theme.eventBase,
+          todayTextColor: theme.eventBase,
+          calendarBackground: theme.eventDarkSecondary,
+          textSectionTitleColor: theme.whiteBase,
+          dayTextColor: theme.whiteBase,
+          monthTextColor: theme.whiteBase,
+          textDisabledColor: theme.greyBaseSecondary,
         }}
         showClosingKnob={true}
       />
@@ -231,7 +232,6 @@ useEffect(() => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1a1a1a",
   },
   itemContainer: {
     marginRight: 10,
@@ -246,7 +246,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   emptyText: {
-    color: "#999999",
     fontSize: 14,
   },
 });

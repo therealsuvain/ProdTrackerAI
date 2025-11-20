@@ -1,3 +1,5 @@
+import { ThemeContext } from "@/context/ThemeContext";
+import { useContext } from "react";
 import { Text, StyleSheet, View } from "react-native";
 
 interface TimerDisplayProps {
@@ -5,12 +7,13 @@ interface TimerDisplayProps {
 }
 
 export default function TimerDisplay({ time }: TimerDisplayProps) {
+  const { theme } = useContext(ThemeContext)
   const hours = Math.floor(time / 3600);
   const minutes = Math.floor(time / 60);
   const seconds = time % 60;
   return (
-    <View style={styles.container}>
-      <Text style={styles.time}>
+    <View style={[styles.container,{borderColor:theme.timerBase}]}>
+      <Text style={[styles.time,{color:theme.text}]}>
         {`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`}
       </Text>
     </View>
@@ -19,7 +22,6 @@ export default function TimerDisplay({ time }: TimerDisplayProps) {
 
 const styles = StyleSheet.create({
   time: {
-    color: "white",
     fontSize: 48,
     fontWeight: "bold",
     textAlign: "center",
@@ -30,7 +32,6 @@ const styles = StyleSheet.create({
     height: 300,
     borderRadius: 150,
     borderWidth: 2,
-    borderColor: "#05ce9cff",
     justifyContent: "center",
     alignItems: "center",
   },

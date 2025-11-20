@@ -1,4 +1,4 @@
-import { StyleSheet, useColorScheme, ScrollView, View } from "react-native";
+import { StyleSheet, useColorScheme, ScrollView, View, Appearance } from "react-native";
 import { useData } from "@/hooks/use-data";
 import {
   Text,
@@ -8,13 +8,12 @@ import {
   Button,
   Portal,
   Modal,
-  ActivityIndicator,
   SegmentedButtons,
 } from "react-native-paper";
 import TaskItem from "@/components/ui/tasks/task-item";
 import EventItem from "@/components/ui/calendar-events/event-item";
 import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useSearch } from "@/hooks/use-search";
 import { AnalyticsSection } from "@/components/ui/analytics-section";
 import { SearchResults } from "@/components/ui/search-results";
@@ -27,8 +26,10 @@ import LoadingIndicator from "@/components/loading-indicator";
 import UnifiedTimeline from "@/components/ui/home-timeline";
 import { useNotifications } from "@/hooks/use-notifications";
 import { Habit } from "@/types/habits";
+import { ThemeContext } from "@/context/ThemeContext";
 
 export default function HomeScreen() {
+  const { theme } = useContext(ThemeContext)
   const { tasks, setTasks, events, timerLogs, habits, setHabits } = useData();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -68,20 +69,20 @@ export default function HomeScreen() {
             value: "overview",
             label: "Overview",
             icon: "view-dashboard",
-            checkedColor: "#673AB7",
+            checkedColor: theme.blueLightPrimary,
             style: {
               backgroundColor:
-                viewMode === "overview" ? "#673AB722" : "transparent",
+                viewMode === "overview" ? theme.blueDarkPrimary : "transparent",
             },
           },
           {
             value: "timeline",
             label: "Today's Timeline",
             icon: "timeline",
-            checkedColor: "#673AB7",
+            checkedColor: theme.blueLightPrimary,
             style: {
               backgroundColor:
-                viewMode === "timeline" ? "#673AB722" : "transparent",
+                viewMode === "timeline" ? theme.blueDarkPrimary : "transparent",
             },
           },
         ]}
@@ -102,7 +103,7 @@ export default function HomeScreen() {
             </Button>
           )}
 
-          <Text style={{ color: "#673AB7" }} variant="headlineLarge">
+          <Text style={{ color: theme.taskBase }} variant="headlineLarge">
             Today's Task
           </Text>
           {todaysTasks.length ? (
@@ -114,11 +115,11 @@ export default function HomeScreen() {
               />
             ))
           ) : (
-            <Text style={{ color: "#673AB7" }}>No task Today</Text>
+            <Text style={{ color: theme.taskBase }}>No task Today</Text>
           )}
           <Divider style={styles.divider} />
 
-          <Text style={{ color: "#F44336" }} variant="headlineLarge">
+          <Text style={{ color: theme.eventBase }} variant="headlineLarge">
             Upcoming Events
           </Text>
           {upcomingEvents.length ? (
@@ -126,21 +127,21 @@ export default function HomeScreen() {
               <EventItem key={event.id} event={event}></EventItem>
             ))
           ) : (
-            <Text style={{ color: "#F44336" }}>No Upcoming Events</Text>
+            <Text style={{ color: theme.eventBase }}>No Upcoming Events</Text>
           )}
           <Divider style={styles.divider} />
 
-          <Text style={{ color: "#05ce9cff" }} variant="headlineLarge">
+          <Text style={{ color: theme.timerBase }} variant="headlineLarge">
             Recent Timer Logs
           </Text>
           {recentLogs.length ? (
             recentLogs.map((log) => <TimerLogItem key={log.id} log={log} />)
           ) : (
-            <Text style={{ color: "#05ce9cff" }}>No Recent Logs</Text>
+            <Text style={{ color: theme.timerBase }}>No Recent Logs</Text>
           )}
           <Divider style={styles.divider} />
 
-          <Text style={{ color: "#f1b718ff" }} variant="headlineLarge">
+          <Text style={{ color: theme.habitBase }} variant="headlineLarge">
             Active Habits
           </Text>
           {activeHabits.length ? (
@@ -148,7 +149,7 @@ export default function HomeScreen() {
               <HabitItem key={habit.id} habit={habit} />
             ))
           ) : (
-            <Text style={{ color: "#f1b718ff" }}>No Active Habits</Text>
+            <Text style={{ color: theme.habitBase }}>No Active Habits</Text>
           )}
           <Divider style={styles.divider} />
           <AnalyticsSection />
@@ -184,6 +185,7 @@ export default function HomeScreen() {
           <View style={styles.dateSelector}>
             <Button
               icon="chevron-left"
+              textColor={theme.blueLightPrimary}
               onPress={() => {
                 const newDate = new Date(selectedDate);
                 newDate.setDate(newDate.getDate() - 1);
@@ -194,8 +196,8 @@ export default function HomeScreen() {
             </Button>
             <Button
               mode="contained"
-              buttonColor="#673AB7"
-              textColor="#ffffff"
+              buttonColor={theme.blueDarkPrimary}
+              textColor={theme.whiteBase}
               onPress={() => setSelectedDate(new Date())}
             >
               {selectedDate.toDateString() === new Date().toDateString()
@@ -204,6 +206,7 @@ export default function HomeScreen() {
             </Button>
             <Button
               icon="chevron-right"
+              textColor={theme.blueLightPrimary}
               onPress={() => {
                 const newDate = new Date(selectedDate);
                 newDate.setDate(newDate.getDate() + 1);
@@ -236,7 +239,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  text: { color: "#fff", fontSize: 24 },
   container: { flex: 1, padding: 16 },
   sectionTitle: { marginVertical: 8 },
   divider: { marginVertical: 16 },

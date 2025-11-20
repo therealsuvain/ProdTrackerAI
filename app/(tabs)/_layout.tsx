@@ -1,15 +1,17 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useContext } from "react";
 import DataProvider from "@/context/DataContext";
-import { Provider as PaperProvider } from "react-native-paper";
+import { Provider as PaperProvider} from "react-native-paper";
 import { MD3LightTheme as DefaultTheme } from "react-native-paper";
 import { Text } from "react-native";
 import SuspenseBoundary from "@/components/suspense-boundary";
 import { ErrorBoundary } from "react-error-boundary";
 import { FallbackComponent } from "@/components/error-fallback-component";
-import TimerProvider from "@/context/TimerContext";
+import TimerProvider from "@/context/TimerContextC";
 import { Easing } from "react-native-reanimated";
+import ThemeProvider, { ThemeContext } from "@/context/ThemeContext";
+import { useTheme } from "@/hooks/use-theme-colors";
 
 const theme = {
   ...DefaultTheme,
@@ -19,16 +21,19 @@ const theme = {
   },
 };
 
+
 export default function TabLayout() {
+  const {theme:themeM} = useTheme()
   return (
     <DataProvider>
       <TimerProvider>
+        <ThemeProvider>
         <PaperProvider theme={theme}>
           <ErrorBoundary FallbackComponent={FallbackComponent}>
             <Tabs
               screenOptions={{
                 tabBarStyle: {
-                  backgroundColor: "#25292e",
+                  backgroundColor: themeM.greyBaseSecondary,
                 },
                 // transitionSpec: {
                 //   animation: "timing",
@@ -39,16 +44,16 @@ export default function TabLayout() {
                 // },
                 animation:'fade',
                 headerShadowVisible: false,
-                headerTintColor: "#fff",
+                headerTintColor: themeM.whiteBase,
               }}
             >
               <Tabs.Screen
                 name="index"
                 options={{
                   title: "Home",
-                  tabBarActiveTintColor: "#c7c7c7ff",
+                  tabBarActiveTintColor: themeM.whiteBaseTrans,
                   headerStyle: {
-                    backgroundColor: "#25292e",
+                    backgroundColor: themeM.greyBaseSecondary,
                   },
                   tabBarIcon: ({ color, focused }) => (
                     <Ionicons
@@ -63,9 +68,9 @@ export default function TabLayout() {
                 name="task-screen"
                 options={{
                   title: "Tasks",
-                  tabBarActiveTintColor: "#673AB7",
+                  tabBarActiveTintColor: themeM.taskBase,
                   headerStyle: {
-                    backgroundColor: "#673AB7",
+                    backgroundColor: themeM.taskBase,
                   },
                   tabBarIcon: ({ color, focused }) => (
                     <Ionicons
@@ -80,9 +85,9 @@ export default function TabLayout() {
                 name="calendar-screen"
                 options={{
                   title: "Calendar",
-                  tabBarActiveTintColor: "#F44336",
+                  tabBarActiveTintColor: themeM.eventBase,
                   headerStyle: {
-                    backgroundColor: "#F44336",
+                    backgroundColor: themeM.eventBase,
                   },
                   tabBarIcon: ({ color, focused }) => (
                     <Ionicons
@@ -97,9 +102,9 @@ export default function TabLayout() {
                 name="habits-screen"
                 options={{
                   title: "Habits",
-                  tabBarActiveTintColor: "#f1b718ff",
+                  tabBarActiveTintColor: themeM.habitBase,
                   headerStyle: {
-                    backgroundColor: "#f1b718ff",
+                    backgroundColor: themeM.habitBase,
                   },
                   tabBarIcon: ({ color, focused }) => (
                     <Ionicons
@@ -114,9 +119,9 @@ export default function TabLayout() {
                 name="timer-screen"
                 options={{
                   title: "Timer",
-                  tabBarActiveTintColor: "#05ce9cff",
+                  tabBarActiveTintColor: themeM.timerBase,
                   headerStyle: {
-                    backgroundColor: "#05ce9cff",
+                    backgroundColor: themeM.timerBase,
                   },
                   tabBarIcon: ({ color, focused }) => (
                     <Ionicons
@@ -130,6 +135,7 @@ export default function TabLayout() {
             </Tabs>
           </ErrorBoundary>
         </PaperProvider>
+        </ThemeProvider>
       </TimerProvider>
     </DataProvider>
   );

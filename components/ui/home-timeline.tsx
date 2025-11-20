@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useRef, useEffect, useContext } from "react";
 import {
   View,
   StyleSheet,
@@ -12,8 +12,9 @@ import { Task } from "@/types/task";
 import { TimerLog } from "@/types/timer";
 import { Habit } from "@/types/habits";
 import { Ionicons } from "@expo/vector-icons";
-import { ProgressBar, Checkbox } from "react-native-paper";
+import { ProgressBar, Checkbox, Badge } from "react-native-paper";
 import { updateStreak } from "@/utils/habit-utils";
+import { ThemeContext } from "@/context/ThemeContext";
 
 interface UnifiedTimelineProps {
   events: CalendarEvent[];
@@ -44,13 +45,18 @@ export default function UnifiedTimeline({
   onDeleteEvent,
   onDeleteTask,
 }: UnifiedTimelineProps) {
+  const { theme } = useContext(ThemeContext);
+
+  const getPriorityColor = (priority: "low" | "medium" | "high"): string => {
+  return { low: theme.success, medium: theme.habitBase, high: theme.eventBase }[priority];
+};
+
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Filter items for selected date
   const filteredData = useMemo(() => {
     const dateStr = selectedDate.toDateString();
-    
-    
+
     // Filter tasks due on this date
     const dayTasks = tasks.filter(
       (task) => task.dueDate?.toDateString() === dateStr && !task.completed
@@ -64,8 +70,8 @@ export default function UnifiedTimeline({
     // Filter events
     const dayEvents = events.filter((event) => {
       const eventDate = event.startTime.toDateString();
-      const todayDateIso= selectedDate.toISOString().split('T')[0]
-      if(event.deletedOccurrences?.includes(todayDateIso)) return false;
+      const todayDateIso = selectedDate.toISOString().split("T")[0];
+      if (event.deletedOccurrences?.includes(todayDateIso)) return false;
       if (eventDate === dateStr) return true;
       if (event.recurrence === "daily") return true;
       if (
@@ -114,10 +120,10 @@ export default function UnifiedTimeline({
       // Stack tasks at 9 AM, slightly offset
       const baseHour = task.reminderDate?.getHours();
       const offset = index * 50; // Offset each task by 50px
-      
+
       return {
         task,
-        top: baseHour?baseHour:9 * HOUR_HEIGHT + offset,
+        top: baseHour ? baseHour : 9 * HOUR_HEIGHT + offset,
         height: 45,
       };
     });
@@ -166,8 +172,17 @@ export default function UnifiedTimeline({
     const hours = [];
     for (let i = TIMELINE_START; i < TIMELINE_END; i++) {
       hours.push(
-        <View key={`slot-${i}`} style={[styles.timeSlot, styles.hourSlot]}>
-          <Text style={styles.timeText}>{String(i).padStart(2, "0")}:00</Text>
+        <View
+          key={`slot-${i}`}
+          style={[
+            styles.timeSlot,
+            styles.hourSlot,
+            { borderBottomColor: theme.greyBaseSecondary },
+          ]}
+        >
+          <Text style={[styles.timeText, { color: theme.greyBasePrimary }]}>
+            {String(i).padStart(2, "0")}:00
+          </Text>
         </View>
       );
     }
@@ -184,19 +199,25 @@ export default function UnifiedTimeline({
             top,
             height,
             backgroundColor: getCategoryColor(event.category),
-            opacity:0.75,
+            opacity: 0.75,
           },
         ]}
         onPress={() => onEventSelect?.(event)}
       >
         <View>
           <View style={styles.blockHeader}>
-            <Ionicons name="calendar" size={14} color="#fff" />
-            <Text style={styles.blockTitle} numberOfLines={1}>
+            <Ionicons name="calendar" size={14} color={theme.whiteBase} />
+            <Text
+              style={[styles.blockTitle, { color: theme.whiteBase }]}
+              numberOfLines={1}
+            >
               {event.title}
             </Text>
           </View>
-          <Text style={styles.blockTime} numberOfLines={1}>
+          <Text
+            style={[styles.blockTime, { color: theme.whiteBaseTrans }]}
+            numberOfLines={1}
+          >
             {event.startTime.toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
@@ -221,7 +242,9 @@ export default function UnifiedTimeline({
           {
             top,
             height,
-            borderColor: getPriorityColor(task.priority),
+            borderColor: theme.taskBase,
+            borderRightColor:getPriorityColor(task.priority),
+            backgroundColor:theme.taskBaseTransToo,
           },
         ]}
         onPress={() => onTaskToggle?.(task.id)}
@@ -231,13 +254,24 @@ export default function UnifiedTimeline({
             <Checkbox
               status={task.completed ? "checked" : "unchecked"}
               onPress={() => onTaskToggle?.(task.id)}
-              color="#673AB7"
+              color={theme.taskBase}
             />
-            <Text style={[styles.taskTitle, task.completed && styles.completedTask]} numberOfLines={1}>
+            <Text
+              style={[
+                [styles.taskTitle, { color: theme.whiteBase }],
+                task.completed && [
+                  styles.completedTask,
+                  { color: theme.greyBasePrimary },
+                ],
+              ]}
+              numberOfLines={1}
+            >
               {task.title}
             </Text>
+            
           </View>
-          {/* <Text style={styles.taskSubtext}>
+          
+          {/* <Text style={[styles.taskSubtext,{color:theme.greyBasePrimary}]}>
             Due: {task.dueDate?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) || "Today"}
           </Text> */}
         </View>
@@ -252,18 +286,24 @@ export default function UnifiedTimeline({
         style={[
           styles.logBlock,
           {
+            borderLeftColor: theme.timerBase,
+            backgroundColor: theme.timerBaseTransToo,
+          },
+          {
             top,
             height,
           },
         ]}
       >
-        
-          <View style={styles.blockHeader}>
-            <Ionicons name="timer" size={14} color="#05ce9c" />
-            <Text style={styles.logTitle} numberOfLines={1}>
-              {log.title}
-            </Text>
-            <Text style={styles.logTime}>
+        <View style={styles.blockHeader}>
+          <Ionicons name="timer" size={14} color={theme.timerBase} />
+          <Text
+            style={[styles.logTitle, { color: theme.timerBase }]}
+            numberOfLines={1}
+          >
+            {log.title}
+          </Text>
+          <Text style={[styles.logTime, { color: theme.timerBaseTrans }]}>
             {log.startTime.toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
@@ -275,28 +315,45 @@ export default function UnifiedTimeline({
               })}`}
           </Text>
           {log.duration && (
-            <Text style={styles.logDuration}>
+            <Text style={[styles.logDuration, { color: theme.timerBaseTrans }]}>
               {Math.floor(log.duration / 60)}m {log.duration % 60}s
             </Text>
           )}
-          </View>
-          
-        
+        </View>
       </View>
     ));
   };
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, { backgroundColor: theme.modalDarkPrimary }]}
+    >
       {/* Habits Section */}
       {filteredData.habits.length > 0 && (
-        <View style={styles.habitsContainer}>
+        <View
+          style={[
+            styles.habitsContainer,
+            {
+              backgroundColor: theme.greyTimeline,
+              borderBottomColor: theme.greyBaseSecondary,
+            },
+          ]}
+        >
           <View style={styles.habitHeader}>
-            <Ionicons name="checkmark-circle" size={20} color="#f1b718" />
-            <Text style={styles.habitHeaderText}>Daily Habits</Text>
-            <Text style={styles.habitCount}>
-              {filteredData.habits.filter((h) => isHabitCompletedToday(h)).length}/
-              {filteredData.habits.length}
+            <Ionicons
+              name="checkmark-circle"
+              size={20}
+              color={theme.habitBase}
+            />
+            <Text style={[styles.habitHeaderText, { color: theme.habitBase }]}>
+              Daily Habits
+            </Text>
+            <Text style={[styles.habitCount, { color: theme.habitBase }]}>
+              {
+                filteredData.habits.filter((h) => isHabitCompletedToday(h))
+                  .length
+              }
+              /{filteredData.habits.length}
             </Text>
           </View>
           <ScrollView
@@ -307,39 +364,71 @@ export default function UnifiedTimeline({
             {filteredData.habits.map((habit) => {
               const completed = isHabitCompletedToday(habit);
               const progress = habit.goal ? habit.streak / habit.goal : 0;
-              
+
               return (
                 <TouchableOpacity
                   key={habit.id}
                   style={[
                     styles.habitCard,
-                    completed && styles.habitCardCompleted,
+                    {
+                      backgroundColor: theme.habitDarkPrimary,
+                      borderColor: theme.habitBaseTrans,
+                    },
+                    completed && [
+                      styles.habitCardCompleted,
+                      { borderColor: theme.success },
+                    ],
                   ]}
-                  onPress={() => !completed && onHabitCheckIn?.(updateStreak(habit))}
+                  onPress={() =>
+                    !completed && onHabitCheckIn?.(updateStreak(habit))
+                  }
                   disabled={completed}
                 >
                   <View style={styles.habitCardHeader}>
-                    <Text style={styles.habitTitle} numberOfLines={1}>
+                    <Text
+                      style={[styles.habitTitle, { color: theme.whiteBase }]}
+                      numberOfLines={1}
+                    >
                       {habit.title}
                     </Text>
                     {completed ? (
-                      <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={24}
+                        color={theme.success}
+                      />
                     ) : (
-                      <Ionicons name="ellipse-outline" size={24} color="#f1b718" />
+                      <Ionicons
+                        name="ellipse-outline"
+                        size={24}
+                        color={theme.habitBase}
+                      />
                     )}
                   </View>
                   <View style={styles.habitStats}>
-                    <Text style={styles.habitStreak}>
+                    <Text
+                      style={[styles.habitStreak, { color: theme.habitBase }]}
+                    >
                       🔥 {habit.streak} day streak
                     </Text>
                     {habit.goal && (
-                      <Text style={styles.habitGoal}>Goal: {habit.goal}</Text>
+                      <Text
+                        style={[
+                          styles.habitGoal,
+                          { color: theme.greyBaseSecondary },
+                        ]}
+                      >
+                        Goal: {habit.goal}
+                      </Text>
                     )}
                   </View>
                   <ProgressBar
                     progress={progress}
-                    color="#f1b718"
-                    style={styles.habitProgress}
+                    color={theme.habitBase}
+                    style={[
+                      styles.habitProgress,
+                      { backgroundColor: theme.modalBase },
+                    ]}
                   />
                 </TouchableOpacity>
               );
@@ -354,9 +443,21 @@ export default function UnifiedTimeline({
         style={styles.timelineContainer}
         showsVerticalScrollIndicator={true}
       >
-        <View style={styles.timeline}>
+        <View
+          style={[styles.timeline, { backgroundColor: theme.modalDarkPrimary }]}
+        >
           {/* Time slots */}
-          <View style={styles.timeColumn}>{renderTimeSlots()}</View>
+          <View
+            style={[
+              styles.timeColumn,
+              {
+                backgroundColor: theme.greyTimeline,
+                borderRightColor: theme.greyBaseSecondary,
+              },
+            ]}
+          >
+            {renderTimeSlots()}
+          </View>
 
           {/* Events container */}
           <View style={styles.eventsColumn}>
@@ -365,7 +466,7 @@ export default function UnifiedTimeline({
               (_, i) => (
                 <View
                   key={`grid-${i}`}
-                  style={[styles.timeSlot, styles.gridLine]}
+                  style={[styles.timeSlot, [styles.gridLine,{borderBottomColor:theme.greyBaseSecondary}]]}
                 />
               )
             )}
@@ -382,14 +483,13 @@ export default function UnifiedTimeline({
                   styles.currentTimeLine,
                   {
                     top:
-                      (new Date().getHours() +
-                        new Date().getMinutes() / 60) *
+                      (new Date().getHours() + new Date().getMinutes() / 60) *
                       HOUR_HEIGHT,
                   },
                 ]}
               >
-                <View style={styles.currentTimeDot} />
-                <View style={styles.currentTimeLineBar} />
+                <View style={[styles.currentTimeDot,{backgroundColor:theme.error}]} />
+                <View style={[styles.currentTimeLineBar,{backgroundColor:theme.error}]} />
               </View>
             )}
 
@@ -398,7 +498,12 @@ export default function UnifiedTimeline({
               filteredData.tasks.length === 0 &&
               filteredData.logs.length === 0 && (
                 <View style={styles.noItemsContainer}>
-                  <Text style={styles.noItemsText}>
+                  <Text
+                    style={[
+                      styles.noItemsText,
+                      { color: theme.greyBasePrimary },
+                    ]}
+                  >
                     No scheduled items for this day
                   </Text>
                 </View>
@@ -408,24 +513,38 @@ export default function UnifiedTimeline({
       </ScrollView>
 
       {/* Summary footer */}
-      <View style={styles.summaryFooter}>
+      <View
+        style={[
+          styles.summaryFooter,
+          {
+            backgroundColor: theme.greyTimeline,
+            borderTopColor: theme.greyBaseSecondary,
+          },
+        ]}
+      >
         <View style={styles.summaryItem}>
-          <Ionicons name="calendar" size={16} color="#F44336" />
-          <Text style={styles.summaryText}>{filteredData.events.length}</Text>
+          <Ionicons name="calendar" size={16} color={theme.eventBase} />
+          <Text style={[styles.summaryText, { color: theme.whiteBase }]}>
+            {filteredData.events.length}
+          </Text>
         </View>
         <View style={styles.summaryItem}>
-          <Ionicons name="checkbox" size={16} color="#673AB7" />
-          <Text style={styles.summaryText}>{filteredData.tasks.length}</Text>
+          <Ionicons name="checkbox" size={16} color={theme.taskBase} />
+          <Text style={[styles.summaryText, { color: theme.whiteBase }]}>
+            {filteredData.tasks.length}
+          </Text>
         </View>
         <View style={styles.summaryItem}>
-          <Ionicons name="timer" size={16} color="#05ce9c" />
-          <Text style={styles.summaryText}>{filteredData.logs.length}</Text>
+          <Ionicons name="timer" size={16} color={theme.timerBase} />
+          <Text style={[styles.summaryText, { color: theme.whiteBase }]}>
+            {filteredData.logs.length}
+          </Text>
         </View>
         <View style={styles.summaryItem}>
-          <Ionicons name="checkmark-circle" size={16} color="#f1b718" />
-          <Text style={styles.summaryText}>
-            {filteredData.habits.filter((h) => isHabitCompletedToday(h)).length}/
-            {filteredData.habits.length}
+          <Ionicons name="checkmark-circle" size={16} color={theme.habitBase} />
+          <Text style={[styles.summaryText, { color: theme.whiteBase }]}>
+            {filteredData.habits.filter((h) => isHabitCompletedToday(h)).length}
+            /{filteredData.habits.length}
           </Text>
         </View>
       </View>
@@ -434,35 +553,31 @@ export default function UnifiedTimeline({
 }
 
 const getCategoryColor = (category?: string): string => {
-
-  const red = Math.floor(Math.random() * 56) + 200;    // 200-255
-  const green = Math.floor(Math.random() * 100);       // 0-100
-  const blue = Math.floor(Math.random() * 100); 
+  const red = Math.floor(Math.random() * 56) + 200; // 200-255
+  const green = Math.floor(Math.random() * 100); // 0-100
+  const blue = Math.floor(Math.random() * 100);
 
   const colorMap: Record<string, string> = {
     work: "#FF6B6B",
     personal: "#4ECDC4",
     health: "#45B7D1",
     social: "#FFA07A",
-    default: `#${red.toString(16).padStart(2, "0")}${green.toString(16).padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`,
+    default: `#${red.toString(16).padStart(2, "0")}${green
+      .toString(16)
+      .padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`,
   };
   return colorMap[category || "default"] || colorMap.default;
 };
 
-const getPriorityColor = (priority: "low" | "medium" | "high"): string => {
-  return { low: "#4CAF50", medium: "#FF9800", high: "#F44336" }[priority];
-};
+
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1a1a1a",
   },
   habitsContainer: {
-    backgroundColor: "#2d2a30",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
   },
   habitHeader: {
     flexDirection: "row",
@@ -471,14 +586,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   habitHeaderText: {
-    color: "#f1b718",
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 8,
     flex: 1,
   },
   habitCount: {
-    color: "#f1b718",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -486,16 +599,13 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
   },
   habitCard: {
-    backgroundColor: "#3b3525",
     borderRadius: 12,
     padding: 12,
     marginRight: 12,
     width: 160,
     borderWidth: 2,
-    borderColor: "#f1b71844",
   },
   habitCardCompleted: {
-    borderColor: "#4CAF50",
     opacity: 0.7,
   },
   habitCardHeader: {
@@ -505,7 +615,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   habitTitle: {
-    color: "#fff",
     fontSize: 14,
     fontWeight: "600",
     flex: 1,
@@ -515,31 +624,25 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   habitStreak: {
-    color: "#f1b718",
     fontSize: 12,
     marginBottom: 2,
   },
   habitGoal: {
-    color: "#888",
     fontSize: 11,
   },
   habitProgress: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#2b2001",
   },
   timelineContainer: {
     flex: 1,
   },
   timeline: {
     flexDirection: "row",
-    backgroundColor: "#1a1a1a",
   },
   timeColumn: {
     width: 60,
     borderRightWidth: 1,
-    borderRightColor: "#333",
-    backgroundColor: "#2d2a30",
   },
   eventsColumn: {
     flex: 1,
@@ -553,16 +656,13 @@ const styles = StyleSheet.create({
   },
   hourSlot: {
     borderBottomWidth: 1,
-    borderBottomColor: "#333",
   },
   timeText: {
-    color: "#888",
     fontSize: 12,
     fontWeight: "500",
   },
   gridLine: {
     borderBottomWidth: 1,
-    borderBottomColor: "#2a2a2a",
   },
   eventBlock: {
     position: "absolute",
@@ -574,14 +674,15 @@ const styles = StyleSheet.create({
   },
   taskBlock: {
     position: "absolute",
-    justifyContent:'center',
+    justifyContent: "center",
     left: 8,
     right: 8,
     borderRadius: 8,
     padding: 8,
-    backgroundColor: "#25232A88",
     borderWidth: 2,
-    borderStyle: "dashed",
+    borderRightWidth:8,
+    borderTopRightRadius:4,
+    borderBottomRightRadius:4,
   },
   logBlock: {
     position: "absolute",
@@ -589,58 +690,46 @@ const styles = StyleSheet.create({
     right: 8,
     borderRadius: 8,
     padding: 8,
-    backgroundColor: "#2e3b3844",
     borderLeftWidth: 4,
-    borderLeftColor: "#05ce9c",
   },
-  blockContent: {
-    
-  },
+  blockContent: {},
   blockHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 4,
   },
   blockTitle: {
-    color: "#fff",
     fontSize: 13,
     fontWeight: "600",
     marginLeft: 6,
     flex: 1,
   },
   blockTime: {
-    color: "rgba(255, 255, 255, 0.8)",
     fontSize: 11,
   },
   taskTitle: {
-    color: "#fff",
     fontSize: 13,
     fontWeight: "500",
     flex: 1,
   },
   completedTask: {
     textDecorationLine: "line-through",
-    color: "#888",
   },
   taskSubtext: {
-    color: "#888",
     fontSize: 11,
     marginLeft: 40,
   },
   logTitle: {
-    color: "#05ce9c",
     fontSize: 13,
     fontWeight: "500",
     marginLeft: 6,
     flex: 1,
   },
   logTime: {
-    color: "#05ce9c99",
     fontSize: 11,
     marginLeft: 20,
   },
   logDuration: {
-    color: "#05ce9c77",
     fontSize: 10,
     marginLeft: 20,
     fontStyle: "italic",
@@ -657,13 +746,11 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: "#FF5252",
     marginLeft: -6,
   },
   currentTimeLineBar: {
     flex: 1,
     height: 2,
-    backgroundColor: "#FF5252",
   },
   noItemsContainer: {
     flex: 1,
@@ -672,16 +759,13 @@ const styles = StyleSheet.create({
     minHeight: HOUR_HEIGHT * 6,
   },
   noItemsText: {
-    color: "#888",
     fontSize: 14,
   },
   summaryFooter: {
     flexDirection: "row",
     justifyContent: "space-around",
-    backgroundColor: "#2d2a30",
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: "#333",
   },
   summaryItem: {
     flexDirection: "row",
@@ -689,7 +773,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   summaryText: {
-    color: "#fff",
     fontSize: 14,
     fontWeight: "600",
   },
