@@ -11,6 +11,7 @@ import { FallbackComponent } from "@/components/error-fallback-component";
 import TimerProvider from "@/context/TimerContextC";
 import { Easing } from "react-native-reanimated";
 import ThemeProvider, { ThemeContext } from "@/context/ThemeContext";
+import { ThemeContext as MyTheme } from "@/context/ThemeContext";
 import { useTheme } from "@/hooks/use-theme-colors";
 
 const theme = {
@@ -23,11 +24,10 @@ const theme = {
 
 
 export default function TabLayout() {
-  const {theme:themeM} = useTheme()
+  const {theme:themeM, isDarkMode} = useContext(MyTheme)
   return (
     <DataProvider>
       <TimerProvider>
-        <ThemeProvider>
         <PaperProvider theme={theme}>
           <ErrorBoundary FallbackComponent={FallbackComponent}>
             <Tabs
@@ -135,7 +135,6 @@ export default function TabLayout() {
             </Tabs>
           </ErrorBoundary>
         </PaperProvider>
-        </ThemeProvider>
       </TimerProvider>
     </DataProvider>
   );

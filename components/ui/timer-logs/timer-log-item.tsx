@@ -19,11 +19,11 @@ export default function TimerLogItem({log, onDelete}:TimerLogItemProps){
 
     const duration = log.duration? `${log.duration/60} min `: 'Ongoing';
     return (
-        <Card style={ [styles.container,{backgroundColor:theme.timerDarkPrimary}]}>
+        <Card style={ [styles.container,{backgroundColor:theme.timerDarkPrimary}, !isNotHome && {borderRadius:0}]}>
             <Card.Content style={{position:"relative"}}>
-                <Text  style={{color:theme.text}} variant="titleMedium">{log.title}</Text>
-                <Text style={{color:theme.text}} >Duration: {duration}</Text>
-                <Text style={{color:theme.text}} >Started: {log.startTime.toLocaleString()}</Text>
+                <Text  style={{color:theme.whiteBase}} variant="titleMedium">{log.title}</Text>
+                <Text style={{color:theme.whiteBase}} >Duration: {duration}</Text>
+                <Text style={{color:theme.whiteBase}} >Started: {log.startTime.toLocaleString()}</Text>
                 <View style={{position:"absolute", right:10, top:25}}>
                     { isNotHome && <XButton icon="trash-outline" mode="timer" onPress={onDelete}/>}
                 </View>

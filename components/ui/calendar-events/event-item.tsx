@@ -17,12 +17,12 @@ export default function EventItem({event, onEdit, onDelete}: EventItemProps) {
     const route = useRoute();
     const isNotHome = route.name!=="index" 
     return(
-        <Card style={[styles.card,{backgroundColor:theme.eventDarkPrimary}]}>
+        <Card style={[styles.card,{backgroundColor:theme.eventDarkPrimary}, !isNotHome && {borderRadius:0}]}>
             <Card.Content style={styles.content}>
                 <View>
-                <Text style={{color:theme.text}}variant='titleMedium'>{event.title}</Text>
-                { !isNotHome && <Text style={{color:theme.text}}>Start:{event.startTime.toLocaleTimeString()}</Text>}
-                { !isNotHome && <Text style={{color:theme.text}}>End:{event.endTime.toLocaleTimeString()}</Text>}
+                <Text style={{color:theme.whiteBase}}variant='titleMedium'>{event.title}</Text>
+                { !isNotHome && <Text style={{color:theme.whiteBase}}>Start:{event.startTime.toLocaleTimeString()}</Text>}
+                { !isNotHome && <Text style={{color:theme.whiteBase}}>End:{event.endTime.toLocaleTimeString()}</Text>}
                 </View>
                 <View style={styles.buttonContainer}>
                 { isNotHome && <XButton icon="pencil-outline" mode="calendar" onPress={onEdit}/>}

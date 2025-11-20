@@ -375,7 +375,6 @@ export default function UnifiedTimeline({
                       borderColor: theme.habitBaseTrans,
                     },
                     completed && [
-                      styles.habitCardCompleted,
                       { borderColor: theme.success },
                     ],
                   ]}
@@ -604,9 +603,6 @@ const styles = StyleSheet.create({
     marginRight: 12,
     width: 160,
     borderWidth: 2,
-  },
-  habitCardCompleted: {
-    opacity: 0.7,
   },
   habitCardHeader: {
     flexDirection: "row",

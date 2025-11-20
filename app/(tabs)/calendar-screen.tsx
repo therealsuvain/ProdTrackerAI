@@ -23,7 +23,8 @@ import CalendarEventModal from "@/components/modal/calendar-event-modal";
 import { ThemeContext } from "@/context/ThemeContext";
 
 export default function CalendarScreen() {
-  const {theme } = useContext(ThemeContext)
+  const {theme, isDarkMode } = useContext(ThemeContext)
+   console.log("TATAT2", isDarkMode)
   const { events, setEvents , deleteEventOccurrence} = useData();
   const {
     currentView,
@@ -76,7 +77,7 @@ export default function CalendarScreen() {
         >
           <Ionicons size={40} name="calendar"></Ionicons>
         </Pressable>
-        <Text style={styles.date}>
+        <Text style={[styles.date,{color:theme.text}]}>
           {selectedDate.toDateString()}
         </Text>
       </View>
@@ -123,7 +124,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   container: { flexDirection: "row", alignItems: "center" },
-  date:{ fontSize: 30, color: "white" },
+  date:{ fontSize: 30 },
   fab: {
     position: "absolute",
     margin: 16,

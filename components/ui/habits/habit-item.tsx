@@ -26,10 +26,10 @@ export default function HabitItem({
   const isNotHome = route.name !== "index";
 
   return (
-    <Card style={[styles.container, {backgroundColor: theme.habitDarkPrimary,}]}>
+    <Card style={[styles.container, {backgroundColor: theme.habitDarkPrimary}, !isNotHome && {borderRadius:0}]}>
       <Card.Content>
-        <Text variant="titleMedium">{habit.title}</Text>
-        <Text>
+        <Text variant="titleMedium" style={{color:theme.whiteBase}}>{habit.title}</Text>
+        <Text style={{color:theme.whiteBase}}>
           Streak: {habit.streak} / Goal: {habit.goal || "OnGoing"}
         </Text>
         <ProgressBar progress={progress} color={theme.habitBase} />

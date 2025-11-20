@@ -13,7 +13,7 @@ export default function TimerDisplay({ time }: TimerDisplayProps) {
   const seconds = time % 60;
   return (
     <View style={[styles.container,{borderColor:theme.timerBase}]}>
-      <Text style={[styles.time,{color:theme.text}]}>
+      <Text style={[styles.time,{color:theme.timerBase}]}>
         {`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`}
       </Text>
     </View>

@@ -28,14 +28,16 @@ export default function TaskItem({ task, onToggleComplete, onEdit, onDelete }: T
     const isNotHome = route.name!=="index" 
     // Edit and Delete buttons are bad, need changes
     return (
-        <Card style={[styles.card,{backgroundColor:theme.taskDarkPrimary}]}>
+        <Card style={[styles.card,{backgroundColor:theme.taskDarkPrimary}, !isNotHome && {borderRadius:0}]}>
             <Card.Content style={styles.content}>
                 <Checkbox
                 status={task.completed? "checked":"unchecked"}
                 onPress={()=>onToggleComplete(task.id)}
+                uncheckedColor={theme.greyBasePrimary}
+                color={theme.taskLightPrimary}
                 />
                 <View style={styles.textContainer}>
-                    <Text style={task.completed? styles.completedText : [styles.text, {color:theme.text}]}>
+                    <Text style={task.completed? styles.completedText : [styles.text, {color:theme.whiteBase}]}>
                         {task.title}
                     </Text>
                     {task.dueDate && <Text style={{color:"white"}}>Due : {task.dueDate.toDateString()}</Text>}

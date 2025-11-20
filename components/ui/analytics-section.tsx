@@ -21,9 +21,9 @@ export function AnalyticsSection(){
 
     return(
         <View style={{justifyContent:"center", alignItems:"center"}}>
-            <Text style={{color:theme.whiteBase}}>Task Completion: {taskCompletion.toFixed(0)}%</Text>
-            <Text style={{color:theme.whiteBase}}>Time Tracked (Week) : {timeTracked} min</Text>
-            <Text style={{color:theme.whiteBase}}>Habits Progress</Text>
+            <Text style={{color:theme.text}}>Task Completion: {taskCompletion.toFixed(0)}%</Text>
+            <Text style={{color:theme.text}}>Time Tracked (Week) : {timeTracked} min</Text>
+            <Text style={{color:theme.text}}>Habits Progress</Text>
             <PieChart
             data={chartData}
             width={300}
