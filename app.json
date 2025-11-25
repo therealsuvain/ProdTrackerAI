@@ -12,6 +12,7 @@
       "supportsTablet": true,
       "infoPlist": {
         "UIBackgroundModes": [
+          "remote-notification",
           "remote-notification"
         ]
       }
@@ -26,6 +27,13 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK",
+        "android.permission.FOREGROUND_SERVICE",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.POST_NOTIFICATIONS",
@@ -66,7 +74,6 @@
           "androidCollapsedTitle": "Timer"
         }
       ]
-    
     ],
     "notification": {
       "icon": "./assets/notification-icon.png",
@@ -85,6 +92,12 @@
       "eas": {
         "projectId": "db2cb23b-ee30-4247-9105-15b2e5b8c2d2"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/db2cb23b-ee30-4247-9105-15b2e5b8c2d2"
     }
   }
 }

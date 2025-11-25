@@ -21,12 +21,14 @@ export default function ViewSwitcher({
         {
           value: "month",
           label: "Month",
+          uncheckedColor: theme.whiteBase,
           checkedColor: theme.eventBase,
           style: { backgroundColor: theme.eventDarkSecondary },
         },
         {
           value: "day",
           label: "Day",
+          uncheckedColor: theme.whiteBase,
           checkedColor: theme.eventBase,
           style: { backgroundColor: theme.eventDarkSecondary },
         },

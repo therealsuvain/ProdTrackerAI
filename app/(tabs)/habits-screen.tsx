@@ -62,7 +62,7 @@ export default function HabitsScreen() {
           )}
           ListEmptyComponent={<Text>No habits yet-add one</Text>}
         />
-        <FAB style={[styles.fab,{backgroundColor:theme.habitBase, borderColor:theme.habitDarkSecondary}]} icon="plus" onPress={() => showModal()} />
+        <FAB color={theme.habitDarkPrimary} style={[styles.fab,{backgroundColor:theme.habitBase, borderColor:theme.habitDarkSecondary}]} icon="plus" onPress={() => showModal()} />
       </View>
       <Portal>
         <HabitModal

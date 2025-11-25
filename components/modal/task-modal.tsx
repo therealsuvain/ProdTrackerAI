@@ -37,7 +37,7 @@ export default function TaskModal({
   updateField,
   onSubmit,
 }: Props) {
-  const {theme} = useContext(ThemeContext)
+  const { theme } = useContext(ThemeContext);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
@@ -54,7 +54,13 @@ export default function TaskModal({
     <Modal
       visible={visible}
       onDismiss={onDismiss}
-      contentContainerStyle={[styles.modal, {backgroundColor: theme.taskDarkPrimary, borderColor: theme.taskDarkSecondary}]}
+      contentContainerStyle={[
+        styles.modal,
+        {
+          backgroundColor: theme.taskDarkPrimary,
+          borderColor: theme.taskDarkSecondary,
+        },
+      ]}
     >
       <TextInput
         mode="outlined"
@@ -63,7 +69,9 @@ export default function TaskModal({
         onChangeText={(text) => updateField("title", text)}
       />
       {state.errors?.title && (
-        <Text style={[styles.error,{color:theme.error}]}>{state.errors.title}</Text>
+        <Text style={[styles.error, { color: theme.error }]}>
+          {state.errors.title}
+        </Text>
       )}
       <TextInput
         mode="outlined"
@@ -78,21 +86,45 @@ export default function TaskModal({
           updateField("priority", v as "low" | "medium" | "high")
         }
         buttons={[
-          { value: "low", label: "Low" },
-          { value: "medium", label: "Medium" },
-          { value: "high", label: "High" },
+          {
+            value: "low",
+            uncheckedColor: theme.whiteBase,
+            checkedColor: theme.taskBase,
+            style: { backgroundColor: theme.taskDarkSecondary },
+            label: "Low",
+          },
+          {
+            value: "medium",
+            uncheckedColor: theme.whiteBase,
+            checkedColor: theme.taskBase,
+            style: { backgroundColor: theme.taskDarkSecondary },
+            label: "Medium",
+          },
+          {
+            value: "high",
+            uncheckedColor: theme.whiteBase,
+            checkedColor: theme.taskBase,
+            style: { backgroundColor: theme.taskDarkSecondary },
+            label: "High",
+          },
         ]}
         style={{ marginVertical: 8 }}
       />
       <Button
         mode="elevated"
-        style={[styles.verticalMargin,{backgroundColor:theme.taskDarkSecondary}]}
+        textColor={theme.taskLightPrimary}
+        style={[
+          styles.verticalMargin,
+          { backgroundColor: theme.taskDarkSecondary },
+        ]}
         onPress={() => setShowDatePicker(true)}
       >
         Pick Due Date
       </Button>
       {state.dueDate && (
-        <Text style={[styles.date,{color:theme.taskLightPrimary}]}>{state.dueDate.toDateString()}</Text>
+        <Text style={[styles.date, { color: theme.taskLightPrimary }]}>
+          {state.dueDate.toDateString()}
+        </Text>
       )}
       {showDatePicker && (
         <DateTimePicker
@@ -103,7 +135,9 @@ export default function TaskModal({
         />
       )}
       <View style={styles.switchContainer}>
-        <Text style={[styles.text,{color:theme.taskLightPrimary}]}>Set Reminder</Text>
+        <Text style={[styles.text, { color: theme.taskLightPrimary }]}>
+          Set Reminder
+        </Text>
         <Switch
           value={state.reminder}
           thumbColor={theme.taskLightPrimary}
@@ -117,17 +151,22 @@ export default function TaskModal({
             <Button
               mode="elevated"
               textColor={theme.taskLightPrimary}
-              style={[styles.verticalMargin,{backgroundColor:theme.taskDarkSecondary}]}
+              style={[
+                styles.verticalMargin,
+                { backgroundColor: theme.taskDarkSecondary },
+              ]}
               onPress={() => setShowTimePicker(true)}
             >
               Pick Time
             </Button>
 
-            <Text style={[styles.text,{color:theme.taskLightPrimary}]}>
+            <Text style={[styles.text, { color: theme.taskLightPrimary }]}>
               {state.reminderDate?.toLocaleTimeString()}
             </Text>
             {state.errors?.reminderDate && (
-              <Text style={[styles.error,{color:theme.error}]}>{state.errors.reminderDate}</Text>
+              <Text style={[styles.error, { color: theme.error }]}>
+                {state.errors.reminderDate}
+              </Text>
             )}
             {showTimePicker && (
               <DateTimePicker
@@ -139,10 +178,27 @@ export default function TaskModal({
           </>
         )}
       </View>
-      <Button mode="elevated" style={[styles.verticalMargin,{backgroundColor:theme.taskDarkSecondary}]} onPress={onSubmit}>
+      <Button
+        mode="elevated"
+        textColor={theme.taskLightPrimary}
+        style={[
+          styles.verticalMargin,
+          { backgroundColor: theme.taskDarkSecondary },
+        ]}
+        
+        onPress={onSubmit}
+      >
         Save
       </Button>
-      <Button mode="elevated" style={[styles.verticalMargin,{backgroundColor:theme.taskDarkSecondary}]} onPress={onDismiss}>
+      <Button
+        mode="elevated"
+        textColor={theme.taskLightPrimary}
+        style={[
+          styles.verticalMargin,
+          { backgroundColor: theme.taskDarkSecondary },
+        ]}
+        onPress={onDismiss}
+      >
         Cancel
       </Button>
     </Modal>

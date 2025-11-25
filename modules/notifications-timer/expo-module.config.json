@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["NotificationsTimerModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.notificationstimer.NotificationsTimerModule"]
+  }
+}

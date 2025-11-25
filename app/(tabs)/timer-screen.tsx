@@ -18,7 +18,6 @@ export default function TimerScreen() {
   //const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
   const { time, isRunning, title, setTitle, start, pause, stop, reset } =
     useTimer();
-
   const handleDelete = (id: string) => {
     Alert.alert("Delete Log", "Are you sure?", [
       { text: "Cancel" },

@@ -79,12 +79,14 @@ export default function HabitModal({
           {
             value: "daily",
             label: "Daily",
+            uncheckedColor: theme.whiteBase,
             checkedColor: theme.habitBase,
             style: { backgroundColor: theme.habitDarkSecondary },
           },
           {
             value: "weekly",
             label: "Weekly",
+            uncheckedColor: theme.whiteBase,
             checkedColor: theme.habitBase,
             style: { backgroundColor: theme.habitDarkSecondary },
           },

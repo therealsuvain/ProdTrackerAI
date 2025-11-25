@@ -236,18 +236,21 @@ export default function CalendarEventModal({
           {
             value: "none",
             label: "None",
+            uncheckedColor: theme.whiteBase,
             checkedColor: theme.eventBase,
             style: { backgroundColor: theme.eventDarkSecondary },
           },
           {
             value: "daily",
             label: "Daily",
+            uncheckedColor: theme.whiteBase,
             checkedColor: theme.eventBase,
             style: { backgroundColor: theme.eventDarkSecondary },
           },
           {
             value: "weekly",
             label: "Weekly",
+            uncheckedColor: theme.whiteBase,
             checkedColor: theme.eventBase,
             style: { backgroundColor: theme.eventDarkSecondary },
           },

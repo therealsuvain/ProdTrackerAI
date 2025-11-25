@@ -1,18 +1,8 @@
 import React, { useContext, useState } from "react";
-import {
-  View,
-  StyleSheet,
-  Alert,
-  Text,
-  Pressable,
-} from "react-native";
-import {
-  FAB,
-  Portal,
-  Provider,
-} from "react-native-paper";
+import { View, StyleSheet, Alert, Text, Pressable } from "react-native";
+import { FAB, Portal, Provider } from "react-native-paper";
 import { useData } from "../../hooks/use-data";
-import ViewSwitcher from "../../components/ui/view-switcher-event";
+import ViewSwitcher from "../../components/ui/calendar-events/view-switcher-event";
 import { useCalendarState } from "../../hooks/use-calendar-state";
 import { useEventForm } from "../../hooks/use-event-form";
 import { CalendarEvent } from "@/types/calendar";
@@ -23,9 +13,8 @@ import CalendarEventModal from "@/components/modal/calendar-event-modal";
 import { ThemeContext } from "@/context/ThemeContext";
 
 export default function CalendarScreen() {
-  const {theme, isDarkMode } = useContext(ThemeContext)
-   console.log("TATAT2", isDarkMode)
-  const { events, setEvents , deleteEventOccurrence} = useData();
+  const { theme } = useContext(ThemeContext);
+  const { events, setEvents, deleteEventOccurrence } = useData();
   const {
     currentView,
     setCurrentView,
@@ -49,21 +38,21 @@ export default function CalendarScreen() {
 
   const hideModal = () => setVisible(false);
 
-  const handleDelete = (id: string, date:string) => {
+  const handleDelete = (id: string, date: string) => {
     Alert.alert("Delete Event", "Are you sure?", [
       { text: "Cancel" },
       {
         text: "Delete Current Occurrence",
         onPress: async () => {
-          const eventId = events.filter((e)=>e.id===id) 
-          deleteEventOccurrence(id, date, false)
+          const eventId = events.filter((e) => e.id === id);
+          deleteEventOccurrence(id, date, false);
         },
       },
       {
         text: "Delete All Occurrences",
         onPress: async () => {
-          const eventId = events.filter((e)=>e.id===id) 
-          deleteEventOccurrence(id, date, true)
+          const eventId = events.filter((e) => e.id === id);
+          deleteEventOccurrence(id, date, true);
         },
       },
     ]);
@@ -72,12 +61,12 @@ export default function CalendarScreen() {
     <Provider>
       <View style={styles.container}>
         <Pressable
-          style={[styles.header,{backgroundColor:theme.eventBase}]}
+          style={[styles.header, { backgroundColor: theme.eventBase }]}
           onPress={() => setSelectedDate(new Date())}
         >
           <Ionicons size={40} name="calendar"></Ionicons>
         </Pressable>
-        <Text style={[styles.date,{color:theme.text}]}>
+        <Text style={[styles.date, { color: theme.text }]}>
           {selectedDate.toDateString()}
         </Text>
       </View>
@@ -100,7 +89,12 @@ export default function CalendarScreen() {
           onDelete={handleDelete}
         />
       )}
-      <FAB style={[styles.fab,{backgroundColor:theme.eventBase}]} icon="plus" onPress={() => showModal()} />
+      <FAB
+        color={theme.eventDarkPrimary}
+        style={[styles.fab, { backgroundColor: theme.eventBase }]}
+        icon="plus"
+        onPress={() => showModal()}
+      />
       <Portal>
         <CalendarEventModal
           visible={visible}
@@ -124,7 +118,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   container: { flexDirection: "row", alignItems: "center" },
-  date:{ fontSize: 30 },
+  date: { fontSize: 30 },
   fab: {
     position: "absolute",
     margin: 16,
