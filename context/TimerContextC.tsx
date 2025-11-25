@@ -89,7 +89,12 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
       () => {
         console.log("Notification: Resume Clicked");
         start(); // Call your existing resume logic
+      },
+      () => {
+        console.log("Notification: Saved");
+        stop(); // Call your existing resume logic
       }
+
     );
   }, [time, isRunning, startTimestamp]);
   // Initialize on mount

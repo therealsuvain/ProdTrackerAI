@@ -22,10 +22,12 @@ export function showNotification(
 
 export function addTimerActionListener(
   onPause: () => void,
-  onResume: () => void
+  onResume: () => void,
+  onStop:()=>void,
 ) {
   NotificationsTimer.addListener('onPauseAction', onPause);
   NotificationsTimer.addListener('onResumeAction', onResume);
+  NotificationsTimer.addListener('onStopAction', onStop);
 }
 
 export function stopNativeTimer() {
