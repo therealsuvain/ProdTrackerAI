@@ -90,7 +90,6 @@ class NotificationsTimerModule : Module() {
         .setOngoing(true) // User cannot swipe it away
         .setOnlyAlertOnce(true) // Don't vibrate/sound on updates
         .setContentTitle(title)
-        .setContentText(if (isRunning) "Timer Running" else "Timer Paused")
       
       if (isRunning) {
         // Mode: Running
@@ -99,7 +98,7 @@ class NotificationsTimerModule : Module() {
         val elapsedRealtime = SystemClock.elapsedRealtime()
         
         builder.setUsesChronometer(true)
-        builder.setWhen(elapsedRealtime - timeSinceStart)
+        builder.setWhen(System.currentTimeMillis() - timeSinceStart)
         
         // Add PAUSE button
         builder.addAction(android.R.drawable.ic_media_pause, "Pause", pausePendingIntent)
