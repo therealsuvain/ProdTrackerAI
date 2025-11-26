@@ -25,9 +25,10 @@ export function addTimerActionListener(
   onResume: () => void,
   onStop:()=>void,
 ) {
-  NotificationsTimer.addListener('onPauseAction', onPause);
-  NotificationsTimer.addListener('onResumeAction', onResume);
-  NotificationsTimer.addListener('onStopAction', onStop);
+  const pauseListener = NotificationsTimer.addListener('onPauseAction', onPause);
+  const resumeListener = NotificationsTimer.addListener('onResumeAction', onResume);
+  const stopListener = NotificationsTimer.addListener('onStopAction', onStop);
+  return [pauseListener, resumeListener, stopListener]
 }
 
 export function stopNativeTimer() {

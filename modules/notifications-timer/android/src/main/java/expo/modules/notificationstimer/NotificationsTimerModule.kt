@@ -88,7 +88,7 @@ class NotificationsTimerModule : Module() {
 
       // Create Channel (Required for Android 8+)
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val channel = NotificationChannel(TIMER_CHANNEL_ID, "Active Timer", NotificationManager.IMPORTANCE_LOW)
+        val channel = NotificationChannel(TIMER_CHANNEL_ID, "Active Timer", NotificationManager.IMPORTANCE_MAX)
         channel.description = "Shows the running timer"
         notificationManager.createNotificationChannel(channel)
       }
@@ -122,14 +122,13 @@ class NotificationsTimerModule : Module() {
         builder.addAction(android.R.drawable.ic_media_play, "Resume", resumePendingIntent)
       }
       notificationManager.notify(NOTIFICATION_ID, builder.build()) */
-      val timer = startTimeMs
+
       runnable = object : Runnable {
         override fun run() {
           val now = System.currentTimeMillis()
-          timer = timer + 1
           // Calculate elapsed time manually
           val elapsedMillis = if (isRunning) {
-            timer.toLong()
+            now - startTimeMs.toLong()
           } else {
             (pausedElapsedSecs * 1000).toLong()
           }
@@ -159,7 +158,7 @@ class NotificationsTimerModule : Module() {
             builder.addAction(android.R.drawable.ic_media_play, "Resume", resumePendingIntent)
           }
 
-          builder.addAction(android.R.drawable.ic_media_stop, "Stop", stopPendingIntent)
+          builder.addAction(android.R.drawable.ic_menu_add, "Stop", stopPendingIntent)
 
           // Show it
           notificationManager.notify(NOTIFICATION_ID, builder.build())

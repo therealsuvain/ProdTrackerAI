@@ -81,7 +81,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
   }, [startTimestamp, pausedSeconds, title, isRunning]);
 
   useEffect(() => {
-    addTimerActionListener(
+    const listeners = addTimerActionListener(
       () => {
         console.log("Notification: Pause Clicked");
         pause(); // Call your existing pause logic
@@ -96,6 +96,10 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
       }
 
     );
+
+    return () => {
+      listeners.forEach(listener => listener.remove())
+    }
   }, [time, isRunning, startTimestamp]);
   // Initialize on mount
   useEffect(() => {
@@ -319,7 +323,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     setPausedSeconds(time);
     setIsRunning(true);
     showNotification(
-      title || "Timer Running",
+      title || "Timer",
       now - pausedSeconds * 1000,
       true,
       pausedSeconds
@@ -329,7 +333,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
   /*   // Resume timer
   const resume = () => {
     const now = Date.now();
-    setStartTimestamp(now);
+    setStartTimestamp(now); 
     setPausedSeconds(time);
     setIsRunning(true);
   };
@@ -339,12 +343,19 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     if (startTimestamp) {
       const elapsed =
         pausedSeconds + Math.floor((Date.now() - startTimestamp) / 1000);
-      setPausedSeconds(elapsed);
+      setPausedSeconds(()=>elapsed);
       setTime(elapsed);
+      const now = Date.now();
+      showNotification(
+        title || "Timer",
+        now - pausedSeconds*1000,
+        false,
+        elapsed,
+      )
     }
     //setStartTimestamp(null);
     setIsRunning(false);
-    stopNativeTimer();
+    //stopNativeTimer();
   };
 
   // Stop timer and save log
@@ -376,6 +387,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     setStartTimestamp(null);
     setPausedSeconds(0);
     setIsRunning(false);
+    stopNativeTimer()
     //cancelAllNotifications();
   };
 
