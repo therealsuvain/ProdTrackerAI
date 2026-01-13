@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 import { AIIntent, SingleAIIntent } from "@/types/ai-intent";
 import { Alert } from "react-native";
-import { updateStreak } from "./habit-utils";
+import { checkInHabit } from "./habit-utils";
 import {
   createTask,
   createEvent,
@@ -20,8 +20,8 @@ import {
 } from "@/hooks/use-notifications";
 import { TimerLog } from "@/types/timer";
 
-const GOOGLE_API_KEY = Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
-const HF_TOKEN = Constants.expoConfig?.extra?.HUGGING_FACE_API_TOKEN;
+const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_STT_API_KEY//Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
+const HF_TOKEN = process.env.EXPO_PUBLIC_HUGGING_FACE_API_TOKEN;
 const HF_ENDPOINT = "https://router.huggingface.co/v1/chat/completions";
 
 export const transcribeAudio = async (
@@ -213,6 +213,7 @@ D. Task {
     });
 
     const data = await response.json();
+    console.log("LLM full response", data);
     const jsonStr = data.choices[0].message.content;
     //home page and modal are rendering before text being parsed by the LLM
     console.log(jsonStr);
@@ -357,7 +358,7 @@ export const executeSingleIntent = async (
       if (habitMatches.length === 0) throw new Error("No matching habit found");
       const targetHabit = habitMatches[0].item;
       if (type === "checkin_habit") {
-        const updatedHabit = updateStreak(targetHabit); // From habitUtils
+        const updatedHabit = checkInHabit(targetHabit); // From habitUtils
         setHabits(
           habits.map((h: Habit) => (h.id === targetHabit.id ? updatedHabit : h))
         );

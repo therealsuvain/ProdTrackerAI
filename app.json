@@ -86,8 +86,6 @@
       "reactCompiler": true
     },
     "extra": {
-      "GOOGLE_STT_API_KEY": "AIzaSyBL69fQHD3h6cia_tghL2SSJTTLXD4l8UA",
-      "HUGGING_FACE_API_TOKEN": "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",
       "router": {},
       "eas": {
         "projectId": "db2cb23b-ee30-4247-9105-15b2e5b8c2d2"

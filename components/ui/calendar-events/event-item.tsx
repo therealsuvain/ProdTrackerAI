@@ -1,6 +1,6 @@
 import { CalendarEvent } from "@/types/calendar";
 import { Card, Text } from "react-native-paper";
-import XButton from "../XButton";
+import XButton from "../x-button";
 import { View, StyleSheet } from "react-native";
 import { useRoute } from '@react-navigation/native';
 import { useContext } from "react";

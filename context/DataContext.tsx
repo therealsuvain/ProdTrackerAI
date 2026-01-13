@@ -35,7 +35,7 @@ interface DataContextType {
   timerLogs: TimerLog[];
   setTimerLogs: (timerLogs: TimerLog[]) => void;
   habits: Habit[];
-  setHabits: (habits: Habit[]) => void;
+  setHabits: React.Dispatch<React.SetStateAction<Habit[]>>;
   error:{
     message: string;
     type?: "warning" | "fatal";

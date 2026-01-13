@@ -39,7 +39,21 @@ export const useNotifications = () => {
   }, []);
 };
 
+export const allScheduledNotificationsLogs = async () => {
+  const scheduledNotifications =
+    await Notifications.getAllScheduledNotificationsAsync();
 
+  // Each notification in the array has an 'identifier' property
+  scheduledNotifications.forEach((notification) => {
+    console.log(notification.identifier); // The notification ID
+    console.log(notification.content);
+    console.log(notification.trigger);
+  });
+};
+
+export const cancelAllScheduledNotifications = async () => {
+  await Notifications.cancelAllScheduledNotificationsAsync();
+};
 const getTriggerOptionsHabit = (habit: Habit) => {
   if (habit.frequency === "weekly") {
     return {
@@ -65,10 +79,12 @@ export const scheduleReminderEvents = async (event: CalendarEvent) => {
   for (
     let i = 0;
     i < maxScheduledNotifications &&
-     current.getTime() < event.endDate.getTime();
+    current.getTime() < event.endDate.getTime();
     i++
   ) {
-    if (!event.deletedOccurrences?.includes(current.toISOString().split('T')[0])) {
+    if (
+      !event.deletedOccurrences?.includes(current.toISOString().split("T")[0])
+    ) {
       const id = await Notifications.scheduleNotificationAsync({
         content: {
           title: "Upcoming event",
@@ -79,7 +95,7 @@ export const scheduleReminderEvents = async (event: CalendarEvent) => {
           date: current,
         },
       });
-      ids.push({ date: current.toISOString().split('T')[0], id });
+      ids.push({ date: current.toISOString().split("T")[0], id });
     }
 
     if (event.recurrence === "daily")
@@ -123,4 +139,3 @@ export const cancelReminder = async (id: string) => {
   console.log("canclled notification");
   await Notifications.cancelScheduledNotificationAsync(id);
 };
-

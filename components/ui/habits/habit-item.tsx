@@ -1,8 +1,8 @@
 import { Card, Text, Button, ProgressBar } from "react-native-paper";
 import { StyleSheet, View } from "react-native";
 import { Habit } from "@/types/habits";
-import { updateStreak } from "@/utils/habit-utils";
-import XButton from "../XButton";
+import { checkInHabit } from "@/utils/habit-utils";
+import XButton from "../x-button";
 import { useRoute } from "@react-navigation/native";
 import { useContext } from "react";
 import { ThemeContext } from "@/context/ThemeContext";
@@ -21,7 +21,7 @@ export default function HabitItem({
   const { theme } = useContext(ThemeContext);
   const progress = habit.goal ? habit.streak / habit.goal : 0;
   const handleCheckIn = () =>
-    onUpdate ? onUpdate(updateStreak(habit)) : undefined;
+    onUpdate ? onUpdate(checkInHabit(habit)) : undefined;
   const route = useRoute();
   const isNotHome = route.name !== "index";
 

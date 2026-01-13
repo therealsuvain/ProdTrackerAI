@@ -8,9 +8,10 @@ import HabitItem from "@/components/ui/habits/habit-item";
 import HabitModal from "@/components/modal/habit-modal";
 import { useHabitForm } from "@/hooks/use-habit-form";
 import { ThemeContext } from "@/context/ThemeContext";
+import { cancelReminder } from "@/hooks/use-notifications";
 
 export default function HabitsScreen() {
-  const {theme}= useContext(ThemeContext)
+  const { theme } = useContext(ThemeContext);
   const { habits, setHabits } = useData();
   const [visible, setVisible] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
@@ -37,7 +38,15 @@ export default function HabitsScreen() {
       { text: "Cancel" },
       {
         text: "Delete",
-        onPress: () => setHabits(habits.filter((h) => h.id !== id)),
+        onPress: async () => {
+          setHabits((currentHabits) => {
+            const habit = currentHabits.find((h: Habit) => h.id === id);
+            if (habit?.notificationId) {
+              cancelReminder(habit.notificationId);
+            }
+            return currentHabits.filter((h: Habit) => h.id !== id);
+          });
+        },
       },
     ]);
   };
@@ -62,7 +71,18 @@ export default function HabitsScreen() {
           )}
           ListEmptyComponent={<Text>No habits yet-add one</Text>}
         />
-        <FAB color={theme.habitDarkPrimary} style={[styles.fab,{backgroundColor:theme.habitBase, borderColor:theme.habitDarkSecondary}]} icon="plus" onPress={() => showModal()} />
+        <FAB
+          color={theme.habitDarkPrimary}
+          style={[
+            styles.fab,
+            {
+              backgroundColor: theme.habitBase,
+              borderColor: theme.habitDarkSecondary,
+            },
+          ]}
+          icon="plus"
+          onPress={() => showModal()}
+        />
       </View>
       <Portal>
         <HabitModal
@@ -84,6 +104,6 @@ const styles = StyleSheet.create({
     margin: 16,
     right: 0,
     bottom: 0,
-    borderWidth:1,
+    borderWidth: 1,
   },
 });

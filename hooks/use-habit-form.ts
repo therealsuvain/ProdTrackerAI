@@ -7,10 +7,16 @@ type Frequency = "daily" | "weekly";
 
 type FormState = Omit<
   Habit,
-  "id" | "notificationId" | "streak" | "lastCompleted"
+  | "id"
+  | "notificationId"
+  | "streak"
+  | "longestStreak"
+  | "history"
+  | "streakFreezes"
+  | "isArchived"
 > & {
   frequency: Frequency;
-  goal?: number | string;
+  targetDays: number[];
   errors: Partial<
     Record<"title" | "frequency" | "goal" | "reminder" | "reminderDate", string>
   >;
@@ -28,6 +34,7 @@ const initialState: FormState = {
   reminder: false,
   reminderDate: undefined,
   goal: undefined,
+  targetDays: [],
   errors: {},
 };
 
@@ -125,7 +132,11 @@ export const useHabitForm = ({
       title: state.title,
       frequency: state.frequency,
       streak: editingHabit ? editingHabit.streak : 0,
-      lastCompleted: editingHabit ? editingHabit.lastCompleted : undefined,
+      history: editingHabit ? editingHabit.history : [],
+      targetDays: state.targetDays,
+      isArchived: false,
+      streakFreezes: 0,
+      longestStreak: editingHabit ? editingHabit.streak : 0,
       reminder: state.reminder,
       reminderDate: state.reminderDate,
       goal: state.goal
@@ -139,7 +150,7 @@ export const useHabitForm = ({
     if (editingHabit && editingHabit.notificationId) {
       await cancelReminder(editingHabit.notificationId);
     }
-    
+
     if (newHabit.reminder) {
       const notifId = await scheduleReminderHabits(newHabit);
       newHabit.notificationId = notifId;

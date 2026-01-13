@@ -2,7 +2,7 @@ import { Task } from "@/types/task";
 import { Badge, Card, Checkbox } from "react-native-paper";
 import { StyleSheet, View, Text, Button } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import XButton from "../XButton";
+import XButton from "../x-button";
 import { useRoute } from '@react-navigation/native';
 import { useContext } from "react";
 import { ThemeContext } from "@/context/ThemeContext";

@@ -1,7 +1,7 @@
 import { TimerLog } from "@/types/timer";
 import { StyleSheet, View } from "react-native";
 import { Card, Text } from "react-native-paper";
-import XButton from "../XButton";
+import XButton from "../x-button";
 import { useRoute } from '@react-navigation/native';
 import { useContext } from "react";
 import { ThemeContext } from "@/context/ThemeContext";

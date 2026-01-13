@@ -14,6 +14,7 @@ import {
 } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { ThemeContext } from "@/context/ThemeContext";
+import DaySelector from "../ui/day-selector";
 
 interface Props {
   visible: boolean;
@@ -25,6 +26,7 @@ interface Props {
       | "frequency"
       | "reminder"
       | "reminderDate"
+      | "targetDays"
       | "goal"
       | "errors",
     value: any
@@ -92,6 +94,11 @@ export default function HabitModal({
           },
         ]}
       />
+      <DaySelector
+        visible={state.frequency == "weekly"}
+        selectedDays={state.targetDays}
+        onDaysChange={updateField}
+      />
       <TextInput
         style={styles.verticalMargin}
         label="Goal"
@@ -108,7 +115,10 @@ export default function HabitModal({
         <Switch
           value={state.reminder}
           thumbColor={theme.habitBase}
-          trackColor={{ false: theme.whiteBase, true: theme.habitDarkSecondary }}
+          trackColor={{
+            false: theme.whiteBase,
+            true: theme.habitDarkSecondary,
+          }}
           onValueChange={(val) => {
             updateField("reminder", val);
           }}
@@ -129,7 +139,9 @@ export default function HabitModal({
               {state.reminderDate?.toLocaleTimeString()}
             </Text>
             {state.errors?.reminderDate && (
-              <Text style={[styles.error,{color:theme.error}]}>{state.errors.reminderDate}</Text>
+              <Text style={[styles.error, { color: theme.error }]}>
+                {state.errors.reminderDate}
+              </Text>
             )}
             {showTimePicker && (
               <DateTimePicker
@@ -177,6 +189,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   text: { marginLeft: 10 },
-  error: {  fontSize: 12 },
+  error: { fontSize: 12 },
   verticalMargin: { marginVertical: 2.5 },
 });

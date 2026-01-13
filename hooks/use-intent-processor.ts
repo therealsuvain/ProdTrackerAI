@@ -19,6 +19,7 @@ export const useIntentProcessor = () => {
       setIsLoading(true);
       setIntent(null);
       setProcessingError(null);
+      console.log("Processing command:", transcript);
       const parsedIntent = await parseCommandToIntent(transcript);
       setIntent(parsedIntent);
       setIsLoading(false);
