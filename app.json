@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "myProductivityApp",
-    "slug": "myProductivityApp",
+    "name": "ProdTracker",
+    "slug": "ProdTracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -67,7 +67,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
+          "icon": "./assets/images/notification-icon.png",
           "color": "#05ce9c",
           "sounds": [],
           "androidMode": "default",
@@ -76,7 +76,7 @@
       ]
     ],
     "notification": {
-      "icon": "./assets/notification-icon.png",
+      "icon": "./assets/images/notification-icon.png",
       "color": "#05ce9c",
       "androidMode": "default",
       "androidCollapsedTitle": "Timer Running"

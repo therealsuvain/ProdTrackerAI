@@ -13,7 +13,7 @@ import { TimerLog } from "@/types/timer";
 import { Habit } from "@/types/habits";
 import { Ionicons } from "@expo/vector-icons";
 import { ProgressBar, Checkbox, Badge } from "react-native-paper";
-import { updateStreak } from "@/utils/habit-utils";
+import { checkInHabit } from "@/utils/habit-utils";
 import { ThemeContext } from "@/context/ThemeContext";
 
 interface UnifiedTimelineProps {
@@ -94,7 +94,9 @@ export default function UnifiedTimeline({
 
   // Check if habit was completed today
   const isHabitCompletedToday = (habit: Habit) => {
-    return habit.lastCompleted?.toDateString() === selectedDate.toDateString();
+    const today = new Date();
+    const todayISO = today.toISOString().split('T')[0];
+    return habit.history.includes(todayISO);
   };
 
   // Calculate positions for events
@@ -379,7 +381,7 @@ export default function UnifiedTimeline({
                     ],
                   ]}
                   onPress={() =>
-                    !completed && onHabitCheckIn?.(updateStreak(habit))
+                    !completed && onHabitCheckIn?.(checkInHabit(habit))
                   }
                   disabled={completed}
                 >
