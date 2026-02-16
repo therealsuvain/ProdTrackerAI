@@ -26,6 +26,7 @@ import {
   dummyHabits,
 } from "../data/dummyData";
 import { cancelReminder } from "@/hooks/use-notifications";
+import {applyMissedDayLogic} from "@/utils/habit-utils";
 
 interface DataContextType {
   tasks: Task[];
@@ -122,6 +123,8 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         if (loadedHabits.length === 0) loadedHabits = dummyHabits;
       }
 
+      loadedHabits = loadedHabits.map(habit => applyMissedDayLogic(habit));
+      
       setTasks(loadedTasks);
       setEvents(loadedEvents);
       setTimerLogs(loadedLogs);

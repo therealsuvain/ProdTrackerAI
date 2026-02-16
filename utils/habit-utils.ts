@@ -1,6 +1,6 @@
 import { Habit } from "@/types/habits";
 
-const STREAK_MILESTONE = 7; 
+const STREAK_MILESTONE = 5; 
 const MAX_FREEZES = 3;
 
 export const getTodayISO = () => new Date().toISOString().split('T')[0];
@@ -78,6 +78,21 @@ export const calculateStreak = (habit: Habit): number => {
  * 2. Updates Streak.
  * 3. Consumes Freeze if needed (future implementation).
  */
+export const freezeHabit = (habit: Habit): Habit => {
+  const todayISO = getTodayISO();
+  // Prevent double check-in
+  if (habit.freezeHistory?.includes(todayISO)) return habit;
+
+  const newFreezeHistory = [...(habit.freezeHistory || []), todayISO];
+  const newFreezes = habit.streakFreezes > 0 ? habit.streakFreezes - 1 : 0;
+
+  return {
+    ...habit,
+    streakFreezes: newFreezes,
+    freezeHistory: newFreezeHistory,
+    // Streak is preserved (maintained at current value)
+  };
+}
 export const checkInHabit = (habit: Habit): Habit => {
   const todayISO = getTodayISO();
 
@@ -106,8 +121,10 @@ export const checkInHabit = (habit: Habit): Habit => {
     isStreakContinuous = true; // First ever checkin
   } else {
     const lastDate = new Date(lastDateStr);
-    const todayDate = new Date();
+    const todayDate = new Date(todayISO);
+    console.log('Last Date:', lastDate, 'Today:', todayDate);
     const diffTime = Math.abs(todayDate.getTime() - lastDate.getTime());
+    console.log('Diff Time (ms):', diffTime);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (habit.frequency === 'daily') {
@@ -126,6 +143,7 @@ export const checkInHabit = (habit: Habit): Habit => {
     ...habit,
     history: newHistory,
     streak: isStreakContinuous ? newStreak : 1,
-    longestStreak: Math.max(habit.longestStreak || 0, isStreakContinuous ? newStreak : 1)
+    longestStreak: Math.max(habit.longestStreak || 0, isStreakContinuous ? newStreak : 1),
+    streakFreezes: newFreezes
   };
 };

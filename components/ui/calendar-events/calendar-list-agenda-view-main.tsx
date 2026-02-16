@@ -34,6 +34,49 @@ export default function CalendarListAgendaMain({
     return date.toISOString().split("T")[0];
   };
 
+  const getEventsForSingleDay = useCallback((strTime: string, allEvents: any[]) => {
+    
+    const dayEvents = allEvents.filter((event) => {        
+        const eventStartDate = new Date(event.startDate);
+        eventStartDate.setHours(0, 0, 0, 0);
+        const eventEndDate = new Date(event.endDate);
+        eventEndDate.setHours(0, 0, 0, 0);
+
+        // Current Day (Normalized)
+        const currentDay = new Date(strTime);
+        currentDay.setHours(0,0,0,0);
+        const currentDayTime = currentDay.getTime();
+
+        if (currentDayTime < eventStartDate.getTime()) return false;
+        if (currentDayTime > eventEndDate.getTime()) return false;
+        if (event.deletedOccurrences?.includes(strTime)) return false;
+
+        const eventStartDateString = event.startDate.toISOString().split("T")[0];
+
+        if (event.recurrence === "none" || !event.recurrence) {
+          return eventStartDateString === strTime;
+        }
+        if (event.recurrence === "daily") return true;
+        if (event.recurrence === "weekly") {
+           return currentDay.getDay() === eventStartDate.getDay();
+        }
+        return false;
+    });
+
+    if (dayEvents.length > 0) {
+      return dayEvents
+        .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
+        .map((event) => ({
+          name: event.title,
+          height: 40,
+          day: strTime,
+          event: event,
+          occurence: strTime,
+        }));
+    }
+    return [];
+  }, []);
+
   const loadItems = (day: DateData) => {
     // We must use the functional form of setItems to prevent an infinite loop
     setItems((prevItems) => {
@@ -47,88 +90,8 @@ export default function CalendarListAgendaMain({
         //console.log("strTime", strTime)
         // Only load if we haven't already
         if (!newItems[strTime]) {
+          newItems[strTime] = getEventsForSingleDay(strTime, events);
           itemsWereAdded = true; // Mark that we're adding new days
-
-          // --- START OF FILTER FIX ---
-
-          const dayEvents = events.filter((event) => {
-            // Get the day we are *currently checking* (from the loop)
-            // Normalized to midnight
-            //console.log("i:",i)
-            const currentDay = new Date(time);
-            currentDay.setHours(0, 0, 0, 0);
-            // console.log("current", currentDay)
-            const currentDayTimestamp = currentDay.getTime();
-            const currentDayEndTimestamp =
-              currentDayTimestamp + 24 * 60 * 60 * 1000 - 1;
-
-            // Get the event's start *date* (normalized to midnight)
-            const eventStartDate = new Date(event.startDate);
-            eventStartDate.setHours(0, 0, 0, 0);
-            // console.log("start", eventStartDate)
-            const eventStartDateTimestamp = eventStartDate.getTime();
-
-            // Get the event's end *date* (normalized to midnight)
-            const eventEndDate = new Date(event.endDate);
-            eventEndDate.setHours(0, 0, 0, 0);
-            //console.log("end", eventEndDate)
-            const eventEndDateTimestamp = eventEndDate.getTime();
-
-            if (currentDayTimestamp < eventStartDateTimestamp) {
-              return false;
-            }
-
-            if (currentDayTimestamp > eventEndDateTimestamp) {
-              return false;
-            }
-
-            if (event.deletedOccurrences?.includes(strTime)) {
-              return false;
-            }
-
-            // Now we know the currentDay is *within* the event's start/end range.
-            // We can proceed with the recurrence logic.
-
-            const eventStartDateString = event.startDate
-              .toISOString()
-              .split("T")[0];
-
-            // Check 1: Is it a non-recurring event on its exact start date?
-            if (event.recurrence === "none" || !event.recurrence) {
-              return eventStartDateString === strTime;
-            }
-
-            // Check 2: Is it a daily recurrence?
-            // (We already know we're within the start/end dates, so this is valid)
-            if (event.recurrence === "daily") {
-              return true;
-            }
-
-            // Check 3: Is it a weekly recurrence?
-            if (event.recurrence === "weekly") {
-              // Check if the day of the week matches the event's *start* day
-              return currentDay.getDay() === eventStartDate.getDay();
-            }
-
-            return false;
-          });
-
-          // --- END OF FILTER FIX ---
-
-          if (dayEvents.length > 0) {
-            newItems[strTime] = dayEvents
-              .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
-              .map((event) => ({
-                name: event.title,
-                height: 40,
-                day: strTime,
-                event: event,
-                occurence: strTime, // Store full event object
-              }));
-          } else {
-            // Empty array for days with no events
-            newItems[strTime] = [];
-          }
         }
       }
 
@@ -156,12 +119,29 @@ export default function CalendarListAgendaMain({
     };
     loadItems(dateData);
   }, [events, loadItems]);
-  /* const [refreshKey, setRefreshKey] = useState(0);
 
-useEffect(() => {
-  setRefreshKey(k => k + 1);
-  console.log(refreshKey)
-}, [events]); */
+  useEffect(() => {
+    setItems((prevItems) => {
+      // 1. Get all dates currently loaded in the calendar
+      const loadedDates = Object.keys(prevItems);
+      
+      // If nothing is loaded yet, do nothing
+      if (loadedDates.length === 0) return prevItems;
+
+      // 2. Create a shallow copy
+      const newItems = { ...prevItems };
+
+      // 3. Force recalculate events ONLY for the loaded dates
+      // We do NOT use the "if (!newItems)" check here. We overwrite.
+      loadedDates.forEach((strTime) => {
+        newItems[strTime] = getEventsForSingleDay(strTime, events);
+      });
+
+      // 4. Return new object reference
+      return newItems;
+    });
+  }, [events, getEventsForSingleDay]);
+
 
   const renderItem = (reservation: AgendaEntry, isFirst: boolean) => {
     const event = (reservation as any).event as CalendarEvent;
@@ -191,7 +171,7 @@ useEffect(() => {
   };
 
   const rowHasChanged = (r1: AgendaEntry, r2: AgendaEntry) => {
-    return r1.name !== r2.name;
+    return JSON.stringify(r1) !== JSON.stringify(r2);
   };
 
   const selectedStr = selectedDate.toISOString().split("T")[0];

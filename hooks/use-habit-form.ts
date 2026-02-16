@@ -12,7 +12,6 @@ type FormState = Omit<
   | "streak"
   | "longestStreak"
   | "history"
-  | "streakFreezes"
   | "isArchived"
 > & {
   frequency: Frequency;
@@ -33,6 +32,7 @@ const initialState: FormState = {
   frequency: "daily",
   reminder: false,
   reminderDate: undefined,
+  streakFreezes:1,
   goal: undefined,
   targetDays: [],
   errors: {},
@@ -135,7 +135,7 @@ export const useHabitForm = ({
       history: editingHabit ? editingHabit.history : [],
       targetDays: state.targetDays,
       isArchived: false,
-      streakFreezes: 0,
+      streakFreezes: state.streakFreezes,
       longestStreak: editingHabit ? editingHabit.streak : 0,
       reminder: state.reminder,
       reminderDate: state.reminderDate,

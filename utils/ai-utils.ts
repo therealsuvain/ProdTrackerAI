@@ -421,6 +421,7 @@ export const executeIntent = async (
     setIsProcessing(true);
     if (intent.intent === "multi_action") {
       for (const action of intent.actions) {
+        console.log(action);
         await executeSingleIntent(action, {
           tasks,
           setTasks,

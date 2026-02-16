@@ -3,7 +3,6 @@ import { useContext, useState } from "react";
 import { useData } from "@/hooks/use-data";
 import { Habit } from "@/types/habits";
 import { FAB, Portal, Provider, Text } from "react-native-paper";
-import { LineChart } from "react-native-chart-kit";
 import HabitItem from "@/components/ui/habits/habit-item";
 import HabitModal from "@/components/modal/habit-modal";
 import { useHabitForm } from "@/hooks/use-habit-form";
@@ -30,6 +29,7 @@ export default function HabitsScreen() {
   const hideModal = () => setVisible(false);
 
   const handleUpdate = (updated: Habit) => {
+    console.log("Updating habit:", updated);
     setHabits(habits.map((h) => (h.id === updated.id ? updated : h)));
   };
 
@@ -68,6 +68,7 @@ export default function HabitsScreen() {
               onUpdate={handleUpdate}
               onDelete={() => handleDelete(item.id)}
             />
+            
           )}
           ListEmptyComponent={<Text>No habits yet-add one</Text>}
         />

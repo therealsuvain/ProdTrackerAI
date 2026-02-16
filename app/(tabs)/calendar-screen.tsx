@@ -73,7 +73,8 @@ export default function CalendarScreen() {
       <ViewSwitcher currentView={currentView} onChange={setCurrentView} />
       {currentView === "month" ? (
         <CalendarListAgendaMain
-          events={events}
+        //key={Object.keys(events).length}
+          events={[...events]}
           selectedDate={selectedDate}
           onDateSelect={(date: Date) => {
             setSelectedDate(date);

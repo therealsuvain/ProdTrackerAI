@@ -3,7 +3,6 @@ import * as Notifications from "expo-notifications";
 import { CalendarEvent } from "@/types/calendar";
 import { Task } from "@/types/task";
 import { Habit } from "@/types/habits";
-import { useData } from "./use-data";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -16,7 +15,6 @@ Notifications.setNotificationHandler({
 
 export const useNotifications = () => {
   const notificationListener = useRef<any>(undefined);
-  const { tasks, setTasks, events, setEvents, habits, setHabits } = useData();
 
   const requestPermissions = async () => {
     const { status } = await Notifications.requestPermissionsAsync();

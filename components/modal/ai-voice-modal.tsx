@@ -18,6 +18,11 @@ import {
 } from "react-native-paper";
 import { useVoiceInput } from "@/hooks/use-voice-input";
 import LottieView from "lottie-react-native";
+import * as Haptics from "expo-haptics";
+import { useAudioPlayer } from "expo-audio";
+import { Ionicons } from "@expo/vector-icons";
+import LoadingIndicator from "../loading-indicator";
+import { ThemeContext } from "@/context/ThemeContext";
 
 const AnimatedLottieView = Animated.createAnimatedComponent(LottieView);
 
@@ -26,11 +31,7 @@ interface AIVoiceModalProps {
   onDismiss: () => void;
   IntentProcessor: (transcript: string) => void;
 }
-import * as Haptics from "expo-haptics";
-import { useAudioPlayer } from "expo-audio";
-import { Ionicons } from "@expo/vector-icons";
-import LoadingIndicator from "../loading-indicator";
-import { ThemeContext } from "@/context/ThemeContext";
+
 
 export default function AIVoiceModal({
   visible,

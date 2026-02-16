@@ -6,10 +6,11 @@ import XButton from "../x-button";
 import { useRoute } from "@react-navigation/native";
 import { useContext } from "react";
 import { ThemeContext } from "@/context/ThemeContext";
+import HabitStats from "./habit-stats";
 
 interface HabitItemProps {
   habit: Habit;
-  onUpdate?: (updated: Habit) => void;
+  onUpdate: (updated: Habit) => void;
   onDelete?: () => void;
 }
 
@@ -28,10 +29,23 @@ export default function HabitItem({
   return (
     <Card style={[styles.container, {backgroundColor: theme.habitDarkPrimary}, !isNotHome && {borderRadius:0}]}>
       <Card.Content>
+        <View style={{flexDirection:'row', justifyContent:'space-between'}}>
+          <View style={styles.container}>
         <Text variant="titleMedium" style={{color:theme.whiteBase}}>{habit.title}</Text>
         <Text style={{color:theme.whiteBase}}>
           Streak: {habit.streak} / Goal: {habit.goal || "OnGoing"}
         </Text>
+        </View>
+        {/* <View style={{flexDirection:'row'}}>
+        <Text style={{color:theme.whiteBase, paddingHorizontal:2}}>
+           LS:{habit.longestStreak}
+        </Text>
+        <Text style={{color:theme.whiteBase}}>
+           F:{habit.streakFreezes}
+        </Text>
+        </View> */}
+        <HabitStats habit={habit} onUpdate={onUpdate}/>
+        </View>
         <ProgressBar progress={progress} color={theme.habitBase} />
         <View style={styles.buttons}>
           {isNotHome && (

@@ -44,6 +44,7 @@ export default function XButton({ icon, onPress, mode, size }: XButtonProps) {
     },
   ];
 
+
   return (
     <View style={size === "big" ? styles.biggerContainer : styles.container}>
       <Pressable style={pressedFunc} onPress={onPress}>
