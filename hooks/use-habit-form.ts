@@ -32,7 +32,7 @@ const initialState: FormState = {
   frequency: "daily",
   reminder: false,
   reminderDate: undefined,
-  streakFreezes:1,
+  streakFreezes:5,
   goal: undefined,
   targetDays: [],
   errors: {},

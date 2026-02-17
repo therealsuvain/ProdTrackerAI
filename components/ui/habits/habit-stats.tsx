@@ -89,11 +89,7 @@ export default function HabitStats({ habit, onUpdate }: HabitStatsProps) {
       </View>
       <Pressable onPress={handleFreeze}>
         <Text
-          style={{
-            color: playedSoundRef.current
-              ? theme.whiteBase
-              : theme.greyBasePrimary,
-          }}
+          style={styles.text}
         >
           {habit.streakFreezes}
         </Text>
@@ -144,6 +140,6 @@ const styles = StyleSheet.create({
     height: 120,
     position: "absolute",
     top: -30,
-    left: -70,
+    left: -61,
   },
 });

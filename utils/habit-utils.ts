@@ -18,12 +18,12 @@ export const applyMissedDayLogic = (habit: Habit): Habit => {
   const todayISO = today.toISOString().split('T')[0];
 
   // If already done today or yesterday, we are safe.
-  if (habit.history.includes(todayISO) || habit.history.includes(yesterdayISO)) {
+  if (habit.history.length==0 || habit.history.includes(todayISO) || habit.history.includes(yesterdayISO)) {
     return habit;
   }
   
   // If yesterday was FROZEN, we are also safe (recursive check, simplified here)
-  if (habit.freezeHistory?.includes(yesterdayISO)) {
+  if (habit.freezeHistory?.includes(yesterdayISO) || habit.freezeHistory?.includes(todayISO)) {
     return habit;
   }
 
