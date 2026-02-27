@@ -8,7 +8,7 @@ import { Text } from "react-native";
 import SuspenseBoundary from "@/components/suspense-boundary";
 import { ErrorBoundary } from "react-error-boundary";
 import { FallbackComponent } from "@/components/error-fallback-component";
-import TimerProvider from "@/context/TimerContextC";
+import TimerProvider from "@/context/TimerContext";
 import { Easing } from "react-native-reanimated";
 import ThemeProvider, { ThemeContext } from "@/context/ThemeContext";
 import { ThemeContext as MyTheme } from "@/context/ThemeContext";

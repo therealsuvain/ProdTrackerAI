@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useContext } from "react";
 import { TimerLog } from "@/types/timer";
 import { randomUUID } from "expo-crypto";
-import { TimerContext } from "@/context/TimerContextC";
+import { TimerContext } from "@/context/TimerContext";
 
 export const useTimer =(/*addLog: (log : TimerLog) => void*/) => {
     // const [time, setTime]= useState(0);

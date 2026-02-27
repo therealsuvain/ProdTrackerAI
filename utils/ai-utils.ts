@@ -19,6 +19,13 @@ import {
   scheduleReminderTasks,
 } from "@/hooks/use-notifications";
 import { TimerLog } from "@/types/timer";
+import { ActionRegistry, executeActions } from "./AI-utils/registry-handler";
+import { AIActionContext } from "../types/ai-handler";
+import { generateSystemPrompt } from "./AI-utils/system-prompt";
+import { gemini_ai } from "./AI-utils/llm-client";
+import { aiTools } from "./AI-utils/tool-definitions";
+import { FunctionCall } from "@google/genai";
+import { getAppStatusSnapshot } from "./AI-utils/system-context";
 
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_STT_API_KEY//Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
 const HF_TOKEN = process.env.EXPO_PUBLIC_HUGGING_FACE_API_TOKEN;
@@ -314,13 +321,13 @@ export const executeSingleIntent = async (
         if (
           (updatedEvent.startDate.toDateString() !==
             targetEvent.startDate.toDateString() ||
-          updatedEvent.endDate.toDateString() !==
+            updatedEvent.endDate.toDateString() !==
             targetEvent.endDate.toDateString() ||
-          updatedEvent.startTime.toTimeString() !==
+            updatedEvent.startTime.toTimeString() !==
             targetEvent.startTime.toTimeString() ||
-          updatedEvent.endTime.toTimeString() !==
+            updatedEvent.endTime.toTimeString() !==
             targetEvent.endTime.toTimeString() ||
-          updatedEvent.recurrence !== targetEvent.recurrence) &&
+            updatedEvent.recurrence !== targetEvent.recurrence) &&
           targetEvent.notificationIds
         ) {
           targetEvent.notificationIds.forEach((n) => cancelReminder(n.id));
@@ -399,6 +406,199 @@ export const executeSingleIntent = async (
       Alert.alert("Unknown intent");
   }
 };
+export const validateParams = (intent: string, params: any) => {
+  const requiresId = ['edit_task', 'delete_task', 'complete_task', 'checkin_habit'];
+
+  if (requiresId.includes(intent) && !params.id) {
+    throw new Error(`Intent ${intent} requires a valid 'id' parameter.`);
+  }
+
+  // Add more specific logic: e.g., dueDate must be a valid ISO string
+  return true;
+};
+
+export const runSafeAgentLoop = async (transcript: string, context: any) => {
+  // 1. Get Gemini's Plan
+  const plan = await runAgentLoop(transcript, context);
+
+  const pendingActions = [];
+  const safeActions = [];
+
+  for (const action of plan?.actions) {
+    if (isDestructive(action.intent)) {
+      pendingActions.push(action); // Needs UI confirmation
+    } else {
+      safeActions.push(action); // Can run immediately
+    }
+  }
+
+  // 2. Execute safe actions (Add task, Start timer)
+  if (safeActions.length > 0) {
+    await executeActions(safeActions, context);
+  }
+
+  // 3. Return pending actions to show in IntentConfirmationModal
+  return {
+    reasoning: plan?.reasoning,
+    pendingActions: pendingActions,
+    requiresConfirmation: pendingActions.length > 0
+  };
+};
+
+export const DESTRUCTIVE_ACTIONS = ['delete_task', 'delete_event', 'delete_habit'];
+
+export const isDestructive = (intent: string) => DESTRUCTIVE_ACTIONS.includes(intent);
+
+let activeChatSession: any = null;
+export const chatIntialize = async (context: any) => {
+try{
+  if (!activeChatSession) {
+    const systemContext = generateSystemPrompt(context);
+    activeChatSession = gemini_ai.chats.create({
+      model: "gemini-2.5-flash",
+      config: {
+        tools: [{ functionDeclarations: aiTools }],
+      }
+      ,
+      history: [
+        { role: "user", parts: [{ text: `${systemContext}` }] },
+        { role: "model", parts: [{ text: "Understood. I have access to the user's state and tools." }] }
+      ]
+    });
+    return activeChatSession
+  }
+  const updatedSnapshot = getAppStatusSnapshot(context);
+  if (updatedSnapshot) {
+    console.log("Sending context patch to Gemini:", updatedSnapshot);
+    await activeChatSession.sendMessage({ message: `${updatedSnapshot}` });
+  }
+} catch (error) {
+  console.error("Chat initialization failed:", error);
+  activeChatSession = null;
+}
+  return activeChatSession;
+}
+
+export const runAgentLoop = async (userInput: string, context: any) => {
+  const chat = await chatIntialize(context);
+  let message = userInput;
+  let response = await chat.sendMessage({ message });
+
+  // MAX_TURNS prevents infinite loops if the AI gets confused
+  const MAX_TURNS = 5;
+  let turns = 0;
+
+  while (turns < MAX_TURNS) {
+    const calls = response.functionCalls;
+
+    // If there are no more function calls, the AI is done and just responding with text.
+    if (!calls || calls.length === 0) break;
+
+    const toolResults = [];
+
+    // Execute each tool call and collect results
+    for (const call of calls) {
+      if (!call.name) continue;
+      const handler = ActionRegistry[call.name];
+      if (handler) {
+        const result = await handler.execute(call.args, context);
+        // We must format the result as a 'FunctionResponse' to send back to Gemini
+        toolResults.push({
+          functionResponse: {
+            name: call.name,
+            response: { content: result }
+          }
+        });
+      }
+    }
+
+    // Send the observations back to Gemini so it can take the next step
+    response = await chat.sendMessage({ message: toolResults });
+    turns++;
+  }
+
+  return JSON.parse(response.text || "");
+};
+
+export const processCommandAgentic = async (transcript: string, context: any) => {
+  //const systemContext = generateSystemPrompt(context);
+  const chat = await chatIntialize(context);
+  // Start a chat session with history for multi-turn reasoning
+  // const chat = gemini_ai.chats.create({
+  //   model: "gemini-2.5-flash",
+  //   config: {
+  //     tools: [{ functionDeclarations: aiTools }],
+  //   }
+  //   ,
+  //   history: [
+  //     { role: "user", parts: [{ text: `System: Role: Senior Productivity Agent. Env: ${systemContext}` }] },
+  //     { role: "model", parts: [{ text: "Understood. I have access to the user's state and tools." }] }
+  //   ]
+  // });
+
+  try {
+    const result = await chat.sendMessage({ message: transcript });
+    console.log("FUNCTIONCALLS", result.functionCalls);
+    const response = result.text?.replace(/```json|```/g, "").trim();
+    console.log("CHAT RESPONSE:", response);
+    const calls = result.functionCalls;
+
+    return { response, calls };
+
+
+    //return  response ;
+  } catch (error) {
+    console.error("Agent Loop Failed:", error);
+    throw error;
+
+  }
+};
+
+export const agenticExecutor = async (calls: FunctionCall[] | undefined, context: AIActionContext) => {
+  console.log("Executing agentic actions:", calls);
+  if (calls) {
+    for (const call of calls) {
+      if (!call.name) continue;
+      console.log(call.name)
+      const handler = ActionRegistry[call.name];
+      if (handler) {
+        console.log(`[Agent] Calling ${call.name} with:`, call.args);
+        await handler.execute(call.args, context);
+      }
+    }
+    //return { success: true, message: "Actions executed successfully." };
+  }
+}
+export const processUserCommand = async (userTranscript: string, context: any) => {
+  const systemInstruction = generateSystemPrompt(context, userTranscript);
+
+  try {
+
+    const response = await gemini_ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.1, // This forces JSON output
+      },
+      contents: systemInstruction,
+    });
+    console.log("Token:", response.usageMetadata);
+    const text = response.text;
+
+    // Clean Markdown backticks if Gemini adds them
+    const cleanedJson = text?.replace(/```json|```/g, "").trim();
+    const parsedIntent = JSON.parse(cleanedJson || "{}");
+
+    if (parsedIntent.actions && parsedIntent.actions.length > 0) {
+      await executeActions(parsedIntent.actions, context);
+    }
+    return parsedIntent;
+  } catch (error) {
+    console.error("Agentic Error:", error);
+    throw error;
+  }
+};
+
 export const executeIntent = async (
   intent: AIIntent,
   setIsProcessing: (value: boolean) => void,

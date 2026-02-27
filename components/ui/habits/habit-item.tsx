@@ -10,7 +10,7 @@ import HabitStats from "./habit-stats";
 
 interface HabitItemProps {
   habit: Habit;
-  onUpdate: (updated: Habit) => void;
+  onUpdate?: (updated: Habit) => void;
   onDelete?: () => void;
 }
 

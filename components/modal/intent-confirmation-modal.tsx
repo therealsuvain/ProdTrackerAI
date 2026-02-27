@@ -17,9 +17,10 @@ import Fuse from "fuse.js";
 import { CalendarEvent } from "@/types/calendar";
 import { Habit } from "@/types/habits";
 import { ThemeContext } from "@/context/ThemeContext";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 interface IntentConfirmationModalProps {
-  intent: AIIntent | null;
+  intent: any;
   onConfirm: () => void;
 }
 
@@ -30,17 +31,18 @@ export function IntentConfirmationModal({
   const { theme } = useContext(ThemeContext);
   const [visible, setVisible] = useState(true);
   const { tasks, events, habits } = useData();
-
+  console.log("mineModal",intent)
   const renderPreview = () => {
     if (!intent) return null;
 
-    if (intent.intent === "multi_action") {
+    //if (intent.intent === "multi_action") 
+    if (intent.actions )  {
       return (
         <View>
           <Text style={[styles.label, { color: theme.whiteBase }]}>
             Multiple Actions
           </Text>
-          {(intent.actions || []).map((act: any, idx: number) => (
+          {(intent.actions).map((act: any, idx: number) => (
             <View
               key={idx}
               style={{
@@ -342,7 +344,7 @@ export function IntentConfirmationModal({
   };
   //console.log("modal intent", intent)
   //console.log(intent===null)
-  if (intent == null) return null;
+  //if (intent == null) return null;
   return (
     <Portal>
       <View style={styles.container}>
@@ -362,6 +364,21 @@ export function IntentConfirmationModal({
             <Text style={{ color: "#ffffff" }}>
               Params: {JSON.stringify(intent.params, null, 2)}
             </Text> */}
+            <View style={styles.reasoningContainer}>
+              <MaterialCommunityIcons
+                name="brain"
+                size={20}
+                color={theme.whiteBase}
+              />
+              <Text
+                style={[
+                  styles.reasoningText,
+                  { color: theme.whiteBase },
+                ]}
+              >
+                {/* {intent.reasoning} */}
+              </Text>
+            </View> 
             {renderPreview()}
             <Button
               mode="contained"
@@ -428,5 +445,19 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     marginVertical: 4,
+  },
+  reasoningContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  reasoningText: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontStyle: 'italic',
+    flex: 1,
   },
 });

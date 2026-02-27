@@ -155,6 +155,12 @@ export const createHabit = (
         ? params.frequency
         : "daily",
       streak: params.streak ?? 0,
+      longestStreak:0,
+      history:[],
+      freezeHistory:[],
+     // targetDays : params.targetDays,
+      streakFreezes : 1,
+      isArchived : false,
       goal,
       reminder: params.reminder,
       reminderDate,

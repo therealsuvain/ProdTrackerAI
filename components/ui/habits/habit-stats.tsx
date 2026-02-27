@@ -8,7 +8,7 @@ import {freezeHabit} from "@/utils/habit-utils";
 
 interface HabitStatsProps {
   habit: Habit;
-  onUpdate: (updated: Habit) => void;
+  onUpdate?: (updated: Habit) => void;
 }
 
 const AnimatedLottieView = Animated.createAnimatedComponent(LottieView);
@@ -39,7 +39,7 @@ export default function HabitStats({ habit, onUpdate }: HabitStatsProps) {
     }
     let oldStreakFreezes = habit.streakFreezes
     const updatedHabit = freezeHabit(habit);
-    onUpdate(updatedHabit);
+    onUpdate?(updatedHabit):undefined;
     console.log("NEW FREEZE", updatedHabit.streakFreezes)
  
     if(oldStreakFreezes > updatedHabit.streakFreezes) 
