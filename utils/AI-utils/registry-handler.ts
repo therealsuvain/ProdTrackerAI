@@ -4,6 +4,10 @@ import { AddHabitHandler, DeleteHabitHandler, CheckInHabitHandler } from "./habi
 import { AddEventHandler, EditEventHandler, DeleteEventHandler } from "./event-handler";
 import { StartTimerHandler, StopTimerHandler } from "./timer-handler";
 
+/**  
+ * TODO: Add more handlers, summaries, searchs for various types of requests, maybe simple analytics 
+ */
+
 // This will eventually hold all our handlers
 const SearchTasksHandler= {
   execute: async (params:any, context:AIActionContext) => {

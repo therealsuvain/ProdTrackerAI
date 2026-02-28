@@ -12,7 +12,7 @@ export const useIntentProcessor = () => {
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [intent, setIntent] = useState<string|undefined>(undefined);
+  const [intent, setIntent] = useState<string | undefined>(undefined);
   const [AIFunctionCalls, setAIFunctionCalls] = useState<FunctionCall[] | undefined>();
   const [procesingError, setProcessingError] = useState<string | null>(null);
 
@@ -22,7 +22,7 @@ export const useIntentProcessor = () => {
       setIntent(undefined);
       setProcessingError(null);
       console.log("Processing command:", transcript);
-      const {response , calls} = await processCommandAgentic(transcript, { ...dataContext, setTitle, start, stop, navigation });
+      const { response, calls } = await processCommandAgentic(transcript, { ...dataContext, setTitle, start, stop, navigation });
       //processUserCommand(transcript, {...dataContext, start, stop, navigation})
       //parseCommandToIntent(transcript);
       //geminiPrompt(transcript);
@@ -38,16 +38,16 @@ export const useIntentProcessor = () => {
   };
   //const isValidIntent = (val: string|undefined): val is string => val !== undefined;
   const confirmExecute = async () => {
-  //  if (isValidIntent(intent)) {
-      await agenticExecutor(AIFunctionCalls, { ...dataContext, setTitle, start, stop, navigation });
-      // executeIntent(
-      //   intent,
-      //   setIsProcessing,
-      //   { ...dataContext, setTitle, start, stop, navigation }
-      // );
-      //setIntent(undefined);
-      //setAIFunctionCalls(undefined);
-   // }
+    //  if (isValidIntent(intent)) {
+    await agenticExecutor(AIFunctionCalls, { ...dataContext, setTitle, start, stop, navigation });
+    // executeIntent(
+    //   intent,
+    //   setIsProcessing,
+    //   { ...dataContext, setTitle, start, stop, navigation }
+    // );
+    //setIntent(undefined);
+    //setAIFunctionCalls(undefined);
+    // }
   };
 
   return { isLoading, isProcessing, processCommand, confirmExecute, intent, procesingError };

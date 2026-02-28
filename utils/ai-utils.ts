@@ -451,31 +451,31 @@ export const isDestructive = (intent: string) => DESTRUCTIVE_ACTIONS.includes(in
 
 let activeChatSession: any = null;
 export const chatIntialize = async (context: any) => {
-try{
-  if (!activeChatSession) {
-    const systemContext = generateSystemPrompt(context);
-    activeChatSession = gemini_ai.chats.create({
-      model: "gemini-2.5-flash",
-      config: {
-        tools: [{ functionDeclarations: aiTools }],
-      }
-      ,
-      history: [
-        { role: "user", parts: [{ text: `${systemContext}` }] },
-        { role: "model", parts: [{ text: "Understood. I have access to the user's state and tools." }] }
-      ]
-    });
-    return activeChatSession
+  try {
+    if (!activeChatSession) {
+      const systemContext = generateSystemPrompt(context);
+      activeChatSession = gemini_ai.chats.create({
+        model: "gemini-2.5-flash",
+        config: {
+          tools: [{ functionDeclarations: aiTools }],
+        }
+        ,
+        history: [
+          { role: "user", parts: [{ text: `${systemContext}` }] },
+          { role: "model", parts: [{ text: "Understood. I have access to the user's state and tools." }] }
+        ]
+      });
+      return activeChatSession
+    }
+    const updatedSnapshot = getAppStatusSnapshot(context);
+    if (updatedSnapshot) {
+      console.log("Sending context patch to Gemini:", updatedSnapshot);
+      await activeChatSession.sendMessage({ message: `${updatedSnapshot}` });
+    }
+  } catch (error) {
+    console.error("Chat initialization failed:", error);
+    activeChatSession = null;
   }
-  const updatedSnapshot = getAppStatusSnapshot(context);
-  if (updatedSnapshot) {
-    console.log("Sending context patch to Gemini:", updatedSnapshot);
-    await activeChatSession.sendMessage({ message: `${updatedSnapshot}` });
-  }
-} catch (error) {
-  console.error("Chat initialization failed:", error);
-  activeChatSession = null;
-}
   return activeChatSession;
 }
 
@@ -538,11 +538,32 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
 
   try {
     const result = await chat.sendMessage({ message: transcript });
+    console.log("Token:", result.usageMetadata);
     console.log("FUNCTIONCALLS", result.functionCalls);
     const response = result.text?.replace(/```json|```/g, "").trim();
     console.log("CHAT RESPONSE:", response);
     const calls = result.functionCalls;
 
+    if (calls?.some((call:any) => call.name === 'search-tasks')) {
+      const toolResults = [];
+
+      for (const call of calls) {
+        if (call.name === 'search-tasks') {
+          const handler = ActionRegistry[call.name];
+          const data = await handler.execute(call.args, context);
+
+          toolResults.push({
+            functionResponse: { name: call.name, response: { content: data } }
+          });
+        }
+      }
+
+      const finalResult = await chat.sendMessage(toolResults);
+      return {
+        response: finalResult.text,
+        calls: finalResult.functionCalls // Now contains the 'Edit/Delete' calls based on search
+      };
+    }
     return { response, calls };
 
 

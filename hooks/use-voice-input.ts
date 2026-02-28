@@ -12,37 +12,37 @@ import {
 import { transcribeAudio } from "@/utils/ai-utils";
 import { Alert } from "react-native";
 
-interface Props{
-  IntentProcessor: (transcript: string) => void;
-  onDismiss: () => void;
+interface Props {
+  IntentProcessor?: (transcript: string) => void;
+  onDismiss?: () => void;
 }
-export const useVoiceInput = ({IntentProcessor, onDismiss}:Props) => {
+export const useVoiceInput = ({ IntentProcessor, onDismiss }: Props) => {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const recordingOptions: RecordingOptions = {
- extension: '.wav',
-  sampleRate: 44100,
-  numberOfChannels: 2,
-  bitRate: 128000,
-  android: {
-    outputFormat: 'mpeg4',
-    audioEncoder: 'aac',
-  },
-  ios: {
-    outputFormat: IOSOutputFormat.MPEG4AAC,
-    audioQuality: AudioQuality.MAX,
-    linearPCMBitDepth: 16,
-    linearPCMIsBigEndian: false,
-    linearPCMIsFloat: false,
-  },
-  web: {
-    mimeType: 'audio/webm',
-    bitsPerSecond: 128000,
-  },
-};
+    extension: '.wav',
+    sampleRate: 44100,
+    numberOfChannels: 2,
+    bitRate: 128000,
+    android: {
+      outputFormat: 'mpeg4',
+      audioEncoder: 'aac',
+    },
+    ios: {
+      outputFormat: IOSOutputFormat.MPEG4AAC,
+      audioQuality: AudioQuality.MAX,
+      linearPCMBitDepth: 16,
+      linearPCMIsBigEndian: false,
+      linearPCMIsFloat: false,
+    },
+    web: {
+      mimeType: 'audio/webm',
+      bitsPerSecond: 128000,
+    },
+  };
 
   const audioRecorder = useAudioRecorder(recordingOptions);
 
@@ -61,7 +61,7 @@ export const useVoiceInput = ({IntentProcessor, onDismiss}:Props) => {
       });
     })();
   }, []);
-const startRecording = async () => {
+  const startRecording = async () => {
     try {
       await audioRecorder.prepareToRecordAsync();
       audioRecorder.record();
@@ -72,7 +72,7 @@ const startRecording = async () => {
   };
 
   const stopRecording = async () => {
-onDismiss();
+    //onDismiss();
     setIsRecording(false);
     setIsLoading(true)
 
@@ -84,8 +84,8 @@ onDismiss();
         const text = await transcribeAudio(uri);
         setTranscript(text);
         setIsLoading(false)
-        IntentProcessor(text);
-        
+        //IntentProcessor(text);
+
       } else {
         setError('No recording URI available');
       }

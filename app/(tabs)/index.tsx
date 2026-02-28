@@ -1,4 +1,10 @@
-import { StyleSheet, useColorScheme, ScrollView, View, Appearance } from "react-native";
+import {
+  StyleSheet,
+  useColorScheme,
+  ScrollView,
+  View,
+  Appearance,
+} from "react-native";
 import { useData } from "@/hooks/use-data";
 import {
   Text,
@@ -17,9 +23,6 @@ import { useContext, useState } from "react";
 import { useSearch } from "@/hooks/use-search";
 import { AnalyticsSection } from "@/components/ui/analytics-section";
 import { SearchResults } from "@/components/ui/search-results";
-import AIVoiceModal from "@/components/modal/ai-voice-modal";
-import { IntentConfirmationModal } from "@/components/modal/intent-confirmation-modal";
-import { useIntentProcessor } from "@/hooks/use-intent-processor";
 import HabitItem from "@/components/ui/habits/habit-item";
 import { Provider } from "react-native-paper";
 import LoadingIndicator from "@/components/loading-indicator";
@@ -27,9 +30,10 @@ import UnifiedTimeline from "@/components/ui/home-timeline";
 import { useNotifications } from "@/hooks/use-notifications";
 import { Habit } from "@/types/habits";
 import { ThemeContext } from "@/context/ThemeContext";
+import { ChatScreen } from "@/components/chat/chat-screen";
 
 export default function HomeScreen() {
-  const { theme } = useContext(ThemeContext)
+  const { theme } = useContext(ThemeContext);
   const { tasks, setTasks, events, timerLogs, habits, setHabits } = useData();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -37,13 +41,11 @@ export default function HomeScreen() {
   const { query, performSearch, results } = useSearch();
   const [aiVisible, setAiVisible] = useState(false);
   useNotifications();
-  const { isLoading, isProcessing, intent, processCommand, confirmExecute } =
-    useIntentProcessor();
   const [viewMode, setViewMode] = useState<"overview" | "timeline">("overview");
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   let todaysTasks = tasks.filter(
-    (t) => t.dueDate && t.dueDate.toDateString() == new Date().toDateString()
+    (t) => t.dueDate && t.dueDate.toDateString() == new Date().toDateString(),
   );
   let upcomingEvents = events.slice(0, 3);
   let activeHabits = habits.slice(0, 3);
@@ -51,7 +53,7 @@ export default function HomeScreen() {
 
   const toggleTaskCompleted = (id: string) => {
     setTasks(
-      tasks.map((t) => (id === t.id ? { ...t, completed: !t.completed } : t))
+      tasks.map((t) => (id === t.id ? { ...t, completed: !t.completed } : t)),
     );
   };
   const handleHabitUpdate = (updated: Habit) => {
@@ -60,7 +62,7 @@ export default function HomeScreen() {
 
   return (
     <Provider>
-      {(isLoading || isProcessing) && <LoadingIndicator />}
+      {/* {(isLoading || isProcessing) && <LoadingIndicator />} */}
       <SegmentedButtons
         value={viewMode}
         onValueChange={(value) => setViewMode(value as "overview" | "timeline")}
@@ -166,18 +168,18 @@ export default function HomeScreen() {
               />
             </Modal>
           </Portal>
-          <AIVoiceModal
+          {/* <AIVoiceModal
             visible={aiVisible}
             onDismiss={() => setAiVisible(false)}
             IntentProcessor={processCommand}
-          />
+          /> */}
 
-          {!isLoading && (
+          {/* {!isLoading && (
             <IntentConfirmationModal
               intent={intent}
               onConfirm={confirmExecute}
             />
-          )}
+          )} */}
         </ScrollView>
       ) : (
         <View style={styles.timelineContainer}>
@@ -234,6 +236,9 @@ export default function HomeScreen() {
         icon="brain"
         onPress={() => setAiVisible(true)}
       />
+      <Portal>
+        <ChatScreen visible={aiVisible} onDismiss={() => setAiVisible(false)} />
+      </Portal>
     </Provider>
   );
 }

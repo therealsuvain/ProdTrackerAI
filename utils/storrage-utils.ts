@@ -4,6 +4,7 @@ import { Task } from '../types/task';
 import { CalendarEvent } from '../types/calendar';
 import { TimerLog } from '../types/timer';
 import { Habit } from '../types/habits';
+import { Message } from '../types/chat';
 
 // Helper to handle JSON serialization (Dates need conversion)
 const stringify = (data: any) => JSON.stringify(data, (_key, value) => 
@@ -89,6 +90,27 @@ export const loadHabits = async (): Promise<Habit[]> => {
     return [];
   }
 };
+
+export const saveAIChatHistory = async (messages: Message[]) => {
+      try {
+        const limitedHistory = messages.slice(-100)
+        await AsyncStorage.setItem("ai_chat_history", stringify(messages));
+      } catch (e) {
+        console.error("Failed to save history", e);
+      }
+    };
+
+export const loadAIChatHistory = async () => {
+      try {
+        const savedHistory = await AsyncStorage.getItem("ai_chat_history");
+        const limitedHistory = savedHistory ? parse(savedHistory) : []
+          return limitedHistory.slice(-50);
+        }
+       catch (e) {
+        console.error("Failed to load history", e);
+        return [];
+      }
+    };
 
 // Optional: Clear all data for testing
 export const clearStorage = async () => {

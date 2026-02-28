@@ -9,6 +9,7 @@ import { Task } from "../types/task";
 import { CalendarEvent } from "../types/calendar";
 import { TimerLog } from "../types/timer";
 import { Habit } from "../types/habits";
+import { Message } from "../types/chat";
 import {
   loadTasks,
   saveTasks,
@@ -18,6 +19,8 @@ import {
   saveTimerLogs,
   loadHabits,
   saveHabits,
+  loadAIChatHistory,
+  saveAIChatHistory,
 } from "../utils/storrage-utils";
 import {
   dummyTasks,
@@ -26,28 +29,34 @@ import {
   dummyHabits,
 } from "../data/dummyData";
 import { cancelReminder } from "@/hooks/use-notifications";
-import {applyMissedDayLogic} from "@/utils/habit-utils";
+import { applyMissedDayLogic } from "@/utils/habit-utils";
 
 interface DataContextType {
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   events: CalendarEvent[];
-  setEvents:  React.Dispatch<React.SetStateAction<CalendarEvent[]>>;
+  setEvents: React.Dispatch<React.SetStateAction<CalendarEvent[]>>;
   timerLogs: TimerLog[];
   setTimerLogs: (timerLogs: TimerLog[]) => void;
   habits: Habit[];
   setHabits: React.Dispatch<React.SetStateAction<Habit[]>>;
-  error:{
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  error: {
     message: string;
     type?: "warning" | "fatal";
   } | null;
-  dispatchError:(err: Error | string, type: "warning" | "fatal") => void
-  clearError: () => void
-  deleteEventOccurrence: (eventId: string, date: string, all: boolean) => Promise<void>
+  dispatchError: (err: Error | string, type: "warning" | "fatal") => void;
+  clearError: () => void;
+  deleteEventOccurrence: (
+    eventId: string,
+    date: string,
+    all: boolean,
+  ) => Promise<void>;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(
-  undefined
+  undefined,
 );
 
 // Feature flag for using dummy data - can be moved to environment variables or config
@@ -58,6 +67,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [timerLogs, setTimerLogs] = useState<TimerLog[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<{
     message: string;
@@ -73,33 +83,36 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         setTimeout(() => clearError(), 5000); // Auto-clear non-fatal
       }
     },
-    []
+    [],
   );
 
   const clearError = useCallback(() => setError(null), []);
 
-   const deleteEventOccurrence = async (eventId: string, date: string, all: boolean) => {
-    setEvents(prev => {
-      const updated = prev.map(event => {
+  const deleteEventOccurrence = async (
+    eventId: string,
+    date: string,
+    all: boolean,
+  ) => {
+    setEvents((prev) => {
+      const updated = prev.map((event) => {
         if (event.id !== eventId) return event;
 
         if (all) {
           // cancel all notifications
-          event.notificationIds?.forEach(n => cancelReminder(n.id));
+          event.notificationIds?.forEach((n) => cancelReminder(n.id));
           return null; // mark for deletion
         }
 
         // cancel only the notification for that date
-        const notifId = event.notificationIds?.find(n => n.date === date)?.id;
+        const notifId = event.notificationIds?.find((n) => n.date === date)?.id;
         if (notifId) cancelReminder(notifId);
 
         return {
           ...event,
-          deletedOccurrences: [
-            ...(event.deletedOccurrences || []),
-            date,
-          ],
-          notificationIds: event.notificationIds?.filter(n => n.date !== date),
+          deletedOccurrences: [...(event.deletedOccurrences || []), date],
+          notificationIds: event.notificationIds?.filter(
+            (n) => n.date !== date,
+          ),
         };
       });
 
@@ -114,6 +127,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       let loadedEvents = await loadEvents();
       let loadedLogs = await loadTimerLogs();
       let loadedHabits = await loadHabits();
+      let loadedMessages = await loadAIChatHistory();
 
       // Initialize with dummy data if enabled and no data exists
       if (USE_DUMMY_DATA) {
@@ -123,12 +137,13 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         if (loadedHabits.length === 0) loadedHabits = dummyHabits;
       }
 
-      loadedHabits = loadedHabits.map(habit => applyMissedDayLogic(habit));
-      
+      loadedHabits = loadedHabits.map((habit) => applyMissedDayLogic(habit));
+
       setTasks(loadedTasks);
       setEvents(loadedEvents);
       setTimerLogs(loadedLogs);
       setHabits(loadedHabits);
+      setMessages(loadedMessages);
       // mark that initial load finished so save effects don't overwrite storage during startup
       setLoaded(true);
     };
@@ -138,13 +153,13 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveTasks(tasks);
-    console.log("DATA TASKS",tasks)
+    console.log("DATA TASKS", tasks);
   }, [tasks, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
     saveEvents(events);
-    console.log("DATA EVENTS",events/* [0]?.notificationIds */)
+    console.log("DATA EVENTS", events /* [0]?.notificationIds */);
   }, [events, loaded]);
 
   useEffect(() => {
@@ -155,8 +170,14 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveHabits(habits);
-    console.log("DATA HABITS",habits)
+    console.log("DATA HABITS", habits);
   }, [habits, loaded]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    saveAIChatHistory(messages);
+    //console.log("DATA MESSAGES",messages)
+  }, [messages, loaded]);
 
   return (
     <DataContext.Provider
@@ -169,10 +190,12 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         setTimerLogs,
         habits,
         setHabits,
+        messages,
+        setMessages,
         error,
         dispatchError,
         clearError,
-        deleteEventOccurrence
+        deleteEventOccurrence,
       }}
     >
       {children}
