@@ -10,4 +10,5 @@ export interface Task {
   priority: "low" | "medium" | "high";
   completed: boolean;
   tags?: string[];
+  embedding?:number[]; // For Semantic Search
 }

@@ -2,6 +2,7 @@ import { Habit } from "@/types/habits";
 import { useReducer, useEffect } from "react";
 import { randomUUID } from "expo-crypto";
 import { cancelReminder, scheduleReminderHabits } from "./use-notifications";
+import {generateEmbedding} from '@/utils/embedding-engine'
 
 type Frequency = "daily" | "weekly";
 
@@ -88,6 +89,7 @@ export const useHabitForm = ({
           reminder: editingHabit.reminder,
           reminderDate: editingHabit.reminderDate,
           goal: editingHabit.goal,
+          embedding : editingHabit.embedding
         },
       });
     } else {
@@ -145,6 +147,7 @@ export const useHabitForm = ({
           : state.goal
         : undefined,
       notificationId: editingHabit ? editingHabit.notificationId : undefined,
+      embedding: state.embedding || await generateEmbedding(state.title,false)
     };
 
     if (editingHabit && editingHabit.notificationId) {

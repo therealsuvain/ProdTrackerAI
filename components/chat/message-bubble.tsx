@@ -33,7 +33,7 @@ export const MessageBubble = ({
       <View
         style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}
       >
-        <Text style={[styles.text, isUser ? styles.userText : styles.aiText]}>
+        <Text selectable={true} style={[styles.text, isUser ? styles.userText : styles.aiText]}>
           {message.text}
         </Text>
 

@@ -12,7 +12,7 @@ interface Props{
 export const ActionChip = ({ action, onRemove, isConfirmed }: Props) => {
 
   const getActionSubtitle = (action: any) => {
-    const data = action.extraInfo || action.args; // Use extraInfo for existing, args for new
+    const data ={ ...action.extraInfo , ...action.args}; // Use extraInfo for existing, args for new
     const parts: string[] = [];
 
 
@@ -55,7 +55,7 @@ export const ActionChip = ({ action, onRemove, isConfirmed }: Props) => {
       //style={styles.content}
       >
         <Text style={styles.actionTitle} numberOfLines={1}>
-          {action.extraInfo?.title || action.args.title || action.args.t || "New Item"}
+          {action.args.title || action.args.t||action.extraInfo?.title   || "New Item"}
         </Text>
         <Text style={styles.extraInfo}>{getActionSubtitle(action)}</Text>
         

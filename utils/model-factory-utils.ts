@@ -4,6 +4,7 @@ import { CalendarEvent } from "../types/calendar";
 import { TimerLog } from "../types/timer";
 import { Habit } from "../types/habits";
 import { randomUUID } from "expo-crypto";
+import {generateEmbedding} from "@/utils/embedding-engine"
 
 
 // Helper for date parsing
@@ -25,7 +26,7 @@ const validDate = (date: any): boolean => {
   return date instanceof Date && !isNaN(date.getTime());
 };
 // Task factory
-export const createTask =  (
+export const createTask =  async (
   params: Record<string, any>,
 )=> {
   try {
@@ -52,6 +53,8 @@ export const createTask =  (
         );
       }
     }
+
+    const embeddingVector = await generateEmbedding(params.title, false);
     return {
       id,
       title: params.title || "",
@@ -65,15 +68,16 @@ export const createTask =  (
         : "medium",
       completed: params.completed ?? false,
       tags: params.tags || [],
+      embedding : params.embedding || embeddingVector,
     } as Task;
   } catch (err: any) {
     throw new Error(`Invalid Task params: ${err.message}`);
   }
 };
 
-export const createEvent = (
+export const createEvent = async (
   params: Record<string, any>,
-): CalendarEvent => {
+ ) => {
   try {
     let id;
     if (params.id) {
@@ -101,6 +105,7 @@ export const createEvent = (
       );
     if (startTime && endTime && startTime > endTime)
       throw new Error("End time before start");
+    const embeddingVector = await generateEmbedding(params.title, false);
     return {
       id,
       title: params.title || "",
@@ -116,15 +121,16 @@ export const createEvent = (
       category: params.category || "",
       deletedOccurrences:params.deletedOccurrences||[],
       notificationIds: params.notificationIds || undefined,
+      embedding : params.embedding ||embeddingVector,
     };
   } catch (err: any) {
     throw new Error(`Invalid Event params: ${err.message}`);
   }
 };
 
-export const createHabit = (
+export const createHabit = async (
   params: Record<string, any>
-): Habit => {
+) => {
   try {
     let id;
     if (params.id) {
@@ -148,6 +154,7 @@ export const createHabit = (
     }
     const goal = params.goal ? parseInt(params.goal) : undefined;
     if (goal && isNaN(goal)) throw new Error("Goal must be a number");
+    const embeddingVector = await generateEmbedding(params.title,false);
     return {
       id,
       title: params.title || "",
@@ -165,6 +172,7 @@ export const createHabit = (
       reminder: params.reminder,
       reminderDate,
       notificationId: params.notificationId || undefined,
+      embedding : params.embedding ||embeddingVector,
     };
   } catch (err: any) {
     throw new Error(`Invalid Habit params: ${err.message}`);

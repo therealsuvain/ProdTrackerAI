@@ -3,19 +3,11 @@ import { AddTaskHandler, EditTaskHandler, DeleteTaskHandler, CompleteTaskHandler
 import { AddHabitHandler, DeleteHabitHandler, CheckInHabitHandler } from "./habit-handler";
 import { AddEventHandler, EditEventHandler, DeleteEventHandler } from "./event-handler";
 import { StartTimerHandler, StopTimerHandler } from "./timer-handler";
+import { SearchItemsHandler , getProductivityStats} from './additional-handlers';
 
 /**  
  * TODO: Add more handlers, summaries, searchs for various types of requests, maybe simple analytics 
  */
-
-// This will eventually hold all our handlers
-const SearchTasksHandler= {
-  execute: async (params:any, context:AIActionContext) => {
-    // Return the actual search results so Gemini can "see" them
-    return context.tasks.filter(t => t.title.toLowerCase().includes(params.query.toLowerCase()));
-  }
-};
-
 
 export const ActionRegistry: Record<string, AIHandler> = {
     "add-task": AddTaskHandler,
@@ -30,7 +22,8 @@ export const ActionRegistry: Record<string, AIHandler> = {
     "delete-event": DeleteEventHandler,
     "start-timer": StartTimerHandler,
     "stop-timer": StopTimerHandler,
-    "search-tasks": SearchTasksHandler,
+    "search-items": SearchItemsHandler,
+    "get-stats": getProductivityStats
 };
 
 export const executeActions = async (
@@ -50,10 +43,3 @@ export const executeActions = async (
     }
 };
 
-
-const EditTaskHandlerHUH = {
-  execute: async (params:any, context:AIActionContext) => {
-    context.setTasks(prev => prev.map(t => t.id === params.id ? { ...t, ...params } : t));
-    return { success: true, updatedId: params.id };
-  }
-}

@@ -321,11 +321,11 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       <Pressable
         style={({ pressed }: { pressed: boolean }) => [
           styles.button,
-          { transform: [{ scale: pressed ? 0.9 : 1 }] },
+          { transform: [{ scale: pressed ? 0.75 : 1 }] },
         ]}
         onPress={onDismiss}
       >
-        <Ionicons size={24} name="close-outline"></Ionicons>
+        <Ionicons size={24} name="close-outline"  color="#fff"></Ionicons>
       </Pressable>
     </KeyboardAvoidingView>
   );
@@ -343,6 +343,8 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#fff",
   },
   emptyContainer: {
     flex: 1,

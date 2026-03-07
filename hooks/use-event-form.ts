@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { validateEventTimes } from "@/utils/event-utils";
 import { randomUUID } from "expo-crypto";
 import { cancelReminder, scheduleReminderEvents } from "./use-notifications";
+import {generateEmbedding} from '@/utils/embedding-engine'
 
 type FormState = Omit<CalendarEvent, "id" | "notificationId"> & {
   errors: Partial<
@@ -105,6 +106,7 @@ export const useEventForm = ({
           deletedOccurrences: editingEvent.deletedOccurrences,
           category: editingEvent.category,
           notificationIds: editingEvent.notificationIds,
+          embedding :editingEvent.embedding
         },
       });
     } else {
@@ -162,6 +164,7 @@ export const useEventForm = ({
       id: editingEvent ? editingEvent.id : randomUUID(),
       notificationIds: undefined,
       ...state,
+      embedding: state.embedding || await generateEmbedding(state.title,false)
     };
 
 

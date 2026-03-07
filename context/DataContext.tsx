@@ -138,7 +138,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       }
 
       loadedHabits = loadedHabits.map((habit) => applyMissedDayLogic(habit));
-
+      //loadedTasks = loadedTasks.filter((t)=>!t.title.includes("testing") && !t.title.includes("Testing"))
       setTasks(loadedTasks);
       setEvents(loadedEvents);
       setTimerLogs(loadedLogs);
@@ -153,13 +153,20 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveTasks(tasks);
-    console.log("DATA TASKS", tasks);
+    console.log("DATA TASKS", tasks.map((e) => {
+        return { ...e, embedding: e.embedding?.[0] };
+      }));
   }, [tasks, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
     saveEvents(events);
-    console.log("DATA EVENTS", events /* [0]?.notificationIds */);
+    console.log(
+      "DATA EVENTS",
+      events.map((e) => {
+        return { ...e, embedding: e.embedding?.[0] };
+      }) 
+    );
   }, [events, loaded]);
 
   useEffect(() => {
@@ -170,7 +177,9 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveHabits(habits);
-    console.log("DATA HABITS", habits);
+    console.log("DATA HABITS", habits.map((e) => {
+        return { ...e, embedding: e.embedding?.[0] };
+      }));
   }, [habits, loaded]);
 
   useEffect(() => {

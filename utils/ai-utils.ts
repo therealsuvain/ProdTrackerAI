@@ -26,6 +26,7 @@ import { gemini_ai } from "./AI-utils/llm-client";
 import { aiTools } from "./AI-utils/tool-definitions";
 import { FunctionCall } from "@google/genai";
 import { getAppStatusSnapshot } from "./AI-utils/system-context";
+import { recordGeminiUsage } from "./dev-util-token-monitor";
 
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_STT_API_KEY//Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
 const HF_TOKEN = process.env.EXPO_PUBLIC_HUGGING_FACE_API_TOKEN;
@@ -251,7 +252,7 @@ export const executeSingleIntent = async (
   const { intent: type, params, searchQuery } = intent;
   switch (type) {
     case "add_task":
-      const newTask = createTask(params);
+      const newTask = await createTask(params);
       if (newTask.reminder) {
         const notifId = await scheduleReminderTasks(newTask);
         newTask.notificationId = notifId;
@@ -272,7 +273,7 @@ export const executeSingleIntent = async (
       if (matches.length === 0) throw new Error("No matching task found");
       const targetTask = matches[0].item; // Best match
       if (type === "edit_task") {
-        const updated = createTask({ ...targetTask, ...params });
+        const updated = await createTask({ ...targetTask, ...params });
         if (updated.reminder && !updated.notificationId) {
           const notifId = await scheduleReminderTasks(updated);
           updated.notificationId = notifId;
@@ -293,7 +294,7 @@ export const executeSingleIntent = async (
       }
       break;
     case "add_event":
-      const newEvent = createEvent(params);
+      const newEvent = await createEvent(params);
       if (newEvent.reminder) {
         const notifIds = await scheduleReminderEvents(newEvent);
         newEvent.notificationIds = notifIds;
@@ -312,7 +313,7 @@ export const executeSingleIntent = async (
       if (eventMatches.length === 0) throw new Error("No matching event found");
       const targetEvent = eventMatches[0].item;
       if (type === "edit_event") {
-        const updatedEvent = createEvent({ ...targetEvent, ...params });
+        const updatedEvent = await createEvent({ ...targetEvent, ...params });
 
         if (updatedEvent.reminder && !updatedEvent.notificationIds) {
           const notifIds = await scheduleReminderEvents(updatedEvent);
@@ -346,7 +347,7 @@ export const executeSingleIntent = async (
       }
       break;
     case "add_habit":
-      const newHabit = createHabit(params);
+      const newHabit = await createHabit(params);
       if (newHabit.reminder) {
         const notifId = await scheduleReminderHabits(newHabit);
         newHabit.notificationId = notifId;
@@ -370,7 +371,7 @@ export const executeSingleIntent = async (
           habits.map((h: Habit) => (h.id === targetHabit.id ? updatedHabit : h))
         );
       } else if (type === "edit_habit") {
-        const updatedHabit = createHabit({ ...targetHabit, ...params });
+        const updatedHabit = await createHabit({ ...targetHabit, ...params });
         if (updatedHabit.reminder && !updatedHabit.notificationId) {
           const notifId = await scheduleReminderHabits(updatedHabit);
           updatedHabit.notificationId = notifId;
@@ -465,6 +466,7 @@ export const chatIntialize = async (context: any) => {
           { role: "model", parts: [{ text: "Understood. I have access to the user's state and tools." }] }
         ]
       });
+      console.log("chatty", activeChatSession)
       return activeChatSession
     }
     const updatedSnapshot = getAppStatusSnapshot(context);
@@ -476,6 +478,7 @@ export const chatIntialize = async (context: any) => {
     console.error("Chat initialization failed:", error);
     activeChatSession = null;
   }
+  console.log("chatty", activeChatSession)
   return activeChatSession;
 }
 
@@ -520,22 +523,9 @@ export const runAgentLoop = async (userInput: string, context: any) => {
   return JSON.parse(response.text || "");
 };
 
-export const processCommandAgentic = async (transcript: string, context: any) => {
+export const BACKUP_processCommandAgentic = async (transcript: string, context: any) => {
   //const systemContext = generateSystemPrompt(context);
   const chat = await chatIntialize(context);
-  // Start a chat session with history for multi-turn reasoning
-  // const chat = gemini_ai.chats.create({
-  //   model: "gemini-2.5-flash",
-  //   config: {
-  //     tools: [{ functionDeclarations: aiTools }],
-  //   }
-  //   ,
-  //   history: [
-  //     { role: "user", parts: [{ text: `System: Role: Senior Productivity Agent. Env: ${systemContext}` }] },
-  //     { role: "model", parts: [{ text: "Understood. I have access to the user's state and tools." }] }
-  //   ]
-  // });
-
   try {
     const result = await chat.sendMessage({ message: transcript });
     console.log("Token:", result.usageMetadata);
@@ -544,7 +534,7 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
     console.log("CHAT RESPONSE:", response);
     const calls = result.functionCalls;
 
-    if (calls?.some((call:any) => call.name === 'search-tasks')) {
+    if (calls?.some((call: any) => call.name === 'search-tasks')) {
       const toolResults = [];
 
       for (const call of calls) {
@@ -565,6 +555,97 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
       };
     }
     return { response, calls };
+
+
+    //return  response ;
+  } catch (error) {
+    console.error("Agent Loop Failed:", error);
+    throw error;
+
+  }
+};
+
+export const processCommandAgentic = async (transcript: string, context: any) => {
+  //const systemContext = generateSystemPrompt(context);
+  const chat = await chatIntialize(context);
+  let iteration = 0;
+  const MAX_ITERATIONS = 3;
+  let accumulatedConfirmationCalls: any[] = [];
+  try {
+    let result = await chat.sendMessage({ message: transcript });
+    recordGeminiUsage(result);
+    console.log("Token:", result.usageMetadata);
+    console.log("FUNCTIONCALLS", result.functionCalls);
+    console.log("CHAT RESPONSE:", result);
+    let currentCalls = result.functionCalls;
+
+    //  !The Fallback: If native calls are undefined, but the text looks like JSON
+    // if (!currentCalls && lastResponseText.startsWith("{") && lastResponseText.includes("function_calls")) {
+    //   try {
+    //     const parsedText = JSON.parse(lastResponseText);
+
+
+    //     if (parsedText.function_calls) {
+    //       currentCalls = parsedText.function_calls.map((c: any) => ({
+    //         name: c.function_name,
+    //         args: c.parameters
+    //       }));
+    //       console.log("🛠️ Recovered from hallucinated JSON text!");
+    //     }
+    //   } catch (e) {
+    //     console.log("Failed to parse fallback JSON, treating as normal text.");
+    //   }
+    // }
+    const toolResponses = [];
+    while (iteration < MAX_ITERATIONS) {
+      // 1. Separate current calls into Silent vs. Confirmation
+      const silentCalls = currentCalls?.filter((c: any) =>
+        c.name === 'search-items'
+      ) || [];
+
+      const confirmationCalls = currentCalls?.filter((c: any) =>
+        c.name !== 'search-items'
+      ) || [];
+
+      // 2. Add confirmation calls to our global list for the user
+      accumulatedConfirmationCalls = [...accumulatedConfirmationCalls, ...confirmationCalls];
+
+      // 3. If there are no more silent tools to run, we are done
+      if (silentCalls.length === 0) break;
+
+      let toolResults;
+      for (const call of silentCalls) {
+        const handler = ActionRegistry[call.name];
+        const data = await handler.execute(call.args, context);
+        toolResults = {
+          name: call.name,
+          response: { result: data }
+        };
+        toolResponses.push({
+          functionResponse: {
+            name: call.name,
+            response: data
+          }
+        });
+
+      }
+      const nextStep = await chat.sendMessage({
+        message: {
+          role: "user",
+          parts: toolResponses
+        }
+      });
+      recordGeminiUsage(nextStep);
+      result = nextStep;
+      currentCalls = nextStep.functionCalls;
+      iteration++;
+
+    }
+
+    return {
+      response: result.text?.replace(/```json|```/g, "").trim(),
+      calls: accumulatedConfirmationCalls
+    };
 
 
     //return  response ;

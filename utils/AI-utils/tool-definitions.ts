@@ -10,9 +10,10 @@ export const aiTools: FunctionDeclaration[] = [
                 title: { type: Type.STRING, description: "The title of the task" },
                 priority: { type: Type.STRING, enum: ["low", "medium", "high"] },
                 dueDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
-                category: { type: Type.STRING }
+                category: { type: Type.STRING },
+                reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder"}
             },
-            required: ["title"]
+            required: ["title", "priority", "dueDate"]
         }
     },
     {
@@ -23,6 +24,10 @@ export const aiTools: FunctionDeclaration[] = [
             properties: {
                 id: { type: Type.STRING, description: "The unique task ID" },
                 title: { type: Type.STRING },
+                priority: { type: Type.STRING, enum: ["low", "medium", "high"] },
+                dueDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
+                category: { type: Type.STRING },
+                reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder"},
                 completed: { type: Type.BOOLEAN }
             },
             required: ["id"]
@@ -62,9 +67,10 @@ export const aiTools: FunctionDeclaration[] = [
                 startTime: { type: Type.STRING, description: "Time string (HH:mm)" },
                 endTime: { type: Type.STRING, description: "Time string (HH:mm)" },
                 recurrence: { type: Type.STRING, enum: ["none", "daily", "weekly", "monthly"] },
-                category: { type: Type.STRING }
+                category: { type: Type.STRING },
+                reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder"}
             },
-            required: ["title"]
+            required: ["title", "startDate", "endDate", "startTime", "endTime", "recurrence"]
         }
     },
     {
@@ -80,7 +86,8 @@ export const aiTools: FunctionDeclaration[] = [
                 startTime: { type: Type.STRING, description: "Time string (HH:mm)" },
                 endTime: { type: Type.STRING, description: "Time string (HH:mm)" },
                 recurrence: { type: Type.STRING, enum: ["none", "daily", "weekly", "monthly"] },
-                category: { type: Type.STRING }
+                category: { type: Type.STRING },
+                reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder"}
             },
             required: ["id"]
         }
@@ -105,9 +112,11 @@ export const aiTools: FunctionDeclaration[] = [
                 title: { type: Type.STRING, description: "The title of the habit" },
                 description: { type: Type.STRING },
                 category: { type: Type.STRING },
-                frequency: { type: Type.STRING, enum: ["daily", "weekly", "monthly"] }
+                frequency: { type: Type.STRING, enum: ["daily", "weekly"] },
+                goal: {type: Type.NUMBER, description: "The target goal for the habit (e.g., 10 pushups, 8 glasses of water)"},
+                reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder"}
             },
-            required: ["title"]
+            required: ["title", "frequency", "goal"]
         }
     },
     {
@@ -148,6 +157,30 @@ export const aiTools: FunctionDeclaration[] = [
         description: "Stops a currently running focus timer.",
         parameters: {
             type: Type.OBJECT,
+        }
+    },
+    {
+        name: "get-stats",
+        description: "Get completion rates, habit streaks, and category breakdowns for coaching.",
+        parameters: { type: Type.OBJECT, properties: {} }
+    },
+    {
+        name: "search-items",
+        description: "Use this to semantically search for existing tasks, habits, or events. Finds items by meaning, not just exact keywords. Do NOT use this for exact regex matches, date filtering, or meta-queries (e.g., do NOT search 'tasks with a weekday'). Instead, search for the core concept (e.g., 'health', 'car repair', 'groceries'). If you need to find tasks by specific dates or string matching, look at the raw data provided in your system prompt instead.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                query: {
+                    type: Type.STRING,
+                    description: "The semantic concept to search for. Must be a meaning or topic, not a database command"
+                },
+                type : {
+                    type:Type.STRING,
+                    enum: ["task","event","habit","all"],
+                    description: "The type of items to search for. 'all' will search across all item types."
+                }
+            },
+            required: ["query"]
         }
     }
 ];

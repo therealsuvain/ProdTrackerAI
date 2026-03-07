@@ -5,7 +5,7 @@ import {checkInHabit} from "../habit-utils"
 
 export const AddHabitHandler : AIHandler = {
     execute : async (params, context) => {
-        const newHabit = createHabit (params);
+        const newHabit = await createHabit (params);
         if(newHabit.reminder){
             try {
                 newHabit.notificationId = await scheduleReminderHabits(newHabit);

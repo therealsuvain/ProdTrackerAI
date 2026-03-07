@@ -5,7 +5,7 @@ import {
   View,
   Appearance,
 } from "react-native";
-import { useData } from "@/hooks/use-data";
+import { useEffect }  from "react";
 import {
   Text,
   Divider,
@@ -16,6 +16,8 @@ import {
   Modal,
   SegmentedButtons,
 } from "react-native-paper";
+
+import { useData } from "@/hooks/use-data";
 import TaskItem from "@/components/ui/tasks/task-item";
 import EventItem from "@/components/ui/calendar-events/event-item";
 import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
@@ -31,10 +33,11 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { Habit } from "@/types/habits";
 import { ThemeContext } from "@/context/ThemeContext";
 import { ChatScreen } from "@/components/chat/chat-screen";
+import {migrateToSemanticSearch} from "@/utils/embedding-engine"
 
 export default function HomeScreen() {
   const { theme } = useContext(ThemeContext);
-  const { tasks, setTasks, events, timerLogs, habits, setHabits } = useData();
+  const { tasks, setTasks, events, setEvents, timerLogs, habits, setHabits } = useData();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const [searchVisible, setSearchVisible] = useState(false);
@@ -60,6 +63,9 @@ export default function HomeScreen() {
     setHabits(habits.map((h) => (h.id === updated.id ? updated : h)));
   };
 
+  // useEffect(()=>{
+  //   migrateToSemanticSearch({tasks, setTasks, habits, setHabits, events, setEvents})
+  // },[])
   return (
     <Provider>
       {/* {(isLoading || isProcessing) && <LoadingIndicator />} */}

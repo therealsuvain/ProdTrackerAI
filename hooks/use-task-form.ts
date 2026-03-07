@@ -2,6 +2,7 @@ import { Task } from "@/types/task";
 import { useReducer, useEffect } from "react";
 import { randomUUID } from "expo-crypto";
 import { cancelReminder, scheduleReminderTasks } from "./use-notifications";
+import { generateEmbedding } from '@/utils/embedding-engine'
 
 type FormState = Omit<Task, "id" | "notificationId" | "completed"> & {
   errors: Partial<
@@ -80,6 +81,7 @@ export const useTaskForm = ({
           reminderDate: editingTask.reminderDate,
           priority: editingTask.priority,
           tags: editingTask.tags,
+          embedding: editingTask.embedding,
         },
       });
     } else {
@@ -128,6 +130,7 @@ export const useTaskForm = ({
       priority: state.priority as Task["priority"],
       completed: editingTask ? editingTask.completed : false,
       tags: state.tags,
+      embedding: state.embedding || await generateEmbedding(state.title,false)
     };
 
     if(editingTask && editingTask.reminder && !newTask.reminder){

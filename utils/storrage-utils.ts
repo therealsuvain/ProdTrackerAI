@@ -94,7 +94,7 @@ export const loadHabits = async (): Promise<Habit[]> => {
 export const saveAIChatHistory = async (messages: Message[]) => {
       try {
         const limitedHistory = messages.slice(-100)
-        await AsyncStorage.setItem("ai_chat_history", stringify(messages));
+        await AsyncStorage.setItem("ai_chat_history", stringify(limitedHistory));
       } catch (e) {
         console.error("Failed to save history", e);
       }

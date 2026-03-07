@@ -13,4 +13,5 @@ export interface Habit {
   isArchived: boolean;
   goal?: number; // e.g., 7 days in a row
   notificationId?: string;
+  embedding?:number[]; // For Semantic Search
 }
