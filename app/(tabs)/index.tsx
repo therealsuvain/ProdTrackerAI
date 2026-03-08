@@ -32,8 +32,7 @@ import UnifiedTimeline from "@/components/ui/home-timeline";
 import { useNotifications } from "@/hooks/use-notifications";
 import { Habit } from "@/types/habits";
 import { ThemeContext } from "@/context/ThemeContext";
-import { ChatScreen } from "@/components/chat/chat-screen";
-import {migrateToSemanticSearch} from "@/utils/embedding-engine"
+import { ChatScreen } from "@/components/ui/chat/chat-screen";
 
 export default function HomeScreen() {
   const { theme } = useContext(ThemeContext);
@@ -69,6 +68,7 @@ export default function HomeScreen() {
   return (
     <Provider>
       {/* {(isLoading || isProcessing) && <LoadingIndicator />} */}
+      <View style={{ backgroundColor: theme.background}}>
       <SegmentedButtons
         value={viewMode}
         onValueChange={(value) => setViewMode(value as "overview" | "timeline")}
@@ -94,12 +94,13 @@ export default function HomeScreen() {
             },
           },
         ]}
-        style={styles.viewSwitcher}
+        style={[styles.viewSwitcher, { backgroundColor: theme.background }]}
       />
+      </View>
       {viewMode === "overview" ? (
-        <ScrollView>
+        <ScrollView style={{ backgroundColor: theme.background }}>
           <Searchbar
-            style={{ marginVertical: 4 }}
+            style={{ marginVertical: 4, backgroundColor: theme.taskBaseTransToo }}
             placeholder="Search Everything"
             onChangeText={performSearch}
             value={query}
@@ -188,7 +189,7 @@ export default function HomeScreen() {
           )} */}
         </ScrollView>
       ) : (
-        <View style={styles.timelineContainer}>
+        <View style={[styles.timelineContainer, { backgroundColor: theme.background }]}>
           {/* Date selector */}
           <View style={styles.dateSelector}>
             <Button

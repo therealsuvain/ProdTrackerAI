@@ -35,6 +35,7 @@ const themes = {
     timerBaseTrans:"#06fabd71",
     timerBaseTransToo:"#2e3b3844",
     timerDarkPrimary:"#5a8178ff",
+    background:"#ebebeb"
   },
   dark: {
     text:"#ffffff",
@@ -67,6 +68,7 @@ const themes = {
     timerBaseTrans:"#6ac9b180",
     timerBaseTransToo:"#2e3b3844",
     timerDarkPrimary:"#2e3b38ff",
+    background:"#1b1b1b"
   },
 } as const;
 
@@ -147,6 +149,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isDarkMode]);
 
+  //   useEffect(() => {
+  //     theme= isDarkMode ? themes.dark : themes.light;
+  // }, [isDarkMode]);
+
   const setThemeName = async (t: ThemeName) => {
     try {
       await AsyncStorage.setItem("@app:theme", t);
@@ -166,7 +172,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setIsDarkMode(newTheme);
   };
 
-  const theme = isDarkMode ? themes.dark : themes.light;
+  let theme = isDarkMode ? themes.dark : themes.light;
 
   return (
     <ThemeContext.Provider

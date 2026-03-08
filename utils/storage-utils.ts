@@ -1,17 +1,22 @@
 // src/utils/storage.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { Task } from '../types/task';
 import { CalendarEvent } from '../types/calendar';
 import { TimerLog } from '../types/timer';
 import { Habit } from '../types/habits';
 import { Message } from '../types/chat';
+import { SettingsConfig, defaultSettings } from '@/types/settings';
+import { AchievementBadge } from '@/types/achievements';
 
+const SETTINGS_KEY = '@prodtracker_settings';
+const ACHIEVEMENTS_KEY = '@prodtracker_achievements';
 // Helper to handle JSON serialization (Dates need conversion)
-const stringify = (data: any) => JSON.stringify(data, (_key, value) => 
+const stringify = (data: any) => JSON.stringify(data, (_key, value) =>
   value instanceof Date ? value.toISOString() : value
 );
 
-const parse = (json: string) => JSON.parse(json, (_key, value) => 
+const parse = (json: string) => JSON.parse(json, (_key, value) =>
   typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/) ? new Date(value) : value
 );
 
@@ -92,25 +97,68 @@ export const loadHabits = async (): Promise<Habit[]> => {
 };
 
 export const saveAIChatHistory = async (messages: Message[]) => {
-      try {
-        const limitedHistory = messages.slice(-100)
-        await AsyncStorage.setItem("ai_chat_history", stringify(limitedHistory));
-      } catch (e) {
-        console.error("Failed to save history", e);
-      }
-    };
+  try {
+    const limitedHistory = messages.slice(-100)
+    await AsyncStorage.setItem("ai_chat_history", stringify(limitedHistory));
+  } catch (e) {
+    console.error("Failed to save history", e);
+  }
+};
 
 export const loadAIChatHistory = async () => {
-      try {
-        const savedHistory = await AsyncStorage.getItem("ai_chat_history");
-        const limitedHistory = savedHistory ? parse(savedHistory) : []
-          return limitedHistory.slice(-50);
-        }
-       catch (e) {
-        console.error("Failed to load history", e);
-        return [];
-      }
-    };
+  try {
+    const savedHistory = await AsyncStorage.getItem("ai_chat_history");
+    const limitedHistory = savedHistory ? parse(savedHistory) : []
+    return limitedHistory.slice(-50);
+  }
+  catch (e) {
+    console.error("Failed to load history", e);
+    return [];
+  }
+};
+
+export const getSettings = async (): Promise<SettingsConfig> => {
+  try {
+    const jsonValue = await AsyncStorage.getItem(SETTINGS_KEY);
+    return jsonValue != null ? JSON.parse(jsonValue) : defaultSettings;
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    return defaultSettings;
+  }
+};
+
+export const saveSettings = async (settings: SettingsConfig): Promise<void> => {
+  try {
+    const jsonValue = JSON.stringify(settings);
+    await AsyncStorage.setItem(SETTINGS_KEY, jsonValue);
+  } catch (error) {
+    console.error('Error saving settings:', error);
+  }
+};
+
+
+export const getUnlockedAchievements = async (): Promise<AchievementBadge[]> => {
+  try {
+    const jsonValue = await AsyncStorage.getItem(ACHIEVEMENTS_KEY);
+    return jsonValue != null ? JSON.parse(jsonValue) : [];
+  } catch (error) {
+    console.error('Error fetching achievements:', error);
+    return [];
+  }
+};
+
+export const saveUnlockedAchievement = async (badge: AchievementBadge): Promise<void> => {
+  try {
+    const currentBadges = await getUnlockedAchievements();
+    // Prevent duplicate unlocks
+    if (!currentBadges.some(b => b.id === badge.id)) {
+      currentBadges.push(badge);
+      await AsyncStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(currentBadges));
+    }
+  } catch (error) {
+    console.error('Error saving achievement:', error);
+  }
+};
 
 // Optional: Clear all data for testing
 export const clearStorage = async () => {

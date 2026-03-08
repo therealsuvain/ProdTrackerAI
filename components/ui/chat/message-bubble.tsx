@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
-import { Message } from "../../types/chat";
+import { Message } from "@/types/chat";
 import { ActionChip } from "./action-chip";
 import { ThemeContext } from "@/context/ThemeContext";
 

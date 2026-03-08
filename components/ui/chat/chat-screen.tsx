@@ -49,7 +49,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const [isThinking, setIsThinking] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const playedSoundRef = useRef(false);
-  const audioSource = require("../../assets/audio/record.wav");
+  const audioSource = require("@/assets/audio/record.wav");
   const player = useAudioPlayer(audioSource);
 
   useEffect(() => {

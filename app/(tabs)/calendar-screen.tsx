@@ -59,7 +59,7 @@ export default function CalendarScreen() {
   };
   return (
     <Provider>
-      <View style={styles.container}>
+      <View style={[styles.container,{backgroundColor:theme.background}]}>
         <Pressable
           style={[styles.header, { backgroundColor: theme.eventBase }]}
           onPress={() => setSelectedDate(new Date())}
@@ -73,7 +73,7 @@ export default function CalendarScreen() {
       <ViewSwitcher currentView={currentView} onChange={setCurrentView} />
       {currentView === "month" ? (
         <CalendarListAgendaMain
-        //key={Object.keys(events).length}
+          //key={Object.keys(events).length}
           events={[...events]}
           selectedDate={selectedDate}
           onDateSelect={(date: Date) => {

@@ -31,7 +31,7 @@ export default function TimerScreen() {
   return (
     <Provider>
       <GestureHandlerRootView>
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
           <TextInput
             placeholder="Activity name"
             value={title}

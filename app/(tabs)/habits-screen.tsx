@@ -57,7 +57,7 @@ export default function HabitsScreen() {
   };
   return (
     <Provider>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.background}]}>
         <FlatList
           data={habits}
           showsVerticalScrollIndicator={false}

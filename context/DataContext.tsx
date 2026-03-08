@@ -21,7 +21,7 @@ import {
   saveHabits,
   loadAIChatHistory,
   saveAIChatHistory,
-} from "../utils/storrage-utils";
+} from "../utils/storage-utils";
 import {
   dummyTasks,
   dummyEvents,

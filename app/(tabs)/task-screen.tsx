@@ -104,12 +104,12 @@ export default function TaskScreen() {
   return (
     <Provider>
       <GestureHandlerRootView>
-        <View style={styles.container}>
+        <View style={[styles.container,{backgroundColor:theme.background}]}>
           <Searchbar
             placeholder="Search Tasks"
             onChangeText={setSearchQuery}
             value={searchQuery}
-            style={styles.searchbar}
+            style={[styles.searchbar,{backgroundColor:theme.taskBaseTransToo}]}
           />
           <View style={styles.menuButton}>
             <Button onPress={() => setShowSortOptions(!showSortOptions)}>
