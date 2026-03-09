@@ -68,6 +68,15 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   const [timerLogs, setTimerLogs] = useState<TimerLog[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [metaData, setMetaData] = useState({
+    tasksCompleted: 0,
+    tasksMissed: 0,
+    habitsCheckedIn: 0,
+    habitGoalsCompleted: 0,
+    habitCheckInsMissed: 0,
+    habitsFrozen: 0,
+    habitsAutoFrozen: 0,
+  });
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<{
     message: string;

@@ -31,9 +31,9 @@ interface Props {
   onDismiss: () => void;
 }
 /** 
- * TODO: Expire unconfirmed actions automatically
- * TODO: use ThemeContext for colors
- * TODO: maybe make chat-screen leaner by using chat-utils
+ * TODO 1: Expire unconfirmed actions automatically
+ * TODO 2: use ThemeContext for colors
+ * TODO 3: maybe make chat-screen leaner by using chat-utils
  */
 const EXPIRY_THRESHOLD_MS = 30 * 60 * 1000; // 30 Minutes
 

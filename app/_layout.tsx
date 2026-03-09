@@ -1,13 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
-import {
-  ThemeProvider as OuterThemeProvider,
-  DarkTheme,
-  DefaultTheme,
-} from "@react-navigation/native";
 import { Drawer } from "expo-router/drawer";
-import { Provider as PaperProvider } from "react-native-paper";
 import { ErrorBoundary } from "react-error-boundary";
 
 import SuspenseBoundary from "@/components/suspense-boundary";
@@ -41,6 +35,7 @@ export default function RootLayout() {
           </Stack>
           <Stack>
             <Stack.Screen name="settings" options={{ headerShown: false }} />
+            <Stack.Screen name="achievements" options={{ title: 'Achievements', headerBackTitle: 'Back' }} />
           </Stack>
           <StatusBar style="auto" />
         </Drawer>

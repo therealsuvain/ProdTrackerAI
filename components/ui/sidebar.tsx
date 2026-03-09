@@ -48,7 +48,7 @@ export  const Sidebar = (props: any) => {
           label="Achievements"
           labelStyle={{ color: theme.text }}
           icon={({ size }) => <Ionicons name="trophy-outline" size={size} color={theme.text} />}
-          onPress={() => {}/* router.push('/achievements') */}
+          onPress={() =>  router.push('/achievements')}
         />
         <DrawerItem
           label="Analytics"
