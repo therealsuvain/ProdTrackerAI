@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 import { SettingsConfig, defaultSettings } from '@/types/settings';
-import { getSettings, saveSettings } from '@/utils/storage-utils';
+import { loadSettings, saveSettings } from '@/utils/storage-utils';
 
 interface SettingsContextType {
   settings: SettingsConfig;
@@ -16,9 +16,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadSettings = async () => {
+    const loadSettingsFromStorage = async () => {
       try {
-        const storedSettings = await getSettings();
+        const storedSettings = await loadSettings();
         setSettings(storedSettings);
       } catch (error) {
         console.error("Failed to load settings:", error);
@@ -27,7 +27,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     };
     
-    loadSettings();
+    loadSettingsFromStorage();
   }, []);
 
   // Generic function that enforces strict type-checking based on the key

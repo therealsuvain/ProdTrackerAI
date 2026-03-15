@@ -30,15 +30,12 @@ export default function RootLayout() {
             },
           }}
         >
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          </Stack>
-          <Stack>
-            <Stack.Screen name="settings" options={{ headerShown: false }} />
-            <Stack.Screen name="achievements" options={{ title: 'Achievements', headerBackTitle: 'Back' }} />
-          </Stack>
-          <StatusBar style="auto" />
+            <Drawer.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Drawer.Screen name="settings" options={{ headerShown: false }} />
+            <Drawer.Screen name="achievements" options={{ title: 'Achievements'}} />
+          
         </Drawer>
+        <StatusBar style="auto" />
         </TimerProvider>
         </DataProvider>
       </ThemeProvider>

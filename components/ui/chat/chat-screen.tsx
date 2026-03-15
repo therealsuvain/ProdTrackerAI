@@ -30,10 +30,11 @@ interface Props {
   visible: boolean;
   onDismiss: () => void;
 }
-/** 
+/**
  * TODO 1: Expire unconfirmed actions automatically
  * TODO 2: use ThemeContext for colors
  * TODO 3: maybe make chat-screen leaner by using chat-utils
+ * TODO 4: Deleted items need better placeholder data for the chat message
  */
 const EXPIRY_THRESHOLD_MS = 30 * 60 * 1000; // 30 Minutes
 
@@ -188,6 +189,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       };
 
       setMessages((prev) => [aiMsg, ...prev]);
+      context.trackMetric("chatMessagesSent", 1);
     } catch (err) {
       // Handle error UI
     } finally {
@@ -220,30 +222,33 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         timestamp: new Date(),
       };
       setMessages((prev) => [feedbackMsg, ...prev]);
+      context.trackMetric("chatActionsExpired", 1);
       return;
     }
     setMessages((prev) =>
       prev.map((m) => (m.id === msgId ? { ...m, isConfirmed: true } : m)),
     );
-
-    // B. Run the background logic
-    await agenticExecutor(actions, {
-      ...context,
-      setTitle,
-      start,
-      stop,
-      navigation,
-    });
-
-    // C. Add Hardcoded Success Message
-    const successMsg: Message = {
-      id: Date.now().toString(),
-      sender: "ai",
-      type: "text",
-      text: "Actions confirmed! ✅",
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [successMsg, ...prev]);
+    try {
+      // B. Run the background logic
+      await agenticExecutor(actions, {
+        ...context,
+        setTitle,
+        start,
+        stop,
+        navigation,
+      });
+      //TODO: old timestamp updation
+      // C. Add Hardcoded Success Message
+      const successMsg: Message = {
+        id: Date.now().toString(),
+        sender: "ai",
+        type: "text",
+        text: "Actions confirmed! ✅",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [successMsg, ...prev]);
+      context.trackMetric("chatActionsConfirmed", 1);
+    } catch (err) {}
   };
 
   const handleCancelAction = (msgId: string) => {
@@ -259,6 +264,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       timestamp: new Date(),
     };
     setMessages((prev) => [cancelMsg, ...prev]);
+    context.trackMetric("chatActionsCancelled", 1);
   };
 
   const EmptyState = () => (
@@ -325,7 +331,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         ]}
         onPress={onDismiss}
       >
-        <Ionicons size={24} name="close-outline"  color="#fff"></Ionicons>
+        <Ionicons size={24} name="close-outline" color="#fff"></Ionicons>
       </Pressable>
     </KeyboardAvoidingView>
   );

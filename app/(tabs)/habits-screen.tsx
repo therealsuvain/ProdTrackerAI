@@ -8,10 +8,12 @@ import HabitModal from "@/components/modal/habit-modal";
 import { useHabitForm } from "@/hooks/use-habit-form";
 import { ThemeContext } from "@/context/ThemeContext";
 import { cancelReminder } from "@/hooks/use-notifications";
+import { wasHabitCheckInMissed } from "@/utils/habit-utils";
 
+// TODO : shifting logic from habit-screen , habit-item, habiit-stats to utils maybe
 export default function HabitsScreen() {
   const { theme } = useContext(ThemeContext);
-  const { habits, setHabits } = useData();
+  const { habits, setHabits, trackMetric } = useData();
   const [visible, setVisible] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const { state, updateField, onSubmit } = useHabitForm({
@@ -29,8 +31,26 @@ export default function HabitsScreen() {
   const hideModal = () => setVisible(false);
 
   const handleUpdate = (updated: Habit) => {
-    console.log("Updating habit:", updated);
-    setHabits(habits.map((h) => (h.id === updated.id ? updated : h)));
+    setHabits((prevHabits)=>{
+      return prevHabits.map((h) => {
+        if (h.id !== updated.id) {
+          return h;
+        }
+        if (h.history.length < updated.history.length) {
+          trackMetric("habitsCheckedIn", 1);
+        }
+        if(updated.streak === updated.goal){
+          trackMetric("habitsGoalsCompleted", 1);
+        }
+        if((!h.freezeHistory && updated.freezeHistory)||(h.freezeHistory && updated.freezeHistory && (h.freezeHistory.length < updated.freezeHistory.length) )){
+          trackMetric("habitsFrozen", 1);
+        }
+        if(wasHabitCheckInMissed(h, updated)){
+          trackMetric('habitCheckInsMissed',1);
+        }
+        return updated;
+      });
+    })
   };
 
   const handleDelete = (id: string) => {

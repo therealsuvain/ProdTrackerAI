@@ -4,6 +4,7 @@ export interface AchievementBadge {
   id: string;          // e.g., 'first_10_tasks'
   title: string;       // e.g., 'Getting Started'
   description: string; // e.g., 'Complete your first 10 tasks.'
+  unlockedDescription: string;
   tier: AchievementTier;
   target: number;      // e.g., 10
   unlockedAt: string;  // ISO Date string

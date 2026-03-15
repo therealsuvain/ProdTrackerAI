@@ -22,7 +22,7 @@ export default function TabLayout() {
         //     easing: Easing.inOut(Easing.ease),
         //   },
         // },
-        animation: "fade",
+        animation: "shift",
         headerShadowVisible: false,
         headerTintColor: theme.whiteBase,
         headerLeft: () => (

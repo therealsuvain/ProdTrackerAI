@@ -1,16 +1,28 @@
 // src/utils/storage.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { Task } from '../types/task';
-import { CalendarEvent } from '../types/calendar';
-import { TimerLog } from '../types/timer';
-import { Habit } from '../types/habits';
-import { Message } from '../types/chat';
+import { Task } from '@/types/task';
+import { CalendarEvent } from '@/types/calendar';
+import { TimerLog } from '@/types/timer';
+import { Habit } from '@/types/habits';
+import { Message } from '@/types/chat';
 import { SettingsConfig, defaultSettings } from '@/types/settings';
 import { AchievementBadge } from '@/types/achievements';
+import { AppMetrics, MetricKey, DailyMetricKey, GlobalMetricKey } from '@/types/metrics';
 
 const SETTINGS_KEY = '@prodtracker_settings';
 const ACHIEVEMENTS_KEY = '@prodtracker_achievements';
+const METRICS_KEY = '@prodtracker_metrics';
+
+const defaultMetrics: AppMetrics = {
+  global: {
+    tasksCompleted: 0, tasksMissed: 0, habitsCheckedIn: 0,
+    habitsGoalsCompleted: 0, habitCheckInsMissed: 0, habitsStreakMax: 0, habitsFrozen: 0,
+    habitsAutoFrozen: 0, timeTracked: 0, chatMessagesSent: 0, chatActionsConfirmed: 0, chatActionsExpired: 0,
+    chatActionsCancelled: 0
+  },
+  daily: {}
+};
 // Helper to handle JSON serialization (Dates need conversion)
 const stringify = (data: any) => JSON.stringify(data, (_key, value) =>
   value instanceof Date ? value.toISOString() : value
@@ -98,7 +110,7 @@ export const loadHabits = async (): Promise<Habit[]> => {
 
 export const saveAIChatHistory = async (messages: Message[]) => {
   try {
-    const limitedHistory = messages.slice(-100)
+    const limitedHistory = messages.slice(0, 100)
     await AsyncStorage.setItem("ai_chat_history", stringify(limitedHistory));
   } catch (e) {
     console.error("Failed to save history", e);
@@ -109,7 +121,7 @@ export const loadAIChatHistory = async () => {
   try {
     const savedHistory = await AsyncStorage.getItem("ai_chat_history");
     const limitedHistory = savedHistory ? parse(savedHistory) : []
-    return limitedHistory.slice(-50);
+    return limitedHistory.slice(0, 50);
   }
   catch (e) {
     console.error("Failed to load history", e);
@@ -117,7 +129,7 @@ export const loadAIChatHistory = async () => {
   }
 };
 
-export const getSettings = async (): Promise<SettingsConfig> => {
+export const loadSettings = async (): Promise<SettingsConfig> => {
   try {
     const jsonValue = await AsyncStorage.getItem(SETTINGS_KEY);
     return jsonValue != null ? JSON.parse(jsonValue) : defaultSettings;
@@ -137,7 +149,7 @@ export const saveSettings = async (settings: SettingsConfig): Promise<void> => {
 };
 
 
-export const getUnlockedAchievements = async (): Promise<AchievementBadge[]> => {
+export const loadUnlockedAchievements = async (): Promise<AchievementBadge[]> => {
   try {
     const jsonValue = await AsyncStorage.getItem(ACHIEVEMENTS_KEY);
     return jsonValue != null ? JSON.parse(jsonValue) : [];
@@ -149,7 +161,7 @@ export const getUnlockedAchievements = async (): Promise<AchievementBadge[]> => 
 
 export const saveUnlockedAchievement = async (badge: AchievementBadge): Promise<void> => {
   try {
-    const currentBadges = await getUnlockedAchievements();
+    const currentBadges = await loadUnlockedAchievements();
     // Prevent duplicate unlocks
     if (!currentBadges.some(b => b.id === badge.id)) {
       currentBadges.push(badge);
@@ -160,7 +172,68 @@ export const saveUnlockedAchievement = async (badge: AchievementBadge): Promise<
   }
 };
 
+export const loadAppMetrics = async (): Promise<AppMetrics> => {
+  try {
+    const jsonValue = await AsyncStorage.getItem(METRICS_KEY);
+    return jsonValue != null ? JSON.parse(jsonValue) : defaultMetrics;
+  } catch (error) {
+    console.error('Error fetching metrics:', error);
+    return defaultMetrics;
+  }
+};
+
+export const saveAppMetrics = async (metrics: AppMetrics): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(METRICS_KEY, JSON.stringify(metrics));
+  } catch (error) {
+    console.error('Error saving metrics:', error);
+  }
+};
+
+/**
+ * Atomic mutation function for metrics. 
+ * Handles both Daily and Global updates simultaneously for absolute consistency.
+ */
+export const mutateMetric = async (
+  key: MetricKey,
+  amount: number, // Use 1 to increment, -1 to decrement
+  dateOverride?: string
+): Promise<AppMetrics> => {
+  const metrics = await loadAppMetrics();
+  const dateString = dateOverride || new Date().toISOString().split('T')[0];
+  if (!metrics.daily[dateString]) {
+    metrics.daily[dateString] = {
+      tasksCompleted: 0, habitsCheckedIn: 0, habitsGoalsCompleted: 0, habitsStreakMax: 0,
+      habitsFrozen: 0, timeTracked: 0, chatMessagesSent: 0, chatActionsConfirmed: 0, chatActionsExpired: 0,
+      chatActionsCancelled: 0
+    };
+  }
+
+  // Apply mutations with a floor of 0 to prevent negative stats
+  if (key in metrics.global) {
+    const gKey = key as GlobalMetricKey;
+    metrics.global[gKey] = Math.max(0, metrics.global[gKey] + amount);
+  }
+  if (key in metrics.daily[dateString]) {
+    const dKey = key as DailyMetricKey;
+    metrics.daily[dateString][dKey] = Math.max(0, metrics.daily[dateString][dKey] + amount);
+  }
+  console.log("Mutated metrics:", metrics);
+  await saveAppMetrics(metrics);
+  return metrics;
+};
+
 // Optional: Clear all data for testing
+
+export const clearStorageByKey = async (key: string) => {
+  try {
+    await AsyncStorage.removeItem(key);
+    console.log("Cleared key:", key);
+  } catch (e) {
+    console.error('Error clearing metrics:', e);
+  }
+};
+
 export const clearStorage = async () => {
   try {
     await AsyncStorage.clear();

@@ -8,6 +8,7 @@ import React, {
 import { AppState } from "react-native";
 import * as Notifications from "expo-notifications";
 import { randomUUID } from "expo-crypto";
+
 import { TimerLog } from "@/types/timer";
 import { useData } from "@/hooks/use-data";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -29,7 +30,7 @@ interface TimerContextType {
 }
 
 export const TimerContext = createContext<TimerContextType | undefined>(
-  undefined
+  undefined,
 );
 
 const TIMER_KEY = "timer_data";
@@ -60,7 +61,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
   const [title, setTitle] = useState("");
   const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
   const [pausedSeconds, setPausedSeconds] = useState(0);
-  const { timerLogs, setTimerLogs } = useData();
+  const { timerLogs, setTimerLogs, trackMetric } = useData();
   const updateIntervalRef = useRef<number | null>(null);
   //const notificationUpdateRef = useRef<number | null>(null);
   const isInitializedRef = useRef(false);
@@ -93,13 +94,12 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
       () => {
         console.log("Notification: Saved");
         stop(); // Call your existing resume logic
-      }
-
+      },
     );
 
     return () => {
-      listeners.forEach(listener => listener.remove())
-    }
+      listeners.forEach((listener) => listener.remove());
+    };
   }, [time, isRunning, startTimestamp]);
   // Initialize on mount
   useEffect(() => {
@@ -161,7 +161,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
           // App went to background - save state
           await saveTimerData();
         }
-      }
+      },
     );
 
     return () => {
@@ -201,7 +201,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
           "Recalculating time - pausedSeconds:",
           data.pausedSeconds,
           "elapsed:",
-          elapsed
+          elapsed,
         );
 
         setTime(elapsed);
@@ -318,7 +318,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
       title || "Timer",
       now - pausedSeconds * 1000,
       true,
-      pausedSeconds
+      pausedSeconds,
     );
   };
 
@@ -335,15 +335,15 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     if (startTimestamp) {
       const elapsed =
         pausedSeconds + Math.floor((Date.now() - startTimestamp) / 1000);
-      setPausedSeconds(()=>elapsed);
+      setPausedSeconds(() => elapsed);
       setTime(elapsed);
       const now = Date.now();
       showNotification(
         title || "Timer",
-        now - pausedSeconds*1000,
+        now - pausedSeconds * 1000,
         false,
         elapsed,
-      )
+      );
     }
     //setStartTimestamp(null);
     setIsRunning(false);
@@ -366,6 +366,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
         duration: finalTime,
       };
       setTimerLogs([...timerLogs, log]);
+      trackMetric("timeTracked", finalTime);
       stopNativeTimer();
     }
 
@@ -379,7 +380,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     setStartTimestamp(null);
     setPausedSeconds(0);
     setIsRunning(false);
-    stopNativeTimer()
+    stopNativeTimer();
     //cancelAllNotifications();
   };
 

@@ -5,11 +5,15 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
-import { Task } from "../types/task";
-import { CalendarEvent } from "../types/calendar";
-import { TimerLog } from "../types/timer";
-import { Habit } from "../types/habits";
-import { Message } from "../types/chat";
+
+import { Task } from "@/types/task";
+import { CalendarEvent } from "@/types/calendar";
+import { TimerLog } from "@/types/timer";
+import { Habit } from "@/types/habits";
+import { Message } from "@/types/chat";
+import { AppMetrics, MetricKey, GlobalMetricKey } from "@/types/metrics";
+import { AchievementBadge } from "@/types/achievements";
+
 import {
   loadTasks,
   saveTasks,
@@ -21,15 +25,21 @@ import {
   saveHabits,
   loadAIChatHistory,
   saveAIChatHistory,
-} from "../utils/storage-utils";
+  loadAppMetrics,
+  mutateMetric,
+} from "@/utils/storage-utils";
+import { processAchievements } from "@/utils/achievements-util";
+import { applyMissedDayLogic } from "@/utils/habit-utils";
+import { cancelReminder } from "@/hooks/use-notifications";
+
 import {
   dummyTasks,
   dummyEvents,
   dummyTimerLogs,
   dummyHabits,
-} from "../data/dummyData";
-import { cancelReminder } from "@/hooks/use-notifications";
-import { applyMissedDayLogic } from "@/utils/habit-utils";
+} from "@/data/dummyData";
+
+import { AchievementToast } from "@/components/ui/achievements/achievement-toast";
 
 interface DataContextType {
   tasks: Task[];
@@ -53,6 +63,8 @@ interface DataContextType {
     date: string,
     all: boolean,
   ) => Promise<void>;
+  appMetrics: AppMetrics | null;
+  trackMetric: (key: GlobalMetricKey, amount: number) => Promise<void>;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(
@@ -68,15 +80,8 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   const [timerLogs, setTimerLogs] = useState<TimerLog[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [metaData, setMetaData] = useState({
-    tasksCompleted: 0,
-    tasksMissed: 0,
-    habitsCheckedIn: 0,
-    habitGoalsCompleted: 0,
-    habitCheckInsMissed: 0,
-    habitsFrozen: 0,
-    habitsAutoFrozen: 0,
-  });
+  const [appMetrics, setAppMetrics] = useState<AppMetrics | null>(null);
+  const [activeBadge, setActiveBadge] = useState<AchievementBadge | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<{
     message: string;
@@ -130,6 +135,45 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const trackMetric = useCallback(
+    async (key: GlobalMetricKey, amount: number) => {
+      // 1. Mutate storage atomically
+      const updatedMetrics = await mutateMetric(key, amount);
+      // 2. Update React Context so UI (Heatmaps, Progress Bars) re-renders instantly
+      setAppMetrics(updatedMetrics);
+
+      // 3. If the user advanced a metric (not undid it), check for achievements!
+      if (amount > 0) {
+        let newlyUnlocked: AchievementBadge[] = [];
+
+        try {
+          newlyUnlocked = await processAchievements(
+            updatedMetrics.global[key],
+            key,
+          );
+
+          // Phase 6.3 Prep: If we got badges, we will trigger a global toast here later!
+          if (newlyUnlocked.length > 0) {
+            const achievementToastQueue = [...newlyUnlocked];
+            function showNext() {
+              const badge = achievementToastQueue.shift();
+              if (!badge) return;
+              setActiveBadge(badge);
+              setTimeout(() => {
+                setActiveBadge(null);
+                setTimeout(showNext, 500); // small gap between badges
+              }, 6000);
+            }
+            showNext();
+          }
+        } catch (err) {
+          console.error("Error evaluating achievements:", err);
+        }
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     const loadData = async () => {
       let loadedTasks = await loadTasks();
@@ -137,6 +181,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       let loadedLogs = await loadTimerLogs();
       let loadedHabits = await loadHabits();
       let loadedMessages = await loadAIChatHistory();
+      let loadedMetrics = await loadAppMetrics();
 
       // Initialize with dummy data if enabled and no data exists
       if (USE_DUMMY_DATA) {
@@ -146,13 +191,20 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         if (loadedHabits.length === 0) loadedHabits = dummyHabits;
       }
 
-      loadedHabits = loadedHabits.map((habit) => applyMissedDayLogic(habit));
+      loadedHabits = loadedHabits.map((habit) => {
+        const updatedHabit = applyMissedDayLogic(habit);
+        if (updatedHabit.streakFreezes < habit.streakFreezes) {
+          trackMetric("habitsAutoFrozen", 1);
+        }
+        return updatedHabit;
+      });
       //loadedTasks = loadedTasks.filter((t)=>!t.title.includes("testing") && !t.title.includes("Testing"))
       setTasks(loadedTasks);
       setEvents(loadedEvents);
       setTimerLogs(loadedLogs);
       setHabits(loadedHabits);
       setMessages(loadedMessages);
+      setAppMetrics(loadedMetrics);
       // mark that initial load finished so save effects don't overwrite storage during startup
       setLoaded(true);
     };
@@ -162,20 +214,23 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveTasks(tasks);
-    console.log("DATA TASKS", tasks.map((e) => {
+    /* console.log(
+      "DATA TASKS",
+      tasks.map((e) => {
         return { ...e, embedding: e.embedding?.[0] };
-      }));
+      }),
+    ); */
   }, [tasks, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
     saveEvents(events);
-    console.log(
+    /* console.log(
       "DATA EVENTS",
       events.map((e) => {
         return { ...e, embedding: e.embedding?.[0] };
-      }) 
-    );
+      }),
+    ); */
   }, [events, loaded]);
 
   useEffect(() => {
@@ -186,15 +241,18 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveHabits(habits);
-    console.log("DATA HABITS", habits.map((e) => {
+    /* console.log(
+      "DATA HABITS",
+      habits.map((e) => {
         return { ...e, embedding: e.embedding?.[0] };
-      }));
+      }),
+    ); */
   }, [habits, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
     saveAIChatHistory(messages);
-    //console.log("DATA MESSAGES",messages)
+    console.log("DATA MESSAGES", messages[0]);
   }, [messages, loaded]);
 
   return (
@@ -214,9 +272,12 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         dispatchError,
         clearError,
         deleteEventOccurrence,
+        appMetrics,
+        trackMetric,
       }}
     >
       {children}
+      <AchievementToast badge={activeBadge} />
     </DataContext.Provider>
   );
 }

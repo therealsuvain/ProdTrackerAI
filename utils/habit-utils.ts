@@ -2,14 +2,26 @@ import { Habit } from "@/types/habits";
 
 const STREAK_MILESTONE = 5; 
 const MAX_FREEZES = 3;
-
+// TODO Freeze has to for 24 hours, and not just depend on the day habit is frozen
 export const getTodayISO = () => new Date().toISOString().split('T')[0];
 
 export const isCompletedToday = (habit: Habit): boolean => {
   const today = getTodayISO();
   return habit.history.includes(today);
 };
-
+ 
+export const wasHabitCheckInMissed = (habit: Habit, justCheckedInHabit: Habit): boolean => {
+  if(habit.history.length === 0 )
+    return false;
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayISO = yesterday.toISOString().split('T')[0];
+  if(habit.history.includes(yesterdayISO))
+    return false;
+  if(habit.freezeHistory?.includes(getTodayISO()) || justCheckedInHabit.freezeHistory?.includes(getTodayISO()))
+    return false;
+  return true
+}
 export const applyMissedDayLogic = (habit: Habit): Habit => {
   const today = new Date();
   const yesterday = new Date(today);

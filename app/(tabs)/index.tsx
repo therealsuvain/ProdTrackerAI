@@ -34,6 +34,15 @@ import { Habit } from "@/types/habits";
 import { ThemeContext } from "@/context/ThemeContext";
 import { ChatScreen } from "@/components/ui/chat/chat-screen";
 
+/**
+ * TODO : Check all types again, many new fields have been added which have been marked optional to not break exisitng items, but are required for future items
+ * TODO : Many files are very large, try and make it more modular. ALL FILES HAVE TO CHECKED FOR POSSIBLE <REFACTORS></REFACTORS>
+ * TODO : CLOUD DATA SYNC ABILITY with Login and accounts
+ * TODO : Pay wall
+ * TODO : EMPTY states for Tasks, Events, Habits, TimerLogs
+ * TODO : Habit heat map
+ * TODO :  
+ */
 export default function HomeScreen() {
   const { theme } = useContext(ThemeContext);
   const { tasks, setTasks, events, setEvents, timerLogs, habits, setHabits } = useData();

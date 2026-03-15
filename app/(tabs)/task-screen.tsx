@@ -25,11 +25,13 @@ import TaskModal from "@/components/modal/task-modal";
 import { useTaskForm } from "@/hooks/use-task-form";
 import {ThemeContext} from "@/context/ThemeContext";
 
+import { clearStorageByKey } from "@/utils/storage-utils";
+
 
 
 export default function TaskScreen() {
   const {theme} = useContext(ThemeContext)
-  const { tasks, setTasks } = useData();
+  const { tasks, setTasks , trackMetric } = useData();
   const [visible, setVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -91,9 +93,19 @@ export default function TaskScreen() {
   };
 
   const toggleComplete = (id: string) => {
-    setTasks(
-      tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
-    );
+
+    setTasks((prevTasks) => {
+    return prevTasks.map((t) => {
+      if (t.id !== id) return t;
+
+      if (t.completed) {
+        trackMetric('tasksCompleted', -1); // Undoing completion
+      } else {
+        trackMetric('tasksCompleted', 1);  // Completing
+      }
+      return { ...t, completed: !t.completed };
+    });
+  });
   };
 
   const handleDragEnd = ({ data }: { data: Task[] }) => {
@@ -188,6 +200,9 @@ export default function TaskScreen() {
             </View>
           )}
           <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
+              <FAB style={styles.fab} icon="plus" onPress={() => {clearStorageByKey("@prodtracker_metrics")
+                clearStorageByKey("@prodtracker_achievements")
+              }} />  
         </View>
         <Portal>
           <TaskModal

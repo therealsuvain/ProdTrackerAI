@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { getUnlockedAchievements } from "@/utils/storage-utils";
+import { loadUnlockedAchievements } from "@/utils/storage-utils";
 import { AchievementBadge as BadgeType } from "../types/achievements";
 import AchievementBadge from "@/components/ui/achievements/achievement-badge";
 import {
@@ -20,45 +20,42 @@ import { useTheme } from "@/hooks/use-theme-colors";
 */
 export default function AchievementsScreen() {
   const {theme} = useTheme();
-  const { tasks, habits } = useData();
-  const totalMinutesLogged = 1000; // Assuming your timer hook exposes this or timer logs
-
+  const { tasks, habits , appMetrics} = useData();
+  const [achievements, setAchievements] = useState(ALL_ACHIEVEMENTS);
   const [unlockedData, setUnlockedData] = useState<Record<string, BadgeType>>(
     {},
   );
 
   useEffect(() => {
     const loadBadges = async () => {
-      const unlocked = await getUnlockedAchievements();
+      const unlocked = await loadUnlockedAchievements();
       // Convert array to a dictionary for O(1) lookups during rendering
       const unlockedMap: Record<string, BadgeType> = {};
       unlocked.forEach((badge) => {
         unlockedMap[badge.id] = badge;
       });
       setUnlockedData(unlockedMap);
+      setAchievements((prevAchievements) => {
+        return [...prevAchievements]
+      });
     };
     loadBadges();
-  }, [tasks, habits, totalMinutesLogged]); // Re-run if core data changes
+  }, [appMetrics]); // Re-run if core data changes
 
   // Calculate live metrics
-  const completedTasksCount = useMemo(
-    () => tasks.filter((t) => t.completed).length,
-    [tasks],
-  );
-  const completedHabitsCount = 25; //useMemo(() => habits.reduce((acc, h) => acc + h.completionCount, 0), [habits]); // Adjust based on your habit tracking logic
+  const completedTasksCount = appMetrics?.global.tasksCompleted || 0;
+  const completedHabitsCount = appMetrics?.global.habitsCheckedIn || 0;
   const unlockedBadgesCount = Object.keys(unlockedData).length;
 
   // Helper function to map an achievement ID to its current metric progress
   const getProgressForBadge = (badgeId: string): number => {
-    if (TASK_ACHIEVEMENTS.some((a) => a.id === badgeId))
-      return completedTasksCount;
-    if (HABIT_ACHIEVEMENTS.some((a) => a.id === badgeId))
-      return completedHabitsCount;
-    if (TIMER_ACHIEVEMENTS.some((a) => a.id === badgeId))
-      return totalMinutesLogged || 0;
-    if (ACHIEVEMENTS_ACHIEVEMENTS.some((a) => a.id === badgeId))
+    const achivement = ALL_ACHIEVEMENTS.find((a) => a.id === badgeId);
+    if (!achivement) 
+      return 0;
+    if(achivement.metricTrigger === "meta") 
       return unlockedBadgesCount;
-    return 0;
+    else
+      return appMetrics?.global[achivement.metricTrigger] || 0;
   };
 
   return (
@@ -69,15 +66,15 @@ export default function AchievementsScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
       >
-        {ALL_ACHIEVEMENTS.map((def) => {
+        {achievements.map((def) => {
           const unlockedInfo = unlockedData[def.id];
-          const isUnlocked =
-            def.id === "tasks_10" ||
+          const isUnlocked = !! unlockedInfo;
+            /* def.id === "tasks_10" ||
             def.id === "habits_100" ||
             def.id === "timer_1440" ||
             def.id === "achievements_all"
               ? true
-              : !!unlockedInfo;
+              : !!unlockedInfo; */
 
           return (
             <AchievementBadge
