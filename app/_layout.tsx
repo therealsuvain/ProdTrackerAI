@@ -17,8 +17,9 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
+    <ThemeProvider>
     <SettingsProvider>
-      <ThemeProvider>
+      
         <DataProvider>
         <TimerProvider>
         <Drawer
@@ -38,7 +39,8 @@ export default function RootLayout() {
         <StatusBar style="auto" />
         </TimerProvider>
         </DataProvider>
-      </ThemeProvider>
+      
     </SettingsProvider>
+    </ThemeProvider>
   );
 }

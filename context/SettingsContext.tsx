@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 import { SettingsConfig, defaultSettings } from '@/types/settings';
 import { loadSettings, saveSettings } from '@/utils/storage-utils';
+import { useTheme } from '@/hooks/use-theme-colors';
 
 interface SettingsContextType {
   settings: SettingsConfig;
@@ -14,6 +15,7 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<SettingsConfig>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
+  const { isDarkMode,toggleTheme, theme } = useTheme();
 
   useEffect(() => {
     const loadSettingsFromStorage = async () => {
@@ -32,6 +34,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Generic function that enforces strict type-checking based on the key
   const updateSetting = async <K extends keyof SettingsConfig>(key: K, value: SettingsConfig[K]) => {
+    if(key === 'isDarkMode'){
+      await toggleTheme();
+    }
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings); // Optimistic UI update
     await saveSettings(newSettings); // Persist to storage

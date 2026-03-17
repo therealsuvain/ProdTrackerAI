@@ -4,9 +4,13 @@ export interface SettingsConfig {
   notificationEnabled: boolean //string | null; // e.g., "09:00" or null if disabled
   soundEffectsEnabled: boolean;
   resetAchievements : boolean;
-  enableCloudSync: boolean
-  deleteProfile: boolean
-  deleteData: boolean
+  enableCloudSync: boolean;
+  deleteProfile: boolean;
+  deleteAllData: boolean;
+  deleteTasks: boolean;
+  deleteHabits: boolean;
+  deleteEvents: boolean;
+  deleteTimerLogs: boolean;
 
 }
 
@@ -18,5 +22,9 @@ export const defaultSettings: SettingsConfig = {
   resetAchievements: false,
   enableCloudSync: false,
   deleteProfile: false,
-  deleteData: false
+  deleteAllData: false,
+  deleteTasks: false,
+  deleteHabits: false,
+  deleteEvents: false,
+  deleteTimerLogs: false
 };

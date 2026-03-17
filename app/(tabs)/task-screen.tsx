@@ -24,6 +24,7 @@ import { cancelReminder } from "@/hooks/use-notifications";
 import TaskModal from "@/components/modal/task-modal";
 import { useTaskForm } from "@/hooks/use-task-form";
 import {ThemeContext} from "@/context/ThemeContext";
+import { useHaptics } from "@/hooks/use-haptics";
 
 import { clearStorageByKey } from "@/utils/storage-utils";
 
@@ -44,6 +45,7 @@ export default function TaskScreen() {
     editingTask,
     onClose: () => setVisible(false),
   });
+  const {triggerHaptic} = useHaptics()
 
   const filteredTasks = tasks
     .filter(
@@ -102,6 +104,7 @@ export default function TaskScreen() {
         trackMetric('tasksCompleted', -1); // Undoing completion
       } else {
         trackMetric('tasksCompleted', 1);  // Completing
+        triggerHaptic()
       }
       return { ...t, completed: !t.completed };
     });
@@ -200,9 +203,9 @@ export default function TaskScreen() {
             </View>
           )}
           <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
-              <FAB style={styles.fab} icon="plus" onPress={() => {clearStorageByKey("@prodtracker_metrics")
+              {/* <FAB style={styles.fab} icon="plus" onPress={() => {clearStorageByKey("@prodtracker_metrics")
                 clearStorageByKey("@prodtracker_achievements")
-              }} />  
+              }} />   */}
         </View>
         <Portal>
           <TaskModal

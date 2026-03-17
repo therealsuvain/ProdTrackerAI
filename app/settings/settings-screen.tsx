@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { ScrollView, StyleSheet, View, Text } from "react-native";
 import { Searchbar } from "react-native-paper";
+import { router } from 'expo-router';
 
-import { useSettings } from "../context/SettingsContext";
-import { SettingsSection } from "../types/settings-ui";
+import { useSettings } from "@/context/SettingsContext";
+import { SettingsSection } from "@/types/settings-ui";
 import { SettingsGroup } from "@/components/ui/settings/settings-group";
 import { SettingsRow } from "@/components/ui/settings/settings-row";
 import { useTheme } from "@/hooks/use-theme-colors";
@@ -81,10 +82,11 @@ const SETTINGS_LAYOUT: SettingsSection[] = [
     title: "Data Mangement",
     data: [
       {
-        id: "deleteData",
+        id: "deleteAllData",
         label: "Delete All Data",
         icon: "folder-delete",
         type: "link",
+        href: "/settings/data-management"
       },
       {
         id: "resetAchievements",
@@ -95,6 +97,12 @@ const SETTINGS_LAYOUT: SettingsSection[] = [
     ],
   },
 ];
+
+const handlePress = (id: string, href?: string) => {
+  if (href) {
+    router.push(href as any);
+  }
+};
 
 export default function SettingsScreen() {
   const { theme } = useTheme();
@@ -139,8 +147,9 @@ export default function SettingsScreen() {
               <SettingsRow
                 key={item.id}
                 item={item}
-                value={settings[item.id] as boolean}
+                value={settings[item.id as keyof typeof settings] as any}
                 onToggle={handleToggle}
+                onPress={handlePress}
                 isLast={itemIndex === section.data.length - 1}
               />
             ))}

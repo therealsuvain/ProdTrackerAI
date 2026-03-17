@@ -42,7 +42,7 @@ export  const Sidebar = (props: any) => {
           label="Settings"
           labelStyle={{ color: theme.text }}
           icon={({ size }) => <Ionicons name="settings-outline" size={size} color={theme.text} />}
-          onPress={() =>  router.push('/settings')}
+          onPress={() =>  router.push('/settings/settings-screen')}
         />
         <DrawerItem
           label="Achievements"

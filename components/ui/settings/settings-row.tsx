@@ -1,15 +1,20 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Text, Switch, TouchableRipple } from "react-native-paper";
-import { Ionicons, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  Ionicons,
+  MaterialIcons,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 
 import { SettingItem } from "@/types/settings-ui";
 import { useTheme } from "@/hooks/use-theme-colors";
 
 interface SettingsRowProps {
   item: SettingItem;
-  value: boolean; // Simplified to boolean for toggles initially
-  onToggle: (id: string, newValue: boolean) => void;
+  value?: any; // Simplified to boolean for toggles initially
+  onToggle?: (id: string, newValue: boolean) => void;
+  onPress?: (id: string, href?: string) => void;
   isLast: boolean;
 }
 
@@ -17,27 +22,55 @@ export const SettingsRow = ({
   item,
   value,
   onToggle,
+  onPress,
   isLast,
 }: SettingsRowProps) => {
   const { theme } = useTheme();
   const renderRightElement = () => {
-    if (item.type === "toggle") {
-      return (
-        <Switch
-          thumbColor={theme.text}
-          trackColor={{ false: theme.whiteBase, true: "red" }}
-          value={value}
-          onValueChange={(val) => onToggle(item.id, val)}
-        />
-      );
+    switch (item.type) {
+      case "toggle":
+        return (
+          <Switch
+            thumbColor={theme.text}
+            trackColor={{ false: theme.whiteBase, true: "red" }}
+            value={value}
+            onValueChange={(val) => onToggle &&onToggle(item.id, val)}
+          />
+        );
+
+      case "value-link":
+        return (
+          <View style={styles.valueLinkContainer}>
+            <Text style={{ color: theme.text, marginRight: 8 }}>
+              {value !== undefined ? String(value) : ""}
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color={theme.text} />
+          </View>
+        );
+
+      case "link":
+        return <Ionicons name="chevron-forward" size={20} color={theme.text} />;
+
+      case "action":
+        // Actions (like 'Delete All Data') usually don't have a right-side element
+        return null;
+
+      default:
+        return null;
     }
-    // Fallback for links/navigation
-    return <Ionicons name="chevron-forward" size={20} color={theme.text} />;
   };
 
+  const handleRowPress = () => {
+    if (item.type === "toggle" && onToggle) {
+      onToggle(item.id, !value);
+    } else if (onPress) {
+      onPress(item.id, item.href);
+    }
+  };
+  
   return (
     <TouchableRipple
-      onPress={() => item.type === "toggle" && onToggle(item.id, !value)}
+      onPress={handleRowPress}
     >
       <View
         style={[
@@ -104,4 +137,8 @@ const styles = StyleSheet.create({
   rightContent: {
     justifyContent: "center",
   },
+  valueLinkContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  }
 });
