@@ -8,3 +8,10 @@ export interface Message {
   isConfirmed?: boolean; // Tracks if the action was already processed
   isExpired?:boolean;
 }
+export interface DaySeparatorItem {
+  id: string;
+  type: 'day_separator';
+  date: Date;
+}
+
+export type ChatListItem = Message | DaySeparatorItem;

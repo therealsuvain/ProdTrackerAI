@@ -1,12 +1,11 @@
 // screens/ChatScreen.tsx
-import React, { useState, useRef, useContext, useEffect } from "react";
+import React, { useState, useRef, useContext, useEffect, useMemo } from "react";
 import { useNavigation } from "expo-router";
 import { useAudioPlayer } from "expo-audio";
 import { useHeaderHeight } from "@react-navigation/elements";
 
 import {
   FlatList,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   StyleSheet,
@@ -14,6 +13,10 @@ import {
   Text,
   BackHandler,
 } from "react-native";
+import {
+  KeyboardAvoidingView,
+  KeyboardProvider,
+} from "react-native-keyboard-controller";
 
 import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/use-data";
@@ -23,8 +26,10 @@ import { Message } from "@/types/chat";
 import { LoadingBubble } from "./loading-bubble";
 import { ChatInput } from "./chat-input";
 import { MessageBubble } from "./message-bubble";
+import { DaySeparator } from "./day-seperator";
 import { processCommandAgentic, agenticExecutor } from "@/utils/ai-utils";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
+import { injectDaySeparators } from "@/utils/chat-utils";
 
 interface Props {
   visible: boolean;
@@ -52,6 +57,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const playedSoundRef = useRef(false);
   const audioSource = require("@/assets/audio/record.wav");
   const player = useAudioPlayer(audioSource);
+  const chatItems = useMemo(() => injectDaySeparators(messages), [messages]);
 
   useEffect(() => {
     // Add the event listener when the component mounts or when isPortalOpen changes
@@ -183,7 +189,10 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         id: (Date.now() + 1).toString(),
         sender: "ai",
         type: calls && calls.length > 0 ? "action" : "text",
-        text: response,
+        text:
+          (calls && calls.length > 0) || response
+            ? response
+            : "Sorry, something went wrong. Please try again.",
         pendingActions: calls,
         timestamp: new Date(),
       };
@@ -288,52 +297,64 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
 
   if (!visible) return null;
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={headerHeight}
-      style={{ flex: 1, backgroundColor: theme.modalBase, marginBottom: 0 }}
-    >
-      <FlatList
-        ListEmptyComponent={EmptyState}
-        ref={flatListRef}
-        data={messages}
-        inverted // WhatsApp/iMessage start from bottom
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <MessageBubble
-            message={item}
-            onActionConfirm={(actions) => handleConfirmAction(item.id, actions)}
-            onActionCancel={() => handleCancelAction(item.id)}
-            onRemoveIndividualAction={(actionIndex) =>
-              removeIndividualAction(item.id, actionIndex)
-            }
-            onEnrichAction={enrichAction}
-          />
-        )}
-        ListHeaderComponent={
-          isThinking || isLoading ? <LoadingBubble isUser={isLoading} /> : null
-        } // "Thinking" at the very bottom
-        //ListHeaderComponentStyle={isLoading?{ alignItems: "right"}:{alignItems: "left"}}
-        contentContainerStyle={{ paddingVertical: 20 }}
-      />
-
-      <ChatInput
-        onSend={handleSendMessage}
-        onVoiceStart={handleStart}
-        onVoiceStop={handleStop}
-        isLoading={isThinking}
-        transcript={transcript}
-      />
-      <Pressable
-        style={({ pressed }: { pressed: boolean }) => [
-          styles.button,
-          { transform: [{ scale: pressed ? 0.75 : 1 }] },
-        ]}
-        onPress={onDismiss}
+    <KeyboardProvider>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={headerHeight}
+        style={{ flex: 1, backgroundColor: theme.modalBase, marginBottom: 0 }}
       >
-        <Ionicons size={24} name="close-outline" color="#fff"></Ionicons>
-      </Pressable>
-    </KeyboardAvoidingView>
+        <FlatList
+          ListEmptyComponent={EmptyState}
+          keyboardShouldPersistTaps="handled"
+          ref={flatListRef}
+          data={chatItems}
+          inverted // WhatsApp/iMessage start from bottom
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => {
+            if (item.type === "day_separator") {
+              return <DaySeparator date={item.date} />;
+            }
+            return (
+              <MessageBubble
+                message={item}
+                onActionConfirm={(actions) =>
+                  handleConfirmAction(item.id, actions)
+                }
+                onActionCancel={() => handleCancelAction(item.id)}
+                onRemoveIndividualAction={(actionIndex) =>
+                  removeIndividualAction(item.id, actionIndex)
+                }
+                onEnrichAction={enrichAction}
+              />
+            );
+          }}
+          ListHeaderComponent={
+            isThinking || isLoading ? (
+              <LoadingBubble isUser={isLoading} />
+            ) : null
+          } // "Thinking" at the very bottom
+          //ListHeaderComponentStyle={isLoading?{ alignItems: "right"}:{alignItems: "left"}}
+          contentContainerStyle={{ paddingVertical: 20 }}
+        />
+
+        <ChatInput
+          onSend={handleSendMessage}
+          onVoiceStart={handleStart}
+          onVoiceStop={handleStop}
+          isLoading={isThinking}
+          transcript={transcript}
+        />
+        <Pressable
+          style={({ pressed }: { pressed: boolean }) => [
+            styles.button,
+            { transform: [{ scale: pressed ? 0.75 : 1 }] },
+          ]}
+          onPress={onDismiss}
+        >
+          <Ionicons size={24} name="close-outline" color="#fff"></Ionicons>
+        </Pressable>
+      </KeyboardAvoidingView>
+    </KeyboardProvider>
   );
 };
 

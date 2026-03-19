@@ -55,7 +55,7 @@ export const ActionChip = ({ action, onRemove, isConfirmed }: Props) => {
       //style={styles.content}
       >
         <Text style={styles.actionTitle} numberOfLines={1}>
-          {action.args.title || action.args.t||action.extraInfo?.title   || "New Item"}
+          {action.args.title || action.args.t||action.extraInfo?.title   || "Deleted Item"}
         </Text>
         <Text style={styles.extraInfo}>{getActionSubtitle(action)}</Text>
         

@@ -19,7 +19,7 @@ import {
   scheduleReminderTasks,
 } from "@/hooks/use-notifications";
 import { TimerLog } from "@/types/timer";
-import { ActionRegistry, executeActions } from "./AI-utils/registry-handler";
+import { ActionRegistry, executeActions, SilentHandlerList } from "./AI-utils/registry-handler";
 import { AIActionContext } from "../types/ai-handler";
 import { generateSystemPrompt } from "./AI-utils/system-prompt";
 import { gemini_ai } from "./AI-utils/llm-client";
@@ -454,11 +454,12 @@ let activeChatSession: any = null;
 export const chatIntialize = async (context: any) => {
   try {
     if (!activeChatSession) {
-      const systemContext = generateSystemPrompt(context);
+      const {systemInstruction,systemContext} = generateSystemPrompt(context);
       activeChatSession = gemini_ai.chats.create({
         model: "gemini-2.5-flash",
         config: {
           tools: [{ functionDeclarations: aiTools }],
+          systemInstruction,
         }
         ,
         history: [
@@ -466,7 +467,7 @@ export const chatIntialize = async (context: any) => {
           { role: "model", parts: [{ text: "Understood. I have access to the user's state and tools." }] }
         ]
       });
-      console.log("chatty", activeChatSession)
+      //console.log("chatty", activeChatSession)
       return activeChatSession
     }
     const updatedSnapshot = getAppStatusSnapshot(context);
@@ -478,7 +479,7 @@ export const chatIntialize = async (context: any) => {
     console.error("Chat initialization failed:", error);
     activeChatSession = null;
   }
-  console.log("chatty", activeChatSession)
+  //console.log("chatty", activeChatSession)
   return activeChatSession;
 }
 
@@ -574,9 +575,10 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
   try {
     let result = await chat.sendMessage({ message: transcript });
     recordGeminiUsage(result);
-    console.log("Token:", result.usageMetadata);
     console.log("FUNCTIONCALLS", result.functionCalls);
-    console.log("CHAT RESPONSE:", result);
+    console.log("CHAT RESPONSE TEXT:", result.text);
+    console.log("CHAT Candidates.content:", result.candidates?.[0]?.content);
+    console.log("FULL RESPONSE", result)
     let currentCalls = result.functionCalls;
 
     //  !The Fallback: If native calls are undefined, but the text looks like JSON
@@ -600,11 +602,11 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
     while (iteration < MAX_ITERATIONS) {
       // 1. Separate current calls into Silent vs. Confirmation
       const silentCalls = currentCalls?.filter((c: any) =>
-        c.name === 'search-items'
+        SilentHandlerList.includes(c.name)
       ) || [];
 
       const confirmationCalls = currentCalls?.filter((c: any) =>
-        c.name !== 'search-items'
+        !SilentHandlerList.includes(c.name)
       ) || [];
 
       // 2. Add confirmation calls to our global list for the user
@@ -615,12 +617,14 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
 
       let toolResults;
       for (const call of silentCalls) {
+        console.log(`[Silent-Agent] Calling ${call.name} with:`, call.args);
         const handler = ActionRegistry[call.name];
         const data = await handler.execute(call.args, context);
         toolResults = {
           name: call.name,
           response: { result: data }
         };
+        console.log(`[Silent-Agent]  ${call.name} returned:`, data);
         toolResponses.push({
           functionResponse: {
             name: call.name,
@@ -672,7 +676,7 @@ export const agenticExecutor = async (calls: FunctionCall[] | undefined, context
   }
 }
 export const processUserCommand = async (userTranscript: string, context: any) => {
-  const systemInstruction = generateSystemPrompt(context, userTranscript);
+  const {systemInstruction} = generateSystemPrompt(context, userTranscript);
 
   try {
 

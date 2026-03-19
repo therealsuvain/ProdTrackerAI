@@ -252,7 +252,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveAIChatHistory(messages);
-    console.log("DATA MESSAGES", messages[0]);
+    //console.log("DATA MESSAGES", messages[0]);
   }, [messages, loaded]);
 
   return (

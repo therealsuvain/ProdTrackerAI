@@ -121,7 +121,7 @@ export const loadAIChatHistory = async () => {
   try {
     const savedHistory = await AsyncStorage.getItem("ai_chat_history");
     const limitedHistory = savedHistory ? parse(savedHistory) : []
-    return limitedHistory.slice(0, 50);
+    return limitedHistory;
   }
   catch (e) {
     console.error("Failed to load history", e);
@@ -218,7 +218,7 @@ export const mutateMetric = async (
     const dKey = key as DailyMetricKey;
     metrics.daily[dateString][dKey] = Math.max(0, metrics.daily[dateString][dKey] + amount);
   }
-  console.log("Mutated metrics:", metrics);
+  console.log("Global metrics:", metrics.global);
   await saveAppMetrics(metrics);
   return metrics;
 };

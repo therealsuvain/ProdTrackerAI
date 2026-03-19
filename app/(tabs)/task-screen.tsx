@@ -23,21 +23,19 @@ import TaskItem from "@/components/ui/tasks/task-item";
 import { cancelReminder } from "@/hooks/use-notifications";
 import TaskModal from "@/components/modal/task-modal";
 import { useTaskForm } from "@/hooks/use-task-form";
-import {ThemeContext} from "@/context/ThemeContext";
+import { ThemeContext } from "@/context/ThemeContext";
 import { useHaptics } from "@/hooks/use-haptics";
 
 import { clearStorageByKey } from "@/utils/storage-utils";
 
-
-
 export default function TaskScreen() {
-  const {theme} = useContext(ThemeContext)
-  const { tasks, setTasks , trackMetric } = useData();
+  const { theme } = useContext(ThemeContext);
+  const { tasks, setTasks, trackMetric } = useData();
   const [visible, setVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"priority" | "duedate" | "manual">(
-    "manual"
+    "manual",
   );
   const { state, updateField, onSubmit } = useTaskForm({
     tasks,
@@ -45,14 +43,14 @@ export default function TaskScreen() {
     editingTask,
     onClose: () => setVisible(false),
   });
-  const {triggerHaptic} = useHaptics()
+  const { triggerHaptic } = useHaptics();
 
   const filteredTasks = tasks
     .filter(
       (t) =>
         t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (t.description &&
-          t.description.toLowerCase().includes(searchQuery.toLowerCase()))
+          t.description.toLowerCase().includes(searchQuery.toLowerCase())),
     )
     .sort((a, b) => {
       if (sortBy === "priority") {
@@ -95,20 +93,20 @@ export default function TaskScreen() {
   };
 
   const toggleComplete = (id: string) => {
-
+    triggerHaptic();
     setTasks((prevTasks) => {
-    return prevTasks.map((t) => {
-      if (t.id !== id) return t;
+      return prevTasks.map((t) => {
+        if (t.id !== id) return t;
 
-      if (t.completed) {
-        trackMetric('tasksCompleted', -1); // Undoing completion
-      } else {
-        trackMetric('tasksCompleted', 1);  // Completing
-        triggerHaptic()
-      }
-      return { ...t, completed: !t.completed };
+        if (t.completed) {
+          trackMetric("tasksCompleted", -1); // Undoing completion
+        } else {
+          trackMetric("tasksCompleted", 1); // Completing
+          triggerHaptic();
+        }
+        return { ...t, completed: !t.completed };
+      });
     });
-  });
   };
 
   const handleDragEnd = ({ data }: { data: Task[] }) => {
@@ -119,12 +117,15 @@ export default function TaskScreen() {
   return (
     <Provider>
       <GestureHandlerRootView>
-        <View style={[styles.container,{backgroundColor:theme.background}]}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
           <Searchbar
             placeholder="Search Tasks"
             onChangeText={setSearchQuery}
             value={searchQuery}
-            style={[styles.searchbar,{backgroundColor:theme.taskBaseTransToo}]}
+            style={[
+              styles.searchbar,
+              { backgroundColor: theme.taskBaseTransToo },
+            ]}
           />
           <View style={styles.menuButton}>
             <Button onPress={() => setShowSortOptions(!showSortOptions)}>
@@ -132,7 +133,12 @@ export default function TaskScreen() {
             </Button>
 
             {showSortOptions && (
-              <View style={[styles.menu,{backgroundColor:theme.taskDarkSecondary}]}>
+              <View
+                style={[
+                  styles.menu,
+                  { backgroundColor: theme.taskDarkSecondary },
+                ]}
+              >
                 <Button
                   mode="text"
                   onPress={() => {
@@ -202,8 +208,14 @@ export default function TaskScreen() {
               />
             </View>
           )}
-          <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
-              {/* <FAB style={styles.fab} icon="plus" onPress={() => {clearStorageByKey("@prodtracker_metrics")
+          <FAB
+            style={styles.fab}
+            icon="plus"
+            onPress={
+              () =>showModal()
+            }
+          />
+          {/* <FAB style={styles.fab} icon="plus" onPress={() => {clearStorageByKey("@prodtracker_metrics")
                 clearStorageByKey("@prodtracker_achievements")
               }} />   */}
         </View>
@@ -241,7 +253,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuButton: {
-    zIndex:1
+    zIndex: 1,
   },
   searchbar: { marginBottom: 16 },
   fab: {

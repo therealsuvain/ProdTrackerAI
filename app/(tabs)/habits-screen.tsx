@@ -45,7 +45,7 @@ export default function HabitsScreen() {
         if((!h.freezeHistory && updated.freezeHistory)||(h.freezeHistory && updated.freezeHistory && (h.freezeHistory.length < updated.freezeHistory.length) )){
           trackMetric("habitsFrozen", 1);
         }
-        if(wasHabitCheckInMissed(h, updated)){
+        if(wasHabitCheckInMissed(h, updated)){ // TODO : This only works when a habit is checkd in. Ideally this should be done on app start or in background or something
           trackMetric('habitCheckInsMissed',1);
         }
         return updated;

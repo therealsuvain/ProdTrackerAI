@@ -41,7 +41,8 @@ import { ChatScreen } from "@/components/ui/chat/chat-screen";
  * TODO : Pay wall
  * TODO : EMPTY states for Tasks, Events, Habits, TimerLogs
  * TODO : Habit heat map
- * TODO :  
+ * TODO : Notifications edits via chat 
+ * TODO : Maybe custom notifications options
  */
 export default function HomeScreen() {
   const { theme } = useContext(ThemeContext);

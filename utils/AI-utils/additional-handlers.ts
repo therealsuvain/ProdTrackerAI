@@ -55,7 +55,7 @@ export const SearchItemsHandler: AIHandler = {
 
     // 5. Take the Top 5 results to keep the AI's context window clean
     const topResults = scoredResults.slice(0, 5);
-    const foundIds = topResults.map(({ id, title, type }) => ({ id, title, type}));
+    const foundIds = topResults.map(({ id, title, type }) => ({ id: id.slice(0, 8), title, type}));
 
     console.log("FOUND ID'S:", foundIds)
     return {

@@ -57,7 +57,7 @@ export default function HabitStats({ habit, onUpdate }: HabitStatsProps) {
      return diff < 1; // Consider frozen if last freeze was within the last dayd
   }
   useEffect(() => {
-    if (habit.streak >= 3) {
+    if (habit.streak >= 2) {
       Animated.timing(scaleAnim, {
         toValue: 1,
         duration: 500,
