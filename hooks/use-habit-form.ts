@@ -34,7 +34,8 @@ const initialState: FormState = {
   reminder: false,
   reminderDate: undefined,
   streakFreezes:5,
-  goal: undefined,
+  goal: 0,
+  goalCompletions: [],
   targetDays: [],
   errors: {},
 };
@@ -141,11 +142,10 @@ export const useHabitForm = ({
       longestStreak: editingHabit ? editingHabit.streak : 0,
       reminder: state.reminder,
       reminderDate: state.reminderDate,
-      goal: state.goal
-        ? typeof state.goal === "string"
+      goal:  typeof state.goal === "string"
           ? parseInt(state.goal)
-          : state.goal
-        : undefined,
+          : state.goal,
+      goalCompletions: state.goalCompletions || [],
       notificationId: editingHabit ? editingHabit.notificationId : undefined,
       embedding: state.embedding || await generateEmbedding(state.title,false)
     };

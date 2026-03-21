@@ -43,6 +43,8 @@ import { ChatScreen } from "@/components/ui/chat/chat-screen";
  * TODO : Habit heat map
  * TODO : Notifications edits via chat 
  * TODO : Maybe custom notifications options
+ * TODO : Update Form validations and error handling
+ * TODO : Sound effect on unlocking achievement and habit goal completion
  */
 export default function HomeScreen() {
   const { theme } = useContext(ThemeContext);
@@ -165,7 +167,7 @@ export default function HomeScreen() {
           </Text>
           {activeHabits.length ? (
             activeHabits.map((habit) => (
-              <HabitItem key={habit.id} habit={habit} />
+              <HabitItem key={habit.id} habit={habit} onUpdate={handleHabitUpdate} onDelete={()=>0}/>
             ))
           ) : (
             <Text style={{ color: theme.habitBase }}>No Active Habits</Text>

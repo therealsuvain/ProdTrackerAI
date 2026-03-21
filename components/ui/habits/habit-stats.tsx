@@ -1,23 +1,25 @@
 import React, { useRef, useContext, useEffect } from "react";
 import { View, Text, StyleSheet, Animated, Pressable } from "react-native";
+import { Svg, Text as SvgText } from "react-native-svg";
 import LottieView from "lottie-react-native";
 import { ThemeContext } from "@/context/ThemeContext";
 import { useAudioPlayer } from "expo-audio";
 import { Habit } from "@/types/habits";
-import {freezeHabit} from "@/utils/habit-utils";
+import { freezeHabit, isFrozen } from "@/utils/habit-utils";
 
 interface HabitStatsProps {
   habit: Habit;
-  onUpdate?: (updated: Habit) => void;
+  onUpdate: (updated: Habit) => void;
+  onDenied: () => void;
 }
 
 const AnimatedLottieView = Animated.createAnimatedComponent(LottieView);
 
-export default function HabitStats({ habit, onUpdate }: HabitStatsProps) {
+export const HabitStats = ({ habit, onUpdate, onDenied }: HabitStatsProps) => {
   const { theme } = useContext(ThemeContext);
   const playedSoundRef = useRef(false);
   const freezeAnimRef = useRef<LottieView>(null);
-  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const scaleFireAnime = useRef(new Animated.Value(0)).current;
   const audioSource = require("../../../assets/audio/freeze.mp3");
   const player = useAudioPlayer(audioSource);
 
@@ -32,33 +34,27 @@ export default function HabitStats({ habit, onUpdate }: HabitStatsProps) {
   };
 
   const handleFreeze = async () => {
-    //playedSoundRef.current = false;
-    if(habit.streakFreezes === 0){
-      //PLAY DENIED SOUND
+    let oldStreakFreezes = habit.streakFreezes;
+    const result = freezeHabit(habit);
+
+    if (result.status === "denied") {
+      onDenied();
       return;
     }
-    let oldStreakFreezes = habit.streakFreezes
-    const updatedHabit = freezeHabit(habit);
-    onUpdate?(updatedHabit):undefined;
-    console.log("NEW FREEZE", updatedHabit.streakFreezes)
- 
-    if(oldStreakFreezes > updatedHabit.streakFreezes) 
-    {freezeAnimRef.current?.play();
-    await playStartCue();}
+
+    onUpdate(result.habit);
+    console.log("NEW FREEZE", result.habit.streakFreezes);
+
+    if (oldStreakFreezes > result.habit.streakFreezes) {
+       playedSoundRef.current = false
+      freezeAnimRef.current?.play();
+      await playStartCue();
+    }
   };
 
-  const isFrozen = () => {
-    if(habit.freezeHistory?.length === 0) return false;
-    const lastFreeze = habit.freezeHistory?.[habit.freezeHistory.length - 1];
-    if(!lastFreeze) return false;
-    const lastFreezeDate = new Date(lastFreeze)
-     const getToday = () => new Date(new Date().toISOString().split('T')[0]);
-     const diff = (getToday().getTime() - lastFreezeDate.getTime()) / (1000 * 3600 * 24);
-     return diff < 1; // Consider frozen if last freeze was within the last dayd
-  }
   useEffect(() => {
     if (habit.streak >= 2) {
-      Animated.timing(scaleAnim, {
+      Animated.timing(scaleFireAnime, {
         toValue: 1,
         duration: 500,
         //tension: 0.001, // Controls speed/bounciness (higher = faster/snappier)
@@ -67,13 +63,20 @@ export default function HabitStats({ habit, onUpdate }: HabitStatsProps) {
       }).start();
     } else {
       // Reset immediately if streak is lost
-      scaleAnim.setValue(0);
+      scaleFireAnime.setValue(0);
     }
   }, [habit.streak]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>{habit.streak}</Text>
+      <Text style={[styles.text, { color: theme.habitBase }]}>
+        {habit.streak}
+      </Text>
+      {/* <Svg>
+        <SvgText stroke="black" strokeWidth={2} fill={theme.habitBase}fontSize="20" fontWeight="bold">
+          {habit.streak}
+        </SvgText>
+      </Svg> */}
       <View style={styles.animationContainer}>
         <AnimatedLottieView
           source={require("../../../assets/lottie/Fire.json")}
@@ -82,29 +85,30 @@ export default function HabitStats({ habit, onUpdate }: HabitStatsProps) {
           style={[
             styles.fireAnim,
             {
-              transform: [{ scale: scaleAnim }],
+              transform: [{ scale: scaleFireAnime }],
             },
           ]}
         />
       </View>
       <Pressable onPress={handleFreeze}>
-        <Text
-          style={styles.text}
-        >
+        <Text style={[styles.text, { color: theme.habitBase }]}>
           {habit.streakFreezes}
         </Text>
-        {isFrozen()?<LottieView
-          source={require("../../../assets/lottie/Freeze.json")}
-          autoPlay={true}
-          loop={false}
-          style={styles.freezeAnim}
-        />:<LottieView
-          ref={freezeAnimRef}
-          source={require("../../../assets/lottie/Freeze.json")}
-          loop={false}
-          style={styles.freezeAnim}
-        />}
-
+        {isFrozen(habit) ? (
+          <LottieView
+            source={require("../../../assets/lottie/Freeze.json")}
+            autoPlay={true}
+            loop={false}
+            style={styles.freezeAnim}
+          />
+        ) : (
+          <LottieView
+            ref={freezeAnimRef}
+            source={require("../../../assets/lottie/Freeze.json")}
+            loop={false}
+            style={styles.freezeAnim}
+          />
+        )}
       </Pressable>
     </View>
   );
@@ -117,10 +121,13 @@ const styles = StyleSheet.create({
   },
 
   text: {
-    color: "black",
     zIndex: 1,
     fontWeight: "bold",
+    fontSize: 16,
     marginHorizontal: 10,
+    textShadowColor: "black",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
   animationContainer: {
     //flexDirection: "row",
@@ -136,10 +143,10 @@ const styles = StyleSheet.create({
     left: -55,
   },
   freezeAnim: {
-    width: 120,
-    height: 120,
+    width: 175,
+    height: 175,
     position: "absolute",
-    top: -30,
-    left: -61,
+    top: -33,
+    left: -93,
   },
 });

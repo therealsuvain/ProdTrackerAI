@@ -29,7 +29,7 @@ import {
   mutateMetric,
 } from "@/utils/storage-utils";
 import { processAchievements } from "@/utils/achievements-util";
-import { applyMissedDayLogic } from "@/utils/habit-utils";
+import { applyMissedDayLogic, restartHabitAfterGoalForeground } from "@/utils/habit-utils";
 import { cancelReminder } from "@/hooks/use-notifications";
 
 import {
@@ -64,7 +64,7 @@ interface DataContextType {
     all: boolean,
   ) => Promise<void>;
   appMetrics: AppMetrics | null;
-  trackMetric: (key: GlobalMetricKey, amount: number) => Promise<void>;
+  trackMetric: (key: GlobalMetricKey[], amount: number) => Promise<void>;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(
@@ -136,21 +136,23 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const trackMetric = useCallback(
-    async (key: GlobalMetricKey, amount: number) => {
+    async (keys: GlobalMetricKey[], amount: number) => {
       // 1. Mutate storage atomically
-      const updatedMetrics = await mutateMetric(key, amount);
+      const updatedMetrics = await mutateMetric(keys, amount);
       // 2. Update React Context so UI (Heatmaps, Progress Bars) re-renders instantly
-      setAppMetrics(updatedMetrics);
+      setAppMetrics((prevMetrics) => ({ ...prevMetrics, ...updatedMetrics }));
 
       // 3. If the user advanced a metric (not undid it), check for achievements!
       if (amount > 0) {
         let newlyUnlocked: AchievementBadge[] = [];
 
         try {
+           for (const key of keys) {
           newlyUnlocked = await processAchievements(
             updatedMetrics.global[key],
             key,
           );
+        }
 
           // Phase 6.3 Prep: If we got badges, we will trigger a global toast here later!
           if (newlyUnlocked.length > 0) {
@@ -192,9 +194,15 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       }
 
       loadedHabits = loadedHabits.map((habit) => {
-        const updatedHabit = applyMissedDayLogic(habit);
-        if (updatedHabit.streakFreezes < habit.streakFreezes) {
-          trackMetric("habitsAutoFrozen", 1);
+        const {status, habit:updatedHabit} = applyMissedDayLogic(habit);
+        if (status === "missed_check_in") {
+          trackMetric(["habitCheckInsMissed"], 1);
+        }
+        else if (status === "auto_frozen") {
+          trackMetric(["habitsAutoFrozen"], 1);
+        }
+        if(habit.pendingStreakResetAfter){
+          return restartHabitAfterGoalForeground(updatedHabit);
         }
         return updatedHabit;
       });
@@ -241,12 +249,12 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveHabits(habits);
-    /* console.log(
+    console.log(
       "DATA HABITS",
       habits.map((e) => {
         return { ...e, embedding: e.embedding?.[0] };
       }),
-    ); */
+    );
   }, [habits, loaded]);
 
   useEffect(() => {

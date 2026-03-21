@@ -10,7 +10,7 @@ type XButtonProps = {
   size?: string;
 };
 
-export default function XButton({ icon, onPress, mode, size }: XButtonProps) {
+export const XButton = ({ icon, onPress, mode, size }: XButtonProps) => {
   const {theme }= useContext(ThemeContext)
   const light = () => {
     if (mode === "timer") {

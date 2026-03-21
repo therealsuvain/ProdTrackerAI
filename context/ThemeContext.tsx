@@ -28,7 +28,7 @@ const themes = {
     eventBaseTrans:"#ff625779",
     eventDarkPrimary:"#9c2118ff",
     eventDarkSecondary:"#941006ff",
-    habitBase: "#ffd358ff",
+    habitBase: "#ffd358",
     habitBaseTrans:"#ffd2587c",
     habitDarkPrimary: "#8f752aff",
     habitDarkSecondary: "#866405ff",

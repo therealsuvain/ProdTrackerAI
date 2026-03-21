@@ -22,12 +22,14 @@ interface DaySelectorProps {
       | "errors",
     value: any
   ) => void;
+  setTargetDaysOnly? : React.Dispatch<React.SetStateAction<number[]>>;
 }
 
 export default function DaySelector({
   visible,
   selectedDays = [],
   onDaysChange,
+  setTargetDaysOnly
 }: DaySelectorProps) {
   const { theme } = useContext(ThemeContext);
   const [selected, setSelected] = useState<number[]>(selectedDays);
@@ -70,7 +72,8 @@ export default function DaySelector({
       : [...selected, dayValue];
 
     setSelected(newSelected);
-    onDaysChange?.("targetDays", newSelected);
+    if(onDaysChange) onDaysChange("targetDays", newSelected)
+    if(setTargetDaysOnly) setTargetDaysOnly(newSelected);
   };
 
   if (!visible) {

@@ -195,7 +195,7 @@ export const saveAppMetrics = async (metrics: AppMetrics): Promise<void> => {
  * Handles both Daily and Global updates simultaneously for absolute consistency.
  */
 export const mutateMetric = async (
-  key: MetricKey,
+  keys: MetricKey[],
   amount: number, // Use 1 to increment, -1 to decrement
   dateOverride?: string
 ): Promise<AppMetrics> => {
@@ -210,13 +210,15 @@ export const mutateMetric = async (
   }
 
   // Apply mutations with a floor of 0 to prevent negative stats
-  if (key in metrics.global) {
-    const gKey = key as GlobalMetricKey;
-    metrics.global[gKey] = Math.max(0, metrics.global[gKey] + amount);
-  }
-  if (key in metrics.daily[dateString]) {
-    const dKey = key as DailyMetricKey;
-    metrics.daily[dateString][dKey] = Math.max(0, metrics.daily[dateString][dKey] + amount);
+  for (const key of keys) {
+    if (key in metrics.global) {
+      const gKey = key as GlobalMetricKey;
+      metrics.global[gKey] = Math.max(0, metrics.global[gKey] + amount);
+    }
+    if (key in metrics.daily[dateString]) {
+      const dKey = key as DailyMetricKey;
+      metrics.daily[dateString][dKey] = Math.max(0, metrics.daily[dateString][dKey] + amount);
+    }
   }
   console.log("Global metrics:", metrics.global);
   await saveAppMetrics(metrics);

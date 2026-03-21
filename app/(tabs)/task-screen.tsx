@@ -99,9 +99,9 @@ export default function TaskScreen() {
         if (t.id !== id) return t;
 
         if (t.completed) {
-          trackMetric("tasksCompleted", -1); // Undoing completion
+          trackMetric(["tasksCompleted"], -1); // Undoing completion
         } else {
-          trackMetric("tasksCompleted", 1); // Completing
+          trackMetric(["tasksCompleted"], 1); // Completing
           triggerHaptic();
         }
         return { ...t, completed: !t.completed };
@@ -217,7 +217,7 @@ export default function TaskScreen() {
           />
           {/* <FAB style={styles.fab} icon="plus" onPress={() => {clearStorageByKey("@prodtracker_metrics")
                 clearStorageByKey("@prodtracker_achievements")
-              }} />   */}
+              }} />  */} 
         </View>
         <Portal>
           <TaskModal

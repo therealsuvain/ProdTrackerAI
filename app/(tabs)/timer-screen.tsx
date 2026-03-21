@@ -1,6 +1,6 @@
 import TimerDisplay from "@/components/ui/timer-logs/time-display";
 import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
-import XButton from "@/components/ui/x-button";
+import {XButton} from "@/components/ui/x-button";
 import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/use-data";
 import { useTimer } from "@/hooks/use-timer";

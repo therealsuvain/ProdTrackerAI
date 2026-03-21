@@ -366,7 +366,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
         duration: finalTime,
       };
       setTimerLogs([...timerLogs, log]);
-      trackMetric("timeTracked", finalTime);
+      trackMetric(["timeTracked"], finalTime);
       stopNativeTimer();
     }
 

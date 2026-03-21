@@ -198,7 +198,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       };
 
       setMessages((prev) => [aiMsg, ...prev]);
-      context.trackMetric("chatMessagesSent", 1);
+      context.trackMetric(["chatMessagesSent"], 1);
     } catch (err) {
       // Handle error UI
     } finally {
@@ -231,7 +231,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         timestamp: new Date(),
       };
       setMessages((prev) => [feedbackMsg, ...prev]);
-      context.trackMetric("chatActionsExpired", 1);
+      context.trackMetric(["chatActionsExpired"], 1);
       return;
     }
     setMessages((prev) =>
@@ -256,7 +256,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         timestamp: new Date(),
       };
       setMessages((prev) => [successMsg, ...prev]);
-      context.trackMetric("chatActionsConfirmed", 1);
+      context.trackMetric(["chatActionsConfirmed"], 1);
     } catch (err) {}
   };
 
@@ -273,7 +273,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       timestamp: new Date(),
     };
     setMessages((prev) => [cancelMsg, ...prev]);
-    context.trackMetric("chatActionsCancelled", 1);
+    context.trackMetric(["chatActionsCancelled"], 1);
   };
 
   const EmptyState = () => (
