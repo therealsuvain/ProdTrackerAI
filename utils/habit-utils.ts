@@ -1,4 +1,5 @@
 import { Habit, GoalCompletion } from "@/types/habits";
+import { getNowISO, getTodayISO } from "./common-utils";
 
 const STREAK_MILESTONE = 5;
 const MAX_FREEZES = 3;
@@ -20,8 +21,7 @@ export type FreezeResult =
 
 export type Difficulty = "easy" | "medium" | "hard" | "legendary";
 // TODO Freeze has to for 24 hours, and not just depend on the day habit is frozen
-export const getTodayISO = () => new Date().toISOString().split('T')[0];
-export const getNowISO = () => new Date().toISOString();
+
 export const isCompletedToday = (habit: Habit): boolean => new Set(habit.history).has(getTodayISO());
 
 /**

@@ -70,15 +70,15 @@ const styles = StyleSheet.create({
   },
 
   biggerContainer: {
-    height: 80,
-    width: 80,
-    borderRadius: 40,
+    height: 60,
+    width: 60,
+    borderRadius: 30,
     marginHorizontal: 2.5,
   },
   biggerButton: {
-    height: 80,
-    width: 80,
-    borderRadius: 40,
+    height: 60,
+    width: 60,
+    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
   },

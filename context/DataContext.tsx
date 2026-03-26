@@ -47,7 +47,7 @@ interface DataContextType {
   events: CalendarEvent[];
   setEvents: React.Dispatch<React.SetStateAction<CalendarEvent[]>>;
   timerLogs: TimerLog[];
-  setTimerLogs: (timerLogs: TimerLog[]) => void;
+  setTimerLogs:  React.Dispatch<React.SetStateAction<TimerLog[]>>;
   habits: Habit[];
   setHabits: React.Dispatch<React.SetStateAction<Habit[]>>;
   messages: Message[];
@@ -244,6 +244,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveTimerLogs(timerLogs);
+    //console.log("DATA LOGS", timerLogs);
   }, [timerLogs, loaded]);
 
   useEffect(() => {

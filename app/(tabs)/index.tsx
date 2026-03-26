@@ -40,11 +40,11 @@ import { ChatScreen } from "@/components/ui/chat/chat-screen";
  * TODO : CLOUD DATA SYNC ABILITY with Login and accounts
  * TODO : Pay wall
  * TODO : EMPTY states for Tasks, Events, Habits, TimerLogs
- * TODO : Habit heat map
- * TODO : Notifications edits via chat 
+ * TODO : Notifications edits via AI chat 
  * TODO : Maybe custom notifications options
- * TODO : Update Form validations and error handling
+ * TODO : Update Form validations and error handling in modals
  * TODO : Sound effect on unlocking achievement and habit goal completion
+ * TODO : Check Data vs String issue in data fields, should date be a string? and converted on use? or vice versa
  */
 export default function HomeScreen() {
   const { theme } = useContext(ThemeContext);
