@@ -21,8 +21,8 @@ export default function EventItem({event, onEdit, onDelete}: EventItemProps) {
             <Card.Content style={styles.content}>
                 <View>
                 <Text style={{color:theme.whiteBase}}variant='titleMedium'>{event.title}</Text>
-                { !isNotHome && <Text style={{color:theme.whiteBase}}>Start:{event.startTime.toLocaleTimeString()}</Text>}
-                { !isNotHome && <Text style={{color:theme.whiteBase}}>End:{event.endTime.toLocaleTimeString()}</Text>}
+                { !isNotHome && <Text style={{color:theme.whiteBase}}>Start:{new Date(event.startTime).toLocaleTimeString()}</Text>}
+                { !isNotHome && <Text style={{color:theme.whiteBase}}>End:{new Date(event.endTime).toLocaleTimeString()}</Text>}
                 </View>
                 <View style={styles.buttonContainer}>
                 { isNotHome && <XButton icon="pencil-outline" mode="calendar" onPress={onEdit}/>}

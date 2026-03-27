@@ -51,7 +51,7 @@ export default function CalendarListAgendaMain({
         if (currentDayTime > eventEndDate.getTime()) return false;
         if (event.deletedOccurrences?.includes(strTime)) return false;
 
-        const eventStartDateString = event.startDate.toISOString().split("T")[0];
+        const eventStartDateString = eventStartDate.toISOString().split("T")[0];
 
         if (event.recurrence === "none" || !event.recurrence) {
           return eventStartDateString === strTime;
@@ -65,7 +65,7 @@ export default function CalendarListAgendaMain({
 
     if (dayEvents.length > 0) {
       return dayEvents
-        .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
+        .sort((a, b) => new Date(a.startTime).getTime() - b.startTime.getTime())
         .map((event) => ({
           name: event.title,
           height: 40,

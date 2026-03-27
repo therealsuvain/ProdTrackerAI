@@ -16,6 +16,7 @@ import {
   Modal,
   SegmentedButtons,
 } from "react-native-paper";
+import {Provider} from 'react-native-paper';
 
 import { useData } from "@/hooks/use-data";
 import TaskItem from "@/components/ui/tasks/task-item";
@@ -26,7 +27,6 @@ import { useSearch } from "@/hooks/use-search";
 import { AnalyticsSection } from "@/components/ui/analytics-section";
 import { SearchResults } from "@/components/ui/search-results";
 import HabitItem from "@/components/ui/habits/habit-item";
-import { Provider } from "react-native-paper";
 import LoadingIndicator from "@/components/loading-indicator";
 import UnifiedTimeline from "@/components/ui/home-timeline";
 import { useNotifications } from "@/hooks/use-notifications";
@@ -59,7 +59,7 @@ export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   let todaysTasks = tasks.filter(
-    (t) => t.dueDate && t.dueDate.toDateString() == new Date().toDateString(),
+    (t) => t.dueDate && new Date(t.dueDate).toDateString() == new Date().toDateString(),
   );
   let upcomingEvents = events.slice(0, 3);
   let activeHabits = habits.slice(0, 3);
@@ -78,7 +78,7 @@ export default function HomeScreen() {
   //   migrateToSemanticSearch({tasks, setTasks, habits, setHabits, events, setEvents})
   // },[])
   return (
-    <Provider>
+    <>
       {/* {(isLoading || isProcessing) && <LoadingIndicator />} */}
       <View style={{ backgroundColor: theme.background}}>
       <SegmentedButtons
@@ -256,9 +256,9 @@ export default function HomeScreen() {
         onPress={() => setAiVisible(true)}
       />
       <Portal>
-        <ChatScreen visible={aiVisible} onDismiss={() => setAiVisible(false)} />
+         <ChatScreen visible={aiVisible} onDismiss={() => setAiVisible(false)} /> 
       </Portal>
-    </Provider>
+    </>
   );
 }
 

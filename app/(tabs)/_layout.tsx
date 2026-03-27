@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { TouchableOpacity } from "react-native";
 import { DrawerActions, useNavigation } from "@react-navigation/native";
+import { Provider as PaperProvider } from "react-native-paper";
 
 import { useTheme } from "@/hooks/use-theme-colors";
 
@@ -10,6 +11,7 @@ export default function TabLayout() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   return (
+  <PaperProvider>
     <Tabs
       screenOptions={{
         tabBarStyle: {
@@ -121,5 +123,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+  </PaperProvider>
   );
 }

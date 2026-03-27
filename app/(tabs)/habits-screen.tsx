@@ -1,6 +1,6 @@
 import { View, StyleSheet, FlatList, Alert } from "react-native";
 import { useContext, useState, useEffect, useCallback, useRef } from "react";
-import { FAB, Portal, Provider, Text, Searchbar } from "react-native-paper";
+import { FAB, Portal, Text, Searchbar } from "react-native-paper";
 
 import { useData } from "@/hooks/use-data";
 import { Habit } from "@/types/habits";
@@ -17,6 +17,8 @@ import {
   wasHabitCheckInMissed,
   restartHabitAfterGoal,
 } from "@/utils/habit-utils";
+import { withAlpha } from "@/utils/common-utils";
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
 // TODO : shifting logic from habit-screen , habit-item, habiit-stats to utils maybe
 export default function HabitsScreen() {
@@ -119,8 +121,26 @@ export default function HabitsScreen() {
     );
   }, [searchQuery, habits]);
 
+  const EmptyState = () => (
+    <View style={emptyStateStyle.emptyContainer}>
+      <FontAwesome6 name="bars-progress" size={60} color={theme.habitBase} />
+      <Text style={[emptyStateStyle.emptyTitle, { color: withAlpha(theme.habitBase,"99") }]}>This is your habits page</Text>
+      <Text style={emptyStateStyle.emptySubtitle}>
+        Added habits will be shown here
+      </Text>
+      <View style={[emptyStateStyle.suggestionBox, { borderColor: withAlpha(theme.habitBase,"33")}]}>
+        <Text style={[emptyStateStyle.suggestionText, { color: theme.habitBase }]}>
+          Habits can have daily and weekly goals with on specific days of the week
+        </Text>
+        <Text style={[emptyStateStyle.suggestionText, { color: theme.habitBase }]}>
+          1 Free streak freeze is given per habit, every 5 successive check-ins earn 1 additional freeze
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
-    <Provider>
+    <>
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Searchbar
           placeholder="Search Habits"
@@ -143,7 +163,7 @@ export default function HabitsScreen() {
               onGoalReached={handleGoalReached}
             />
           )}
-          ListEmptyComponent={<Text>No habits yet-add one</Text>}
+          ListEmptyComponent={EmptyState}
         />
         <FAB
           color={theme.habitDarkPrimary}
@@ -179,7 +199,7 @@ export default function HabitsScreen() {
           />
         )}
       </Portal>
-    </Provider>
+    </>
   );
 }
 
@@ -198,3 +218,38 @@ const styles = StyleSheet.create({
     //height: "6%",
   },
 });
+
+const emptyStateStyle = StyleSheet.create({
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: "20%", // Keeps it centered in the upper-middle
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginTop: 20,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: "#8E8E93",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 10,
+    lineHeight: 20,
+  },
+  suggestionBox: {
+    marginTop: 30,
+    width: "100%",
+    borderRadius: 15,
+    padding: 15,
+    borderWidth: 2,
+  },
+  suggestionText: {
+    fontSize: 13,
+    marginVertical: 5,
+    textAlign: "center",
+  },
+})

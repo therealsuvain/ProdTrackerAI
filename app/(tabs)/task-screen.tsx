@@ -6,16 +6,9 @@ import {
   StyleSheet,
   FlatList,
 } from "react-native";
-import {
-  Button,
-  FAB,
-  Portal,
-  Provider,
-  Searchbar,
-  Text,
-} from "react-native-paper";
+import { Button, FAB, Portal, Searchbar, Text } from "react-native-paper";
 import DraggableFlatList from "react-native-draggable-flatlist";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import Octicons from "@expo/vector-icons/Octicons";
 
 import { useData } from "@/hooks/use-data";
 import { Task } from "@/types/task";
@@ -25,7 +18,7 @@ import TaskModal from "@/components/modal/task-modal";
 import { useTaskForm } from "@/hooks/use-task-form";
 import { ThemeContext } from "@/context/ThemeContext";
 import { useHaptics } from "@/hooks/use-haptics";
-
+import { withAlpha } from "@/utils/common-utils";
 import { clearStorageByKey } from "@/utils/storage-utils";
 
 export default function TaskScreen() {
@@ -113,123 +106,156 @@ export default function TaskScreen() {
     setTasks(data);
   };
 
+  const EmptyState = () => (
+    <View style={emptyStateStyle.emptyContainer}>
+      <Octicons name="tasklist" size={60} color={theme.taskBase} />
+      <Text
+        style={[
+          emptyStateStyle.emptyTitle,
+          { color: withAlpha(theme.taskBase, "99") },
+        ]}
+      >
+        This is your task page
+      </Text>
+      <Text style={emptyStateStyle.emptySubtitle}>
+        Added tasks will be shown here
+      </Text>
+      <View
+        style={[
+          emptyStateStyle.suggestionBox,
+          { borderColor: withAlpha(theme.taskBase, "33") },
+        ]}
+      >
+        <Text
+          style={[emptyStateStyle.suggestionText, { color: theme.taskBase }]}
+        >
+          Tasks can have priorities, due dates, and descriptions
+        </Text>
+        <Text
+          style={[emptyStateStyle.suggestionText, { color: theme.taskBase }]}
+        >
+          You can search tasks by title or description, sort them by priority,
+          due date, or manually by dragg and drop
+        </Text>
+      </View>
+    </View>
+  );
+
   const [showSortOptions, setShowSortOptions] = useState(false);
   return (
-    <Provider>
-      <GestureHandlerRootView>
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-          <Searchbar
-            placeholder="Search Tasks"
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={[
-              styles.searchbar,
-              { backgroundColor: theme.taskBaseTransToo },
-            ]}
-          />
-          <View style={styles.menuButton}>
-            <Button onPress={() => setShowSortOptions(!showSortOptions)}>
-              Sort By
-            </Button>
+    <>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Searchbar
+          placeholder="Search Tasks"
+          onChangeText={setSearchQuery}
+          value={searchQuery}
+          style={[
+            styles.searchbar,
+            { backgroundColor: theme.taskBaseTransToo },
+          ]}
+        />
+        <View style={styles.menuButton}>
+          <Button onPress={() => setShowSortOptions(!showSortOptions)}>
+            Sort By
+          </Button>
 
-            {showSortOptions && (
-              <View
-                style={[
-                  styles.menu,
-                  { backgroundColor: theme.taskDarkSecondary },
-                ]}
+          {showSortOptions && (
+            <View
+              style={[
+                styles.menu,
+                { backgroundColor: theme.taskDarkSecondary },
+              ]}
+            >
+              <Button
+                mode="text"
+                onPress={() => {
+                  setSortBy("priority");
+                  setShowSortOptions(false);
+                }}
               >
-                <Button
-                  mode="text"
-                  onPress={() => {
-                    setSortBy("priority");
-                    setShowSortOptions(false);
-                  }}
-                >
-                  Priority
-                </Button>
-                <Button
-                  mode="text"
-                  onPress={() => {
-                    setSortBy("duedate");
-                    setShowSortOptions(false);
-                  }}
-                >
-                  Due Date
-                </Button>
-                <Button
-                  mode="text"
-                  onPress={() => {
-                    setSortBy("manual");
-                    setShowSortOptions(false);
-                  }}
-                >
-                  Manual
-                </Button>
-              </View>
-            )}
-          </View>
-
-          {filteredTasks.length === 0 ? (
-            <Text style={styles.noTasks}>No tasks found, Add one</Text>
-          ) : sortBy === "manual" ? (
-            <View style={styles.flatlist}>
-              <DraggableFlatList
-                data={filteredTasks}
-                renderItem={({ item, drag }) => (
-                  <TouchableOpacity onLongPress={drag}>
-                    <TaskItem
-                      task={item}
-                      onToggleComplete={toggleComplete}
-                      onEdit={() => showModal(item)}
-                      onDelete={() => handleDelete(item.id)}
-                    />
-                  </TouchableOpacity>
-                )}
-                keyExtractor={(item) => item.id}
-                onDragEnd={handleDragEnd}
-                showsVerticalScrollIndicator={false}
-              />
+                Priority
+              </Button>
+              <Button
+                mode="text"
+                onPress={() => {
+                  setSortBy("duedate");
+                  setShowSortOptions(false);
+                }}
+              >
+                Due Date
+              </Button>
+              <Button
+                mode="text"
+                onPress={() => {
+                  setSortBy("manual");
+                  setShowSortOptions(false);
+                }}
+              >
+                Manual
+              </Button>
             </View>
-          ) : (
-            <View style={styles.flatlist}>
-              <FlatList
-                data={filteredTasks}
-                renderItem={({ item }) => (
+          )}
+        </View>
+
+        {sortBy === "manual" ? (
+          <View style={styles.flatlist}>
+            <DraggableFlatList
+              data={filteredTasks}
+              renderItem={({ item, drag }) => (
+                <TouchableOpacity onLongPress={drag}>
                   <TaskItem
                     task={item}
                     onToggleComplete={toggleComplete}
                     onEdit={() => showModal(item)}
                     onDelete={() => handleDelete(item.id)}
                   />
-                )}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-              />
-            </View>
-          )}
-          <FAB
-            style={styles.fab}
-            icon="plus"
-            onPress={
-              () =>showModal()
-            }
-          />
-          {/* <FAB style={styles.fab} icon="plus" onPress={() => {clearStorageByKey("@prodtracker_metrics")
-                clearStorageByKey("@prodtracker_achievements")
-              }} />  */} 
-        </View>
-        <Portal>
-          <TaskModal
-            visible={visible}
-            onDismiss={hideModal}
-            state={state}
-            updateField={updateField}
-            onSubmit={onSubmit}
-          />
-        </Portal>
-      </GestureHandlerRootView>
-    </Provider>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id}
+              onDragEnd={handleDragEnd}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={EmptyState}
+            />
+          </View>
+        ) : (
+          <View style={styles.flatlist}>
+            <FlatList
+              data={filteredTasks}
+              renderItem={({ item }) => (
+                <TaskItem
+                  task={item}
+                  onToggleComplete={toggleComplete}
+                  onEdit={() => showModal(item)}
+                  onDelete={() => handleDelete(item.id)}
+                />
+              )}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={EmptyState}
+            />
+          </View>
+        )}
+        <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
+        <FAB
+          style={styles.fab}
+          icon="plus"
+          onPress={() => {
+            clearStorageByKey("timeLogs");
+            //clearStorageByKey("@prodtracker_metrics");
+            //clearStorageByKey("@prodtracker_achievements");
+          }}
+        />
+      </View>
+      <Portal>
+        <TaskModal
+          visible={visible}
+          onDismiss={hideModal}
+          state={state}
+          updateField={updateField}
+          onSubmit={onSubmit}
+        />
+      </Portal>
+    </>
   );
 }
 
@@ -268,5 +294,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 8,
     marginHorizontal: 5,
+  },
+});
+
+const emptyStateStyle = StyleSheet.create({
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: "40%", // Keeps it centered in the upper-middle
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginTop: 20,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: "#8E8E93",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 10,
+    lineHeight: 20,
+  },
+  suggestionBox: {
+    marginTop: 30,
+    width: "100%",
+    borderRadius: 15,
+    padding: 15,
+    borderWidth: 2,
+  },
+  suggestionText: {
+    fontSize: 13,
+    marginVertical: 5,
+    textAlign: "center",
   },
 });

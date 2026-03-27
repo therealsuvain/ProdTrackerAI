@@ -253,7 +253,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     console.log(
       "DATA HABITS",
       habits.map((e) => {
-        return { ...e, embedding: e.embedding?.[0] };
+        return { title: e.title, freezeHistory: typeof e.freezeHistory?.[0] };
       }),
     );
   }, [habits, loaded]);

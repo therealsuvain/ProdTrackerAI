@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import { View, StyleSheet, Alert, Text, Pressable } from "react-native";
-import { FAB, Portal, Provider } from "react-native-paper";
+import { FAB, Portal } from "react-native-paper";
 import { useData } from "../../hooks/use-data";
 import ViewSwitcher from "../../components/ui/calendar-events/view-switcher-event";
 import { useCalendarState } from "../../hooks/use-calendar-state";
@@ -58,7 +58,7 @@ export default function CalendarScreen() {
     ]);
   };
   return (
-    <Provider>
+    <>
       <View style={[styles.container,{backgroundColor:theme.background}]}>
         <Pressable
           style={[styles.header, { backgroundColor: theme.eventBase }]}
@@ -105,7 +105,7 @@ export default function CalendarScreen() {
           onSubmit={onSubmit}
         ></CalendarEventModal>
       </Portal>
-    </Provider>
+    </>
   );
 }
 

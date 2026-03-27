@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useContext, useMemo } from "react";
 import {
   View,
@@ -9,11 +9,10 @@ import {
   FlatList,
   TouchableOpacity,
 } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { TextInput } from "react-native-paper";
-import { Provider } from "react-native-paper";
 
-import TimerDisplay from "@/components/ui/timer-logs/time-display";
+import { TextInput } from "react-native-paper";
+
+import TimerDisplay from "@/components/ui/timer-logs/time-display/time-display";
 import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
 import { XButton } from "@/components/ui/x-button";
 import { ThemeContext } from "@/context/ThemeContext";
@@ -22,8 +21,6 @@ import { useData } from "@/hooks/use-data";
 import { useTimer } from "@/hooks/use-timer";
 import { TimerLog } from "@/types/timer";
 import { getTodayISO, withAlpha, getWeekStartISO } from "@/utils/common-utils";
-
-
 
 export default function TimerScreen() {
   const { theme } = useContext(ThemeContext);
@@ -58,10 +55,10 @@ export default function TimerScreen() {
 
     for (const log of timerLogs) {
       if (!log.duration) continue;
-      const logDate =
-        typeof log.startTime === "string"
-          ? log.startTime.split("T")[0]
-          : log.startTime.toISOString().split("T")[0]; //TODO // ISO string → date part
+      const logDate = log.startTime.split("T")[0]
+        // typeof log.startTime === "string"
+        //   ? log.startTime.split("T")[0]
+        //   : log.startTime.toString().split("T")[0]; //TODO // ISO string → date part
 
       if (logDate === todayISO) todayTotal += log.duration;
       if (logDate >= weekStartISO) {
@@ -109,18 +106,44 @@ export default function TimerScreen() {
       prev.map((l) => (l.id === updated.id ? updated : l)),
     );
   };
-
+  const EmptyState = () => (
+    <View style={emptyStateStyle.emptyContainer}>
+      <Ionicons name="timer" size={60} color={theme.timerBase} />
+      <Text
+        style={[
+          emptyStateStyle.emptyTitle,
+          { color: withAlpha(theme.timerBase, "99") },
+        ]}
+      >
+        This is your timer logs page
+      </Text>
+      <Text style={emptyStateStyle.emptySubtitle}>
+        Added logs will be shown here
+      </Text>
+      <View
+        style={[
+          emptyStateStyle.suggestionBox,
+          { borderColor: withAlpha(theme.timerBase, "33") },
+        ]}
+      >
+        <Text
+          style={[emptyStateStyle.suggestionText, { color: theme.timerBase }]}
+        >
+          Logs can have categories and also have lap details
+        </Text>
+        <Text
+          style={[emptyStateStyle.suggestionText, { color: theme.timerBase }]}
+        >
+          You can switch mode to countdown by long pressing the clock
+        </Text>
+      </View>
+    </View>
+  );
   return (
-    <Provider>
-      <GestureHandlerRootView>
+      
         <View style={[styles.container, { backgroundColor: theme.background }]}>
           {/* ── Stats row (checkpoint 10) ── */}
-          <View
-            style={[
-              styles.statsRow,
-              { backgroundColor: withAlpha(theme.timerBase,"18") },
-            ]}
-          >
+          <View style={styles.statsRow}>
             <StatCell
               label="Today"
               value={formatDuration(todayTotal)}
@@ -129,7 +152,7 @@ export default function TimerScreen() {
             <View
               style={[
                 styles.statDivider,
-                { backgroundColor: withAlpha(theme.timerBase,"33") },
+                { backgroundColor: withAlpha(theme.timerBase, "33") },
               ]}
             />
             <StatCell
@@ -142,7 +165,7 @@ export default function TimerScreen() {
                 <View
                   style={[
                     styles.statDivider,
-                    { backgroundColor:  withAlpha(theme.timerBase,"33") },
+                    { backgroundColor: withAlpha(theme.timerBase, "33") },
                   ]}
                 />
                 <StatCell
@@ -235,7 +258,7 @@ export default function TimerScreen() {
             <View
               style={[
                 styles.lapsContainer,
-                { borderColor:  withAlpha(theme.timerBase,"33") },
+                { borderColor: withAlpha(theme.timerBase, "33") },
               ]}
             >
               {laps.map((lapTime, idx) => {
@@ -246,7 +269,7 @@ export default function TimerScreen() {
                     <Text
                       style={[
                         styles.lapLabel,
-                        { color:  withAlpha(theme.timerBase,"99") },
+                        { color: withAlpha(theme.timerBase, "99") },
                       ]}
                     >
                       Lap {idx + 1}
@@ -257,7 +280,7 @@ export default function TimerScreen() {
                     <Text
                       style={[
                         styles.lapTotal,
-                        { color:  withAlpha(theme.timerBase,"66") },
+                        { color: withAlpha(theme.timerBase, "66") },
                       ]}
                     >
                       {formatDuration(lapTime)}
@@ -268,7 +291,23 @@ export default function TimerScreen() {
             </View>
           )}
 
-          <Text style={{ color: "white" }}>Recent Logs</Text>
+          <View style={styles.logDividerContainer}>
+            <View
+              style={[
+                styles.logDividerLine,
+                { backgroundColor: withAlpha(theme.timerBase, "99") },
+              ]}
+            />
+            <Text style={[styles.logDividerLabel, { color: theme.timerBase }]}>
+              Recent Logs
+            </Text>
+            <View
+              style={[
+                styles.logDividerLine,
+                { backgroundColor: withAlpha(theme.timerBase, "99") },
+              ]}
+            />
+          </View>
           <FlatList
             data={timerLogs.slice(-10)}
             keyExtractor={(item) => item.id}
@@ -281,10 +320,9 @@ export default function TimerScreen() {
                 onEdit={handleEdit}
               />
             )}
+            ListEmptyComponent={EmptyState}
           />
         </View>
-      </GestureHandlerRootView>
-    </Provider>
   );
 }
 
@@ -316,9 +354,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     width: "100%",
-    borderRadius: 10,
-    paddingVertical: 10,
-    marginBottom: 14,
+    marginBottom: 2,
   },
   statCell: { flex: 1, alignItems: "center" },
   statValue: { fontSize: 14, fontWeight: "700" },
@@ -369,5 +405,53 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 6,
+  },
+  logDividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  logDividerLine: {
+    flex: 1, // each line takes equal remaining space
+    height: 1,
+  },
+  logDividerLabel: {
+    marginHorizontal: 6,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+});
+
+const emptyStateStyle = StyleSheet.create({
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: "5%",
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginTop: 20,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: "#8E8E93",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 10,
+    lineHeight: 20,
+  },
+  suggestionBox: {
+    marginTop: 30,
+    width: "100%",
+    borderRadius: 15,
+    padding: 15,
+    borderWidth: 2,
+  },
+  suggestionText: {
+    fontSize: 13,
+    marginVertical: 5,
+    textAlign: "center",
   },
 });

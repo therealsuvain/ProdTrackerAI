@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
-import { Text, Provider } from "react-native-paper";
+import { Text } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTheme } from "@/hooks/use-theme-colors";
@@ -108,7 +108,6 @@ export default function DataManagementScreen() {
   };
 
   return (
-    <Provider>
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Text style={[styles.headerText, { color: theme.text}]}>
         Manage how your local data is stored on this device.
@@ -137,7 +136,6 @@ export default function DataManagementScreen() {
         confirmText={modalConfig.isDestructive ? "Delete" : "Confirm"}
       />
     </SafeAreaView>
-    </Provider>
   );
 }
 

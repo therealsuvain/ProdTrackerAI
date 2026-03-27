@@ -29,7 +29,7 @@ const stringify = (data: any) => JSON.stringify(data, (_key, value) =>
 );
 
 const parse = (json: string) => JSON.parse(json, (_key, value) =>
-  typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/) ? new Date(value) : value
+  typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/) ? value : value
 );
 
 // Tasks

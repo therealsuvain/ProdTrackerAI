@@ -40,7 +40,7 @@ export default function TaskItem({ task, onToggleComplete, onEdit, onDelete }: T
                     <Text style={task.completed? styles.completedText : [styles.text, {color:theme.whiteBase}]}>
                         {task.title}
                     </Text>
-                    {task.dueDate && <Text style={{color:"white"}}>Due : {task.dueDate.toDateString()}</Text>}
+                    {task.dueDate && <Text style={{color:"white"}}>Due : {new Date(task.dueDate).toDateString()}</Text>}
                 </View>
                 { isNotHome && <XButton icon="pencil-outline" onPress={onEdit}/>}
                 { isNotHome &&  <XButton icon="trash-outline" onPress={onDelete}/>}

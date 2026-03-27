@@ -59,24 +59,24 @@ export default function UnifiedTimeline({
 
     // Filter tasks due on this date
     const dayTasks = tasks.filter(
-      (task) => task.dueDate?.toDateString() === dateStr && !task.completed
+      (task) => new Date(task.dueDate?task.dueDate:"0").toDateString() === dateStr && !task.completed
     );
 
     // Filter timer logs from this date
     const dayLogs = timerLogs.filter(
-      (log) => log.startTime.toDateString() === dateStr
+      (log) => new Date(log.startTime).toDateString() === dateStr
     );
 
     // Filter events
     const dayEvents = events.filter((event) => {
-      const eventDate = event.startTime.toDateString();
+      const eventDate = new Date(event.startTime).toDateString();
       const todayDateIso = selectedDate.toISOString().split("T")[0];
       if (event.deletedOccurrences?.includes(todayDateIso)) return false;
       if (eventDate === dateStr) return true;
       if (event.recurrence === "daily") return true;
       if (
         event.recurrence === "weekly" &&
-        event.startTime.getDay() === selectedDate.getDay()
+        new Date(event.startTime).getDay() === selectedDate.getDay()
       ) {
         return true;
       }
@@ -102,10 +102,12 @@ export default function UnifiedTimeline({
   // Calculate positions for events
   const eventPositions = useMemo(() => {
     return filteredData.events.map((event) => {
+      const eventStartTime = new Date(event.startTime);
+      const eventEndTime = new Date(event.endTime);
       const startHour =
-        event.startTime.getHours() + event.startTime.getMinutes() / 60;
+        eventStartTime.getHours() + eventStartTime.getMinutes() / 60;
       const endHour = event.endTime
-        ? event.endTime.getHours() + event.endTime.getMinutes() / 60
+        ? eventEndTime.getHours() + eventEndTime.getMinutes() / 60
         : startHour + 1;
 
       return {
@@ -135,9 +137,9 @@ export default function UnifiedTimeline({
   const logPositions = useMemo(() => {
     return filteredData.logs.map((log) => {
       const startHour =
-        log.startTime.getHours() + log.startTime.getMinutes() / 60;
+        new Date(log.startTime).getHours() + new Date(log.startTime).getMinutes() / 60;
       const endHour = log.endTime
-        ? log.endTime.getHours() + log.endTime.getMinutes() / 60
+        ? new Date(log.endTime).getHours() + new Date(log.endTime).getMinutes() / 60
         : startHour + (log.duration ? log.duration / 3600 : 1);
 
       return {
@@ -220,12 +222,12 @@ export default function UnifiedTimeline({
             style={[styles.blockTime, { color: theme.whiteBaseTrans }]}
             numberOfLines={1}
           >
-            {event.startTime.toLocaleTimeString([], {
+            {new Date(event.startTime).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             })}
             {event.endTime &&
-              ` - ${event.endTime.toLocaleTimeString([], {
+              ` - ${new Date(event.endTime).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
               })}`}
@@ -306,12 +308,12 @@ export default function UnifiedTimeline({
             {log.title}
           </Text>
           <Text style={[styles.logTime, { color: theme.timerBaseTrans }]}>
-            {log.startTime.toLocaleTimeString([], {
+            {new Date(log.startTime).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             })}
-            {log.endTime &&
-              ` - ${log.endTime.toLocaleTimeString([], {
+            {log.endTime  &&
+              ` - ${new Date(log.endTime).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
               })}`}
@@ -366,7 +368,14 @@ export default function UnifiedTimeline({
             {filteredData.habits.map((habit) => {
               const completed = isHabitCompletedToday(habit);
               const progress = habit.goal ? habit.streak / habit.goal : 0;
-
+              const handleHabitCheckIn = () => {
+                if(completed) return;
+                const result = checkInHabit(habit)
+                if(result.status === "denied"){
+                  return;
+                }
+                onHabitCheckIn?.(result.habit);
+              }
               return (
                 <TouchableOpacity
                   key={habit.id}
@@ -380,9 +389,7 @@ export default function UnifiedTimeline({
                       { borderColor: theme.success },
                     ],
                   ]}
-                  onPress={() =>
-                    !completed && onHabitCheckIn?.(checkInHabit(habit))
-                  }
+                  onPress={handleHabitCheckIn}
                   disabled={completed}
                 >
                   <View style={styles.habitCardHeader}>
