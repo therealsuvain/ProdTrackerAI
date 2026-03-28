@@ -1,11 +1,11 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { getDayLabel } from '@/utils/chat-utils';
 
-export function DaySeparator({ date }: { date: Date }) {
+export function DaySeparator({ date }: { date: string }) {
   return (
     <View style={styles.container}>
       <View style={styles.line} />
-      <Text style={styles.label}>{getDayLabel(date)}</Text>
+      <Text style={styles.label}>{getDayLabel(new Date(date))}</Text>
       <View style={styles.line} />
     </View>
   );

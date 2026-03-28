@@ -38,9 +38,9 @@ export function injectDaySeparators(messages: Message[]): ChatListItem[] {
 
     if (lastDate && !isSameDay(lastDate, msgDate)) {
       const separator: DaySeparatorItem = {
-        id: `separator-${msgDate.toDateString()}`,
+        id: `separator-${lastDate.toDateString()}`,
         type: 'day_separator',
-        date: msgDate,
+        date: lastDate.toISOString(),
       };
       result.push(separator);
       
@@ -54,7 +54,7 @@ export function injectDaySeparators(messages: Message[]): ChatListItem[] {
       const separator: DaySeparatorItem = {
         id: `separator-${lastDate.toDateString()}`,
         type: 'day_separator',
-        date: lastDate,
+        date: lastDate.toISOString(),
       };
       result.push(separator);
   }

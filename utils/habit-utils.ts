@@ -20,7 +20,7 @@ export type FreezeResult =
   | { status: "denied"; reason: "already_frozen" | "no_freezes_left" | "not_a_target_day" | "already_checked_in" };
 
 export type Difficulty = "easy" | "medium" | "hard" | "legendary";
-// TODO Freeze has to for 24 hours, and not just depend on the day habit is frozen
+
 
 export const isCompletedToday = (habit: Habit): boolean => new Set(habit.history).has(getTodayISO());
 

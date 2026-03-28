@@ -10,16 +10,15 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
-import { useAudioPlayer } from "expo-audio";
 
 import { ThemeContext } from "@/context/ThemeContext";
+import { usePlaySound } from "@/hooks/use-play-sound";
 import { Habit } from "@/types/habits";
 import { checkInHabit } from "@/utils/habit-utils";
 import { XButton } from "../x-button";
 import { HabitStats } from "./habit-stats";
 import { TargetDaysRow } from "./habit-target-days";
 
-// TODO : Restarting habit, prevents checkin
 interface HabitItemProps {
   habit: Habit;
   onUpdate: (updated: Habit) => void;
@@ -60,9 +59,8 @@ function HabitItem({
   const route = useRoute();
   const isNotHome = route.name !== "index";
   const shakeX = useSharedValue(0);
-  const deniedAudioSource = require("../../../assets/audio/habit-denied.m4a");
-  const deniedPlayer = useAudioPlayer(deniedAudioSource);
-  deniedPlayer.volume = 0.1;
+  const deniedAudioSource = require("@/assets/audio/habit-denied.m4a");
+  const deniedPlayer = usePlaySound(deniedAudioSource, 0.2);
 
   const playDeniedFeedback = useCallback(async () => {
     // Shake: 7 rapid left-right swings with decaying amplitude

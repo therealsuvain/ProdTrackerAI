@@ -4,7 +4,9 @@ import { Button, Modal, TextInput } from "react-native-paper";
 import { ThemeContext } from "@/context/ThemeContext";
 import { TimerLog } from "@/types/timer";
 import { formatDuration } from "@/context/TimerContext";
+import { withAlpha } from "@/utils/common-utils";
 
+//!COMMENT ed out code is for duration editing
 interface Props {
   visible: boolean;
   log: TimerLog | null;
@@ -19,7 +21,7 @@ interface Props {
  * Accepts: "90", "1:30", "1:30:00", "1h30m", "90s".
  * Returns null if unparseable — caller shows validation error.
  */
-const parseDurationInput = (raw: string): number | null => {
+/* const parseDurationInput = (raw: string): number | null => {
   const trimmed = raw.trim();
   if (!trimmed) return null;
 
@@ -50,23 +52,34 @@ const parseDurationInput = (raw: string): number | null => {
   }
 
   return null;
-};
+}; */
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function TimerEditModal({ visible, log, onDismiss, onSave }: Props) {
+export default function TimerEditModal({
+  visible,
+  log,
+  onDismiss,
+  onSave,
+}: Props) {
   const { theme } = useContext(ThemeContext);
 
   const [title, setTitle] = useState("");
-  const [durationInput, setDurationInput] = useState("");
-  const [errors, setErrors] = useState<{ title?: string; duration?: string }>({});
+  const [category, setCategory] = useState("");
+  //const [durationInput, setDurationInput] = useState("");
+  const [errors, setErrors] = useState<{
+    title?: string;
+    category?: string;
+    //duration?: string;
+  }>({});
 
   // Seed fields when a log is opened — reset on each new log
   useEffect(() => {
     if (log) {
-      setTitle(log.title);
+      setTitle(log.title === "Untitled Activity"? "" : log.title);
+      setCategory(log.category?? "");
       // Show current duration in a readable format as the default input value
-      setDurationInput(log.duration ? formatDuration(log.duration) : "");
+      //setDurationInput(log.duration ? formatDuration(log.duration) : "");
       setErrors({});
     }
   }, [log?.id]);
@@ -74,17 +87,20 @@ export default function TimerEditModal({ visible, log, onDismiss, onSave }: Prop
   const validate = (): boolean => {
     const next: typeof errors = {};
     if (!title.trim()) next.title = "Title is required";
-    const parsed = parseDurationInput(durationInput);
-    if (parsed === null) next.duration = "Enter duration as 1h30m, 1:30, or minutes";
-    if (parsed !== null && parsed <= 0) next.duration = "Duration must be greater than 0";
+    // const parsed = parseDurationInput(durationInput);
+    // if (parsed === null)
+    //   next.duration = "Enter duration as 1h30m, 1:30, or minutes";
+    // if (parsed !== null && parsed <= 0)
+    //   next.duration = "Duration must be greater than 0";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
 
   const handleSave = () => {
     if (!log || !validate()) return;
-    const parsed = parseDurationInput(durationInput)!;
-    onSave({ ...log, title: title.trim(), duration: parsed });
+   // const parsed = parseDurationInput(durationInput)!;
+   if(category.trim().length>0) onSave({ ...log, title: title.trim(), category: category.trim() });
+   else onSave({ ...log, title: title.trim() ,category: category.trim()});
     onDismiss();
   };
 
@@ -95,8 +111,8 @@ export default function TimerEditModal({ visible, log, onDismiss, onSave }: Prop
       contentContainerStyle={[
         styles.modal,
         {
-          backgroundColor: theme.timerDarkPrimary,   // #2e3b38ff
-          borderColor: theme.timerBaseTrans,          // #6ac9b180
+          backgroundColor: theme.timerDarkPrimary, // #2e3b38ff
+          borderColor: theme.timerBaseTrans, // #6ac9b180
         },
       ]}
     >
@@ -105,10 +121,19 @@ export default function TimerEditModal({ visible, log, onDismiss, onSave }: Prop
         Edit Session
       </Text>
       {log && (
-        <Text style={[styles.subheading, { color: `${theme.whiteBase}88` }]}>
-          Started {new Date(log.startTime).toLocaleDateString(undefined, {
-            weekday: "short", month: "short", day: "numeric",
-            hour: "numeric", minute: "2-digit",
+        <Text
+          style={[
+            styles.subheading,
+            { color: withAlpha(theme.timerBase, "88") },
+          ]}
+        >
+          Started{" "}
+          {new Date(log.startTime).toLocaleDateString(undefined, {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
           })}
         </Text>
       )}
@@ -128,8 +153,17 @@ export default function TimerEditModal({ visible, log, onDismiss, onSave }: Prop
         <Text style={[styles.error, { color: "#ef4444" }]}>{errors.title}</Text>
       )}
 
-      {/* Duration input */}
       <TextInput
+        style={styles.verticalMargin}
+        label="Category"
+        mode="outlined"
+        activeOutlineColor={theme.timerBase}
+        outlineColor={theme.timerBaseTrans}
+        textColor={theme.whiteBase}
+        value={category}
+        onChangeText={setCategory}
+      />
+      {/*       <TextInput
         style={styles.verticalMargin}
         label="Duration"
         mode="outlined"
@@ -139,20 +173,20 @@ export default function TimerEditModal({ visible, log, onDismiss, onSave }: Prop
         value={durationInput}
         onChangeText={setDurationInput}
         placeholder="e.g. 1h30m  or  1:30  or  90"
-        placeholderTextColor={`${theme.whiteBase}44`}
+        placeholderTextColor={withAlpha(theme.timerBase, "44")}
       />
-      <Text style={[styles.hint, { color: `${theme.whiteBase}55` }]}>
+      <Text style={[styles.hint, { color: withAlpha(theme.timerBase, "55") }]}>
         Enter as 1h30m · 1:30 · 90 (minutes) · or 90s
       </Text>
       {errors.duration && (
         <Text style={[styles.error, { color: "#ef4444" }]}>{errors.duration}</Text>
-      )}
+      )} */}
 
       {/* Actions — identical layout to habit-modal */}
       <Button
         style={styles.verticalMargin}
         mode="elevated"
-        buttonColor={theme.timerBaseTransToo}   // #2e3b3844
+        buttonColor={theme.timerBaseTransToo} // #2e3b3844
         textColor={theme.timerBase}
         onPress={handleSave}
       >

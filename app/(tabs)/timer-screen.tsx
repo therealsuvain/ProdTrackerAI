@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useContext, useMemo } from "react";
+import { useContext, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -10,11 +10,12 @@ import {
   TouchableOpacity,
 } from "react-native";
 
-import { TextInput } from "react-native-paper";
+import { Portal, TextInput } from "react-native-paper";
 
 import TimerDisplay from "@/components/ui/timer-logs/time-display/time-display";
 import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
 import { XButton } from "@/components/ui/x-button";
+import TimerEditModal from "@/components/modal/timer-modal";
 import { ThemeContext } from "@/context/ThemeContext";
 import { formatDuration } from "@/context/TimerContext";
 import { useData } from "@/hooks/use-data";
@@ -44,7 +45,8 @@ export default function TimerScreen() {
     stop,
     reset,
   } = useTimer();
-
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingLog, setEditingLog] = useState<TimerLog | null>(null);
   const { todayTotal, weekTotal, topCategory } = useMemo(() => {
     const todayISO = getTodayISO();
     const weekStartISO = getWeekStartISO();
@@ -55,10 +57,10 @@ export default function TimerScreen() {
 
     for (const log of timerLogs) {
       if (!log.duration) continue;
-      const logDate = log.startTime.split("T")[0]
-        // typeof log.startTime === "string"
-        //   ? log.startTime.split("T")[0]
-        //   : log.startTime.toString().split("T")[0]; //TODO // ISO string → date part
+      const logDate = log.startTime.split("T")[0];
+      // typeof log.startTime === "string"
+      //   ? log.startTime.split("T")[0]
+      //   : log.startTime.toString().split("T")[0]; 
 
       if (logDate === todayISO) todayTotal += log.duration;
       if (logDate >= weekStartISO) {
@@ -106,6 +108,11 @@ export default function TimerScreen() {
       prev.map((l) => (l.id === updated.id ? updated : l)),
     );
   };
+
+  const showModal = (log: TimerLog) => {
+    setEditingLog(log);
+    setModalVisible(true);
+  };
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
       <Ionicons name="timer" size={60} color={theme.timerBase} />
@@ -140,15 +147,27 @@ export default function TimerScreen() {
     </View>
   );
   return (
-      
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-          {/* ── Stats row (checkpoint 10) ── */}
-          <View style={styles.statsRow}>
-            <StatCell
-              label="Today"
-              value={formatDuration(todayTotal)}
-              accent={theme.timerBase}
-            />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* ── Stats row (checkpoint 10) ── */}
+      <View style={styles.statsRow}>
+        <StatCell
+          label="Today"
+          value={formatDuration(todayTotal)}
+          accent={theme.timerBase}
+        />
+        <View
+          style={[
+            styles.statDivider,
+            { backgroundColor: withAlpha(theme.timerBase, "33") },
+          ]}
+        />
+        <StatCell
+          label="This week"
+          value={formatDuration(weekTotal)}
+          accent={theme.timerBase}
+        />
+        {topCategory && (
+          <>
             <View
               style={[
                 styles.statDivider,
@@ -156,173 +175,164 @@ export default function TimerScreen() {
               ]}
             />
             <StatCell
-              label="This week"
-              value={formatDuration(weekTotal)}
+              label="Top category"
+              value={topCategory}
               accent={theme.timerBase}
             />
-            {topCategory && (
-              <>
-                <View
-                  style={[
-                    styles.statDivider,
-                    { backgroundColor: withAlpha(theme.timerBase, "33") },
-                  ]}
-                />
-                <StatCell
-                  label="Top category"
-                  value={topCategory}
-                  accent={theme.timerBase}
-                />
-              </>
-            )}
-          </View>
-          <View
-            style={{
-              flexDirection: "row",
-              width: "100%",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+          </>
+        )}
+      </View>
+      <View
+        style={{
+          flexDirection: "row",
+          width: "100%",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <TextInput
+          placeholder="Activity name"
+          value={title}
+          onChangeText={setTitle}
+          style={styles.input}
+          mode="outlined"
+          activeOutlineColor={theme.timerBase}
+        />
+        <TextInput
+          placeholder="Category (optional)"
+          value={category}
+          onChangeText={setCategory}
+          style={[styles.input, styles.categoryInput]}
+          mode="outlined"
+          activeOutlineColor={theme.timerBase}
+        />
+      </View>
+
+      <View style={styles.categoryRow}>
+        {/* Last-used suggestion chip — only shown when category field is empty */}
+        {!category && lastUsedCategory && (
+          <TouchableOpacity
+            style={[styles.suggestionChip, { borderColor: theme.timerBase }]}
+            onPress={() => setCategory(lastUsedCategory)}
+            activeOpacity={0.7}
           >
-            <TextInput
-              placeholder="Activity name"
-              value={title}
-              onChangeText={setTitle}
-              style={styles.input}
-              mode="outlined"
-              activeOutlineColor={theme.timerBase}
-            />
-            <TextInput
-              placeholder="Category (optional)"
-              value={category}
-              onChangeText={setCategory}
-              style={[styles.input, styles.categoryInput]}
-              mode="outlined"
-              activeOutlineColor={theme.timerBase}
-            />
-          </View>
+            <Text style={[styles.suggestionText, { color: theme.timerBase }]}>
+              ↩ {lastUsedCategory}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+      <TimerDisplay
+        time={time}
+        mode={mode}
+        countdownTarget={countdownTarget}
+        isRunning={isRunning}
+        onToggleMode={toggleMode}
+        onCountdownTargetChange={setCountdownTarget}
+      />
 
-          <View style={styles.categoryRow}>
-            {/* Last-used suggestion chip — only shown when category field is empty */}
-            {!category && lastUsedCategory && (
-              <TouchableOpacity
-                style={[
-                  styles.suggestionChip,
-                  { borderColor: theme.timerBase },
-                ]}
-                onPress={() => setCategory(lastUsedCategory)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[styles.suggestionText, { color: theme.timerBase }]}
-                >
-                  ↩ {lastUsedCategory}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          <TimerDisplay
-            time={time}
-            mode={mode}
-            countdownTarget={countdownTarget}
-            isRunning={isRunning}
-            onToggleMode={toggleMode}
-            onCountdownTargetChange={setCountdownTarget}
-          />
-
-          {/* Mode hint below the circle 
+      {/* Mode hint below the circle 
           <Text style={[styles.modeHint, { color: theme.timerBase }]}>
             {isRunning
               ? ""
               : `Hold circle to switch to ${mode === "stopwatch" ? "countdown" : "stopwatch"}`}
           </Text>*/}
-          <View style={styles.buttons}>
-            {!isRunning ? (
-              <XButton icon="play" mode="timer" size="big" onPress={start} />
-            ) : (
-              <>
-                <XButton icon="pause" mode="timer" size="big" onPress={pause} />
-                <XButton icon="stop" mode="timer" size="big" onPress={stop} />
-                <XButton icon="flag" mode="timer" size="big" onPress={lap} />
-                <XButton
-                  icon="refresh"
-                  mode="timer"
-                  size="big"
-                  onPress={reset}
-                />
-              </>
-            )}
-          </View>
-          {/* ── Lap splits inline display ── */}
-          {laps.length > 0 && (
-            <View
-              style={[
-                styles.lapsContainer,
-                { borderColor: withAlpha(theme.timerBase, "33") },
-              ]}
-            >
-              {laps.map((lapTime, idx) => {
-                const splitDuration =
-                  idx === 0 ? lapTime : lapTime - laps[idx - 1];
-                return (
-                  <View key={idx} style={styles.lapRow}>
-                    <Text
-                      style={[
-                        styles.lapLabel,
-                        { color: withAlpha(theme.timerBase, "99") },
-                      ]}
-                    >
-                      Lap {idx + 1}
-                    </Text>
-                    <Text style={[styles.lapValue, { color: theme.timerBase }]}>
-                      {formatDuration(splitDuration)}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.lapTotal,
-                        { color: withAlpha(theme.timerBase, "66") },
-                      ]}
-                    >
-                      {formatDuration(lapTime)}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          )}
-
-          <View style={styles.logDividerContainer}>
-            <View
-              style={[
-                styles.logDividerLine,
-                { backgroundColor: withAlpha(theme.timerBase, "99") },
-              ]}
-            />
-            <Text style={[styles.logDividerLabel, { color: theme.timerBase }]}>
-              Recent Logs
-            </Text>
-            <View
-              style={[
-                styles.logDividerLine,
-                { backgroundColor: withAlpha(theme.timerBase, "99") },
-              ]}
-            />
-          </View>
-          <FlatList
-            data={timerLogs.slice(-10)}
-            keyExtractor={(item) => item.id}
-            style={{ width: "95%" }}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <TimerLogItem
-                log={item}
-                onDelete={() => handleDelete(item.id)}
-                onEdit={handleEdit}
-              />
-            )}
-            ListEmptyComponent={EmptyState}
-          />
+      <View style={styles.buttons}>
+        {!isRunning ? (
+          <XButton icon="play" mode="timer" size="big" onPress={start} />
+        ) : (
+          <>
+            <XButton icon="pause" mode="timer" size="big" onPress={pause} />
+            <XButton icon="stop" mode="timer" size="big" onPress={stop} />
+            <XButton icon="flag" mode="timer" size="big" onPress={lap} />
+            <XButton icon="refresh" mode="timer" size="big" onPress={reset} />
+          </>
+        )}
+      </View>
+      {/* ── Lap splits inline display ── */}
+      {laps.length > 0 && (
+        <View
+          style={[
+            styles.lapsContainer,
+            { borderColor: withAlpha(theme.timerBase, "33") },
+          ]}
+        >
+          {laps.map((lapTime, idx) => {
+            const splitDuration = idx === 0 ? lapTime : lapTime - laps[idx - 1];
+            return (
+              <View key={idx} style={styles.lapRow}>
+                <Text
+                  style={[
+                    styles.lapLabel,
+                    { color: withAlpha(theme.timerBase, "99") },
+                  ]}
+                >
+                  Lap {idx + 1}
+                </Text>
+                <Text style={[styles.lapValue, { color: theme.timerBase }]}>
+                  {formatDuration(splitDuration)}
+                </Text>
+                <Text
+                  style={[
+                    styles.lapTotal,
+                    { color: withAlpha(theme.timerBase, "66") },
+                  ]}
+                >
+                  {formatDuration(lapTime)}
+                </Text>
+              </View>
+            );
+          })}
         </View>
+      )}
+
+      <View style={styles.logDividerContainer}>
+        <View
+          style={[
+            styles.logDividerLine,
+            { backgroundColor: withAlpha(theme.timerBase, "99") },
+          ]}
+        />
+        <Text style={[styles.logDividerLabel, { color: theme.timerBase }]}>
+          Recent Logs
+        </Text>
+        <View
+          style={[
+            styles.logDividerLine,
+            { backgroundColor: withAlpha(theme.timerBase, "99") },
+          ]}
+        />
+      </View>
+      <FlatList
+        data={timerLogs.slice(-10).toReversed()}
+        keyExtractor={(item) => item.id}
+        style={{ width: "95%" }}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <TimerLogItem
+            log={item}
+            onDelete={() => handleDelete(item.id)}
+            onEdit={() => showModal(item)}
+          />
+        )}
+        ListEmptyComponent={EmptyState}
+      />
+      <Portal>
+        <TimerEditModal
+          visible={modalVisible}
+          log={editingLog}
+          onDismiss={() => {
+            setModalVisible(false);
+            setEditingLog(null);
+          }}
+          onSave={(updated) => {
+            handleEdit(updated);
+            setModalVisible(false);
+            setEditingLog(null);
+          }}
+        />
+      </Portal>
+    </View>
   );
 }
 

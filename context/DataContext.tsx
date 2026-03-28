@@ -40,6 +40,7 @@ import {
 } from "@/data/dummyData";
 
 import { AchievementToast } from "@/components/ui/achievements/achievement-toast";
+import { usePlaySound } from "@/hooks/use-play-sound";
 
 interface DataContextType {
   tasks: Task[];
@@ -102,6 +103,8 @@ export default function DataProvider({ children }: { children: ReactNode }) {
 
   const clearError = useCallback(() => setError(null), []);
 
+  const audioSource = require("@/assets/audio/achievement-unlocked.mp3");
+  const audioPlayer = usePlaySound(audioSource)
   const deleteEventOccurrence = async (
     eventId: string,
     date: string,
@@ -161,6 +164,8 @@ export default function DataProvider({ children }: { children: ReactNode }) {
               const badge = achievementToastQueue.shift();
               if (!badge) return;
               setActiveBadge(badge);
+              audioPlayer.seekTo(0);
+              audioPlayer.play();
               setTimeout(() => {
                 setActiveBadge(null);
                 setTimeout(showNext, 500); // small gap between badges
@@ -250,17 +255,18 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveHabits(habits);
-    console.log(
+   /*  console.log(
       "DATA HABITS",
       habits.map((e) => {
         return { title: e.title, freezeHistory: typeof e.freezeHistory?.[0] };
       }),
-    );
+    ); */
   }, [habits, loaded]);
 
   useEffect(() => {
     if (!loaded) return;
     saveAIChatHistory(messages);
+    //messages.map((m) => console.log(new Date(m.timestamp).toLocaleString()));
     //console.log("DATA MESSAGES", messages[0]);
   }, [messages, loaded]);
 

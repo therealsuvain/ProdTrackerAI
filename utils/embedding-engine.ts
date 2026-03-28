@@ -10,8 +10,6 @@ export const createSearchString = (item: any) => {
 };
 
 export const generateEmbedding = async (text: string, isQuery: boolean): Promise<number[]> => {
-
-  console.log("GenerationE", text)
   if (!text || typeof text !== 'string' || text.trim() === '') {
     console.warn("generateEmbedding aborted: 'text' was empty or undefined.");
     return [];

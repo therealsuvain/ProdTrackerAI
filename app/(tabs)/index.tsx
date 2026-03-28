@@ -27,7 +27,6 @@ import { useSearch } from "@/hooks/use-search";
 import { AnalyticsSection } from "@/components/ui/analytics-section";
 import { SearchResults } from "@/components/ui/search-results";
 import HabitItem from "@/components/ui/habits/habit-item";
-import LoadingIndicator from "@/components/loading-indicator";
 import UnifiedTimeline from "@/components/ui/home-timeline";
 import { useNotifications } from "@/hooks/use-notifications";
 import { Habit } from "@/types/habits";
@@ -39,12 +38,12 @@ import { ChatScreen } from "@/components/ui/chat/chat-screen";
  * TODO : Many files are very large, try and make it more modular. ALL FILES HAVE TO CHECKED FOR POSSIBLE <REFACTORS></REFACTORS>
  * TODO : CLOUD DATA SYNC ABILITY with Login and accounts
  * TODO : Pay wall
- * TODO : EMPTY states for Tasks, Events, Habits, TimerLogs
  * TODO : Notifications edits via AI chat 
  * TODO : Maybe custom notifications options
  * TODO : Update Form validations and error handling in modals
- * TODO : Sound effect on unlocking achievement and habit goal completion
- * TODO : Check Data vs String issue in data fields, should date be a string? and converted on use? or vice versa
+ * TODO : new Date() is expensive in javascript so have be to memomized everywhere
+ * TODO : Input sanitization
+ * TODO : Check for Security enhancements and possible securicty concerns for the entire app 
  */
 export default function HomeScreen() {
   const { theme } = useContext(ThemeContext);
@@ -78,7 +77,7 @@ export default function HomeScreen() {
   //   migrateToSemanticSearch({tasks, setTasks, habits, setHabits, events, setEvents})
   // },[])
   return (
-    <>
+    <Provider>
       {/* {(isLoading || isProcessing) && <LoadingIndicator />} */}
       <View style={{ backgroundColor: theme.background}}>
       <SegmentedButtons
@@ -156,7 +155,7 @@ export default function HomeScreen() {
             Recent Timer Logs
           </Text>
           {recentLogs.length ? (
-            recentLogs.map((log) => <TimerLogItem key={log.id} log={log} />)
+            recentLogs.map((log) => <TimerLogItem key={log.id} log={log} onDelete={()=>{}} onEdit={()=>{}}/>)
           ) : (
             <Text style={{ color: theme.timerBase }}>No Recent Logs</Text>
           )}
@@ -258,7 +257,7 @@ export default function HomeScreen() {
       <Portal>
          <ChatScreen visible={aiVisible} onDismiss={() => setAiVisible(false)} /> 
       </Portal>
-    </>
+    </Provider>
   );
 }
 

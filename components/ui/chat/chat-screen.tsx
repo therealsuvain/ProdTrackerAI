@@ -1,7 +1,6 @@
 // screens/ChatScreen.tsx
 import React, { useState, useRef, useContext, useEffect, useMemo } from "react";
 import { useNavigation } from "expo-router";
-import { useAudioPlayer } from "expo-audio";
 import { useHeaderHeight } from "@react-navigation/elements";
 
 import {
@@ -22,6 +21,7 @@ import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/use-data";
 import { useTimer } from "@/hooks/use-timer";
 import { useVoiceInput } from "@/hooks/use-voice-input";
+import { usePlaySound } from "@/hooks/use-play-sound";
 import { Message } from "@/types/chat";
 import { LoadingBubble } from "./loading-bubble";
 import { ChatInput } from "./chat-input";
@@ -54,11 +54,11 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const { messages, setMessages } = context;
   const [isThinking, setIsThinking] = useState(false);
   const flatListRef = useRef<FlatList>(null);
-  const playedSoundRef = useRef(false);
   const audioSource = require("@/assets/audio/record.wav");
-  const player = useAudioPlayer(audioSource);
+  const player = usePlaySound(audioSource);
   const chatItems = useMemo(() => injectDaySeparators(messages), [messages]);
-
+  //const chatItems = injectDaySeparators(messages);
+ //console.log(chatItems.map((m) => m.id));
   useEffect(() => {
     // Add the event listener when the component mounts or when isPortalOpen changes
     const backButtonListener = BackHandler.addEventListener(
@@ -71,9 +71,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       backButtonListener.remove();
     };
   }, [visible]);
-  const playStartCue = async () => {
-    if (playedSoundRef.current) return;
-    playedSoundRef.current = true;
+  const playMicPressAudio = async () => {
     try {
       player.seekTo(0);
       player.play();
@@ -90,8 +88,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   };
 
   const handleStart = async () => {
-    playedSoundRef.current = false;
-    await playStartCue();
+    await playMicPressAudio();
     startRecording();
   };
 
@@ -170,7 +167,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       sender: "user",
       type: "text",
       text,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
     setMessages((prev) => [userMsg, ...prev]); // Inverted list
 
@@ -194,7 +191,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
             ? response
             : "Sorry, something went wrong. Please try again.",
         pendingActions: calls,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       };
 
       setMessages((prev) => [aiMsg, ...prev]);
@@ -228,7 +225,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         sender: "ai",
         type: "text",
         text: "This action request has expired to prevent errors.⏳",
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [feedbackMsg, ...prev]);
       context.trackMetric(["chatActionsExpired"], 1);
@@ -253,7 +250,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         sender: "ai",
         type: "text",
         text: "Actions confirmed! ✅",
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [successMsg, ...prev]);
       context.trackMetric(["chatActionsConfirmed"], 1);
@@ -270,7 +267,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       sender: "ai",
       type: "text",
       text: "No problem, I've cancelled those actions. ✋",
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
     setMessages((prev) => [cancelMsg, ...prev]);
     context.trackMetric(["chatActionsCancelled"], 1);

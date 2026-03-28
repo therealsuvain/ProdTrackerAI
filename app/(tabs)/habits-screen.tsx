@@ -19,6 +19,7 @@ import {
 } from "@/utils/habit-utils";
 import { withAlpha } from "@/utils/common-utils";
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import { usePlaySound } from "@/hooks/use-play-sound";
 
 // TODO : shifting logic from habit-screen , habit-item, habiit-stats to utils maybe
 export default function HabitsScreen() {
@@ -36,7 +37,8 @@ export default function HabitsScreen() {
     editingHabit,
     onClose: () => setVisible(false),
   });
-
+  const audioSource = require("@/assets/audio/habit-congrats-2.mp3");
+  const audioPlayer = usePlaySound(audioSource, 0.5);
   const showModal = (habit?: Habit) => {
     setEditingHabit(habit || null);
     setVisible(true);
@@ -106,6 +108,8 @@ export default function HabitsScreen() {
   const handleGoalReached = useCallback((habit: Habit) => {
     setCompletedHabit(habit);
     setGoalModalVisible(true);
+    audioPlayer.seekTo(0);
+    audioPlayer.play();
   }, []);
 
   const chartData = {

@@ -11,7 +11,7 @@ interface AchievementBadgeProps {
   currentProgress: number;
 }
 
-export default function AchievementBadge({
+ function AchievementBadge({
   badge,
   isUnlocked,
   unlockedAt,
@@ -113,6 +113,7 @@ export default function AchievementBadge({
     </Surface>
   );
 }
+export default React.memo(AchievementBadge);
 
 const styles = StyleSheet.create({
   container: {

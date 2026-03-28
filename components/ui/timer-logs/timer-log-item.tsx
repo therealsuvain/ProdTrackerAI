@@ -7,13 +7,11 @@ import { XButton } from "../x-button";
 import { ThemeContext } from "@/context/ThemeContext";
 import { formatDuration, formatRelativeTime } from "@/context/TimerContext";
 import { TimerLog } from "@/types/timer";
-import TimerEditModal from "@/components/modal/timer-modal";
 import { withAlpha } from "@/utils/common-utils";
-
 interface TimerLogItemProps {
   log: TimerLog;
-  onDelete?: () => void;
-  onEdit?: (updated: TimerLog) => void;
+  onDelete: () => void;
+  onEdit: () => void;
 }
 
 export default function TimerLogItem({
@@ -26,24 +24,23 @@ export default function TimerLogItem({
   const isNotHome = route.name !== "index";
 
   const [lapsExpanded, setLapsExpanded] = useState(false);
-  const [editVisible, setEditVisible] = useState(false);
 
   const duration = log.duration ? formatDuration(log.duration) : "Ongoing";
   // startTime is now an ISO string — convert to Date only at display time
   const startedLabel = formatRelativeTime(log.startTime);
   const hasLaps = log.laps && log.laps.length > 0;
   return (
-    <>
-      <Card
-        style={[
-          styles.container,
-          { backgroundColor: theme.timerDarkPrimary },
-          !isNotHome && { borderRadius: 0 },
-        ]}
-      >
-        <Card.Content style={{ position: "relative" }}>
-          <View style={styles.titleRow}>
-            <View style={styles.titleBlock}>
+    <Card
+      style={[
+        styles.container,
+        { backgroundColor: theme.timerDarkPrimary },
+        !isNotHome && { borderRadius: 0 },
+      ]}
+    >
+      <Card.Content style={{ position: "relative" }}>
+        <View style={styles.row}>
+          <View style={styles.dataBlock}>
+            <View style={styles.titleCategoryBlock}>
               <Text style={{ color: theme.whiteBase }} variant="titleMedium">
                 {log.title}
                 {log.isPartial && (
@@ -59,7 +56,7 @@ export default function TimerLogItem({
                 <View
                   style={[
                     styles.categoryPill,
-                    { borderColor:  withAlpha(theme.timerBase,"66") },
+                    { borderColor: withAlpha(theme.timerBase, "66") },
                   ]}
                 >
                   <Text
@@ -70,108 +67,95 @@ export default function TimerLogItem({
                 </View>
               )}
             </View>
-            {isNotHome && (
-              <XButton icon="trash-outline" mode="timer" onPress={onDelete} />
+            {/* ── Duration + start time ── */}
+            <Text style={{ color: theme.whiteBase }}>
+              {duration}
+              {"  ·  "}
+              <Text style={{ opacity: 0.6 }}>{startedLabel}</Text>
+            </Text>
+
+            {/* ── Lap summary — tap to expand ── */}
+            {hasLaps && (
+              <>
+                <TouchableOpacity
+                  onPress={() => setLapsExpanded((v) => !v)}
+                  activeOpacity={0.7}
+                  style={styles.lapToggle}
+                >
+                  <Text
+                    style={[styles.lapToggleText, { color: theme.timerBase }]}
+                  >
+                    {lapsExpanded ? "▾" : "▸"} {log.laps!.length} lap
+                    {log.laps!.length !== 1 ? "s" : ""}
+                  </Text>
+                </TouchableOpacity>
+
+                {lapsExpanded && (
+                  <View
+                    style={[
+                      styles.lapsBlock,
+                      { borderColor: withAlpha(theme.timerBase, "33") },
+                    ]}
+                  >
+                    {log.laps!.map((lapTime, idx) => {
+                      const splitDuration =
+                        idx === 0 ? lapTime : lapTime - log.laps![idx - 1];
+                      return (
+                        <View key={idx} style={styles.lapRow}>
+                          <Text
+                            style={[
+                              styles.lapLabel,
+                              { color: withAlpha(theme.timerBase, "99") },
+                            ]}
+                          >
+                            Lap {idx + 1}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.lapSplit,
+                              { color: theme.whiteBase },
+                            ]}
+                          >
+                            {formatDuration(splitDuration)}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.lapTotal,
+                              { color: withAlpha(theme.timerBase, "66") },
+                            ]}
+                          >
+                            {formatDuration(lapTime)}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+              </>
             )}
           </View>
-          {/* ── Duration + start time ── */}
-          <Text style={{ color: theme.whiteBase }}>
-            {duration}
-            {"  ·  "}
-            <Text style={{ opacity: 0.6 }}>{startedLabel}</Text>
-          </Text>
-
-          {/* ── Lap summary — tap to expand ── */}
-          {hasLaps && (
-            <>
-              <TouchableOpacity
-                onPress={() => setLapsExpanded((v) => !v)}
-                activeOpacity={0.7}
-                style={styles.lapToggle}
-              >
-                <Text
-                  style={[styles.lapToggleText, { color: theme.timerBase }]}
-                >
-                  {lapsExpanded ? "▾" : "▸"} {log.laps!.length} lap
-                  {log.laps!.length !== 1 ? "s" : ""}
-                </Text>
-              </TouchableOpacity>
-
-              {lapsExpanded && (
-                <View
-                  style={[
-                    styles.lapsBlock,
-                    { borderColor:  withAlpha(theme.timerBase,"33") },
-                  ]}
-                >
-                  {log.laps!.map((lapTime, idx) => {
-                    const splitDuration =
-                      idx === 0 ? lapTime : lapTime - log.laps![idx - 1];
-                    return (
-                      <View key={idx} style={styles.lapRow}>
-                        <Text
-                          style={[
-                            styles.lapLabel,
-                            { color:  withAlpha(theme.timerBase,"99") },
-                          ]}
-                        >
-                          Lap {idx + 1}
-                        </Text>
-                        <Text
-                          style={[styles.lapSplit, { color: theme.whiteBase }]}
-                        >
-                          {formatDuration(splitDuration)}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.lapTotal,
-                            { color:  withAlpha(theme.timerBase,"66") },
-                          ]}
-                        >
-                          {formatDuration(lapTime)}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              )}
-            </>
+          {isNotHome && (
+            <XButton icon="pencil-outline" mode="timer" onPress={onEdit} />
           )}
-          {/*         <Text style={{ color: theme.whiteBase }}>Duration: {duration}</Text>
-        <Text style={{ color: theme.whiteBase }}>
-          Started: {log.startTime.toLocaleString()}
-        </Text>
-        <View style={{ position: "absolute", right: 10, top: 25 }}>
           {isNotHome && (
             <XButton icon="trash-outline" mode="timer" onPress={onDelete} />
           )}
-        </View> */}
-        </Card.Content>
-      </Card>
-      <Portal>
-        <TimerEditModal
-          visible={editVisible}
-          log={log}
-          onDismiss={() => setEditVisible(false)}
-          onSave={(updated) => {
-            onEdit?.(updated);
-            setEditVisible(false);
-          }}
-        />
-      </Portal>
-    </>
+        </View>
+      </Card.Content>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   container: { marginVertical: 8, width: "100%", position: "relative" },
-  titleRow: {
+  row: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
     marginBottom: 4,
   },
-  titleBlock: { flex: 1, paddingRight: 8 },
+  dataBlock: { flex: 1, paddingRight: 8 },
+  titleCategoryBlock: { flexDirection: "row", gap: 5 , alignItems: "center"},
   partialBadge: { fontSize: 12, fontStyle: "italic" },
   categoryPill: {
     alignSelf: "flex-start",

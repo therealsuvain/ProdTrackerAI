@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, Animated, Pressable } from "react-native";
 import { Svg, Text as SvgText } from "react-native-svg";
 import LottieView from "lottie-react-native";
 import { ThemeContext } from "@/context/ThemeContext";
-import { useAudioPlayer } from "expo-audio";
 import { Habit } from "@/types/habits";
 import { freezeHabit, isFrozen } from "@/utils/habit-utils";
+import { usePlaySound } from "@/hooks/use-play-sound";
 
 interface HabitStatsProps {
   habit: Habit;
@@ -20,10 +20,10 @@ export const HabitStats = ({ habit, onUpdate, onDenied }: HabitStatsProps) => {
   const playedSoundRef = useRef(false);
   const freezeAnimRef = useRef<LottieView>(null);
   const scaleFireAnime = useRef(new Animated.Value(0)).current;
-  const audioSource = require("../../../assets/audio/freeze.mp3");
-  const player = useAudioPlayer(audioSource);
+  const audioSource = require("@/assets/audio/freeze.mp3");
+  const player = usePlaySound(audioSource);
 
-  const playStartCue = async () => {
+  const playFreezingAudio = async () => {
     if (playedSoundRef.current) return;
     playedSoundRef.current = true;
     try {
@@ -48,7 +48,7 @@ export const HabitStats = ({ habit, onUpdate, onDenied }: HabitStatsProps) => {
     if (oldStreakFreezes > result.habit.streakFreezes) {
        playedSoundRef.current = false
       freezeAnimRef.current?.play();
-      await playStartCue();
+      await playFreezingAudio();
     }
   };
 

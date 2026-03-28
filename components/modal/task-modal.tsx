@@ -65,7 +65,7 @@ export default function TaskModal({
       <TextInput
         mode="outlined"
         label="Title"
-        value={state.title}
+        defaultValue={state.title}
         onChangeText={(text) => updateField("title", text)}
       />
       {state.errors?.title && (

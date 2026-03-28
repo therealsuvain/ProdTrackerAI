@@ -1,5 +1,5 @@
 import React, { useMemo, useContext, useState, useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Dimensions } from "react-native";
 import { Portal } from "react-native-paper";
 
 import { ThemeContext } from "@/context/ThemeContext";
@@ -10,7 +10,10 @@ interface HabitHeatmapProps {
 }
 
 // ─── Grid constants ───────────────────────────────────────────────────────────
-
+const { width } = Dimensions.get("window");
+const CELL_SIZE = Math.min(width * 0.0375, 19);
+//console.log("CELL SIZE", CELL_SIZE); // px — fits 6 columns comfortably on a 375px screen
+const CELL_GAP = Math.min(width * 0.005, 2.5);
 const DAYS = 60;
 const COLS = 20;
 const ROWS = 3; // 20 × 3 = 60
@@ -132,8 +135,8 @@ export default function HabitHeatmap({ metrics }: HabitHeatmapProps) {
           <View
             style={{
               position: "absolute",
-              top: tooltip.y - 150,
-              left: tooltip.x - 25,
+              top: tooltip.y ,
+              left: tooltip.x,
               backgroundColor:
                 tooltip.opacity > 0
                   ? `rgb(255, 211, 88 , ${tooltip.opacity})`
@@ -230,9 +233,6 @@ export default function HabitHeatmap({ metrics }: HabitHeatmapProps) {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-
-const CELL_SIZE = 19; // px — fits 6 columns comfortably on a 375px screen
-const CELL_GAP = 2.5;
 
 const styles = StyleSheet.create({
   container: {

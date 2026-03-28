@@ -3,7 +3,7 @@ export interface Message {
   sender: 'user' | 'ai';
   type: 'text' | 'loading' | 'action';
   text: string;
-  timestamp: Date;
+  timestamp: string;
   pendingActions?: any[]; // Stores functionCalls for 'ACTION_REQUIRED' bubbles
   isConfirmed?: boolean; // Tracks if the action was already processed
   isExpired?:boolean;
@@ -11,7 +11,7 @@ export interface Message {
 export interface DaySeparatorItem {
   id: string;
   type: 'day_separator';
-  date: Date;
+  date: string;
 }
 
 export type ChatListItem = Message | DaySeparatorItem;

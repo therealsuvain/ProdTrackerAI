@@ -241,8 +241,8 @@ export default function TaskScreen() {
           icon="plus"
           onPress={() => {
             clearStorageByKey("timeLogs");
-            //clearStorageByKey("@prodtracker_metrics");
-            //clearStorageByKey("@prodtracker_achievements");
+            clearStorageByKey("@prodtracker_metrics");
+            clearStorageByKey("@prodtracker_achievements");
           }}
         />
       </View>
