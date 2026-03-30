@@ -41,15 +41,15 @@ export default function Timeline({
   // Sort timed events by start time
   const sortedTimedEvents = useMemo(() => {
     return [...timedEvents].sort(
-      (a, b) => a.startTime.getTime() - b.startTime.getTime()
+      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
     );
   }, [timedEvents]);
 
   // Calculate position and height for each event
   const eventPositions = useMemo(() => {
     return sortedTimedEvents.map((event) => {
-      const startHour = event.startTime.getHours();
-      const endHour = event.endTime ? event.endTime.getHours() : startHour + 1; // Default 1 hour if no end time
+      const startHour = new Date(event.startTime).getHours();
+      const endHour = event.endTime ? new Date(event.endTime).getHours() : startHour + 1; // Default 1 hour if no end time
 
       return {
         event,
@@ -123,12 +123,12 @@ export default function Timeline({
               {event.title}
             </Text>
             <Text style={[styles.eventTime,{color:theme.whiteBaseTrans}]} numberOfLines={1}>
-              {event.startTime.toLocaleTimeString([], {
+              {new Date(event.startTime).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
               })}
               {event.endTime &&
-                ` - ${event.endTime.toLocaleTimeString([], {
+                ` - ${new Date(event.endTime).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}`}

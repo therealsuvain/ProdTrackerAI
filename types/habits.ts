@@ -3,7 +3,7 @@ export interface Habit {
   title: string;
   frequency: 'daily' | 'weekly';
   reminder : boolean;
-  reminderDate? : Date;
+  reminderDate? : string;
   targetDays?: number[]; 
   streak: number;
   history: string[]; 

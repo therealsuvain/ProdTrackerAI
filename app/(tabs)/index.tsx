@@ -1,11 +1,8 @@
 import {
   StyleSheet,
-  useColorScheme,
   ScrollView,
   View,
-  Appearance,
 } from "react-native";
-import { useEffect }  from "react";
 import {
   Text,
   Divider,
@@ -32,6 +29,8 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { Habit } from "@/types/habits";
 import { ThemeContext } from "@/context/ThemeContext";
 import { ChatScreen } from "@/components/ui/chat/chat-screen";
+import {getTodayISO} from '@/utils/common-utils';
+import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 
 /**
  * TODO : Check all types again, many new fields have been added which have been marked optional to not break exisitng items, but are required for future items
@@ -44,21 +43,21 @@ import { ChatScreen } from "@/components/ui/chat/chat-screen";
  * TODO : new Date() is expensive in javascript so have be to memomized everywhere
  * TODO : Input sanitization
  * TODO : Check for Security enhancements and possible securicty concerns for the entire app 
+ * TODO : Duplicate timer log storage in TImerContext vs DataContext
+ * TODO : Change Calendar, habits, task properpty type from Date to String
  */
-export default function HomeScreen() {
+ function HomeScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { tasks, setTasks, events, setEvents, timerLogs, habits, setHabits } = useData();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { tasks, setTasks, events, timerLogs, habits, setHabits } = useData();
   const [searchVisible, setSearchVisible] = useState(false);
   const { query, performSearch, results } = useSearch();
   const [aiVisible, setAiVisible] = useState(false);
   useNotifications();
   const [viewMode, setViewMode] = useState<"overview" | "timeline">("overview");
   const [selectedDate, setSelectedDate] = useState(new Date());
-
+  const todayDate = getTodayISO();
   let todaysTasks = tasks.filter(
-    (t) => t.dueDate && new Date(t.dueDate).toDateString() == new Date().toDateString(),
+    (t) => t.dueDate && t.dueDate.split("T")[0] === todayDate,
   );
   let upcomingEvents = events.slice(0, 3);
   let activeHabits = habits.slice(0, 3);
@@ -260,6 +259,13 @@ export default function HomeScreen() {
     </Provider>
   );
 }
+export default function HomeScreen() {
+    return (
+      <ScreenErrorBoundary screenName="Home">
+        <HomeScreenInner />
+      </ScreenErrorBoundary>
+    );
+  }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },

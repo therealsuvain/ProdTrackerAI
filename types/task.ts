@@ -3,9 +3,9 @@ export interface Task {
   title: string;
   description?: string;
   category?: string;
-  dueDate?: Date;
+  dueDate: string;
   reminder: boolean;
-  reminderDate?: Date;
+  reminderDate?: string;
   notificationId?: string; // To track/cancel reminders
   priority: "low" | "medium" | "high";
   completed: boolean;

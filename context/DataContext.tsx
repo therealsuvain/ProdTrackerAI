@@ -238,12 +238,12 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveEvents(events);
-    /* console.log(
+     console.log(
       "DATA EVENTS",
       events.map((e) => {
         return { ...e, embedding: e.embedding?.[0] };
       }),
-    ); */
+    ); 
   }, [events, loaded]);
 
   useEffect(() => {

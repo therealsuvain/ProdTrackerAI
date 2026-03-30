@@ -20,9 +20,10 @@ import {
 import { withAlpha } from "@/utils/common-utils";
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { usePlaySound } from "@/hooks/use-play-sound";
+import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 
 // TODO : shifting logic from habit-screen , habit-item, habiit-stats to utils maybe
-export default function HabitsScreen() {
+function HabitsScreenInner() {
   const { theme } = useContext(ThemeContext);
   const { habits, setHabits, trackMetric, appMetrics } = useData();
   const [filteredHabits, setFilteredHabits] = useState<Habit[]>(habits);
@@ -207,6 +208,13 @@ export default function HabitsScreen() {
   );
 }
 
+ export default function HabitsScreen() {
+    return (
+      <ScreenErrorBoundary screenName="Habits">
+        <HabitsScreenInner />
+      </ScreenErrorBoundary>
+    );
+  }
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   fab: {

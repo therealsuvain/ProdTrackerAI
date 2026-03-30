@@ -1,10 +1,10 @@
 export interface CalendarEvent {
   id: string;
   title: string;
-  startDate: Date;
-  endDate: Date ;
-  startTime: Date;
-  endTime: Date ;
+  startDate: string;
+  endDate: string ;
+  startTime: string;
+  endTime: string ;
   description?: string ;
   reminder: boolean; // For notifications
   recurrence: 'none'|'daily'|'weekly'  //  For repeating events

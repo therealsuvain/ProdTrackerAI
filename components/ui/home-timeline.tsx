@@ -7,12 +7,15 @@ import {
   Dimensions,
   TouchableOpacity,
 } from "react-native";
+import { ProgressBar, Checkbox, Badge } from "react-native-paper";
+import Animated from "react-native-reanimated";
+
 import { CalendarEvent } from "@/types/calendar";
 import { Task } from "@/types/task";
 import { TimerLog } from "@/types/timer";
 import { Habit } from "@/types/habits";
 import { Ionicons } from "@expo/vector-icons";
-import { ProgressBar, Checkbox, Badge } from "react-native-paper";
+import { useHabitDeniedFeedback } from "@/components/ui/habits/habit-denied-feedback-util";
 import { checkInHabit } from "@/utils/habit-utils";
 import { ThemeContext } from "@/context/ThemeContext";
 
@@ -33,6 +36,9 @@ const HOUR_HEIGHT = 80;
 const TIMELINE_START = 0;
 const TIMELINE_END = 24;
 
+const AnimatedTouchableOpacity =
+  Animated.createAnimatedComponent(TouchableOpacity);
+
 export default function UnifiedTimeline({
   events,
   tasks,
@@ -46,40 +52,56 @@ export default function UnifiedTimeline({
   onDeleteTask,
 }: UnifiedTimelineProps) {
   const { theme } = useContext(ThemeContext);
-
   const getPriorityColor = (priority: "low" | "medium" | "high"): string => {
-  return { low: theme.success, medium: theme.habitBase, high: theme.eventBase }[priority];
-};
+    return {
+      low: theme.success,
+      medium: theme.habitBase,
+      high: theme.eventBase,
+    }[priority];
+  };
 
   const scrollViewRef = useRef<ScrollView>(null);
-
   // Filter items for selected date
   const filteredData = useMemo(() => {
     const dateStr = selectedDate.toDateString();
 
     // Filter tasks due on this date
     const dayTasks = tasks.filter(
-      (task) => new Date(task.dueDate?task.dueDate:"0").toDateString() === dateStr && !task.completed
+      (task) =>
+        new Date(task.dueDate ? task.dueDate : "0").toDateString() ===
+          dateStr && !task.completed,
     );
 
     // Filter timer logs from this date
     const dayLogs = timerLogs.filter(
-      (log) => new Date(log.startTime).toDateString() === dateStr
+      (log) => new Date(log.startTime).toDateString() === dateStr,
     );
 
     // Filter events
     const dayEvents = events.filter((event) => {
-      const eventDate = new Date(event.startTime).toDateString();
+      const eventStartDate = new Date(event.startDate);
+      const eventStartDatePart = eventStartDate.toISOString().split("T")[0];
+      const eventEndDatePart = new Date(event.endDate)
+        .toISOString()
+        .split("T")[0];
+      const eventStartDateString = eventStartDate.toDateString();
       const todayDateIso = selectedDate.toISOString().split("T")[0];
       if (event.deletedOccurrences?.includes(todayDateIso)) return false;
-      if (eventDate === dateStr) return true;
-      if (event.recurrence === "daily") return true;
-      if (
-        event.recurrence === "weekly" &&
-        new Date(event.startTime).getDay() === selectedDate.getDay()
-      ) {
-        return true;
+      if (eventStartDateString === dateStr) return true;
+      if (event.recurrence === "daily") {
+        if (
+          eventStartDatePart <= todayDateIso &&
+          todayDateIso <= eventEndDatePart
+        )
+          return true;
       }
+      if (event.recurrence === "weekly")
+        if (
+          eventStartDatePart <= todayDateIso &&
+          todayDateIso <= eventEndDatePart
+        )
+          if (eventStartDate.getDay() === selectedDate.getDay()) return true;
+
       return false;
     });
 
@@ -95,7 +117,7 @@ export default function UnifiedTimeline({
   // Check if habit was completed today
   const isHabitCompletedToday = (habit: Habit) => {
     const today = new Date();
-    const todayISO = today.toISOString().split('T')[0];
+    const todayISO = today.toISOString().split("T")[0];
     return habit.history.includes(todayISO);
   };
 
@@ -122,7 +144,8 @@ export default function UnifiedTimeline({
   const taskPositions = useMemo(() => {
     return filteredData.tasks.map((task, index) => {
       // Stack tasks at 9 AM, slightly offset
-      const baseHour = task.reminderDate?.getHours();
+      const baseHour =
+        task.reminderDate && new Date(task.reminderDate).getHours();
       const offset = index * 50; // Offset each task by 50px
 
       return {
@@ -137,9 +160,11 @@ export default function UnifiedTimeline({
   const logPositions = useMemo(() => {
     return filteredData.logs.map((log) => {
       const startHour =
-        new Date(log.startTime).getHours() + new Date(log.startTime).getMinutes() / 60;
+        new Date(log.startTime).getHours() +
+        new Date(log.startTime).getMinutes() / 60;
       const endHour = log.endTime
-        ? new Date(log.endTime).getHours() + new Date(log.endTime).getMinutes() / 60
+        ? new Date(log.endTime).getHours() +
+          new Date(log.endTime).getMinutes() / 60
         : startHour + (log.duration ? log.duration / 3600 : 1);
 
       return {
@@ -187,7 +212,7 @@ export default function UnifiedTimeline({
           <Text style={[styles.timeText, { color: theme.greyBasePrimary }]}>
             {String(i).padStart(2, "0")}:00
           </Text>
-        </View>
+        </View>,
       );
     }
     return hours;
@@ -247,8 +272,8 @@ export default function UnifiedTimeline({
             top,
             height,
             borderColor: theme.taskBase,
-            borderRightColor:getPriorityColor(task.priority),
-            backgroundColor:theme.taskBaseTransToo,
+            borderRightColor: getPriorityColor(task.priority),
+            backgroundColor: theme.taskBaseTransToo,
           },
         ]}
         onPress={() => onTaskToggle?.(task.id)}
@@ -272,9 +297,8 @@ export default function UnifiedTimeline({
             >
               {task.title}
             </Text>
-            
           </View>
-          
+
           {/* <Text style={[styles.taskSubtext,{color:theme.greyBasePrimary}]}>
             Due: {task.dueDate?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) || "Today"}
           </Text> */}
@@ -312,7 +336,7 @@ export default function UnifiedTimeline({
               hour: "2-digit",
               minute: "2-digit",
             })}
-            {log.endTime  &&
+            {log.endTime &&
               ` - ${new Date(log.endTime).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -326,6 +350,80 @@ export default function UnifiedTimeline({
         </View>
       </View>
     ));
+  };
+
+  const renderHabits = () => {
+    const HabitCard = ({ habit }: { habit: Habit }) => {
+      const { playDeniedFeedback, animatedStyle } = useHabitDeniedFeedback();
+      const completed = isHabitCompletedToday(habit);
+      const progress = habit.goal ? habit.streak / habit.goal : 0;
+      const handleHabitCheckIn = () => {
+        const result = checkInHabit(habit);
+        if (result.status === "denied") {
+          playDeniedFeedback();
+          return;
+        }
+        onHabitCheckIn?.(result.habit);
+      };
+
+      return (
+        <AnimatedTouchableOpacity
+          key={habit.id}
+          style={[
+            styles.habitCard,
+            {
+              backgroundColor: theme.habitDarkPrimary,
+              borderColor: theme.habitBaseTrans,
+            },
+            animatedStyle,
+            completed && [{ borderColor: theme.success }],
+          ]}
+          onPress={handleHabitCheckIn}
+        >
+          <View style={styles.habitCardHeader}>
+            <Text
+              style={[styles.habitTitle, { color: theme.whiteBase }]}
+              numberOfLines={1}
+            >
+              {habit.title}
+            </Text>
+            {completed ? (
+              <Ionicons
+                name="checkmark-circle"
+                size={24}
+                color={theme.success}
+              />
+            ) : (
+              <Ionicons
+                name="ellipse-outline"
+                size={24}
+                color={theme.habitBase}
+              />
+            )}
+          </View>
+          <View style={styles.habitStats}>
+            <Text style={[styles.habitStreak, { color: theme.habitBase }]}>
+              🔥 {habit.streak} day streak
+            </Text>
+            {habit.goal && (
+              <Text
+                style={[styles.habitGoal, { color: theme.greyBaseSecondary }]}
+              >
+                Goal: {habit.goal}
+              </Text>
+            )}
+          </View>
+          <ProgressBar
+            progress={progress}
+            color={theme.habitBase}
+            style={[styles.habitProgress, { backgroundColor: theme.modalBase }]}
+          />
+        </AnimatedTouchableOpacity>
+      );
+    };
+    return filteredData.habits.map((habit) => {
+      return <HabitCard key={habit.id} habit={habit} />;
+    });
   };
 
   return (
@@ -365,82 +463,7 @@ export default function UnifiedTimeline({
             showsHorizontalScrollIndicator={false}
             style={styles.habitScroll}
           >
-            {filteredData.habits.map((habit) => {
-              const completed = isHabitCompletedToday(habit);
-              const progress = habit.goal ? habit.streak / habit.goal : 0;
-              const handleHabitCheckIn = () => {
-                if(completed) return;
-                const result = checkInHabit(habit)
-                if(result.status === "denied"){
-                  return;
-                }
-                onHabitCheckIn?.(result.habit);
-              }
-              return (
-                <TouchableOpacity
-                  key={habit.id}
-                  style={[
-                    styles.habitCard,
-                    {
-                      backgroundColor: theme.habitDarkPrimary,
-                      borderColor: theme.habitBaseTrans,
-                    },
-                    completed && [
-                      { borderColor: theme.success },
-                    ],
-                  ]}
-                  onPress={handleHabitCheckIn}
-                  disabled={completed}
-                >
-                  <View style={styles.habitCardHeader}>
-                    <Text
-                      style={[styles.habitTitle, { color: theme.whiteBase }]}
-                      numberOfLines={1}
-                    >
-                      {habit.title}
-                    </Text>
-                    {completed ? (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={24}
-                        color={theme.success}
-                      />
-                    ) : (
-                      <Ionicons
-                        name="ellipse-outline"
-                        size={24}
-                        color={theme.habitBase}
-                      />
-                    )}
-                  </View>
-                  <View style={styles.habitStats}>
-                    <Text
-                      style={[styles.habitStreak, { color: theme.habitBase }]}
-                    >
-                      🔥 {habit.streak} day streak
-                    </Text>
-                    {habit.goal && (
-                      <Text
-                        style={[
-                          styles.habitGoal,
-                          { color: theme.greyBaseSecondary },
-                        ]}
-                      >
-                        Goal: {habit.goal}
-                      </Text>
-                    )}
-                  </View>
-                  <ProgressBar
-                    progress={progress}
-                    color={theme.habitBase}
-                    style={[
-                      styles.habitProgress,
-                      { backgroundColor: theme.modalBase },
-                    ]}
-                  />
-                </TouchableOpacity>
-              );
-            })}
+            {renderHabits()}
           </ScrollView>
         </View>
       )}
@@ -474,9 +497,15 @@ export default function UnifiedTimeline({
               (_, i) => (
                 <View
                   key={`grid-${i}`}
-                  style={[styles.timeSlot, [styles.gridLine,{borderBottomColor:theme.greyBaseSecondary}]]}
+                  style={[
+                    styles.timeSlot,
+                    [
+                      styles.gridLine,
+                      { borderBottomColor: theme.greyBaseSecondary },
+                    ],
+                  ]}
                 />
-              )
+              ),
             )}
 
             {/* Render all timeline items */}
@@ -496,8 +525,18 @@ export default function UnifiedTimeline({
                   },
                 ]}
               >
-                <View style={[styles.currentTimeDot,{backgroundColor:theme.error}]} />
-                <View style={[styles.currentTimeLineBar,{backgroundColor:theme.error}]} />
+                <View
+                  style={[
+                    styles.currentTimeDot,
+                    { backgroundColor: theme.error },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.currentTimeLineBar,
+                    { backgroundColor: theme.error },
+                  ]}
+                />
               </View>
             )}
 
@@ -576,8 +615,6 @@ const getCategoryColor = (category?: string): string => {
   };
   return colorMap[category || "default"] || colorMap.default;
 };
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -685,9 +722,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 8,
     borderWidth: 2,
-    borderRightWidth:8,
-    borderTopRightRadius:4,
-    borderBottomRightRadius:4,
+    borderRightWidth: 8,
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
   },
   logBlock: {
     position: "absolute",

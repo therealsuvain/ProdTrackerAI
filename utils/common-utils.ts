@@ -3,6 +3,12 @@ export const withAlpha = (hex: string, alpha: string): string =>
 
 export const getTodayISO = () => new Date().toISOString().split("T")[0];
 export const getNowISO = () => new Date().toISOString();
+export const getTodayStartISO = () => { 
+  const today = new Date(); 
+  today.setHours(0, 0, 0, 0); 
+  return today.toISOString(); 
+};
+
 export const getWeekStartISO = () => {
   const d = new Date();
   d.setDate(d.getDate() - d.getDay()); // back to Sunday

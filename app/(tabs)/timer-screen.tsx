@@ -22,8 +22,9 @@ import { useData } from "@/hooks/use-data";
 import { useTimer } from "@/hooks/use-timer";
 import { TimerLog } from "@/types/timer";
 import { getTodayISO, withAlpha, getWeekStartISO } from "@/utils/common-utils";
+import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 
-export default function TimerScreen() {
+function TimerScreenInner() {
   const { theme } = useContext(ThemeContext);
   const { timerLogs, setTimerLogs } = useData();
   //const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
@@ -336,6 +337,7 @@ export default function TimerScreen() {
   );
 }
 
+
 function StatCell({
   label,
   value,
@@ -353,6 +355,13 @@ function StatCell({
   );
 }
 
+export default function TimerScreen() {
+  return (
+    <ScreenErrorBoundary screenName="Timer">
+      <TimerScreenInner />
+    </ScreenErrorBoundary>
+  );
+}
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, alignItems: "center" },
   buttons: {

@@ -1,18 +1,21 @@
 import React, { useContext, useState } from "react";
 import { View, StyleSheet, Alert, Text, Pressable } from "react-native";
 import { FAB, Portal } from "react-native-paper";
-import { useData } from "../../hooks/use-data";
-import ViewSwitcher from "../../components/ui/calendar-events/view-switcher-event";
-import { useCalendarState } from "../../hooks/use-calendar-state";
-import { useEventForm } from "../../hooks/use-event-form";
-import { CalendarEvent } from "@/types/calendar";
 import { Ionicons } from "@expo/vector-icons";
+
+import { useData } from "@/hooks/use-data";
+import ViewSwitcher from "@/components/ui/calendar-events/view-switcher-event";
+import { useCalendarState } from "@/hooks/use-calendar-state";
+import { useEventForm } from "@/hooks/use-event-form";
+import { CalendarEvent } from "@/types/calendar";
+
 import Timeline from "@/components/ui/calendar-events/calendar-timeline-view";
 import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-list-agenda-view-main";
 import CalendarEventModal from "@/components/modal/calendar-event-modal";
 import { ThemeContext } from "@/context/ThemeContext";
+import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 
-export default function CalendarScreen() {
+function CalendarScreenInner() {
   const { theme } = useContext(ThemeContext);
   const { events, setEvents, deleteEventOccurrence } = useData();
   const {
@@ -109,6 +112,13 @@ export default function CalendarScreen() {
   );
 }
 
+export default function CalendarScreen() {
+    return (
+      <ScreenErrorBoundary screenName="Calendar">
+        <CalendarScreenInner />
+      </ScreenErrorBoundary>
+    );
+  }
 const styles = StyleSheet.create({
   header: {
     borderRadius: 30,

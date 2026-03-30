@@ -21,7 +21,7 @@ export const sortEventsByTime = (
   filtered: CalendarEvent[]
 ): CalendarEvent[] => {
   return [...filtered].sort(
-    (a, b) => a.startTime.getTime() - b.startTime.getTime()
+    (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
   );
 };
 
@@ -30,7 +30,7 @@ export const calculateMarketDates = (
 ): Record<string, { marked: boolean; dotColor: string }> => {
   const marked: Record<string, { marked: boolean; dotColor: string }> = {};
   events.forEach((event) => {
-    const dateStr = event.startTime.toISOString().split("T")[0];
+    const dateStr = new Date(event.startTime).toISOString().split("T")[0];
     marked[dateStr] = { marked: true, dotColor: "blue" };
     if (event.recurrence === "daily" || event.recurrence === "weekly") {
       let nextDate = new Date(event.startDate);
@@ -38,8 +38,8 @@ export const calculateMarketDates = (
         event.endDate
           ? event.endDate
           : event.recurrence === "daily"
-          ? event.startDate.getDate() + 1
-          : event.startDate.getDate() + 7
+          ? new Date(event.startDate).getDate() + 1
+          : new Date(event.startDate).getDate() + 7
       );
       let endPoint = Math.ceil(
         (endDate.getDate() - nextDate.getDate()) / (1000 * 60 * 60 * 24)

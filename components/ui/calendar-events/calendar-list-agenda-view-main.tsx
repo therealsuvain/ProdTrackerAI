@@ -65,7 +65,7 @@ export default function CalendarListAgendaMain({
 
     if (dayEvents.length > 0) {
       return dayEvents
-        .sort((a, b) => new Date(a.startTime).getTime() - b.startTime.getTime())
+        .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
         .map((event) => ({
           name: event.title,
           height: 40,

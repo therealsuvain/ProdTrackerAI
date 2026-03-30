@@ -7,7 +7,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Provider as PaperProvider } from "react-native-paper";
 
 import SuspenseBoundary from "@/components/suspense-boundary";
-import { FallbackComponent } from "@/components/error-fallback-component";
+import { RootFallbackComponent } from "@/components/error-fallback-component";
 import ThemeProvider from "@/context/ThemeContext";
 import { SettingsProvider } from "@/context/SettingsContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -20,6 +20,7 @@ export default function RootLayout() {
 
   return (
       <GestureHandlerRootView>
+         <ErrorBoundary FallbackComponent={RootFallbackComponent}>
         <ThemeProvider>
           <SettingsProvider>
             <DataProvider>
@@ -51,6 +52,7 @@ export default function RootLayout() {
             </DataProvider>
           </SettingsProvider>
         </ThemeProvider>
+        </ErrorBoundary>
       </GestureHandlerRootView>
   );
 }

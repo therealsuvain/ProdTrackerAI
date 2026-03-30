@@ -28,6 +28,7 @@ const stringify = (data: any) => JSON.stringify(data, (_key, value) =>
   value instanceof Date ? value.toISOString() : value
 );
 
+//TODO useless func below, returning same value, was being used when dates were being rehydrated
 const parse = (json: string) => JSON.parse(json, (_key, value) =>
   typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/) ? value : value
 );

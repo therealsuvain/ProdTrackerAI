@@ -123,12 +123,12 @@ export default function TaskModal({
       </Button>
       {state.dueDate && (
         <Text style={[styles.date, { color: theme.taskLightPrimary }]}>
-          {state.dueDate.toDateString()}
+          {new Date(state.dueDate).toDateString()}
         </Text>
       )}
       {showDatePicker && (
         <DateTimePicker
-          value={state.dueDate || new Date()}
+          value={new Date(state.dueDate) || new Date()}
           mode="date"
           display="default"
           onChange={onDateChange}

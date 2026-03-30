@@ -59,7 +59,7 @@ export default function CalendarEventModal({
     if (selected)
       varTime = androidDate
         ? androidDate
-        : state.startDate.toISOString().split("T")[0] +
+        : state.startDate.split("T")[0] +
           "T" +
           selected.toISOString().split("T")[1];
     updateField("startTime", new Date(varTime!));
@@ -76,7 +76,7 @@ export default function CalendarEventModal({
     if (selected)
       varTime = androidDate
         ? androidDate
-        : state.startDate.toISOString().split("T")[0] +
+        : state.startDate.split("T")[0] +
           "T" +
           selected.toISOString().split("T")[1];
     updateField("endTime", new Date(varTime!));
@@ -96,7 +96,7 @@ export default function CalendarEventModal({
     >
       <TextInput
         label="Title"
-        value={state.title}
+        defaultValue={state.title}
         mode="outlined"
         style={styles.verticalMargin}
         activeOutlineColor={theme.eventBase}
@@ -117,14 +117,14 @@ export default function CalendarEventModal({
         Pick Date
       </Button>
       <Text style={[styles.text,{color:theme.eventBase}]}>
-        Start: {state.startDate?.toDateString() || ""}
+        Start: {new Date(state.startDate).toDateString() || ""}
       </Text>
       {state.errors?.startDate && (
         <Text style={[styles.error,{color:theme.error}]}>{state.errors.startDate}</Text>
       )}
       {showStartPicker && (
         <DateTimePicker
-          value={state.startDate || new Date()}
+          value={(state.startDate && new Date(state.startDate)) || new Date()}
           mode="date"
           onChange={onStartChange}
         />
@@ -155,13 +155,13 @@ export default function CalendarEventModal({
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
         <Text style={[styles.text,{color:theme.eventBase}]}>
-          Start: {state.startTime?.toLocaleTimeString() || ""}
+          Start: {new Date(state.startTime).toLocaleTimeString() || ""}
         </Text>
         {state.errors?.startTime && (
           <Text style={[styles.error,{color:theme.error}]}>{state.errors.startTime}</Text>
         )}
         <Text style={[styles.text,{color:theme.eventBase}]}>
-          End: {state.endTime?.toLocaleTimeString() || ""}
+          End: {new Date(state.endTime).toLocaleTimeString() || ""}
         </Text>
         {state.errors?.endTime && (
           <Text style={[styles.error,{color:theme.error}]}>{state.errors.endTime}</Text>
@@ -169,14 +169,14 @@ export default function CalendarEventModal({
       </View>
       {showAndroidStartTimePicker && (
         <DateTimePicker
-          value={state.startTime || new Date()}
+          value={(state.startTime && new Date(state.startTime)) || new Date()}
           mode="time"
           onChange={onStartTimeChangeAndroid}
         />
       )}
       {showAndroidEndTimePicker && (
         <DateTimePicker
-          value={state.endTime || new Date()}
+          value={(state.endTime && new Date(state.endTime)) || new Date()}
           mode="time"
           onChange={onEndTimeChangeAndroid}
         />
@@ -193,21 +193,21 @@ export default function CalendarEventModal({
         Pick End Date
       </Button>
       <Text style={[styles.text,{color:theme.eventBase}]}>
-        End: {state.endDate?.toDateString() || ""}
+        End: {new Date(state.endDate).toDateString() || ""}
       </Text>
       {state.errors?.endDate && (
         <Text style={[styles.error,{color:theme.error}]}>{state.errors.endDate}</Text>
       )}
       {showEndPicker && (
         <DateTimePicker
-          value={state.endDate || new Date()}
+          value={(state.endDate && new Date(state.endDate)) || new Date()}
           mode="date"
           onChange={onEndChange}
         />
       )}
       <TextInput
         label="Description"
-        value={state.description || ""}
+        defaultValue={state.description || ""}
         mode="outlined"
         activeOutlineColor={theme.eventBase}
         style={styles.verticalMargin}
@@ -258,7 +258,7 @@ export default function CalendarEventModal({
       />
       <TextInput
         label="Category"
-        value={state.category || ""}
+       defaultValue={state.category || ""}
         mode="outlined"
         activeOutlineColor={theme.eventBase}
         style={styles.verticalMargin}

@@ -20,10 +20,10 @@ type FormAction =
 
 const initialState: FormState = {
   title: "",
-  startDate: new Date(),
-  endDate: new Date(),
-  startTime: new Date(),
-  endTime: new Date(),
+  startDate: new Date().toISOString(),
+  endDate: new Date().toISOString(),
+  startTime: new Date().toISOString(),
+  endTime: new Date().toISOString(),
   description: "",
   reminder: false,
   recurrence: "none",
@@ -70,14 +70,14 @@ const cancelAllRemniders = async (notifications: { date: string; id: string }[])
 
 const isTimeEdited = (editingEvent: CalendarEvent|null, newEvent: CalendarEvent) => {
   if (!editingEvent) return false;
-  if(!editingEvent.reminder) return false;
+  if(!editingEvent.reminder) return false; 
   return (
-    editingEvent.startDate.toDateString() !==
-      newEvent.startDate.toDateString() ||
-    editingEvent.endDate.toDateString() !== newEvent.endDate.toDateString() ||
-    editingEvent.startTime.toTimeString() !==
-      newEvent.startTime.toTimeString() ||
-    editingEvent.endTime.toTimeString() !== newEvent.endTime.toTimeString() ||
+    editingEvent.startDate.split("T")[0] !==
+      newEvent.startDate.split("T")[0] ||
+    editingEvent.endDate.split("T")[0] !== newEvent.endDate.split("T")[0] ||
+    editingEvent.startTime.split("T")[1] !==
+      newEvent.startTime.split("T")[1] ||
+    editingEvent.endTime.split("T")[1] !== newEvent.endTime.split("T")[1] ||
     editingEvent.recurrence !== newEvent.recurrence
   );
 };
@@ -150,7 +150,7 @@ export const useEventForm = ({
       });
       hasError = true;
     }
-    if (!validateEventTimes(state.startTime, state.endTime)) {
+    if (!validateEventTimes(new Date(state.startTime), new Date(state.endTime))) {
       dispatch({
         type: "SET_ERROR",
         payload: { field: "endTime", message: "End time must be after start" },

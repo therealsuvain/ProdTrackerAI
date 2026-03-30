@@ -20,7 +20,7 @@ const initialState: FormState = {
   title: "",
   description: "",
   category: "",
-  dueDate: undefined,
+  dueDate: new Date().toISOString(),
   reminder: false,
   reminderDate: undefined,
   priority: "medium",
@@ -138,7 +138,8 @@ export const useTaskForm = ({
       await cancelReminder(editingTask.notificationId)
     }
 
-    if(editingTask && editingTask.reminderDate?.toTimeString()!==newTask.reminderDate?.toTimeString()){
+    if(editingTask && editingTask.reminderDate && newTask.reminderDate 
+      && new Date(editingTask.reminderDate).toTimeString()!== new Date(newTask.reminderDate).toTimeString()){
     if(editingTask.notificationId)
       await cancelReminder(editingTask.notificationId)
     }

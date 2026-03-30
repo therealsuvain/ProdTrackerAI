@@ -20,8 +20,9 @@ import { ThemeContext } from "@/context/ThemeContext";
 import { useHaptics } from "@/hooks/use-haptics";
 import { withAlpha } from "@/utils/common-utils";
 import { clearStorageByKey } from "@/utils/storage-utils";
+import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 
-export default function TaskScreen() {
+function TaskScreenInner() {
   const { theme } = useContext(ThemeContext);
   const { tasks, setTasks, trackMetric } = useData();
   const [visible, setVisible] = useState(false);
@@ -51,8 +52,8 @@ export default function TaskScreen() {
         return priorityOrder[b.priority] - priorityOrder[a.priority];
       } else if (sortBy === "duedate") {
         return (
-          (a.dueDate?.getTime() || Infinity) -
-          (b.dueDate?.getTime() || Infinity)
+          (new Date(a.dueDate).getTime() || Infinity) -
+          (new Date(b.dueDate).getTime() || Infinity)
         );
       }
       return 0;
@@ -236,7 +237,7 @@ export default function TaskScreen() {
           </View>
         )}
         <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
-        <FAB
+       {/*  <FAB
           style={styles.fab}
           icon="plus"
           onPress={() => {
@@ -244,7 +245,7 @@ export default function TaskScreen() {
             clearStorageByKey("@prodtracker_metrics");
             clearStorageByKey("@prodtracker_achievements");
           }}
-        />
+        /> */}
       </View>
       <Portal>
         <TaskModal
@@ -259,6 +260,13 @@ export default function TaskScreen() {
   );
 }
 
+  export default function TaskScreen() {
+    return (
+      <ScreenErrorBoundary screenName="Tasks">
+        <TaskScreenInner />
+      </ScreenErrorBoundary>
+    );
+  }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
