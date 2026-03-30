@@ -28,8 +28,20 @@ import {
   loadAppMetrics,
   mutateMetric,
 } from "@/utils/storage-utils";
+import {
+  getAllTasks,
+  insertTask,
+  updateTask,
+  deleteTask,
+  toggleTaskCompleted,
+  bulkInsertTasks,
+} from "@/db/repositories/task-repository";
+import {migrateTasksFromAsyncStorage} from "@/db/migrations/async-storage-migrations"
 import { processAchievements } from "@/utils/achievements-util";
-import { applyMissedDayLogic, restartHabitAfterGoalForeground } from "@/utils/habit-utils";
+import {
+  applyMissedDayLogic,
+  restartHabitAfterGoalForeground,
+} from "@/utils/habit-utils";
 import { cancelReminder } from "@/hooks/use-notifications";
 
 import {
@@ -41,14 +53,19 @@ import {
 
 import { AchievementToast } from "@/components/ui/achievements/achievement-toast";
 import { usePlaySound } from "@/hooks/use-play-sound";
+import { initDatabase } from "@/db";
 
 interface DataContextType {
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  addTask: (task: Task) => Promise<void>;
+  editTask: (task: Task) => Promise<void>;
+  removeTask: (id: string) => Promise<void>;
+  toggleTask: (id: string) => Promise<void>;
   events: CalendarEvent[];
   setEvents: React.Dispatch<React.SetStateAction<CalendarEvent[]>>;
   timerLogs: TimerLog[];
-  setTimerLogs:  React.Dispatch<React.SetStateAction<TimerLog[]>>;
+  setTimerLogs: React.Dispatch<React.SetStateAction<TimerLog[]>>;
   habits: Habit[];
   setHabits: React.Dispatch<React.SetStateAction<Habit[]>>;
   messages: Message[];
@@ -76,7 +93,7 @@ export const DataContext = createContext<DataContextType | undefined>(
 const USE_DUMMY_DATA = false;
 
 export default function DataProvider({ children }: { children: ReactNode }) {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasksState] = useState<Task[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [timerLogs, setTimerLogs] = useState<TimerLog[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -104,7 +121,110 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   const clearError = useCallback(() => setError(null), []);
 
   const audioSource = require("@/assets/audio/achievement-unlocked.mp3");
-  const audioPlayer = usePlaySound(audioSource)
+  const audioPlayer = usePlaySound(audioSource);
+
+  const optimisticTaskMutation = useCallback(
+    async (
+      optimisticUpdate: (prev: Task[]) => Task[],
+      dbWrite: () => Promise<void> | Promise<Task>,
+    ): Promise<void> => {
+      // 1. Snapshot
+      let snapshot: Task[] = [];
+      setTasksState((prev) => {
+        snapshot = prev;
+        return prev;
+      });
+
+      // 2. Optimistic update
+      setTasksState(optimisticUpdate);
+
+      // 3. DB write
+      try {
+        await dbWrite();
+      } catch (err) {
+        // 4. Rollback
+        console.error("[DataContext] Task DB write failed, rolling back:", err);
+        setTasksState(snapshot);
+        throw err; // caller catches this and shows DbErrorToast
+      }
+    },
+    [],
+  );
+
+  const addTask = useCallback(
+    async (task: Task): Promise<void> => {
+      await optimisticTaskMutation(
+        (prev) => [...prev, task],
+        () => insertTask(task),
+      );
+    },
+    [optimisticTaskMutation],
+  );
+
+  const editTask = useCallback(
+    async (task: Task): Promise<void> => {
+      await optimisticTaskMutation(
+        (prev) => prev.map((t) => (t.id === task.id ? task : t)),
+        () => updateTask(task),
+      );
+    },
+    [optimisticTaskMutation],
+  );
+
+  const removeTask = useCallback(
+    async (id: string): Promise<void> => {
+      await optimisticTaskMutation(
+        (prev) => prev.filter((t) => t.id !== id),
+        () => deleteTask(id),
+      );
+    },
+    [optimisticTaskMutation],
+  );
+
+  const toggleTask = useCallback(
+    async (id: string): Promise<void> => {
+      await optimisticTaskMutation(
+        (prev) =>
+          prev.map((t) => {
+            if (t.id !== id) return t;
+            const newCompleted = !t.completed;
+            return {
+              ...t,
+              completed: newCompleted,
+              completedAt: newCompleted ? new Date().toISOString() : undefined,
+              updatedAt: new Date().toISOString(),
+            };
+          }),
+        async () => {
+          const task = tasks.find((t) => t.id === id);
+          if (!task) throw new Error(`Task ${id} not found`);
+          await toggleTaskCompleted(id, task.completed);
+        },
+      );
+    },
+    [optimisticTaskMutation, tasks],
+  );
+
+  /**
+   * Compatibility shim for code not yet migrated to the new methods.
+   * Syncs the new state AND attempts to persist to SQLite.
+   * Not optimistic — just a best-effort write.
+   * Remove after Phase 7.
+   */
+  const setTasks: React.Dispatch<React.SetStateAction<Task[]>> = useCallback(
+    (action) => {
+      setTasksState((prev) => {
+        const next = typeof action === "function" ? action(prev) : action;
+        // Fire-and-forget SQLite sync for legacy callers
+        // New callers should use addTask/editTask/removeTask/toggleTask
+        bulkInsertTasks(next).catch((e) =>
+          console.warn("[DataContext] Legacy setTasks SQLite sync failed:", e),
+        );
+        return next;
+      });
+    },
+    [],
+  );
   const deleteEventOccurrence = async (
     eventId: string,
     date: string,
@@ -150,12 +270,12 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         let newlyUnlocked: AchievementBadge[] = [];
 
         try {
-           for (const key of keys) {
-          newlyUnlocked = await processAchievements(
-            updatedMetrics.global[key],
-            key,
-          );
-        }
+          for (const key of keys) {
+            newlyUnlocked = await processAchievements(
+              updatedMetrics.global[key],
+              key,
+            );
+          }
 
           // Phase 6.3 Prep: If we got badges, we will trigger a global toast here later!
           if (newlyUnlocked.length > 0) {
@@ -181,69 +301,80 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  // Initialize and load data
   useEffect(() => {
     const loadData = async () => {
-      let loadedTasks = await loadTasks();
-      let loadedEvents = await loadEvents();
-      let loadedLogs = await loadTimerLogs();
-      let loadedHabits = await loadHabits();
-      let loadedMessages = await loadAIChatHistory();
-      let loadedMetrics = await loadAppMetrics();
+      try {
+        await initDatabase();
+        await migrateTasksFromAsyncStorage();
+        let loadedTasks = await getAllTasks();
+        let loadedEvents = await loadEvents();
+        let loadedLogs = await loadTimerLogs();
+        let loadedHabits = await loadHabits();
+        let loadedMessages = await loadAIChatHistory();
+        let loadedMetrics = await loadAppMetrics();
 
-      // Initialize with dummy data if enabled and no data exists
-      if (USE_DUMMY_DATA) {
-        if (loadedTasks.length === 0) loadedTasks = dummyTasks;
-        if (loadedEvents.length === 0) loadedEvents = dummyEvents;
-        if (loadedLogs.length === 0) loadedLogs = dummyTimerLogs;
-        if (loadedHabits.length === 0) loadedHabits = dummyHabits;
+        // Initialize with dummy data if enabled and no data exists
+        if (USE_DUMMY_DATA) {
+          if (loadedTasks.length === 0) loadedTasks = dummyTasks;
+          if (loadedEvents.length === 0) loadedEvents = dummyEvents;
+          if (loadedLogs.length === 0) loadedLogs = dummyTimerLogs;
+          if (loadedHabits.length === 0) loadedHabits = dummyHabits;
+        }
+
+        loadedHabits = loadedHabits.map((habit) => {
+          const { status, habit: updatedHabit } = applyMissedDayLogic(habit);
+          if (status === "missed_check_in") {
+            trackMetric(["habitCheckInsMissed"], 1);
+          } else if (status === "auto_frozen") {
+            trackMetric(["habitsAutoFrozen"], 1);
+          }
+          if (habit.pendingStreakResetAfter) {
+            return restartHabitAfterGoalForeground(updatedHabit);
+          }
+          return updatedHabit;
+        });
+        //loadedTasks = loadedTasks.filter((t)=>!t.title.includes("testing") && !t.title.includes("Testing"))
+        setTasksState(loadedTasks);
+        setEvents(loadedEvents);
+        setTimerLogs(loadedLogs);
+        setHabits(loadedHabits);
+        setMessages(loadedMessages);
+        setAppMetrics(loadedMetrics);
+      } catch (err) {
+        console.error("[DataContext] Failed to initialise database:", err);
+        dispatchError(
+          `Failed to initialise database: ${err instanceof Error ? err.message : String(err)}`,
+          "fatal",
+        );
+      } finally {
+        // mark that initial load finished so save effects don't overwrite storage during startup
+        setLoaded(true);
       }
-
-      loadedHabits = loadedHabits.map((habit) => {
-        const {status, habit:updatedHabit} = applyMissedDayLogic(habit);
-        if (status === "missed_check_in") {
-          trackMetric(["habitCheckInsMissed"], 1);
-        }
-        else if (status === "auto_frozen") {
-          trackMetric(["habitsAutoFrozen"], 1);
-        }
-        if(habit.pendingStreakResetAfter){
-          return restartHabitAfterGoalForeground(updatedHabit);
-        }
-        return updatedHabit;
-      });
-      //loadedTasks = loadedTasks.filter((t)=>!t.title.includes("testing") && !t.title.includes("Testing"))
-      setTasks(loadedTasks);
-      setEvents(loadedEvents);
-      setTimerLogs(loadedLogs);
-      setHabits(loadedHabits);
-      setMessages(loadedMessages);
-      setAppMetrics(loadedMetrics);
-      // mark that initial load finished so save effects don't overwrite storage during startup
-      setLoaded(true);
     };
     loadData();
   }, []);
 
-  useEffect(() => {
+  /*   useEffect(() => {
     if (!loaded) return;
     saveTasks(tasks);
-    /* console.log(
+     console.log(
       "DATA TASKS",
       tasks.map((e) => {
         return { ...e, embedding: e.embedding?.[0] };
       }),
-    ); */
-  }, [tasks, loaded]);
+    ); 
+  }, [tasks, loaded]); */
 
   useEffect(() => {
     if (!loaded) return;
     saveEvents(events);
-     console.log(
+    console.log(
       "DATA EVENTS",
       events.map((e) => {
         return { ...e, embedding: e.embedding?.[0] };
       }),
-    ); 
+    );
   }, [events, loaded]);
 
   useEffect(() => {
@@ -255,7 +386,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loaded) return;
     saveHabits(habits);
-   /*  console.log(
+    /*  console.log(
       "DATA HABITS",
       habits.map((e) => {
         return { title: e.title, freezeHistory: typeof e.freezeHistory?.[0] };
@@ -275,6 +406,10 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       value={{
         tasks,
         setTasks,
+        addTask,
+        editTask,
+        removeTask,
+        toggleTask,
         events,
         setEvents,
         timerLogs,

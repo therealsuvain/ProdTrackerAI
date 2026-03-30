@@ -52,8 +52,8 @@ export const tasks = sqliteTable(
         description: text("description"),
         category: text("category"),
         // Stored as unix ms; converted to/from Date at the repository layer
-        dueDate: integer("due_date"),
-        reminderDate: integer("reminder_date"),
+        dueDate: text("due_date").notNull(),
+        reminderDate: text("reminder_date"),
         reminder: integer("reminder", { mode: "boolean" }).notNull().default(false),
         notificationId: text("notification_id"),
         // Drizzle doesn't have an enum type for SQLite — use text + app-level validation
@@ -86,7 +86,7 @@ export const habits = sqliteTable(
             .notNull()
             .default("daily"),
         reminder: integer("reminder", { mode: "boolean" }).notNull().default(false),
-        reminderDate: integer("reminder_date"),         // unix ms
+        reminderDate: text("reminder_date"),         // ISO 8601
         // Small array, never individually queried — JSON blob is correct here
         targetDays: text("target_days"),               // JSON: number[] e.g. [1,3,5]
         streak: integer("streak").notNull().default(0),

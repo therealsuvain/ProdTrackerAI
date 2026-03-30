@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "aaad5cbc-382e-4465-9d8d-1543272e4ac2",
+  "id": "73c8b50a-d287-4e20-8e41-bcc251bc98e1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "calendar_events": {
@@ -636,7 +636,7 @@
         },
         "reminder_date": {
           "name": "reminder_date",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -875,14 +875,14 @@
         },
         "due_date": {
           "name": "due_date",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
         "reminder_date": {
           "name": "reminder_date",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

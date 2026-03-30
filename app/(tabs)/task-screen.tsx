@@ -21,16 +21,27 @@ import { useHaptics } from "@/hooks/use-haptics";
 import { withAlpha } from "@/utils/common-utils";
 import { clearStorageByKey } from "@/utils/storage-utils";
 import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
+import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 
 function TaskScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { tasks, setTasks, trackMetric } = useData();
+  const {
+    tasks,
+    setTasks,
+    addTask,
+    editTask,
+    removeTask,
+    toggleTask,
+    trackMetric,
+  } = useData();
   const [visible, setVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"priority" | "duedate" | "manual">(
     "manual",
   );
+  const [showSortOptions, setShowSortOptions] = useState(false);
+  const { toastError, showToast, dismissToast } = useDbErrorToast();
   const { state, updateField, onSubmit } = useTaskForm({
     tasks,
     setTasks,
@@ -74,33 +85,36 @@ function TaskScreenInner() {
       {
         text: "Delete",
         onPress: async () => {
-          setTasks((currentTasks) => {
-            const task = currentTasks.find((e: Task) => e.id === id);
-            if (task?.notificationId) {
-              cancelReminder(task.notificationId);
-            }
-            return currentTasks.filter((e: Task) => e.id !== id);
-          });
+          const task = tasks.find((e: Task) => e.id === id);
+          if (task?.notificationId) {
+            cancelReminder(task.notificationId);
+          }
+          try {
+            await removeTask(id);
+          } catch {
+            showToast("Couldn't delete the task. It has been restored.");
+          }
         },
       },
     ]);
   };
 
-  const toggleComplete = (id: string) => {
-    triggerHaptic();
-    setTasks((prevTasks) => {
-      return prevTasks.map((t) => {
-        if (t.id !== id) return t;
+  const toggleComplete = async (id: string) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    try {
+      await toggleTask(id);
 
-        if (t.completed) {
-          trackMetric(["tasksCompleted"], -1); // Undoing completion
-        } else {
-          trackMetric(["tasksCompleted"], 1); // Completing
-          triggerHaptic();
-        }
-        return { ...t, completed: !t.completed };
-      });
-    });
+      // Track metric — same logic as before, using pre-toggle state
+      if (task.completed) {
+        trackMetric(["tasksCompleted"], -1); // undoing completion
+      } else {
+        trackMetric(["tasksCompleted"], 1);
+        triggerHaptic();
+      }
+    } catch {
+      showToast("Couldn't update the task. Changes have been undone.");
+    }
   };
 
   const handleDragEnd = ({ data }: { data: Task[] }) => {
@@ -142,7 +156,6 @@ function TaskScreenInner() {
     </View>
   );
 
-  const [showSortOptions, setShowSortOptions] = useState(false);
   return (
     <>
       <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -237,7 +250,8 @@ function TaskScreenInner() {
           </View>
         )}
         <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
-       {/*  <FAB
+        <DbErrorToast error={toastError} onDismiss={dismissToast} />
+        {/*  <FAB
           style={styles.fab}
           icon="plus"
           onPress={() => {
@@ -260,13 +274,13 @@ function TaskScreenInner() {
   );
 }
 
-  export default function TaskScreen() {
-    return (
-      <ScreenErrorBoundary screenName="Tasks">
-        <TaskScreenInner />
-      </ScreenErrorBoundary>
-    );
-  }
+export default function TaskScreen() {
+  return (
+    <ScreenErrorBoundary screenName="Tasks">
+      <TaskScreenInner />
+    </ScreenErrorBoundary>
+  );
+}
 const styles = StyleSheet.create({
   container: {
     flex: 1,
