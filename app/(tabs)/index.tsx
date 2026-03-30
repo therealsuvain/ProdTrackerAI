@@ -44,7 +44,7 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
  * TODO : Input sanitization
  * TODO : Check for Security enhancements and possible securicty concerns for the entire app 
  * TODO : Duplicate timer log storage in TImerContext vs DataContext
- * TODO : Change Calendar, habits, task properpty type from Date to String
+ * TODO : Timer Screen Flip Animation state issues- FIX'em
  */
  function HomeScreenInner() {
   const { theme } = useContext(ThemeContext);

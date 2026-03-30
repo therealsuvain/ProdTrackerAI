@@ -1,0 +1,354 @@
+/**
+ * db/schema.ts
+ *
+ * Drizzle ORM schema for Expo SQLite.
+ * This is the single source of truth for the database structure.
+ *
+ * Design decisions documented inline. Read before modifying.
+ *
+ * Column naming: snake_case in DB (SQL convention),
+ * camelCase in TypeScript (via Drizzle's column mapping).
+ *
+ * Date storage strategy
+ * ──────────────────────
+ * - createdAt / updatedAt / completedAt / archivedAt → TEXT, ISO 8601 string.
+ *   Reason: these are set in JS and compared as strings. ISO strings sort
+ *   lexicographically correctly so range queries work without conversion.
+ * - dueDate / reminderDate → INTEGER, unix milliseconds.
+ *   Reason: these come from Date objects and are used in date arithmetic.
+ *   Storing as ms avoids timezone ambiguity and converts trivially:
+ *   new Date(row.dueDate) ↔ date.getTime()
+ * - startTime / endTime on TimerLog → TEXT, ISO 8601.
+ *   Reason: they were already strings in the original type and the UI
+ *   uses them as strings (split('T')[0] etc). No conversion needed.
+ */
+
+import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Reusable audit column set.
+ * Every table that represents user data includes these.
+ * Call spread into your table definition: ...auditFields
+ */
+const auditFields = {
+    createdAt: text("created_at")
+        .notNull()
+        .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    updatedAt: text("updated_at")
+        .notNull()
+        .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+};
+
+// ─── tasks ────────────────────────────────────────────────────────────────────
+
+export const tasks = sqliteTable(
+    "tasks",
+    {
+        id: text("id").primaryKey(),                    // UUID v4
+        title: text("title").notNull(),
+        description: text("description"),
+        category: text("category"),
+        // Stored as unix ms; converted to/from Date at the repository layer
+        dueDate: integer("due_date"),
+        reminderDate: integer("reminder_date"),
+        reminder: integer("reminder", { mode: "boolean" }).notNull().default(false),
+        notificationId: text("notification_id"),
+        // Drizzle doesn't have an enum type for SQLite — use text + app-level validation
+        priority: text("priority", { enum: ["low", "medium", "high"] })
+            .notNull()
+            .default("medium"),
+        completed: integer("completed", { mode: "boolean" }).notNull().default(false),
+        completedAt: text("completed_at"),              // ISO 8601, null until completed
+        // Arrays stored as JSON blobs — small, not queried individually
+        tags: text("tags"),                             // JSON: string[]
+        embedding: text("embedding"),                   // JSON: number[] — large, blob is fine
+        ...auditFields,
+    },
+    (table) => ([
+        // Indexes for the most common query patterns
+        index("tasks_completed_idx").on(table.completed),
+        index("tasks_due_date_idx").on(table.dueDate),
+        index("tasks_category_idx").on(table.category),
+    ]),
+);
+
+// ─── habits ───────────────────────────────────────────────────────────────────
+
+export const habits = sqliteTable(
+    "habits",
+    {
+        id: text("id").primaryKey(),
+        title: text("title").notNull(),
+        frequency: text("frequency", { enum: ["daily", "weekly"] })
+            .notNull()
+            .default("daily"),
+        reminder: integer("reminder", { mode: "boolean" }).notNull().default(false),
+        reminderDate: integer("reminder_date"),         // unix ms
+        // Small array, never individually queried — JSON blob is correct here
+        targetDays: text("target_days"),               // JSON: number[] e.g. [1,3,5]
+        streak: integer("streak").notNull().default(0),
+        longestStreak: integer("longest_streak").notNull().default(0),
+        streakFreezes: integer("streak_freezes").notNull().default(1),
+        isArchived: integer("is_archived", { mode: "boolean" }).notNull().default(false),
+        archivedAt: text("archived_at"),               // ISO 8601
+        goal: integer("goal").notNull().default(7),
+        // Pending reset is a transient coordination flag — text date or null
+        pendingStreakResetAfter: text("pending_streak_reset_after"),
+        notificationId: text("notification_id"),
+        embedding: text("embedding"),                  // JSON: number[]
+        ...auditFields,
+    },
+    (table) => ([
+        index("habits_archived_idx").on(table.isArchived),
+        index("habits_frequency_idx").on(table.frequency),
+    ]),
+);
+
+/**
+ * habit_check_ins — normalised child table for Habit.history
+ *
+ * Why a child table instead of a JSON blob?
+ * - streak calculations: COUNT(*) WHERE habit_id = ? AND date >= ?
+ * - "did I check in today?": SELECT 1 WHERE habit_id = ? AND date = ?
+ * - heatmap data: JOIN with daily_metrics on date
+ * These queries are frequent and benefit from an index on (habit_id, date).
+ */
+export const habitCheckIns = sqliteTable(
+    "habit_check_ins",
+    {
+        id: text("id").primaryKey(),                   // UUID v4
+        habitId: text("habit_id")
+            .notNull()
+            .references(() => habits.id, { onDelete: "cascade" }),
+        // Date only, no time — 'YYYY-MM-DD'. Check-in is a daily boolean.
+        date: text("date").notNull(),
+    },
+    (table) => ([
+        index("habit_check_ins_habit_date_idx").on(
+            table.habitId,
+            table.date,
+        ),
+    ]),
+);
+
+/**
+ * habit_freeze_history — normalised child table for Habit.freezeHistory
+ * Same reasoning as check_ins — freeze queries are per-habit and date-ranged.
+ */
+export const habitFreezeHistory = sqliteTable(
+    "habit_freeze_history",
+    {
+        id: text("id").primaryKey(),
+        habitId: text("habit_id")
+            .notNull()
+            .references(() => habits.id, { onDelete: "cascade" }),
+        date: text("date").notNull(),                  // 'YYYY-MM-DD'
+    },
+    (table) => ([
+        index("habit_freeze_history_habit_idx").on(table.habitId),
+    ]),
+);
+
+/**
+ * habit_goal_completions — normalised child table for Habit.goalCompletions
+ * Queried for "how many times has this habit hit its goal" and for the
+ * GoalCompletionModal which needs the history.
+ */
+export const habitGoalCompletions = sqliteTable(
+    "habit_goal_completions",
+    {
+        id: text("id").primaryKey(),
+        habitId: text("habit_id")
+            .notNull()
+            .references(() => habits.id, { onDelete: "cascade" }),
+        completedAt: text("completed_at").notNull(),   // ISO 8601
+        goal: integer("goal").notNull(),               // goal value at completion time
+    },
+    (table) => ([
+        index("habit_goal_completions_habit_idx").on(table.habitId),
+    ]),
+);
+
+// ─── calendar events ──────────────────────────────────────────────────────────
+
+export const calendarEvents = sqliteTable(
+    "calendar_events",
+    {
+        id: text("id").primaryKey(),
+        title: text("title").notNull(),
+        description: text("description"),
+        // Stored as ISO strings — calendar UI already works with strings
+        startDate: text("start_date").notNull(),
+        endDate: text("end_date"),
+        isAllDay: integer("is_all_day", { mode: "boolean" }).notNull().default(false),
+        // Recurrence rule stored as JSON blob — structure is app-defined
+        recurrence: text("recurrence"),                // JSON: RecurrenceRule | null
+        color: text("color"),
+        location: text("location"),
+        embedding: text("embedding"),                  // JSON: number[]
+        ...auditFields,
+    },
+    (table) => ([
+        index("calendar_events_start_date_idx").on(table.startDate),
+    ]),
+);
+
+/**
+ * event_deleted_occurrences — child table for CalendarEvent.deletedOccurrences
+ * Recurrence exceptions. Small table, queried per-event when expanding
+ * recurring events for display.
+ */
+export const eventDeletedOccurrences = sqliteTable(
+    "event_deleted_occurrences",
+    {
+        id: text("id").primaryKey(),
+        eventId: text("event_id")
+            .notNull()
+            .references(() => calendarEvents.id, { onDelete: "cascade" }),
+        date: text("date").notNull(),                  // 'YYYY-MM-DD' of the skipped occurrence
+    },
+    (table) => ([
+        index("event_deleted_occurrences_event_idx").on(table.eventId),
+    ]),
+);
+
+/**
+ * event_notification_ids — child table for CalendarEvent.notificationIds
+ * Each recurring occurrence can have its own notification.
+ * { id: string, date: string }[] → normalised rows.
+ */
+export const eventNotificationIds = sqliteTable(
+    "event_notification_ids",
+    {
+        id: text("id").primaryKey(),                   // The notification ID itself
+        eventId: text("event_id")
+            .notNull()
+            .references(() => calendarEvents.id, { onDelete: "cascade" }),
+        date: text("date").notNull(),                  // 'YYYY-MM-DD' this notification fires for
+    },
+    (table) => ([
+        index("event_notification_ids_event_idx").on(table.eventId),
+    ]),
+);
+
+// ─── timer logs ───────────────────────────────────────────────────────────────
+
+export const timerLogs = sqliteTable(
+    "timer_logs",
+    {
+        id: text("id").primaryKey(),
+        title: text("title").notNull(),
+        startTime: text("start_time").notNull(),        // ISO 8601
+        endTime: text("end_time"),                      // ISO 8601
+        duration: integer("duration"),                  // seconds
+        category: text("category"),
+        laps: text("laps"),                            // JSON: number[]
+        isPartial: integer("is_partial", { mode: "boolean" }).default(false),
+        ...auditFields,
+    },
+    (table) => ([
+        index("timer_logs_category_idx").on(table.category),
+        index("timer_logs_start_time_idx").on(table.startTime),
+    ]),
+);
+
+// ─── messages (AI chat history) ───────────────────────────────────────────────
+
+export const messages = sqliteTable(
+    "messages",
+    {
+        id: text("id").primaryKey(),
+        sender: text("sender", { enum: ["user", "ai"] }).notNull(),
+        type: text("type", { enum: ["text", "loading", "action"] }).notNull(),
+        text: text("text").notNull(),
+        timestamp: text("timestamp").notNull(),         // ISO 8601 — creation time
+        updatedAt: text("updated_at").notNull(),        // ISO 8601 — updated on confirm/expire
+        pendingActions: text("pending_actions"),        // JSON: any[]
+        isConfirmed: integer("is_confirmed", { mode: "boolean" }),
+        isExpired: integer("is_expired", { mode: "boolean" }),
+    },
+    (table) => ([
+        index("messages_timestamp_idx").on(table.timestamp),
+        index("messages_sender_idx").on(table.sender),
+    ]),
+);
+
+// ─── metrics ──────────────────────────────────────────────────────────────────
+
+/**
+ * global_metrics — single-row table for AppMetrics.global
+ *
+ * Always upsert with id = 1. Never insert a second row.
+ * Using a table instead of a key-value store gives us type-safe columns
+ * and makes adding new metric keys a schema migration (intentional — forces
+ * you to think about it) rather than a silent JSON key addition.
+ */
+export const globalMetrics = sqliteTable("global_metrics", {
+    id: integer("id").primaryKey().default(1),       // Always 1
+    tasksCompleted: integer("tasks_completed").notNull().default(0),
+    tasksMissed: integer("tasks_missed").notNull().default(0),
+    habitsCheckedIn: integer("habits_checked_in").notNull().default(0),
+    habitsGoalsCompleted: integer("habits_goals_completed").notNull().default(0),
+    habitCheckInsMissed: integer("habit_check_ins_missed").notNull().default(0),
+    habitsStreakMax: integer("habits_streak_max").notNull().default(0),
+    habitsFrozen: integer("habits_frozen").notNull().default(0),
+    habitsAutoFrozen: integer("habits_auto_frozen").notNull().default(0),
+    timeTracked: integer("time_tracked").notNull().default(0),
+    chatMessagesSent: integer("chat_messages_sent").notNull().default(0),
+    chatActionsConfirmed: integer("chat_actions_confirmed").notNull().default(0),
+    chatActionsExpired: integer("chat_actions_expired").notNull().default(0),
+    chatActionsCancelled: integer("chat_actions_cancelled").notNull().default(0),
+});
+
+/**
+ * daily_metrics — one row per calendar day for AppMetrics.daily
+ *
+ * Primary key is the date string 'YYYY-MM-DD'.
+ * Replaces the { [date: string]: DailyMetrics } object in AsyncStorage.
+ * Range queries for heatmaps: SELECT * FROM daily_metrics WHERE date >= ?
+ */
+export const dailyMetrics = sqliteTable("daily_metrics", {
+    date: text("date").primaryKey(),                 // 'YYYY-MM-DD'
+    tasksCompleted: integer("tasks_completed").notNull().default(0),
+    habitsCheckedIn: integer("habits_checked_in").notNull().default(0),
+    habitsGoalsCompleted: integer("habits_goals_completed").notNull().default(0),
+    habitsStreakMax: integer("habits_streak_max").notNull().default(0),
+    habitsFrozen: integer("habits_frozen").notNull().default(0),
+    timeTracked: integer("time_tracked").notNull().default(0),
+    chatMessagesSent: integer("chat_messages_sent").notNull().default(0),
+    chatActionsConfirmed: integer("chat_actions_confirmed").notNull().default(0),
+    chatActionsExpired: integer("chat_actions_expired").notNull().default(0),
+    chatActionsCancelled: integer("chat_actions_cancelled").notNull().default(0),
+});
+
+// ─── Drizzle inferred types ───────────────────────────────────────────────────
+// These are the raw DB row shapes — used internally by repositories.
+// Your application code works with the interfaces in types/*.ts, not these.
+
+export type TaskRow = typeof tasks.$inferSelect;
+export type TaskInsert = typeof tasks.$inferInsert;
+
+export type HabitRow = typeof habits.$inferSelect;
+export type HabitInsert = typeof habits.$inferInsert;
+
+export type HabitCheckInRow = typeof habitCheckIns.$inferSelect;
+export type HabitFreezeRow = typeof habitFreezeHistory.$inferSelect;
+export type HabitGoalCompletionRow = typeof habitGoalCompletions.$inferSelect;
+
+export type CalendarEventRow = typeof calendarEvents.$inferSelect;
+export type CalendarEventInsert = typeof calendarEvents.$inferInsert;
+
+export type EventDeletedOccurrenceRow = typeof eventDeletedOccurrences.$inferSelect;
+export type EventNotificationIdRow = typeof eventNotificationIds.$inferSelect;
+
+export type TimerLogRow = typeof timerLogs.$inferSelect;
+export type TimerLogInsert = typeof timerLogs.$inferInsert;
+
+export type MessageRow = typeof messages.$inferSelect;
+export type MessageInsert = typeof messages.$inferInsert;
+
+export type GlobalMetricsRow = typeof globalMetrics.$inferSelect;
+export type DailyMetricsRow = typeof dailyMetrics.$inferSelect;

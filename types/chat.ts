@@ -4,6 +4,7 @@ export interface Message {
   type: 'text' | 'loading' | 'action';
   text: string;
   timestamp: string;
+  updatedAt: string; 
   pendingActions?: any[]; // Stores functionCalls for 'ACTION_REQUIRED' bubbles
   isConfirmed?: boolean; // Tracks if the action was already processed
   isExpired?:boolean;

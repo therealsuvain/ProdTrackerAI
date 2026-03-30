@@ -7,4 +7,7 @@ export interface TimerLog {
   category?:string;
   laps?: number[];
   isPartial?: boolean;
+   // ── Audit fields ──────────────────────────────────────────────────────────
+  createdAt: string;                 // ISO 8601 — when record entered the DB
+  updatedAt: string;                 // ISO 8601 — updated if user edits the log
 }
