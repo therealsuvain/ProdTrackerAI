@@ -45,7 +45,8 @@ interface AchievementBadgeProps {
     <Surface
       style={[
         styles.container,
-        { backgroundColor: theme.colors.elevation.level2 }, // ! Elevation background color : theme.colors.elevation.level2
+        { backgroundColor: theme.colors.elevation.level2 }, 
+        //! Elevation background color : theme.colors.elevation.level2
         !isUnlocked && styles.lockedContainer, // Apply opacity if locked
       ]}
       elevation={isUnlocked ? 2 : 0} // Flatten the elevation if locked

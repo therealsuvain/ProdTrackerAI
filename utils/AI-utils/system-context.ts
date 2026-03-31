@@ -24,7 +24,7 @@ const serializeTasks = (tasks: Task[]) => {
     return tasks.map(t => ({
         i: t.id.slice(0, 8),
         t: t.title,
-        d: t.dueDate ? format(t.dueDate, 'MM/dd/yyyy') : '-',
+        d: t.dueDate ? format(new Date(t.dueDate), 'MM/dd/yyyy') : '-',
         p: t.priority,
         c: t.completed ? 1 : 0
     }))
@@ -52,10 +52,10 @@ const serializeEvents = (events: CalendarEvent[]) => {
         .map(e => ({
             i: e.id.slice(0, 8),
             t: e.title,
-            sd: e.startDate ? format(e.startDate, 'MM/dd/yyyy') : '-',
-            ed: e.endDate ? format(e.endDate, 'MM/dd/yyyy') : '-',
-            st: e.startTime ? format(e.startTime, 'h:mm a') : '-',
-            et: e.endTime ? format(e.endTime, 'h:mm a') : '-',
+            sd: e.startDate ? format(new Date(e.startDate), 'MM/dd/yyyy') : '-',
+            ed: e.endDate ? format(new Date(e.endDate), 'MM/dd/yyyy') : '-',
+            st: e.startTime ? format(new Date(e.startTime), 'h:mm a') : '-',
+            et: e.endTime ? format(new Date(e.endTime), 'h:mm a') : '-',
             r: e.recurrence || '-'
         }))
 

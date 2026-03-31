@@ -11,6 +11,7 @@ import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import { useData } from "@/hooks/use-data";
 import { clearStorage } from "@/utils/storage-utils"; // Make sure clearStorage is exported
 
+//TODO 39: Delete Date only resets state , doesnt affect DB yet
 const DATA_SETTINGS: SettingItem[] = [
   {
     id: "deleteTasks",

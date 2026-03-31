@@ -431,6 +431,8 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
               startTime: new Date(Date.now() - finalTime * 1000).toISOString(),
               endTime: new Date().toISOString(),
               duration: finalTime,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
               laps: laps.length > 0 ? laps : undefined,
             };
             setTimerLogs((prev) => [...prev, log]);
@@ -540,8 +542,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
         ? pausedSeconds + Math.floor((Date.now() - startTimestamp) / 1000)
         : pausedSeconds;
 
-    const workedTime =
-      mode === "countdown" ? finalTime : finalTime;
+    const workedTime = mode === "countdown" ? finalTime : finalTime;
     if (workedTime > 0) {
       const log: TimerLog = {
         id: randomUUID(),
@@ -550,6 +551,8 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
         startTime: new Date(Date.now() - workedTime * 1000).toISOString(),
         endTime: new Date().toISOString(),
         duration: workedTime,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         laps: laps.length > 0 ? laps : undefined,
       };
       setTimerLogs((prev) => [...prev, log]);
@@ -591,6 +594,8 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
                 endTime: new Date().toISOString(),
                 duration: finalTime,
                 laps: laps.length > 0 ? laps : undefined,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
                 isPartial: true, // flagged so the log item can show "(partial)"
               };
               setTimerLogs((prev) => [...prev, log]);

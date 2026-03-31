@@ -44,7 +44,8 @@ function TaskScreenInner() {
   const { toastError, showToast, dismissToast } = useDbErrorToast();
   const { state, updateField, onSubmit } = useTaskForm({
     tasks,
-    setTasks,
+    addTask,
+    editTask,
     editingTask,
     onClose: () => setVisible(false),
   });

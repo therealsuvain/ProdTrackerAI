@@ -25,7 +25,7 @@ interface Props {
       | "category"
       | "tags"
       | "errors",
-    value: any
+    value: any,
   ) => void;
   onSubmit: () => Promise<void> | void;
 }
@@ -38,18 +38,30 @@ export default function TaskModal({
   onSubmit,
 }: Props) {
   const { theme } = useContext(ThemeContext);
+  const [dueDate, setDueDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
-    if (selectedDate) updateField("dueDate", selectedDate);
+    if (selectedDate) {
+      updateField("dueDate", selectedDate.toISOString());
+      setDueDate(selectedDate);
+    }
   };
 
   const onTimeChange = (event: any, selectedDate?: Date) => {
     setShowTimePicker(false);
-    if (selectedDate) updateField("reminderDate", selectedDate);
+
+    if (selectedDate)
+      updateField(
+        "reminderDate",
+        dueDate.toISOString().split("T")[0] +
+          "T" +
+          selectedDate.toISOString().split("T")[1],
+      );
   };
+
   return (
     <Modal
       visible={visible}
@@ -76,7 +88,7 @@ export default function TaskModal({
       <TextInput
         mode="outlined"
         label="Description"
-        value={state.description}
+        defaultValue={state.description}
         onChangeText={(text) => updateField("description", text)}
         multiline
       />
@@ -161,7 +173,8 @@ export default function TaskModal({
             </Button>
 
             <Text style={[styles.text, { color: theme.taskLightPrimary }]}>
-              {state.reminderDate?.toLocaleTimeString()}
+              {state.reminderDate &&
+                new Date(state.reminderDate).toLocaleTimeString()}
             </Text>
             {state.errors?.reminderDate && (
               <Text style={[styles.error, { color: theme.error }]}>
@@ -170,7 +183,7 @@ export default function TaskModal({
             )}
             {showTimePicker && (
               <DateTimePicker
-                value={state.reminderDate || new Date()}
+                value={(state.reminderDate && new Date(state.reminderDate)) || new Date()}
                 mode="time"
                 onChange={onTimeChange}
               />
@@ -185,7 +198,6 @@ export default function TaskModal({
           styles.verticalMargin,
           { backgroundColor: theme.taskDarkSecondary },
         ]}
-        
         onPress={onSubmit}
       >
         Save

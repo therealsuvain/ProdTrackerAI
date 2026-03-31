@@ -38,6 +38,8 @@ const initialState: FormState = {
   goalCompletions: [],
   targetDays: [],
   errors: {},
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 };
 
 const formReducer = (state: FormState, action: FormAction): FormState => {
@@ -146,6 +148,8 @@ export const useHabitForm = ({
           ? parseInt(state.goal)
           : state.goal,
       goalCompletions: state.goalCompletions || [],
+      createdAt: editingHabit ? editingHabit.createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       notificationId: editingHabit ? editingHabit.notificationId : undefined,
       embedding: state.embedding || await generateEmbedding(state.title,false)
     };

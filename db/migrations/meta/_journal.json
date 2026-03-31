@@ -8,6 +8,13 @@
       "when": 1774865653098,
       "tag": "0000_demonic_gorgon",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1774952165368,
+      "tag": "0001_ordinary_omega_sentinel",
+      "breakpoints": true
     }
   ]
 }

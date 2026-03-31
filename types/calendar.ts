@@ -2,9 +2,9 @@ export interface CalendarEvent {
   id: string;
   title: string;
   startDate: string;
-  endDate: string ;
   startTime: string;
   endTime: string ;
+  endDate?: string ;
   description?: string ;
   reminder: boolean; // For notifications
   recurrence: 'none'|'daily'|'weekly'  //  For repeating events
@@ -12,5 +12,7 @@ export interface CalendarEvent {
   category?: string  // e.g., 'work', 'personal' for colors
   deletedOccurrences?: string[]; // To track deleted instances in recurring events
   embedding?:number[]; // For Semantic Search
+  createdAt: string;
+  updatedAt: string;
 }
 

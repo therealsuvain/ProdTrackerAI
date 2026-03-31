@@ -26,6 +26,8 @@ const initialState: FormState = {
   priority: "medium",
   tags: undefined,
   errors: {},
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 };
 
 const formReducer = (state: FormState, action: FormAction): FormState => {
@@ -55,14 +57,16 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
 
 interface UseTaskFormProps {
   tasks: Task[];
-  setTasks: (tasks: Task[]) => void;
+  addTask: (task: Task) => Promise<void>;
+  editTask: (task: Task) => Promise<void>;
   editingTask: Task | null;
   onClose: () => void;
 }
 
 export const useTaskForm = ({
   tasks,
-  setTasks,
+  addTask,
+  editTask,
   editingTask,
   onClose,
 }: UseTaskFormProps) => {
@@ -81,6 +85,8 @@ export const useTaskForm = ({
           reminderDate: editingTask.reminderDate,
           priority: editingTask.priority,
           tags: editingTask.tags,
+          createdAt: editingTask.createdAt,
+          updatedAt: editingTask.updatedAt,
           embedding: editingTask.embedding,
         },
       });
@@ -130,6 +136,8 @@ export const useTaskForm = ({
       priority: state.priority as Task["priority"],
       completed: editingTask ? editingTask.completed : false,
       tags: state.tags,
+      createdAt: state.createdAt,
+      updatedAt: new Date().toISOString(),
       embedding: state.embedding || await generateEmbedding(state.title,false)
     };
 
@@ -148,11 +156,15 @@ export const useTaskForm = ({
       const notifId = await scheduleReminderTasks(newTask);
       newTask.notificationId = notifId;
     }
-
+    
     if (editingTask) {
-      setTasks(tasks.map((t) => (t.id === editingTask.id ? newTask : t)));
+      console.log("EDIT", {...newTask, embedding:[]});
+      await editTask(newTask);
+      //setTasks(tasks.map((t) => (t.id === editingTask.id ? newTask : t)));
     } else {
-      setTasks([...tasks, newTask]);
+      console.log("NEW" ,{...newTask, embedding:[]});
+      await addTask(newTask);
+      //setTasks([...tasks, newTask]);
     }
 
     onClose();

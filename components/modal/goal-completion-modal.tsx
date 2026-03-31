@@ -303,7 +303,7 @@ export const GoalCompletionModal = ({
             label="New Goal"
             mode="outlined"
             activeOutlineColor={config.accentColor}
-            value={String(newGoal)}
+            defaultValue={String(newGoal)}
             onChangeText={(text) => setNewGoal(parseInt(text) || 0)}
             keyboardType="numeric"
           />

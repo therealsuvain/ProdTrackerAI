@@ -6,14 +6,15 @@ import { QueryTimerLogsHandler, StartTimerHandler, StopTimerHandler } from "./ti
 import { SearchItemsHandler, getProductivityStats } from './additional-handlers';
 
 /**  
- * TODO: Add more handlers, summaries, searchs for various types of requests, maybe simple analytics 
- * TODO: Handler that allows the AI to add a additonal custom System prompt instruction curated by the user
- * TODO: Handler that allows the AI to trigger a custom notification with a personalized message to the user (for reminders, encouragement, etc)
- * TODO - Add a "reasoning" field to the handler calls, so that when we log them, we can also log the AI's reasoning for why it called that tool, which will be helpful for debugging and future training/fine-tuning
- * TODO - Add a "response" field to the handler calls, which is the raw response from the tool, so that we can log it for debugging and training/fine-tuning purposes. This is especially important for tools like "search-items" where the AI might be relying on the output to make further decisions, so having that context in the logs will be crucial.
- * TODO - Add error handling and edge case handling for each handler, and log any errors that occur during execution, so that we can identify common failure points and improve the system over time.
- * TODO - Confidence field like response and reasoning
- * TODO - Add a handler so AI can access chat history and use it as context for future responses
+ * TODO 50 : Add more handlers, summaries, searchs for various types of requests, maybe simple analytics 
+ * TODO 51 : Handler that allows the AI to add a additonal custom System prompt instruction curated by the user
+ * TODO 52 : Handler that allows the AI to trigger a custom notification with a personalized message to the user (for reminders, encouragement, etc)
+ * TODO 53 : Add a "reasoning" field to the handler calls, so that when we log them, we can also log the AI's reasoning for why it called that tool, which will be helpful for debugging and future training/fine-tuning
+ * TODO 54 : Add a "response" field to the handler calls, which is the raw response from the tool, so that we can log it for debugging and training/fine-tuning purposes. This is especially important for tools like "search-items" where the AI might be relying on the output to make further decisions, so having that context in the logs will be crucial.
+ * TODO 55 : Add error handling and edge case handling for each handler, and log any errors that occur during execution, so that we can identify common failure points and improve the system over time.
+ * TODO 56 :  Confidence field like response and reasoning
+ * TODO 57 : Add a handler so AI can access chat history and use it as context for future responses
+ * TODO 58 : Update handlers based on DB and type changes
  */
 export const SilentHandlerList: string[] = [
     "search-items",

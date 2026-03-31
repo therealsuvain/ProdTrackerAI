@@ -11,7 +11,8 @@
     "lint": "expo lint",
     "postinstall": "patch-package",
     "prepare": "patch-package",
-    "db:generate": "drizzle-kit generate --config=drizzle.config.ts"
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "db:studio": "drizzle-kit studio --config=drizzle.config.ts"
   },
   "dependencies": {
     "@expo-google-fonts/roboto": "^0.4.1",
@@ -35,6 +36,7 @@
     "expo-constants": "~18.0.9",
     "expo-crypto": "~15.0.7",
     "expo-dev-client": "~6.0.15",
+    "expo-drizzle-studio-plugin": "^0.2.1",
     "expo-file-system": "~19.0.17",
     "expo-font": "~14.0.8",
     "expo-haptics": "~15.0.8",
@@ -79,6 +81,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "babel-plugin-inline-import": "^3.0.0",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",

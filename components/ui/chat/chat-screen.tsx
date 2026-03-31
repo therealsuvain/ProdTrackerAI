@@ -36,10 +36,10 @@ interface Props {
   onDismiss: () => void;
 }
 /**
- * TODO 1: Expire unconfirmed actions automatically
- * TODO 2: use ThemeContext for colors
- * TODO 3: maybe make chat-screen leaner by using chat-utils
- * TODO 4: Deleted items need better placeholder data for the chat message
+ * TODO 42: Expire unconfirmed actions automatically
+ * TODO 43: use ThemeContext for colors
+ * TODO 44: maybe make chat-screen leaner by using chat-utils
+ * TODO 45: Deleted items need better placeholder data for the chat message
  */
 const EXPIRY_THRESHOLD_MS = 30 * 60 * 1000; // 30 Minutes
 
@@ -168,6 +168,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       type: "text",
       text,
       timestamp: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
     setMessages((prev) => [userMsg, ...prev]); // Inverted list
 
@@ -192,6 +193,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
             : "Sorry, something went wrong. Please try again.",
         pendingActions: calls,
         timestamp: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       setMessages((prev) => [aiMsg, ...prev]);
@@ -226,6 +228,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         type: "text",
         text: "This action request has expired to prevent errors.⏳",
         timestamp: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       setMessages((prev) => [feedbackMsg, ...prev]);
       context.trackMetric(["chatActionsExpired"], 1);
@@ -243,7 +246,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         stop,
         navigation,
       });
-      //TODO: old timestamp updation
+      //TODO 46: old timestamp updation
       // C. Add Hardcoded Success Message
       const successMsg: Message = {
         id: Date.now().toString(),
@@ -251,6 +254,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         type: "text",
         text: "Actions confirmed! ✅",
         timestamp: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       setMessages((prev) => [successMsg, ...prev]);
       context.trackMetric(["chatActionsConfirmed"], 1);
@@ -268,6 +272,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       type: "text",
       text: "No problem, I've cancelled those actions. ✋",
       timestamp: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
     setMessages((prev) => [cancelMsg, ...prev]);
     context.trackMetric(["chatActionsCancelled"], 1);

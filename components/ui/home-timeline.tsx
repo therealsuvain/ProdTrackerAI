@@ -19,6 +19,8 @@ import { useHabitDeniedFeedback } from "@/components/ui/habits/habit-denied-feed
 import { checkInHabit } from "@/utils/habit-utils";
 import { ThemeContext } from "@/context/ThemeContext";
 
+// TODO 40 : Optimize this
+// TODO 41: Task checkins are dummies
 interface UnifiedTimelineProps {
   events: CalendarEvent[];
   tasks: Task[];
@@ -68,8 +70,7 @@ export default function UnifiedTimeline({
     // Filter tasks due on this date
     const dayTasks = tasks.filter(
       (task) =>
-        new Date(task.dueDate ? task.dueDate : "0").toDateString() ===
-          dateStr && !task.completed,
+        new Date(task.dueDate ? task.dueDate : "0").toDateString() === dateStr,
     );
 
     // Filter timer logs from this date
@@ -81,7 +82,8 @@ export default function UnifiedTimeline({
     const dayEvents = events.filter((event) => {
       const eventStartDate = new Date(event.startDate);
       const eventStartDatePart = eventStartDate.toISOString().split("T")[0];
-      const eventEndDatePart = new Date(event.endDate)
+      //TODO Fix below ??
+      const eventEndDatePart = new Date(event.endDate?? eventStartDate)
         .toISOString()
         .split("T")[0];
       const eventStartDateString = eventStartDate.toDateString();
@@ -150,7 +152,9 @@ export default function UnifiedTimeline({
 
       return {
         task,
-        top: baseHour ? baseHour : 9 * HOUR_HEIGHT + offset,
+        top: baseHour
+          ? baseHour * HOUR_HEIGHT + offset
+          : 9 * HOUR_HEIGHT + offset,
         height: 45,
       };
     });

@@ -10,7 +10,7 @@ export const AddTaskHandler: AIHandler = {
       title: params.title || "New Task",
       priority: params.priority || "medium",
       dueDate: params.dueDate,
-      category: params.category || "General",
+      category: params.category || undefined,
     });
 
     // 2. Handle notifications if a reminder was parsed
@@ -23,7 +23,8 @@ export const AddTaskHandler: AIHandler = {
     }
 
     // 3. Update the global state via the context
-    context.setTasks((prev) => [...prev, newTask]);
+    //context.setTasks((prev) => [...prev, newTask]);
+    context.addTask(newTask);
 
     console.log(`AI Action: Added task "${newTask.title}"`);
   }
@@ -37,23 +38,23 @@ export const EditTaskHandler: AIHandler = {
     }
     const oldTask = context.tasks.find((t) => t.id.slice(0, 8) === params.id);
     const updatedTask = await createTask({ ...oldTask, ...params, id: oldTask?.id })
-    context.setTasks((prev) =>
+    /* context.setTasks((prev) =>
       prev.map((t) => (t.id.slice(0, 8) === params.id ? updatedTask : t))
-    );
+    ); */
+    context.editTask(updatedTask);
   }
 };
 
 export const DeleteTaskHandler: AIHandler = {
   execute: async (params, context) => {
-    context.setTasks((prev) => prev.filter((t) => t.id.slice(0, 8) !== params.id));
+    //context.setTasks((prev) => prev.filter((t) => t.id.slice(0, 8) !== params.id));
+    context.removeTask(params.id);
   }
 };
 
 export const CompleteTaskHandler: AIHandler = {
   execute: async (params, context) => {
-    context.setTasks((prev) =>
-      prev.map((t) => (t.id.slice(0, 8) === params.id ? { ...t, completed: true } : t))
-    );
+    context.toggleTask(params.id);
   }
 };
 

@@ -36,7 +36,7 @@ export const ChatInput = ({
     <View style={[styles.container,{backgroundColor: theme.greyBaseSecondary}]}>
       <TextInput
         style={styles.input}
-        value={text}
+        defaultValue={text}
         onChangeText={setText}
         placeholder="Type a message..."
         multiline

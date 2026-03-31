@@ -193,7 +193,7 @@ function TimerScreenInner() {
       >
         <TextInput
           placeholder="Activity name"
-          value={title}
+          defaultValue={title}
           onChangeText={setTitle}
           style={styles.input}
           mode="outlined"
@@ -201,7 +201,7 @@ function TimerScreenInner() {
         />
         <TextInput
           placeholder="Category (optional)"
-          value={category}
+          defaultValue={category}
           onChangeText={setCategory}
           style={[styles.input, styles.categoryInput]}
           mode="outlined"

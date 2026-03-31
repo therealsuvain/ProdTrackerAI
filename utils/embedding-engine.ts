@@ -42,43 +42,43 @@ console.log("WHAT THE", error)
 };
 
 // One time existing data base migration to add embeddings field
-export const migrateToSemanticSearch = async (context: any) => {
-  //console.log("BOOM BOOM CHA HA")
-  const needsMigration = (items: any[]) => items.some(item => !item.embedding);
+// export const migrateToSemanticSearch = async (context: any) => {
+//   //console.log("BOOM BOOM CHA HA")
+//   const needsMigration = (items: any[]) => items.some(item => !item.embedding);
 
-  if (needsMigration(context.tasks) || needsMigration(context.habits) || needsMigration(context.events)) {
-    console.log("Starting Semantic Migration via Gemini API... ⏳");
+//   if (needsMigration(context.tasks) || needsMigration(context.habits) || needsMigration(context.events)) {
+//     console.log("Starting Semantic Migration via Gemini API... ⏳");
 
-    const vectorize = async (list: any[]) => {
-      const updatedList = [];
+//     const vectorize = async (list: any[]) => {
+//       const updatedList = [];
 
-      for (const item of list) {
-        if (item.embedding) {
-          updatedList.push(item); // Skip if already done
-          continue;
-        }
+//       for (const item of list) {
+//         if (item.embedding) {
+//           updatedList.push(item); // Skip if already done
+//           continue;
+//         }
 
-        console.log(`Vectorizing: ${item.title || item.t}`);
-        const searchString = createSearchString(item);
-        const vector = await generateEmbedding(searchString, false);
+//         console.log(`Vectorizing: ${item.title || item.t}`);
+//         const searchString = createSearchString(item);
+//         const vector = await generateEmbedding(searchString, false);
 
-        updatedList.push({ ...item, embedding: vector });
+//         updatedList.push({ ...item, embedding: vector });
 
-        // Wait 2 seconds between API calls to respect free-tier limits
-        //await sleep(2000); 
-      }
-      return updatedList;
-    };
+//         // Wait 2 seconds between API calls to respect free-tier limits
+//         //await sleep(2000); 
+//       }
+//       return updatedList;
+//     };
 
-    const newTasks = await vectorize(context.tasks);
-    const newHabits = await vectorize(context.habits);
-    const newEvents = await vectorize(context.events);
-    context.setTasks(newTasks);
-    context.setHabits(newHabits);
-    context.setEvents(newEvents);
-    console.log("Migration Complete! ✅");
-  }
-};
+//     const newTasks = await vectorize(context.tasks);
+//     const newHabits = await vectorize(context.habits);
+//     const newEvents = await vectorize(context.events);
+//     context.setTasks(newTasks);
+//     context.setHabits(newHabits);
+//     context.setEvents(newEvents);
+//     console.log("Migration Complete! ✅");
+//   }
+// };
 
 const normalizeVector = (vector: number[]): number[] => {
   const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));

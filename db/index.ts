@@ -40,7 +40,7 @@ import * as schema from "./schema";
 
 // openDatabaseSync opens or creates the SQLite file.
 // The filename is stable — changing it creates a new empty DB.
-const sqlite = openDatabaseSync("prodtracker.db", {
+export const sqlite = openDatabaseSync("prodtracker.db", {
   enableChangeListener: true, // Enables useLiveQuery if you want reactive queries later
 });
 
@@ -69,7 +69,8 @@ export async function initDatabase(): Promise<void> {
     // The require() call is a Metro bundler pattern for loading the
     // generated migration journal at build time.
     const migrations = require("./migrations/migrations");
-    await migrate(db, migrations);
+    //console.log("[DB] migrations", migrations);
+    await migrate(db, migrations.default);
     console.log("[DB] Migrations applied successfully");
   } catch (error) {
     console.error("[DB] Migration failed:", error);

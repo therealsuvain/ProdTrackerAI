@@ -5,6 +5,7 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
+import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 
 import { Task } from "@/types/task";
 import { CalendarEvent } from "@/types/calendar";
@@ -36,7 +37,8 @@ import {
   toggleTaskCompleted,
   bulkInsertTasks,
 } from "@/db/repositories/task-repository";
-import {migrateTasksFromAsyncStorage} from "@/db/migrations/async-storage-migrations"
+import { migrateTasksFromAsyncStorage } from "@/db/migrations/async-storage-migrations";
+import { sqlite } from "@/db/index";
 import { processAchievements } from "@/utils/achievements-util";
 import {
   applyMissedDayLogic,
@@ -93,7 +95,7 @@ export const DataContext = createContext<DataContextType | undefined>(
 const USE_DUMMY_DATA = false;
 
 export default function DataProvider({ children }: { children: ReactNode }) {
-  const [tasks, setTasksState] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [timerLogs, setTimerLogs] = useState<TimerLog[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -105,7 +107,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     message: string;
     type?: "warning" | "fatal";
   } | null>(null);
-
+  useDrizzleStudio(sqlite);
   const dispatchError = useCallback(
     (err: Error | string, type: "warning" | "fatal" = "warning") => {
       const message = typeof err === "string" ? err : err.message;
@@ -130,13 +132,13 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     ): Promise<void> => {
       // 1. Snapshot
       let snapshot: Task[] = [];
-      setTasksState((prev) => {
+      setTasks((prev) => {
         snapshot = prev;
         return prev;
       });
 
       // 2. Optimistic update
-      setTasksState(optimisticUpdate);
+      setTasks(optimisticUpdate);
 
       // 3. DB write
       try {
@@ -144,7 +146,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         // 4. Rollback
         console.error("[DataContext] Task DB write failed, rolling back:", err);
-        setTasksState(snapshot);
+        setTasks(snapshot);
         throw err; // caller catches this and shows DbErrorToast
       }
     },
@@ -211,7 +213,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
    * Not optimistic — just a best-effort write.
    * Remove after Phase 7.
    */
-  const setTasks: React.Dispatch<React.SetStateAction<Task[]>> = useCallback(
+  /* const setTasks: React.Dispatch<React.SetStateAction<Task[]>> = useCallback(
     (action) => {
       setTasksState((prev) => {
         const next = typeof action === "function" ? action(prev) : action;
@@ -224,7 +226,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       });
     },
     [],
-  );
+  ); */
   const deleteEventOccurrence = async (
     eventId: string,
     date: string,
@@ -306,7 +308,8 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     const loadData = async () => {
       try {
         await initDatabase();
-        await migrateTasksFromAsyncStorage();
+
+        //await migrateTasksFromAsyncStorage();
         let loadedTasks = await getAllTasks();
         let loadedEvents = await loadEvents();
         let loadedLogs = await loadTimerLogs();
@@ -335,7 +338,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
           return updatedHabit;
         });
         //loadedTasks = loadedTasks.filter((t)=>!t.title.includes("testing") && !t.title.includes("Testing"))
-        setTasksState(loadedTasks);
+        setTasks(loadedTasks);
         setEvents(loadedEvents);
         setTimerLogs(loadedLogs);
         setHabits(loadedHabits);

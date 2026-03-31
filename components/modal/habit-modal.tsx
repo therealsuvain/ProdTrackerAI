@@ -64,11 +64,11 @@ export default function HabitModal({
         label="Habit Name"
         mode="outlined"
         activeOutlineColor={theme.habitBase}
-        value={state.title}
+        defaultValue={state.title}
         onChangeText={(text) => updateField("title", text)}
       />
       {state.errors?.title && (
-        <Text style={styles.error}>{state.errors.title}</Text>
+        <Text style={[styles.error, {color:theme.error}]}>{state.errors.title}</Text>
       )}
 
       <SegmentedButtons
@@ -104,7 +104,7 @@ export default function HabitModal({
         label="Goal"
         mode="outlined"
         activeOutlineColor={theme.habitBase}
-        value={state.goal}
+        defaultValue={state.goal}
         onChangeText={(text) => updateField("goal", text)}
         keyboardType="numeric"
       />
@@ -135,7 +135,7 @@ export default function HabitModal({
               Pick Time
             </Button>
 
-            <Text style={styles.text}>
+            <Text style={[styles.text, { color: theme.habitBase }]}>
               {state.reminderDate?.toLocaleTimeString()}
             </Text>
             {state.errors?.reminderDate && (

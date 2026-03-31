@@ -53,31 +53,33 @@ export const cancelAllScheduledNotifications = async () => {
   await Notifications.cancelAllScheduledNotificationsAsync();
 };
 const getTriggerOptionsHabit = (habit: Habit) => {
+  const habitDate = (habit.reminderDate && new Date(habit.reminderDate))|| undefined;
   if (habit.frequency === "weekly") {
+    
     return {
       type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-      weekday: habit.reminderDate?.getDay() || 0 + 1,
-      hour: habit.reminderDate?.getHours(),
-      minute: habit.reminderDate?.getMinutes(),
+      weekday: habitDate?.getDay() || 0 + 1,
+      hour: habitDate?.getHours(),
+      minute: habitDate?.getMinutes(),
     } as Notifications.WeeklyTriggerInput;
   }
 
   return {
     type: Notifications.SchedulableTriggerInputTypes.DAILY,
-    hour: habit.reminderDate?.getHours(),
-    minute: habit.reminderDate?.getMinutes(),
+    hour: habitDate?.getHours(),
+    minute: habitDate?.getMinutes(),
   } as Notifications.DailyTriggerInput;
 };
 
 export const scheduleReminderEvents = async (event: CalendarEvent) => {
   let ids: { date: string; id: string }[] = [];
 
-  let current = event.startTime;
+  let current = new Date(event.startTime);
   const maxScheduledNotifications = 30; // optional limit (to avoid infinite scheduling)
   for (
     let i = 0;
     i < maxScheduledNotifications &&
-    current.getTime() < event.endDate.getTime();
+    current.getTime() < new Date(event.endDate).getTime();
     i++
   ) {
     if (
@@ -107,7 +109,7 @@ export const scheduleReminderEvents = async (event: CalendarEvent) => {
 };
 
 export const scheduleReminderTasks = async (task: Task): Promise<string> => {
-  const triggerDate = new Date(task.reminderDate?.getTime() || Date.now());
+  const triggerDate = new Date((task.reminderDate && task.reminderDate) || Date.now());
 
   const id = await Notifications.scheduleNotificationAsync({
     content: {

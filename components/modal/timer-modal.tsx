@@ -146,7 +146,7 @@ export default function TimerEditModal({
         activeOutlineColor={theme.timerBase}
         outlineColor={theme.timerBaseTrans}
         textColor={theme.whiteBase}
-        value={title}
+        defaultValue={title}
         onChangeText={setTitle}
       />
       {errors.title && (
@@ -160,7 +160,7 @@ export default function TimerEditModal({
         activeOutlineColor={theme.timerBase}
         outlineColor={theme.timerBaseTrans}
         textColor={theme.whiteBase}
-        value={category}
+        defaultValue={category}
         onChangeText={setCategory}
       />
       {/*       <TextInput

@@ -23,6 +23,7 @@
  *   uses them as strings (split('T')[0] etc). No conversion needed.
  */
 
+// TODO 64 : Settings and achievemnts Schema missing
 import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
@@ -179,15 +180,15 @@ export const calendarEvents = sqliteTable(
     {
         id: text("id").primaryKey(),
         title: text("title").notNull(),
-        description: text("description"),
         // Stored as ISO strings — calendar UI already works with strings
         startDate: text("start_date").notNull(),
+        startTime: text("start_time").notNull(),
+        endTime: text("end_time").notNull(),
         endDate: text("end_date"),
-        isAllDay: integer("is_all_day", { mode: "boolean" }).notNull().default(false),
-        // Recurrence rule stored as JSON blob — structure is app-defined
-        recurrence: text("recurrence"),                // JSON: RecurrenceRule | null
-        color: text("color"),
-        location: text("location"),
+        description: text("description"),
+        reminder: integer("reminder", { mode: "boolean" }).notNull().default(false),
+        recurrence: text("recurrence",{ enum: ["none", "daily", "weekly"] }).notNull().default("none"), 
+        category: text("category"),
         embedding: text("embedding"),                  // JSON: number[]
         ...auditFields,
     },
@@ -324,6 +325,16 @@ export const dailyMetrics = sqliteTable("daily_metrics", {
     chatActionsCancelled: integer("chat_actions_cancelled").notNull().default(0),
 });
 
+
+export const unlockedAchievements = sqliteTable("unlocked_achievements", {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    unlockedDescription: text("unlocked_description").notNull(),
+    tier : text("tier", {enum: ["bronze", "silver", "gold", "platinum", "diamond"]}).notNull(),
+    target: integer("target").notNull(),
+    unlockedAt : text("unlocked_at").notNull(),
+})
 // ─── Drizzle inferred types ───────────────────────────────────────────────────
 // These are the raw DB row shapes — used internally by repositories.
 // Your application code works with the interfaces in types/*.ts, not these.
@@ -351,4 +362,10 @@ export type MessageRow = typeof messages.$inferSelect;
 export type MessageInsert = typeof messages.$inferInsert;
 
 export type GlobalMetricsRow = typeof globalMetrics.$inferSelect;
+export type GlobalMetricsInsert = typeof globalMetrics.$inferInsert;
+ 
 export type DailyMetricsRow = typeof dailyMetrics.$inferSelect;
+export type DailyMetricsInsert = typeof dailyMetrics.$inferInsert;
+
+export type UnlockedAchievementsRow = typeof unlockedAchievements.$inferSelect
+export type UnlockedAchievementsInsert = typeof unlockedAchievements.$inferInsert

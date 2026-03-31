@@ -7,7 +7,10 @@ import { NavigationProp, NavigationState } from '@react-navigation/native';
 // By passing the 'context', we allow the handler to modify the app's state.
 export interface AIActionContext {
   tasks: Task[];
-  setTasks: (tasks: Task[] | ((prev: Task[]) => Task[])) => void;
+  addTask: (task: Task) => Promise<void>;
+  editTask: (task: Task) => Promise<void>;
+  removeTask: (id: string) => Promise<void>;
+  toggleTask: (id: string) => Promise<void>;
   events: CalendarEvent[];
   setEvents: (events: CalendarEvent[] | ((prev: CalendarEvent[]) => CalendarEvent[])) => void;
   habits: Habit[];

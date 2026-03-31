@@ -24,7 +24,7 @@ import type { Task } from "@/types/task";
 import type { TaskRow, TaskInsert } from "@/db/schema";
 
 // ─── type converters ──────────────────────────────────────────────────────────
-
+// TODO 63 Check if null is neeeded or undefined. FOR ALL REPOS. I thinl for inserting its passes null for DB and for reading it converts to underfined for optional types
 /** DB row → application Task. Called on every read. */
 function rowToTask(row: TaskRow): Task {
     return {

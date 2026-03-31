@@ -7,6 +7,7 @@ import { randomUUID } from "expo-crypto";
 import {generateEmbedding} from "@/utils/embedding-engine"
 
 
+
 // Helper for date parsing
 const parseDate = (dateStr: any): Date | undefined => {
   if (!dateStr) return undefined;
@@ -43,13 +44,13 @@ export const createTask =  async (
       throw new Error("DueDate is missing");
     }
 
-    const dueDate = parseDate(params.dueDate);
+    const dueDate = parseDate(params.dueDate)?.toISOString();
 
     let reminderDate;
     if (params.reminderDate) {
       if (!validDate(params.reminderDate)) {
         reminderDate = parseDate(
-          dueDate?.toISOString().split("T")[0] + "T" + params.reminderDate
+          dueDate?.split("T")[0] + "T" + params.reminderDate
         );
       }
     }
@@ -68,6 +69,8 @@ export const createTask =  async (
         : "medium",
       completed: params.completed ?? false,
       tags: params.tags || [],
+      createdAt: new Date().toISOString(),
+      updatedAt:  new Date().toISOString(),
       embedding : params.embedding || embeddingVector,
     } as Task;
   } catch (err: any) {
@@ -193,17 +196,21 @@ export const createTimerLog = (params: Record<string, any>): TimerLog => {
     if (!params.startTime || !params.endTime) {
       throw new Error("Time is missing");
     }
-    const startTime = parseDate(params.startTime);
-    const endTime = parseDate(params.endTime);
+    const startTime = parseDate(params.startTime)?.toISOString();
+    const endTime = parseDate(params.endTime)?.toISOString();
     const duration = params.duration ? parseInt(params.duration) : undefined;
     if (duration && isNaN(duration))
       throw new Error("Duration must be a number");
     return {
       id,
       title: params.title || "",
-      startTime: startTime ? startTime : new Date(),
+      startTime: startTime ? startTime : new Date().toISOString(),
       endTime,
       duration,
+      category: params.category || undefined,
+      laps: params.laps || undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
   } catch (err: any) {
     throw new Error(`Invalid TimerLog params: ${err.message}`);
