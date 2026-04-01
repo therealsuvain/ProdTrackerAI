@@ -10,7 +10,7 @@ export type CheckInResult =
   | { status: "auto_frozen"; habit: Habit }
   | { status: "denied"; reason: "already_checked_in" | "frozen" | "not_a_target_day" };
 
-export type AutoCheckInResult = 
+export type AutoCheckInResult =
   | { status: "success"; habit: Habit }
   | { status: 'missed_check_in'; habit: Habit }
   | { status: "auto_frozen"; habit: Habit }
@@ -218,13 +218,17 @@ const areIntermediateTargetDaysCovered = (
 
 const isFreezeEntryActive = (
   freezeTimestamp: string,
+  frequency: "daily"|"weekly",
   targetDays?: number[]
 ): boolean => {
   const frozenAt = new Date(freezeTimestamp);
   const now = new Date();
 
   if (!targetDays || targetDays.length === 0) {
+    if (frequency === "daily")
     return now.getTime() - frozenAt.getTime() < 24 * 60 * 60 * 1000;
+  else
+    return now.getTime() - frozenAt.getTime() < 7 * 24 * 60 * 60 * 1000;
   }
 
   const nextTarget = getNextTargetDayAfter(targetDays, frozenAt);
@@ -235,7 +239,7 @@ const isFreezeEntryActive = (
 export const isFrozen = (habit: Habit): boolean => {
   if (!habit.freezeHistory || habit.freezeHistory.length === 0) return false;
   const last = habit.freezeHistory[habit.freezeHistory.length - 1];
-  return isFreezeEntryActive(last, habit.targetDays);
+  return isFreezeEntryActive(last, habit.frequency, habit.targetDays);
 };
 
 export const freezeHabit = (habit: Habit): FreezeResult => {
@@ -363,15 +367,23 @@ export const restartHabitAfterGoalForeground = (habit: Habit): Habit => {
   return habit;
 
 }
-export const restartHabitAfterGoal = (habit: Habit): Habit => {
+export const restartHabitAfterGoal = (habit: Habit, oldGoal: number): Habit => {
   // Compute when the current check-in window closes
   let resetAfter: string;
 
-  if (habit.targetDays && habit.targetDays.length > 0) {
+  if (habit.targetDays) {
+
     // Next target day at 06:00 — same boundary used by freeze expiry
-    const next = getNextTargetDayAfter(habit.targetDays, new Date());
-    next.setHours(6, 0, 0, 0);
-    resetAfter = next.toISOString();
+    if(habit.targetDays.length > 0)
+    {
+      const next = getNextTargetDayAfter(habit.targetDays, new Date());
+      next.setHours(6, 0, 0, 0);
+      resetAfter = next.toISOString();
+    }
+    else{
+      const next = new Date(new Date().setDate(new Date(habit.history[habit.history.length - 1]).getDate() + 7));
+      resetAfter = next.toISOString()
+    }
   } else {
     // Midnight tonight — start of the next calendar day
     const midnight = new Date();
@@ -384,7 +396,7 @@ export const restartHabitAfterGoal = (habit: Habit): Habit => {
     pendingStreakResetAfter: resetAfter,
     goalCompletions: [
       ...(habit.goalCompletions || []),
-      { completedAt: getNowISO(), goal: habit.goal },
+      { completedAt: getNowISO(), goal: oldGoal },
     ],
     // streak intentionally NOT reset here — happens on next check-in
   };

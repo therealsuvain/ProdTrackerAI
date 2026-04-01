@@ -43,14 +43,13 @@ function TaskScreenInner() {
   const [showSortOptions, setShowSortOptions] = useState(false);
   const { toastError, showToast, dismissToast } = useDbErrorToast();
   const { state, updateField, onSubmit } = useTaskForm({
-    tasks,
     addTask,
     editTask,
     editingTask,
     onClose: () => setVisible(false),
   });
   const { triggerHaptic } = useHaptics();
-
+  console.log("Tasks:", tasks.length);
   const filteredTasks = tasks
     .filter(
       (t) =>

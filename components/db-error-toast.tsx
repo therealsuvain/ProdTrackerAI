@@ -53,7 +53,7 @@ export function useDbErrorToast() {
 
     timerRef.current = setTimeout(() => {
       setToastError((prev) => ({ ...prev, visible: false }));
-    }, 4000);
+    }, 6000);
   }, []);
 
   const dismissToast = useCallback(() => {

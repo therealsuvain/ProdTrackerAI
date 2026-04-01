@@ -3,6 +3,7 @@ import { createHabit } from "../model-factory-utils";
 import { scheduleReminderHabits } from "../../hooks/use-notifications";
 import { checkInHabit } from "../habit-utils"
 
+//TODO Add feedback for bboth if habit not found or check in failed,maybe add feedback for all handlers
 export const AddHabitHandler: AIHandler = {
   execute: async (params, context) => {
     const newHabit = await createHabit(params);
@@ -14,7 +15,8 @@ export const AddHabitHandler: AIHandler = {
       }
     }
 
-    context.setHabits((prev) => [...prev, newHabit]);
+    //context.setHabits((prev) => [...prev, newHabit]);
+    context.addHabit(newHabit);
     console.log(`AI Action: Added Habit "${newHabit.title}"`);
   }
 
@@ -22,15 +24,24 @@ export const AddHabitHandler: AIHandler = {
 
 export const DeleteHabitHandler: AIHandler = {
   execute: async (params, context) => {
-    context.setHabits((prev) => prev.filter((h) => h.id.slice(0, 8) !== params.id));
+    const fullLengthId = context.resolveItemId(params.id, context.habits);
+    if (!fullLengthId) return;
+    await context.removeHabit(fullLengthId);
   }
 };
 
 export const CheckInHabitHandler: AIHandler = {
   execute: async (params, context) => {
-    context.setHabits((prev) =>
+    const fullLengthId = context.resolveItemId(params.id, context.habits);
+    if (!fullLengthId) return; //TODo
+    const habit = await context.getHabit(fullLengthId)
+    if (!habit) return //TODO 
+    const result = checkInHabit(habit);
+    if (result.status === "denied") return //TODO;
+    await context.editHabit(result.habit);
+    /* context.setHabits((prev) =>
       prev.map((h) => (h.id.slice(0, 8) === params.id ? checkInHabit(h) : h))
-    );
+    ); */
   }
 };
 
@@ -42,13 +53,16 @@ const isToday = (dateString?: string) => {
 };
 
 // --- 1. HABITS HANDLER ---
+//TODO All query handlers need to revised
 export const QueryHabitsHandler: AIHandler = {
   execute: async (args: any, context: any) => {
     const { frequency = "all", stateFilter = "all", sortBy = "none", specificHabitId } = args;
 
     // DEEP DIVE: Specific Habit
     if (specificHabitId) {
-      const targetHabit = context.habits.find((h: any) => h.id === specificHabitId);
+      const fullLengthId = context.resolveItemId(specificHabitId, context.habits);
+      if (!fullLengthId) return { error: "Habit not found in database." };
+      const targetHabit = context.getHabit(fullLengthId);
       if (!targetHabit) return { error: "Habit not found in database." };
 
       return {
@@ -64,6 +78,7 @@ export const QueryHabitsHandler: AIHandler = {
         freezeHistory: targetHabit.freezeHistory || [] // AI can look at this to see exactly when it was frozen
       };
     }
+
     let filtered = [...(context.habits || [])].filter(h => !h.isArchived);
 
     // 1. Frequency Filter

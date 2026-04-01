@@ -56,7 +56,6 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
 };
 
 interface UseTaskFormProps {
-  tasks: Task[];
   addTask: (task: Task) => Promise<void>;
   editTask: (task: Task) => Promise<void>;
   editingTask: Task | null;
@@ -64,7 +63,6 @@ interface UseTaskFormProps {
 }
 
 export const useTaskForm = ({
-  tasks,
   addTask,
   editTask,
   editingTask,
@@ -136,8 +134,8 @@ export const useTaskForm = ({
       priority: state.priority as Task["priority"],
       completed: editingTask ? editingTask.completed : false,
       tags: state.tags,
-      createdAt: state.createdAt,
-      updatedAt: new Date().toISOString(),
+      createdAt: editingTask ? editingTask.createdAt : state.createdAt,
+      updatedAt: state.updatedAt,
       embedding: state.embedding || await generateEmbedding(state.title,false)
     };
 

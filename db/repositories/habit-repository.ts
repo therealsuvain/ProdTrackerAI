@@ -81,6 +81,7 @@ function rowToHabit(
 function buildCheckInRows(
     habit: Habit,
 ): Omit<HabitCheckInRow, never>[] {
+    console.log('buildCheckInRows', habit.history);
     return (habit.history ?? []).map((date) => ({
         id: `${habit.id}_ci_${date}`,   // deterministic id — safe to re-insert
         habitId: habit.id,
@@ -260,6 +261,7 @@ export async function updateHabit(habit: Habit): Promise<Habit> {
     const checkInRows = buildCheckInRows(habit);
     const freezeRows = buildFreezeRows(habit);
     const goalCompletionRows = buildGoalCompletionRows(habit);
+    console.log('updateHabit', checkInRows, freezeRows, goalCompletionRows);
 
     await db.transaction(async (tx) => {
         // Update parent

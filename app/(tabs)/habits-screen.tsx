@@ -21,20 +21,25 @@ import { withAlpha } from "@/utils/common-utils";
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
+import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 
 // TODO : shifting logic from habit-screen , habit-item, habiit-stats to utils maybe
+// TODO : deleting habit doesnt delete its child rows
+// TODO : Optmistic UI loses the prev state , state resets, reloading too doesnt fix it , but data still tehre in DB
+// TODO : pendingStreakResetAfter does not reset in db only in state
 function HabitsScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { habits, setHabits, trackMetric, appMetrics } = useData();
+  const { habits, addHabit, editHabit, removeHabit, getHabit, trackMetric, appMetrics } = useData();
   const [filteredHabits, setFilteredHabits] = useState<Habit[]>(habits);
   const [searchQuery, setSearchQuery] = useState("");
   const [visible, setVisible] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [completedHabit, setCompletedHabit] = useState<Habit | null>(null);
+    const { toastError, showToast, dismissToast } = useDbErrorToast();
   const { state, updateField, onSubmit } = useHabitForm({
-    habits,
-    setHabits,
+    addHabit,
+    editHabit,
     editingHabit,
     onClose: () => setVisible(false),
   });
@@ -44,39 +49,39 @@ function HabitsScreenInner() {
     setEditingHabit(habit || null);
     setVisible(true);
   };
-
   const hideModal = () => setVisible(false);
 
   const handleUpdate = useCallback(
-    (updated: Habit) => {
-      setHabits((prevHabits) => {
-        return prevHabits.map((h) => {
-          if (h.id !== updated.id) {
-            return h;
-          }
-          let updateMetrics: GlobalMetricKey[] = [];
-          if (h.history.length < updated.history.length) {
+    async (updated: Habit) => {
+      console.log("Updated Habit:", updated.id);
+      console.log("Updated Habitsss:", habits.map((h)=>h.id));
+      const habit = habits.find((h) => h.id === updated.id);
+      if (!habit) return;
+      try{
+        await editHabit(updated);
+         let updateMetrics: GlobalMetricKey[] = [];
+          if (habit.history.length < updated.history.length) {
             updateMetrics.push("habitsCheckedIn");
           }
           if (updated.streak === updated.goal) {
             updateMetrics.push("habitsGoalsCompleted");
           }
           if (
-            (!h.freezeHistory && updated.freezeHistory) ||
-            (h.freezeHistory &&
+            (!habit.freezeHistory && updated.freezeHistory) ||
+            (habit.freezeHistory &&
               updated.freezeHistory &&
-              h.freezeHistory.length < updated.freezeHistory.length)
+              habit.freezeHistory.length < updated.freezeHistory.length)
           ) {
             updateMetrics.push("habitsFrozen");
           }
           if(updateMetrics.length > 0){
             trackMetric(updateMetrics, 1);
           }
-          return updated;
-        });
-      });
+      }catch(e){
+        showToast("Couldn't save habit. Changes have been undone.");
+      }
     },
-    [trackMetric],
+    [trackMetric, habits],
   );
 
   const handleDelete = useCallback((id: string) => {
@@ -86,13 +91,15 @@ function HabitsScreenInner() {
       {
         text: "Delete",
         onPress: async () => {
-          setHabits((currentHabits) => {
-            const habit = currentHabits.find((h: Habit) => h.id === id);
+            const habit = habits.find((h: Habit) => h.id === id);
             if (habit?.notificationId) {
               cancelReminder(habit.notificationId);
             }
-            return currentHabits.filter((h: Habit) => h.id !== id);
-          });
+            try {
+            await removeHabit(id);
+          } catch {
+            showToast("Couldn't delete the habit. It has been restored.");
+          }
         },
       },
     ]);
@@ -100,7 +107,7 @@ function HabitsScreenInner() {
 
   const handleGoalRestart = useCallback(
     (updated: Habit) => {
-      handleUpdate(restartHabitAfterGoal(updated));
+      handleUpdate(updated);
       setGoalModalVisible(false);
     },
     [handleUpdate],
@@ -183,6 +190,7 @@ function HabitsScreenInner() {
           onPress={() => showModal()}
         />
       </View>
+      <DbErrorToast error={toastError} onDismiss={dismissToast} />
       <Portal>
         <HabitModal
           visible={visible}

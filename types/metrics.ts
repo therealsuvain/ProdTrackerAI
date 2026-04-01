@@ -34,6 +34,15 @@ export interface AppMetrics {
   };
 }
 
+export const DefaultMetrics: AppMetrics = {
+  global: {
+    tasksCompleted: 0, tasksMissed: 0, habitsCheckedIn: 0,
+    habitsGoalsCompleted: 0, habitCheckInsMissed: 0, habitsStreakMax: 0, habitsFrozen: 0,
+    habitsAutoFrozen: 0, timeTracked: 0, chatMessagesSent: 0, chatActionsConfirmed: 0, chatActionsExpired: 0,
+    chatActionsCancelled: 0
+  },
+  daily: {}
+};
 export type MetricKey = keyof DailyMetrics | keyof AppMetrics['global'];
 export type GlobalMetricKey = keyof AppMetrics['global'];
 export type DailyMetricKey = keyof DailyMetrics;

@@ -8,21 +8,12 @@ import { Habit } from '@/types/habits';
 import { Message } from '@/types/chat';
 import { SettingsConfig, defaultSettings } from '@/types/settings';
 import { AchievementBadge } from '@/types/achievements';
-import { AppMetrics, MetricKey, DailyMetricKey, GlobalMetricKey } from '@/types/metrics';
+import { AppMetrics, MetricKey, DailyMetricKey, GlobalMetricKey, DefaultMetrics } from '@/types/metrics';
 
 const SETTINGS_KEY = '@prodtracker_settings';
 const ACHIEVEMENTS_KEY = '@prodtracker_achievements';
 const METRICS_KEY = '@prodtracker_metrics';
 
-const defaultMetrics: AppMetrics = {
-  global: {
-    tasksCompleted: 0, tasksMissed: 0, habitsCheckedIn: 0,
-    habitsGoalsCompleted: 0, habitCheckInsMissed: 0, habitsStreakMax: 0, habitsFrozen: 0,
-    habitsAutoFrozen: 0, timeTracked: 0, chatMessagesSent: 0, chatActionsConfirmed: 0, chatActionsExpired: 0,
-    chatActionsCancelled: 0
-  },
-  daily: {}
-};
 // Helper to handle JSON serialization (Dates need conversion)
 const stringify = (data: any) => JSON.stringify(data, (_key, value) =>
   value instanceof Date ? value.toISOString() : value
@@ -176,10 +167,10 @@ export const saveUnlockedAchievement = async (badge: AchievementBadge): Promise<
 export const loadAppMetrics = async (): Promise<AppMetrics> => {
   try {
     const jsonValue = await AsyncStorage.getItem(METRICS_KEY);
-    return jsonValue != null ? JSON.parse(jsonValue) : defaultMetrics;
+    return jsonValue != null ? JSON.parse(jsonValue) : DefaultMetrics;
   } catch (error) {
     console.error('Error fetching metrics:', error);
-    return defaultMetrics;
+    return DefaultMetrics;
   }
 };
 

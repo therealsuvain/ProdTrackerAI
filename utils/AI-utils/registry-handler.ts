@@ -15,6 +15,8 @@ import { SearchItemsHandler, getProductivityStats } from './additional-handlers'
  * TODO 56 :  Confidence field like response and reasoning
  * TODO 57 : Add a handler so AI can access chat history and use it as context for future responses
  * TODO 58 : Update handlers based on DB and type changes
+ * TODO 66 : - delete-event_instance(id, date[]), - freeze-habit(id) handlers
+ * TODO 67 : Add success/error feedback for all handlers
  */
 export const SilentHandlerList: string[] = [
     "search-items",
@@ -29,18 +31,18 @@ export const ActionRegistry: Record<string, AIHandler> = {
     "edit-task": EditTaskHandler,
     "delete-task": DeleteTaskHandler,
     "complete-task": CompleteTaskHandler,
-    "query-tasks": QueryTasksHandler,
     "add-habit": AddHabitHandler,
     "delete-habit": DeleteHabitHandler,
     "checkin-habit": CheckInHabitHandler,
-    "query-habits": QueryHabitsHandler,
     "add-event": AddEventHandler,
     "edit-event": EditEventHandler,
     "delete-event": DeleteEventHandler,
-    "query-events": QueryEventsHandler,
     "start-timer": StartTimerHandler,
     "stop-timer": StopTimerHandler,
     "query-timer-logs": QueryTimerLogsHandler,
+    "query-tasks": QueryTasksHandler,
+    "query-habits": QueryHabitsHandler,
+    "query-events": QueryEventsHandler,
     "search-items": SearchItemsHandler,
     "get-stats": getProductivityStats
 };

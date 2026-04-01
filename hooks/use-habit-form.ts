@@ -68,15 +68,16 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
 };
 
 interface UseHabitFormProps {
-  habits: Habit[];
-  setHabits: (habits: Habit[]) => void;
+  addHabit: (habit: Habit) => Promise<void>;
+  editHabit: (habit: Habit) => Promise<void>;
   editingHabit: Habit | null;
   onClose: () => void;
 }
 
 export const useHabitForm = ({
-  habits,
-  setHabits,
+
+  addHabit,
+  editHabit,
   editingHabit,
   onClose,
 }: UseHabitFormProps) => {
@@ -92,6 +93,8 @@ export const useHabitForm = ({
           reminder: editingHabit.reminder,
           reminderDate: editingHabit.reminderDate,
           goal: editingHabit.goal,
+          createdAt: editingHabit.createdAt,
+          updatedAt: editingHabit.updatedAt,
           embedding : editingHabit.embedding
         },
       });
@@ -148,8 +151,8 @@ export const useHabitForm = ({
           ? parseInt(state.goal)
           : state.goal,
       goalCompletions: state.goalCompletions || [],
-      createdAt: editingHabit ? editingHabit.createdAt : new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: editingHabit ? editingHabit.createdAt : state.createdAt,
+      updatedAt: state.updatedAt,
       notificationId: editingHabit ? editingHabit.notificationId : undefined,
       embedding: state.embedding || await generateEmbedding(state.title,false)
     };
@@ -164,9 +167,9 @@ export const useHabitForm = ({
     }
 
     if (editingHabit) {
-      setHabits(habits.map((h) => (h.id === editingHabit.id ? newHabit : h)));
+      await editHabit(newHabit);
     } else {
-      setHabits([...habits, newHabit]);
+      await addHabit(newHabit);
     }
 
     onClose();

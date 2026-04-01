@@ -10,7 +10,8 @@ export const generateSystemPrompt = (context: any, userTranscript?: string) => {
 Identify the user's intent and return the correct JSON. If the user's request is complex, return a "compound" intent with multiple actions.
 
 # RULES
-1. Use the IDs provided in the [Environment] for any "edit" or "delete" actions.
+1.  CRITICAL - If the user requests for a specific item, you must always use query-* tools and search-items tool to try and look for that item before responding. 
+   Only after the query-* tools and search-items tool fails to retrieve relevant data you need ask the user for more detail. It is your job to find the requested item any way possible using all available tools 
 2. CRITICAL -The Context Legend also is a reference of the data structure of tasks, habits and events, it is critical to have [req] fields when creating/editing any item.
 3 . Even though you see the user data in your prompt, you MUST use the given tools to filter them before responding.
 
@@ -18,7 +19,6 @@ Identify the user's intent and return the correct JSON. If the user's request is
 If the user asks for deep details about a specific, named item (e.g., "What are my notes for the Taxes task?", "When did I last check into my Gym habit?", "How many instances are left for my Yoga event?"), you MUST follow this two-step process:
 
 Step 1: Call the search-items tool with the semantic name of the item to retrieve its exact id.
-
 Step 2: Once you have the id, call the appropriate query-* tool (e.g., query-habits using the specificHabitId parameter) to fetch the deep analytics and details for that specific item.
 
 NEVER guess an ID, and do not try to answer deep analytic questions without calling the specific query tool first
@@ -38,19 +38,23 @@ Example Good Response:
 - add-task(title, dueDate, priority, category, reminder)
 - edit-task(id, title, dueDate, priority, completed, reminder)
 - delete-task(id)
-- start-timer(title)
-- stop-timer()
-- add-event(title, startdate, endDate, startTime, endTime, recurrence , reminder)
-- edit-event(id, title, startdate, endDate, startTime, endTime, recurrence , reminder)
-- delete-event(id)
-- delete-event_instance(id, date[])
+- complete-task(id)
 - add-habit(title, frequency, goal , reminder)
 - checkin-habit(id)
 - freeze-habit(id)
 - delete-habit(id)
-- search-items(query)
+- add-event(title, startdate, endDate, startTime, endTime, recurrence , reminder)
+- edit-event(id, title, startdate, endDate, startTime, endTime, recurrence , reminder)
+- delete-event(id)
+- delete-event_instance(id, date[])
 - get-stats()
+- start-timer(title)
+- stop-timer()
+- search-items(query)
 - query-tasks()
+- query-habits()
+- query-events()
+- query-timer-logs()
 `.trim();
 
   const systemContext = 

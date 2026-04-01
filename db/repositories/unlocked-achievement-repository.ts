@@ -30,7 +30,7 @@ function achievementBadgeToInsert(achievement: AchievementBadge): UnlockedAchiev
     };
 }
 
-export async function getAllUnlockedAchievementss(): Promise<AchievementBadge[]> {
+export async function getAllUnlockedAchievements(): Promise<AchievementBadge[]> {
     const rows = await db
         .select()
         .from(unlockedAchievements)
