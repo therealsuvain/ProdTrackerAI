@@ -18,16 +18,16 @@ import { XButton } from "@/components/ui/x-button";
 import TimerEditModal from "@/components/modal/timer-modal";
 import { ThemeContext } from "@/context/ThemeContext";
 import { formatDuration } from "@/context/TimerContext";
-import { useData } from "@/hooks/use-data";
 import { useTimer } from "@/hooks/use-timer";
 import { TimerLog } from "@/types/timer";
 import { getTodayISO, withAlpha, getWeekStartISO } from "@/utils/common-utils";
 import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
+import { useLogs } from "@/hooks/use-logs";
 
 function TimerScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { timerLogs, setTimerLogs, addLog, removeLog, editLog } = useData();
+  const { timerLogs, setTimerLogs, addLog, removeLog, editLog } = useLogs();
   //const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
   const {
     time,

@@ -2,6 +2,7 @@ import { AIHandler } from "@/types/ai-handler";
 import { createHabit } from "../model-factory-utils";
 import { scheduleReminderHabits } from "../../hooks/use-notifications";
 import { checkInHabit } from "../habit-utils"
+import { Habit } from "@/types/habits";
 
 //TODO Add feedback for bboth if habit not found or check in failed,maybe add feedback for all handlers
 export const AddHabitHandler: AIHandler = {
@@ -24,17 +25,17 @@ export const AddHabitHandler: AIHandler = {
 
 export const DeleteHabitHandler: AIHandler = {
   execute: async (params, context) => {
-    const fullLengthId = context.resolveItemId(params.id, context.habits);
-    if (!fullLengthId) return;
-    await context.removeHabit(fullLengthId);
+    const oldHabit = context.tasks.find((t) => t.id.slice(0, 8) === params.id);
+    if (!oldHabit) {
+      throw new Error("Task not found");
+    }
+    await context.removeHabit(oldHabit.id);
   }
 };
 
 export const CheckInHabitHandler: AIHandler = {
   execute: async (params, context) => {
-    const fullLengthId = context.resolveItemId(params.id, context.habits);
-    if (!fullLengthId) return; //TODo
-    const habit = await context.getHabit(fullLengthId)
+    const habit = context.habits.find((h) => h.id.slice(0, 8) === params.id);
     if (!habit) return //TODO 
     const result = checkInHabit(habit);
     if (result.status === "denied") return //TODO;
@@ -60,9 +61,7 @@ export const QueryHabitsHandler: AIHandler = {
 
     // DEEP DIVE: Specific Habit
     if (specificHabitId) {
-      const fullLengthId = context.resolveItemId(specificHabitId, context.habits);
-      if (!fullLengthId) return { error: "Habit not found in database." };
-      const targetHabit = context.getHabit(fullLengthId);
+      const targetHabit = context.habits.find((h: Habit) => h.id.slice(0, 8) === specificHabitId);
       if (!targetHabit) return { error: "Habit not found in database." };
 
       return {

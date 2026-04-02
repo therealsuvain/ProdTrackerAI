@@ -2,9 +2,10 @@ import { View, StyleSheet, FlatList, Alert } from "react-native";
 import { useContext, useState, useEffect, useCallback, useRef } from "react";
 import { FAB, Portal, Text, Searchbar } from "react-native-paper";
 
+import { useHabits } from "@/hooks/use-habits";
 import { useData } from "@/hooks/use-data";
 import { Habit } from "@/types/habits";
-import {GlobalMetricKey} from "@/types/metrics";
+import { GlobalMetricKey } from "@/types/metrics";
 
 import HabitItem from "@/components/ui/habits/habit-item";
 import HabitModal from "@/components/modal/habit-modal";
@@ -18,7 +19,7 @@ import {
   restartHabitAfterGoal,
 } from "@/utils/habit-utils";
 import { withAlpha } from "@/utils/common-utils";
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
@@ -29,14 +30,15 @@ import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 // TODO : pendingStreakResetAfter does not reset in db only in state
 function HabitsScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { habits, addHabit, editHabit, removeHabit, getHabit, trackMetric, appMetrics } = useData();
+  const { habits, addHabit, editHabit, removeHabit } = useHabits();
+  const { trackMetric, appMetrics } = useData();
   const [filteredHabits, setFilteredHabits] = useState<Habit[]>(habits);
   const [searchQuery, setSearchQuery] = useState("");
   const [visible, setVisible] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [completedHabit, setCompletedHabit] = useState<Habit | null>(null);
-    const { toastError, showToast, dismissToast } = useDbErrorToast();
+  const { toastError, showToast, dismissToast } = useDbErrorToast();
   const { state, updateField, onSubmit } = useHabitForm({
     addHabit,
     editHabit,
@@ -57,27 +59,30 @@ function HabitsScreenInner() {
       // console.log("Updated Habitsss:", habits.map((h)=>h.id));
       const habit = habits.find((h) => h.id === updated.id);
       if (!habit) return;
-      try{
+      try {
         await editHabit(updated);
-         let updateMetrics: GlobalMetricKey[] = [];
-          if (habit.history.length < updated.history.length) {
-            updateMetrics.push("habitsCheckedIn");
-          }
-          if (!updated.pendingStreakResetAfter && (updated.streak === updated.goal)) {
-            updateMetrics.push("habitsGoalsCompleted");
-          }
-          if (
-            (!habit.freezeHistory && updated.freezeHistory) ||
-            (habit.freezeHistory &&
-              updated.freezeHistory &&
-              habit.freezeHistory.length < updated.freezeHistory.length)
-          ) {
-            updateMetrics.push("habitsFrozen");
-          }
-          if(updateMetrics.length > 0){
-            trackMetric(updateMetrics, 1);
-          }
-      }catch(e){
+        let updateMetrics: GlobalMetricKey[] = [];
+        if (habit.history.length < updated.history.length) {
+          updateMetrics.push("habitsCheckedIn");
+        }
+        if (
+          !updated.pendingStreakResetAfter &&
+          updated.streak === updated.goal
+        ) {
+          updateMetrics.push("habitsGoalsCompleted");
+        }
+        if (
+          (!habit.freezeHistory && updated.freezeHistory) ||
+          (habit.freezeHistory &&
+            updated.freezeHistory &&
+            habit.freezeHistory.length < updated.freezeHistory.length)
+        ) {
+          updateMetrics.push("habitsFrozen");
+        }
+        if (updateMetrics.length > 0) {
+          trackMetric(updateMetrics, 1);
+        }
+      } catch (e) {
         showToast("Couldn't save habit. Changes have been undone.");
       }
     },
@@ -91,11 +96,11 @@ function HabitsScreenInner() {
       {
         text: "Delete",
         onPress: async () => {
-            const habit = habits.find((h: Habit) => h.id === id);
-            if (habit?.notificationId) {
-              cancelReminder(habit.notificationId);
-            }
-            try {
+          const habit = habits.find((h: Habit) => h.id === id);
+          if (habit?.notificationId) {
+            cancelReminder(habit.notificationId);
+          }
+          try {
             await removeHabit(id);
           } catch {
             showToast("Couldn't delete the habit. It has been restored.");
@@ -136,16 +141,34 @@ function HabitsScreenInner() {
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
       <FontAwesome6 name="bars-progress" size={60} color={theme.habitBase} />
-      <Text style={[emptyStateStyle.emptyTitle, { color: withAlpha(theme.habitBase,"99") }]}>This is your habits page</Text>
+      <Text
+        style={[
+          emptyStateStyle.emptyTitle,
+          { color: withAlpha(theme.habitBase, "99") },
+        ]}
+      >
+        This is your habits page
+      </Text>
       <Text style={emptyStateStyle.emptySubtitle}>
         Added habits will be shown here
       </Text>
-      <View style={[emptyStateStyle.suggestionBox, { borderColor: withAlpha(theme.habitBase,"33")}]}>
-        <Text style={[emptyStateStyle.suggestionText, { color: theme.habitBase }]}>
-          Habits can have daily and weekly goals with on specific days of the week
+      <View
+        style={[
+          emptyStateStyle.suggestionBox,
+          { borderColor: withAlpha(theme.habitBase, "33") },
+        ]}
+      >
+        <Text
+          style={[emptyStateStyle.suggestionText, { color: theme.habitBase }]}
+        >
+          Habits can have daily and weekly goals with on specific days of the
+          week
         </Text>
-        <Text style={[emptyStateStyle.suggestionText, { color: theme.habitBase }]}>
-          1 Free streak freeze is given per habit, every 5 successive check-ins earn 1 additional freeze
+        <Text
+          style={[emptyStateStyle.suggestionText, { color: theme.habitBase }]}
+        >
+          1 Free streak freeze is given per habit, every 5 successive check-ins
+          earn 1 additional freeze
         </Text>
       </View>
     </View>
@@ -216,13 +239,13 @@ function HabitsScreenInner() {
   );
 }
 
- export default function HabitsScreen() {
-    return (
-      <ScreenErrorBoundary screenName="Habits">
-        <HabitsScreenInner />
-      </ScreenErrorBoundary>
-    );
-  }
+export default function HabitsScreen() {
+  return (
+    <ScreenErrorBoundary screenName="Habits">
+      <HabitsScreenInner />
+    </ScreenErrorBoundary>
+  );
+}
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   fab: {
@@ -272,4 +295,4 @@ const emptyStateStyle = StyleSheet.create({
     marginVertical: 5,
     textAlign: "center",
   },
-})
+});

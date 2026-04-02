@@ -1,8 +1,4 @@
-import {
-  StyleSheet,
-  ScrollView,
-  View,
-} from "react-native";
+import { StyleSheet, ScrollView, View } from "react-native";
 import {
   Text,
   Divider,
@@ -13,7 +9,7 @@ import {
   Modal,
   SegmentedButtons,
 } from "react-native-paper";
-import {Provider} from 'react-native-paper';
+import { Provider } from "react-native-paper";
 
 import { useData } from "@/hooks/use-data";
 import TaskItem from "@/components/ui/tasks/task-item";
@@ -29,8 +25,12 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { Habit } from "@/types/habits";
 import { ThemeContext } from "@/context/ThemeContext";
 import { ChatScreen } from "@/components/ui/chat/chat-screen";
-import {getTodayISO} from '@/utils/common-utils';
+import { getTodayISO } from "@/utils/common-utils";
 import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
+import { useTasks } from "@/hooks/use-tasks";
+import { useHabits } from "@/hooks/use-habits";
+import { useLogs } from "@/hooks/use-logs";
+import { useEvents } from "@/hooks/use-events";
 
 /**
  * TODO 1 : Check all types again, many new fields have been added which have been marked optional to not break exisitng items, but are required for future items
@@ -38,13 +38,13 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
  * TODO 3 : Account creation, authentication, login
  * TODO 4 : CLOUD DATA SYNC ABILITY with account
  * TODO 5 : Pay wall, barring paid features for free users
- * TODO 6 : Notifications edits via AI chat 
+ * TODO 6 : Notifications edits via AI chat
  * TODO 7 : Maybe custom notifications options
  * TODO 8 : Notifcation changes if needed, go through once
  * TODO 9 : Update Form validations and error handling in modals
  * TODO 10 : new Date() is expensive in javascript so have be to memomized everywhere
  * TODO 11 : Input sanitization
- * TODO 12 : Check for Security enhancements and possible securicty concerns for the entire app 
+ * TODO 12 : Check for Security enhancements and possible securicty concerns for the entire app
  * TODO 13 : Duplicate timer log storage in TImerContext vs DataContext
  * TODO 14: Timer Screen Flip Animation state issues- FIX'em
  * TODO 15 : Duplicate trackmetrics when items updated in index or home-timeline
@@ -64,24 +64,28 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
  * TODO 29 : Habit Item Edit Modal for exisitng Habits
  * TODO 30: Maybe add category and tags field to each, maybe category selection from a predefined list. Both potentially arrays
  * TODO 31 : If tags and categoires are added, embeddings for them?, atleast searchable via physical search, AI handlers also would need to be updated
- * TODO 32 : Common UI for tags/tag-list, shape like a literal tag 
+ * TODO 32 : Common UI for tags/tag-list, shape like a literal tag
  * TODO 33 : Light mode color fixes
  * TODO 34 : Maybe keep darkMode as default irrespective of system settings
- * TODO 35 : Item Label(Home-screen Today's tasks , events, habits etc) animations, like ads 
- * TODO 36 : Mayeb add more animations for the app. R&D   
+ * TODO 35 : Item Label(Home-screen Today's tasks , events, habits etc) animations, like ads
+ * TODO 36 : Mayeb add more animations for the app. R&D
  * TODO 37 : More settings options
- * TODO 38 : Few more achievements    
+ * TODO 38 : Few more achievements
  * TODO 59 : Add fields lastSyncedAt , and deletedAt. Suggested for cloud sync
  * TODO 60 : R&D how mantain analytics data for deleted items
  * TODO 61 : Allow title change in chat action chips
  * TODO 62 : Add instructions to system prompt for punctuation/spell check/beautify
  * TODO 65 : Check for steps required to adapte date/time fields to different Timezones and day light saving time changes
  * TODO 66 : Changes to event modal for endDate
- * 
+ *
  */
- function HomeScreenInner() {
+function HomeScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { tasks, toggleTask,events, timerLogs, habits, editHabit } = useData();
+  const { tasks, toggleTask } = useTasks();
+  const { events } = useEvents();
+  const { timerLogs } = useLogs();
+  const { habits, editHabit } = useHabits();
+  const { trackMetric } = useData();
   const [searchVisible, setSearchVisible] = useState(false);
   const { query, performSearch, results } = useSearch();
   const [aiVisible, setAiVisible] = useState(false);
@@ -107,39 +111,48 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
   return (
     <Provider>
       {/* {(isLoading || isProcessing) && <LoadingIndicator />} */}
-      <View style={{ backgroundColor: theme.background}}>
-      <SegmentedButtons
-        value={viewMode}
-        onValueChange={(value) => setViewMode(value as "overview" | "timeline")}
-        buttons={[
-          {
-            value: "overview",
-            label: "Overview",
-            icon: "view-dashboard",
-            checkedColor: theme.blueLightPrimary,
-            style: {
-              backgroundColor:
-                viewMode === "overview" ? theme.blueDarkPrimary : "transparent",
+      <View style={{ backgroundColor: theme.background }}>
+        <SegmentedButtons
+          value={viewMode}
+          onValueChange={(value) =>
+            setViewMode(value as "overview" | "timeline")
+          }
+          buttons={[
+            {
+              value: "overview",
+              label: "Overview",
+              icon: "view-dashboard",
+              checkedColor: theme.blueLightPrimary,
+              style: {
+                backgroundColor:
+                  viewMode === "overview"
+                    ? theme.blueDarkPrimary
+                    : "transparent",
+              },
             },
-          },
-          {
-            value: "timeline",
-            label: "Today's Timeline",
-            icon: "timeline",
-            checkedColor: theme.blueLightPrimary,
-            style: {
-              backgroundColor:
-                viewMode === "timeline" ? theme.blueDarkPrimary : "transparent",
+            {
+              value: "timeline",
+              label: "Today's Timeline",
+              icon: "timeline",
+              checkedColor: theme.blueLightPrimary,
+              style: {
+                backgroundColor:
+                  viewMode === "timeline"
+                    ? theme.blueDarkPrimary
+                    : "transparent",
+              },
             },
-          },
-        ]}
-        style={[styles.viewSwitcher, { backgroundColor: theme.background }]}
-      />
+          ]}
+          style={[styles.viewSwitcher, { backgroundColor: theme.background }]}
+        />
       </View>
       {viewMode === "overview" ? (
         <ScrollView style={{ backgroundColor: theme.background }}>
           <Searchbar
-            style={{ marginVertical: 4, backgroundColor: theme.taskBaseTransToo }}
+            style={{
+              marginVertical: 4,
+              backgroundColor: theme.taskBaseTransToo,
+            }}
             placeholder="Search Everything"
             onChangeText={performSearch}
             value={query}
@@ -183,7 +196,14 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
             Recent Timer Logs
           </Text>
           {recentLogs.length ? (
-            recentLogs.map((log) => <TimerLogItem key={log.id} log={log} onDelete={()=>{}} onEdit={()=>{}}/>)
+            recentLogs.map((log) => (
+              <TimerLogItem
+                key={log.id}
+                log={log}
+                onDelete={() => {}}
+                onEdit={() => {}}
+              />
+            ))
           ) : (
             <Text style={{ color: theme.timerBase }}>No Recent Logs</Text>
           )}
@@ -194,7 +214,12 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
           </Text>
           {activeHabits.length ? (
             activeHabits.map((habit) => (
-              <HabitItem key={habit.id} habit={habit} onUpdate={handleHabitUpdate} onDelete={()=>0}/>
+              <HabitItem
+                key={habit.id}
+                habit={habit}
+                onUpdate={handleHabitUpdate}
+                onDelete={() => 0}
+              />
             ))
           ) : (
             <Text style={{ color: theme.habitBase }}>No Active Habits</Text>
@@ -228,7 +253,12 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
           )} */}
         </ScrollView>
       ) : (
-        <View style={[styles.timelineContainer, { backgroundColor: theme.background }]}>
+        <View
+          style={[
+            styles.timelineContainer,
+            { backgroundColor: theme.background },
+          ]}
+        >
           {/* Date selector */}
           <View style={styles.dateSelector}>
             <Button
@@ -283,18 +313,18 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
         onPress={() => setAiVisible(true)}
       />
       <Portal>
-         <ChatScreen visible={aiVisible} onDismiss={() => setAiVisible(false)} /> 
+        <ChatScreen visible={aiVisible} onDismiss={() => setAiVisible(false)} />
       </Portal>
     </Provider>
   );
 }
 export default function HomeScreen() {
-    return (
-      <ScreenErrorBoundary screenName="Home">
-        <HomeScreenInner />
-      </ScreenErrorBoundary>
-    );
-  }
+  return (
+    <ScreenErrorBoundary screenName="Home">
+      <HomeScreenInner />
+    </ScreenErrorBoundary>
+  );
+}
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },

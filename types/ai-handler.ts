@@ -11,25 +11,14 @@ export interface AIActionContext {
   editTask: (task: Task) => Promise<void>;
   removeTask: (id: string) => Promise<void>;
   toggleTask: (id: string) => Promise<void>;
-  getTask: (id: string) => Promise<Task | null>;
-  getTasks: () => Promise<Task[]>;
   events: CalendarEvent[];
-  setEvents: (events: CalendarEvent[] | ((prev: CalendarEvent[]) => CalendarEvent[])) => void;
   addEvent: (event: CalendarEvent) => Promise<void>;
   editEvent: (event: CalendarEvent) => Promise<void>;
   removeEvent: (id: string) => Promise<void>;
-  getEvent: (id: string) => Promise<CalendarEvent | null>;
-  getEvents: () => Promise<CalendarEvent[]>;
   habits: Habit[];
   addHabit: (habit: Habit) => Promise<void>;
   editHabit: (habit: Habit) => Promise<void>;
   removeHabit: (id: string) => Promise<void>;
-  getHabit: (id: string) => Promise<Habit | null>;
-  getHabits: () => Promise<Habit[]>;
-  resolveItemId: <T extends { id: string }>(
-    shortOrFullId: string,
-    items: T[],
-  ) => string | null
   setTitle: (title: string) => void;
   start: () => void;
   stop: () => void;

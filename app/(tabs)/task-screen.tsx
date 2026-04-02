@@ -22,18 +22,12 @@ import { withAlpha } from "@/utils/common-utils";
 import { clearStorageByKey } from "@/utils/storage-utils";
 import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
+import { useTasks } from "@/hooks/use-tasks";
 
 function TaskScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const {
-    tasks,
-    setTasks,
-    addTask,
-    editTask,
-    removeTask,
-    toggleTask,
-    trackMetric,
-  } = useData();
+  const { tasks, setTasks, addTask, editTask, removeTask, toggleTask } = useTasks();
+  const { trackMetric } = useData();
   const [visible, setVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -250,17 +244,17 @@ function TaskScreenInner() {
         )}
         <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
         <DbErrorToast error={toastError} onDismiss={dismissToast} />
-         <FAB
+        <FAB
           style={styles.fab}
           icon="plus"
           onPress={() => {
             clearStorageByKey("timeLogs");
             clearStorageByKey("@prodtracker_metrics");
             clearStorageByKey("@prodtracker_achievements");
-            clearStorageByKey("tasks")
-            clearStorageByKey("habits")
-            clearStorageByKey("events")
-            clearStorageByKey("messages")
+            clearStorageByKey("tasks");
+            clearStorageByKey("habits");
+            clearStorageByKey("events");
+            clearStorageByKey("messages");
           }}
         />
       </View>

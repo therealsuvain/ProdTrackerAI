@@ -31,6 +31,10 @@ import { processCommandAgentic, agenticExecutor } from "@/utils/ai-utils";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { injectDaySeparators } from "@/utils/chat-utils";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
+import { useChat } from "@/hooks/use-chat";
+import { useTasks } from "@/hooks/use-tasks";
+import { useHabits } from "@/hooks/use-habits";
+import { useEvents } from "@/hooks/use-events";
 
 interface Props {
   visible: boolean;
@@ -48,17 +52,35 @@ const EXPIRY_THRESHOLD_MS = 30 * 60 * 1000; // 30 Minutes
 export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const headerHeight = useHeaderHeight();
   const { theme } = useContext(ThemeContext);
-  const context = useData();
   const { setTitle, start, stop } = useTimer();
   const navigation = useNavigation();
   const { isLoading, startRecording, stopRecording, transcript, error } =
     useVoiceInput({});
-  const { messages, setMessages, addMessage, editMessage } = context;
+  const { messages, setMessages, addMessage, editMessage } = useChat();
+  const { trackMetric } = useData();
+  const { tasks , addTask, editTask, removeTask, toggleTask} = useTasks();
+  const { habits , addHabit, editHabit, removeHabit } = useHabits();
+  const { events , addEvent, editEvent, removeEvent} = useEvents();
   const { toastError, showToast, dismissToast } = useDbErrorToast();
   const [isThinking, setIsThinking] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const audioSource = require("@/assets/audio/record.wav");
   const player = usePlaySound(audioSource);
+  const curatedContext = {
+    tasks,
+    addTask,
+    editTask,
+    removeTask,
+    toggleTask,
+    habits,
+    addHabit,
+    editHabit,
+    removeHabit,
+    events,
+    addEvent,
+    editEvent,
+    removeEvent
+  }
   const chatItems = useMemo(() => injectDaySeparators(messages), [messages]);
   //const chatItems = injectDaySeparators(messages);
   //console.log(chatItems.map((m) => m.id));
@@ -121,7 +143,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     let extraInfo = {};
     if (call.name.includes("task")) {
       color = theme.taskBase;
-      const task = context.tasks.find((h: any) => h.id.slice(0, 8) === id);
+      const task = tasks.find((h: any) => h.id.slice(0, 8) === id);
       if (task) {
         extraInfo = {
           title: task.title,
@@ -131,7 +153,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       }
     } else if (call.name.includes("habit")) {
       color = theme.habitBase;
-      const habit = context.habits.find((h: any) => h.id.slice(0, 8) === id);
+      const habit = habits.find((h: any) => h.id.slice(0, 8) === id);
       if (habit) {
         extraInfo = {
           title: habit.title,
@@ -142,7 +164,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       }
     } else if (call.name.includes("event")) {
       color = theme.eventBase;
-      const event = context.events.find((h: any) => h.id.slice(0, 8) === id);
+      const event = events.find((h: any) => h.id.slice(0, 8) === id);
       if (event) {
         extraInfo = {
           title: event.title,
@@ -178,7 +200,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
 
     try {
       const { response, calls } = await processCommandAgentic(text, {
-        ...context,
+        ...curatedContext,
         setTitle,
         start,
         stop,
@@ -191,7 +213,9 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         type: calls && calls.length > 0 ? "action" : "text",
         text:
           (calls && calls.length > 0) || response
-            ? response? response : ""
+            ? response
+              ? response
+              : ""
             : "Sorry, something went wrong. Please try again.",
         pendingActions: calls,
         timestamp: new Date().toISOString(),
@@ -200,7 +224,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       console.log("AI msg:", aiMsg);
       await addMessage(aiMsg);
       //setMessages((prev) => [aiMsg, ...prev]);
-      context.trackMetric(["chatMessagesSent"], 1);
+    trackMetric(["chatMessagesSent"], 1);
     } catch (err) {
       // Handle error UI
     } finally {
@@ -238,7 +262,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       };
       await addMessage(feedbackMsg);
       //setMessages((prev) => [feedbackMsg, ...prev]);
-      context.trackMetric(["chatActionsExpired"], 1);
+      trackMetric(["chatActionsExpired"], 1);
       return;
     }
     const confirmedMessage = messages.find((m) => m.id === msgId);
@@ -250,7 +274,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     try {
       // B. Run the background logic
       await agenticExecutor(actions, {
-        ...context,
+        ...curatedContext,
         setTitle,
         start,
         stop,
@@ -268,7 +292,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       };
       await addMessage(successMsg);
       //setMessages((prev) => [successMsg, ...prev]);
-      context.trackMetric(["chatActionsConfirmed"], 1);
+      trackMetric(["chatActionsConfirmed"], 1);
     } catch (err) {}
   };
 
@@ -290,7 +314,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     };
     await addMessage(cancelMsg);
     //setMessages((prev) => [cancelMsg, ...prev]);
-    context.trackMetric(["chatActionsCancelled"], 1);
+    trackMetric(["chatActionsCancelled"], 1);
   };
 
   const EmptyState = () => (

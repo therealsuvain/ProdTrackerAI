@@ -3,7 +3,7 @@ import { View, StyleSheet, Alert, Text, Pressable } from "react-native";
 import { FAB, Portal } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 
-import { useData } from "@/hooks/use-data";
+import { useEvents } from "@/hooks/use-events";
 import ViewSwitcher from "@/components/ui/calendar-events/view-switcher-event";
 import { useCalendarState } from "@/hooks/use-calendar-state";
 import { useEventForm } from "@/hooks/use-event-form";
@@ -19,7 +19,7 @@ import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 // TODO - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { events, addEvent, editEvent, deleteEventOccurrence } = useData();
+  const { events, addEvent, editEvent, deleteEventOccurrence } = useEvents();
   const {
     currentView,
     setCurrentView,

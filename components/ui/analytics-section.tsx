@@ -4,9 +4,15 @@ import { getHabitProgress, getTaskCompletion, getTotalTimeTracked } from "@/util
 import { useContext } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { PieChart } from "react-native-chart-kit";
+import { useTasks } from "@/hooks/use-tasks";
+import { useEvents } from "@/hooks/use-events";
+import { useLogs } from "@/hooks/use-logs";
+import { useHabits } from "@/hooks/use-habits";
 
 export function AnalyticsSection(){
-    const {tasks, timerLogs, habits}= useData();
+    const {tasks}= useTasks();
+    const {timerLogs}= useLogs();
+    const {habits}= useHabits();
     const {theme} = useContext(ThemeContext)
     const taskCompletion= getTaskCompletion(tasks);
     const timeTracked= getTotalTimeTracked(timerLogs, 'week');

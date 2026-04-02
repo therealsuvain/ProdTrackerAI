@@ -8,11 +8,11 @@ import React, {
 } from "react";
 import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 
-/* import { Task } from "@/types/task";
+import { Task } from "@/types/task";
 import { CalendarEvent } from "@/types/calendar";
 import { TimerLog } from "@/types/timer";
 import { Habit } from "@/types/habits";
-import { Message } from "@/types/chat"; */
+import { Message } from "@/types/chat";
 import {
   AppMetrics,
   MetricKey,
@@ -21,7 +21,7 @@ import {
 } from "@/types/metrics";
 import { AchievementBadge } from "@/types/achievements";
 
-/* import {
+import {
   getAllTasks,
   getTaskById,
   insertTask,
@@ -64,7 +64,7 @@ import {
   insertMessage,
   updateMessage,
   countMessages,
-} from "@/db/repositories/chat-message-repository"; */
+} from "@/db/repositories/chat-message-repository";
 
 import {
   loadAppMetricsFromDb,
@@ -80,11 +80,11 @@ import {
 
 import { sqlite } from "@/db/index";
 import { processAchievements } from "@/utils/achievements-util";
-/* import {
+import {
   applyMissedDayLogic,
   restartHabitAfterGoalForeground,
 } from "@/utils/habit-utils";
-import { cancelReminder } from "@/hooks/use-notifications"; */
+import { cancelReminder } from "@/hooks/use-notifications";
 
 import {
   dummyTasks,
@@ -100,7 +100,7 @@ import { initDatabase } from "@/db";
 //TODO Seperate this monolith itno item specific contexts
 // TODO if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
 interface DataContextType {
- /*  tasks: Task[];
+  tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   addTask: (task: Task) => Promise<void>;
   editTask: (task: Task) => Promise<void>;
@@ -137,7 +137,7 @@ interface DataContextType {
   addMessage: (message: Message) => Promise<void>;
   editMessage: (message: Message) => Promise<void>;
   getMessages: () => Promise<Message[]>;
-  messageCount: () => Promise<number>; */
+  messageCount: () => Promise<number>;
   resolveItemId: <T extends { id: string }>(
     shortOrFullId: string,
     items: T[],
@@ -149,11 +149,11 @@ interface DataContextType {
   } | null;
   dispatchError: (err: Error | string, type: "warning" | "fatal") => void;
   clearError: () => void;
- /*  deleteEventOccurrence: (
+  deleteEventOccurrence: (
     eventId: string,
     date: string,
     all: boolean,
-  ) => Promise<void>; */
+  ) => Promise<void>;
   appMetrics: AppMetrics;
   trackMetric: (key: GlobalMetricKey[], amount: number) => Promise<void>;
 }
@@ -166,11 +166,11 @@ export const DataContext = createContext<DataContextType | undefined>(
 const USE_DUMMY_DATA = false;
 
 export default function DataProvider({ children }: { children: ReactNode }) {
-/*   const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [timerLogs, setTimerLogs] = useState<TimerLog[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]); */
+  const [messages, setMessages] = useState<Message[]>([]);
   const [appMetrics, setAppMetrics] = useState<AppMetrics>(DefaultMetrics);
   const [unlockedAchievements, setUnlockedAchievements] = useState<
     AchievementBadge[]
@@ -184,7 +184,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     message: string;
     type?: "warning" | "fatal";
   } | null>(null);
-
+  
   useDrizzleStudio(sqlite);
 
   const dispatchError = useCallback(
@@ -219,7 +219,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     [],
   );
 
- /*  const optimisticTaskMutation = useCallback(
+  const optimisticTaskMutation = useCallback(
     async (
       optimisticUpdate: (prev: Task[]) => Task[],
       dbWrite: () => Promise<void> | Promise<Task>,
@@ -601,7 +601,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   const getMessages = useCallback(async (): Promise<Message[]> => {
     const messages = await getAllMessages();
     return messages ?? [];
-  }, []); */
+  }, []);
 
   const optimisticUnlockedAchievementMutation = useCallback(
     async (
@@ -709,7 +709,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     },
     [],
   ); */
-/*   const deleteEventOccurrence = async (
+  const deleteEventOccurrence = async (
     eventId: string,
     date: string,
     all: boolean,
@@ -732,7 +732,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       deletedOccurrences: [...(event.deletedOccurrences || []), date],
       notificationIds: event.notificationIds?.filter((n) => n.date !== date),
     });
-  }; */
+  };
 
   const trackMetric = useCallback(
     async (keys: GlobalMetricKey[], amount: number) => {
@@ -795,11 +795,11 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         await initDatabase();
 
         //await migrateTasksFromAsyncStorage();
-/*         let loadedTasks = await getAllTasks();
+        let loadedTasks = await getAllTasks();
         let loadedEvents = await getAllCalendarEvents();
         let loadedLogs = await getAllTimerLogs();
         let loadedHabits = await getAllHabits();
-        let loadedMessages = await getAllMessages(); */
+        let loadedMessages = await getAllMessages();
         let loadedMetrics = await loadAppMetricsFromDb();
         let loadedUnlockedAchievements = await getAllUnlockedAchievements();
 
@@ -811,7 +811,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
           if (loadedHabits.length === 0) loadedHabits = dummyHabits;
         } */
 
-/*         loadedHabits = loadedHabits.map((habit) => {
+        loadedHabits = loadedHabits.map((habit) => {
           const { status, habit: updatedHabit } = applyMissedDayLogic(habit);
           if (status === "missed_check_in") {
             trackMetric(["habitCheckInsMissed"], 1);
@@ -823,13 +823,13 @@ export default function DataProvider({ children }: { children: ReactNode }) {
             return restartHabitAfterGoalForeground(updatedHabit);
           }
           return updatedHabit;
-        }); */
+        });
         //loadedTasks = loadedTasks.filter((t)=>!t.title.includes("testing") && !t.title.includes("Testing"))
-/*         setTasks(loadedTasks);
+        setTasks(loadedTasks);
         setEvents(loadedEvents);
         setTimerLogs(loadedLogs);
         setHabits(loadedHabits);
-        setMessages(loadedMessages); */
+        setMessages(loadedMessages);
         setAppMetrics(loadedMetrics);
         setUnlockedAchievements(loadedUnlockedAchievements);
       } catch (err) {
@@ -905,7 +905,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   return (
     <DataContext.Provider
       value={{
-        /* tasks,
+        tasks,
         setTasks,
         addTask,
         editTask,
@@ -942,13 +942,13 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         addMessage,
         editMessage,
         getMessages,
-        messageCount, */
+        messageCount,
         resolveItemId,
         unlockedAchievements,
         error,
         dispatchError,
         clearError,
-        /* deleteEventOccurrence, */
+        deleteEventOccurrence,
         appMetrics,
         trackMetric,
       }}
