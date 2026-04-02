@@ -77,10 +77,11 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
  * TODO 62 : Add instructions to system prompt for punctuation/spell check/beautify
  * TODO 65 : Check for steps required to adapte date/time fields to different Timezones and day light saving time changes
  * TODO 66 : Changes to event modal for endDate
+ * 
  */
  function HomeScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { tasks, toggleTask,events, timerLogs, habits, setHabits } = useData();
+  const { tasks, toggleTask,events, timerLogs, habits, editHabit } = useData();
   const [searchVisible, setSearchVisible] = useState(false);
   const { query, performSearch, results } = useSearch();
   const [aiVisible, setAiVisible] = useState(false);
@@ -98,8 +99,9 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
   const toggleTaskCompleted = async (id: string) => {
     await toggleTask(id);
   };
-  const handleHabitUpdate = (updated: Habit) => {
-    setHabits(habits.map((h) => (h.id === updated.id ? updated : h)));
+  const handleHabitUpdate = async (updated: Habit) => {
+    await editHabit(updated);
+    //setHabits(habits.map((h) => (h.id === updated.id ? updated : h)));
   };
 
   return (

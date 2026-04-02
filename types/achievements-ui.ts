@@ -15,8 +15,8 @@ export interface AchievementDefinition {
 export const TASK_ACHIEVEMENTS: AchievementDefinition[] = [
     {
         id: 'tasks_1',
-        title: 'TEST',
-        description: 'Complete your first 10 tasks.',
+        title: 'DUMMY TASK 1 (TO BE REMOVED)',
+        description: 'DUM DUM TASK ONCE.',
         unlockedDescription: 'One small step for man, one giant leap for mankind.',
         tier: 'bronze',
         target: 1,
@@ -70,96 +70,113 @@ export const TASK_ACHIEVEMENTS: AchievementDefinition[] = [
     },
 ];
 
-export const HABIT_ACHIEVEMENTS: AchievementDefinition[] = [{
-    id: 'habits_10',
-    title: 'Wax On, Wax Off',
-    description: 'Check-in your habits 10 times.',
-    unlockedDescription: 'The routine begins. Every legend starts with a few reps.',
-    tier: 'bronze',
-    target: 10,
-    metricTrigger: 'habitsCheckedIn'
-},
-{
-    id: 'habits_100',
-    title: 'Training Montage',
-    description: 'Check-in your habits 100 times.',
-    unlockedDescription: 'Day after day, you keep showing up. Cue the montage music.\n',
-    tier: 'silver',
-    target: 100,
-    metricTrigger: 'habitsCheckedIn'
-},
-{
-    id: 'habits_250',
-    title: 'The Daily Grind',
-    description: 'Check-in your habits 250 times.',
-    unlockedDescription: 'Discipline beats motivation. You\'re building something real',
-    tier: 'gold',
-    target: 250,
-    metricTrigger: 'habitsCheckedIn'
-},
-{
-    id: 'habits_500',
-    title: 'Creature of Habit',
-    description: 'Check-in your habits 500 times.',
-    unlockedDescription: 'Consistency is now second nature. The system runs itself.',
-    tier: 'platinum',
-    target: 500,
-    metricTrigger: 'habitsCheckedIn'
-},
-{
-    id: 'habits_1000',
-    title: 'Ultra Instinct',
-    description: 'Check-in your habits 1,000 times.',
-    unlockedDescription: 'Your routines run on autopilot. Discipline has become instinct.',
-    tier: 'diamond',
-    target: 1000,
-    metricTrigger: 'habitsCheckedIn'
-},
-{
-    id: 'habits_freezes_5',
-    title: 'Time Out',
-    description: 'Use 5 habit streak freeze.',
-    unlockedDescription: 'Even heroes take a breather.',
-    tier: 'bronze',
-    target: 5,
-    metricTrigger: 'habitsFrozen'
-},
-{
-    id: 'habits_freezes_10',
-    title: 'Dormammu, I\'ve Come to Bargain',
-    description: 'Use 10 habit streak freezes.',
-    unlockedDescription: 'Sometimes the only winning move is looping time.',
-    tier: 'silver',
-    target: 10,
-    metricTrigger: 'habitsFrozen'
-},
-{
-    id: 'habits_freezes_25',
-    title: 'ZA WARUDO',
-    description: 'Use 25 habit streak freezes.',
-    unlockedDescription: 'Time itself pauses at your command.',
-    tier: 'gold',
-    target: 25,
-    metricTrigger: 'habitsFrozen'
-},
-{
-    id: 'habits_freezes_50',
-    title: 'Plot Armor',
-    description: 'Use 50 habit streak freezes.',
-    unlockedDescription: 'Somehow… the streak survives.',
-    tier: 'platinum',
-    target: 50,
-    metricTrigger: 'habitsFrozen'
-},
-{
-    id: 'habits_freezes_100',
-    title: 'Master of Time',
-    description: 'Use 100 habit streak freezes.',
-    unlockedDescription: 'Deadlines, destiny, and time itself bend to your will.',
-    tier: 'diamond',
-    target: 100,
-    metricTrigger: 'habitsFrozen'
-}
+export const HABIT_ACHIEVEMENTS: AchievementDefinition[] = [
+    {
+        id: 'habits_1',
+        title: 'DUMMY HABIT 1 (REMOVE LATER)',
+        description: 'DUM YOUR CEHCKO ONCE',
+        unlockedDescription: 'The routine begins. Every legend starts with a few reps.',
+        tier: 'bronze',
+        target: 1,
+        metricTrigger: 'habitsCheckedIn'
+    }, {
+        id: 'habits_2',
+        title: 'DUMMY HABIT 2 (REMOVE LATER)',
+        description: 'DUM GOALS ONCE',
+        unlockedDescription: 'The routine begins. Every legend starts with a few reps.',
+        tier: 'bronze',
+        target: 1,
+        metricTrigger: 'habitsGoalsCompleted'
+    }, {
+        id: 'habits_10',
+        title: 'Wax On, Wax Off',
+        description: 'Check-in your habits 10 times.',
+        unlockedDescription: 'The routine begins. Every legend starts with a few reps.',
+        tier: 'bronze',
+        target: 10,
+        metricTrigger: 'habitsCheckedIn'
+    },
+    {
+        id: 'habits_100',
+        title: 'Training Montage',
+        description: 'Check-in your habits 100 times.',
+        unlockedDescription: 'Day after day, you keep showing up. Cue the montage music.\n',
+        tier: 'silver',
+        target: 100,
+        metricTrigger: 'habitsCheckedIn'
+    },
+    {
+        id: 'habits_250',
+        title: 'The Daily Grind',
+        description: 'Check-in your habits 250 times.',
+        unlockedDescription: 'Discipline beats motivation. You\'re building something real',
+        tier: 'gold',
+        target: 250,
+        metricTrigger: 'habitsCheckedIn'
+    },
+    {
+        id: 'habits_500',
+        title: 'Creature of Habit',
+        description: 'Check-in your habits 500 times.',
+        unlockedDescription: 'Consistency is now second nature. The system runs itself.',
+        tier: 'platinum',
+        target: 500,
+        metricTrigger: 'habitsCheckedIn'
+    },
+    {
+        id: 'habits_1000',
+        title: 'Ultra Instinct',
+        description: 'Check-in your habits 1,000 times.',
+        unlockedDescription: 'Your routines run on autopilot. Discipline has become instinct.',
+        tier: 'diamond',
+        target: 1000,
+        metricTrigger: 'habitsCheckedIn'
+    },
+    {
+        id: 'habits_freezes_5',
+        title: 'Time Out',
+        description: 'Use 5 habit streak freeze.',
+        unlockedDescription: 'Even heroes take a breather.',
+        tier: 'bronze',
+        target: 5,
+        metricTrigger: 'habitsFrozen'
+    },
+    {
+        id: 'habits_freezes_10',
+        title: 'Dormammu, I\'ve Come to Bargain',
+        description: 'Use 10 habit streak freezes.',
+        unlockedDescription: 'Sometimes the only winning move is looping time.',
+        tier: 'silver',
+        target: 10,
+        metricTrigger: 'habitsFrozen'
+    },
+    {
+        id: 'habits_freezes_25',
+        title: 'ZA WARUDO',
+        description: 'Use 25 habit streak freezes.',
+        unlockedDescription: 'Time itself pauses at your command.',
+        tier: 'gold',
+        target: 25,
+        metricTrigger: 'habitsFrozen'
+    },
+    {
+        id: 'habits_freezes_50',
+        title: 'Plot Armor',
+        description: 'Use 50 habit streak freezes.',
+        unlockedDescription: 'Somehow… the streak survives.',
+        tier: 'platinum',
+        target: 50,
+        metricTrigger: 'habitsFrozen'
+    },
+    {
+        id: 'habits_freezes_100',
+        title: 'Master of Time',
+        description: 'Use 100 habit streak freezes.',
+        unlockedDescription: 'Deadlines, destiny, and time itself bend to your will.',
+        tier: 'diamond',
+        target: 100,
+        metricTrigger: 'habitsFrozen'
+    }
 ];
 
 export const TIMER_ACHIEVEMENTS: AchievementDefinition[] = [{
@@ -211,9 +228,9 @@ export const TIMER_ACHIEVEMENTS: AchievementDefinition[] = [{
 export const ACHIEVEMENTS_ACHIEVEMENTS: AchievementDefinition[] = [
     {
         id: 'achievements_1',
-        title: 'DUMMY Achievement Unlocked',
-        description: 'Complete 5 achievements.',
-        unlockedDescription: 'The first few trophies on the shelf. Many more await.',
+        title: 'DUMMY ACHIEVMETN 1 (TO BE REMOVED)',
+        description: 'Complete 1 achievement.',
+        unlockedDescription: 'DUMACHIEVE',
         tier: 'bronze',
         target: 1,
         metricTrigger: 'meta'

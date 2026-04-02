@@ -10,6 +10,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { ThemeContext } from "@/context/ThemeContext";
 
+//TODO What in case when a user wants to schedule an overnight event, when the start time is later than the end time but of previous date, current logic breaks in case
 interface Props {
   visible: boolean;
   onDismiss: () => void;
@@ -26,7 +27,7 @@ interface Props {
       | "recurrence"
       | "category"
       | "errors",
-    value: any
+    value: any,
   ) => void;
   onSubmit: () => Promise<void> | void;
 }
@@ -50,38 +51,65 @@ export default function CalendarEventModal({
   const onStartChange = (event: any, selected?: Date) => {
     setShowStartPicker(false);
     setAndroidDate(selected);
-    if (selected) updateField("startDate", selected);
+    if (selected) updateField("startDate", selected.toISOString());
   };
 
   const onStartTimeChangeAndroid = (event: any, selected?: Date) => {
     setShowAndroidStartTimerPicker(false);
-    let varTime;
+    let varTime =
+      state.startDate.split("T")[0] +
+      "T" +
+      state.startTime.split("T")[1];
     if (selected)
       varTime = androidDate
-        ? androidDate
+        ? androidDate.toISOString().split("T")[0] +
+          "T" +
+          selected.toISOString().split("T")[1]
         : state.startDate.split("T")[0] +
           "T" +
           selected.toISOString().split("T")[1];
-    updateField("startTime", new Date(varTime!));
+    updateField("startTime", varTime);
+   /*  console.log("varTime", varTime);
+    console.log("androidDate", androidDate);
+    console.log("selected", selected);
+    console.log("state.startDate", state.startDate);
+    console.log("state.startTime", state.startTime); */
   };
   const onEndChange = (event: any, selected?: Date) => {
     setShowEndPicker(false);
-    setAndroidDate(selected);
-    if (selected) updateField("endDate", selected);
+    if (selected) updateField("endDate", selected.toISOString());
   };
 
   const onEndTimeChangeAndroid = (event: any, selected?: Date) => {
+    console.log("ENTERED END");
     setShowAndroidEndTimerPicker(false);
-    let varTime;
-    if (selected)
+
+    let varTime =
+      state.startDate.split("T")[0] +
+      "T" +
+      state.endTime.split("T")[1];
+    console.log("selected1", selected);
+    if (selected) {
+      console.log("selected2", selected);
       varTime = androidDate
-        ? androidDate
+        ? androidDate.toISOString().split("T")[0] +
+          "T" +
+          selected.toISOString().split("T")[1]
         : state.startDate.split("T")[0] +
           "T" +
           selected.toISOString().split("T")[1];
-    updateField("endTime", new Date(varTime!));
+      console.log("selected3", selected);
+    }
+   /*  console.log("varTime", varTime);
+    console.log("androidDate", androidDate);
+    console.log("selected", selected);
+    console.log("state.startDate", state.startDate);
+    console.log("state.endTime", state.endTime); */
+
+    updateField("endTime", varTime);
   };
 
+  //console.log("state", state);
   return (
     <Modal
       visible={visible}
@@ -103,7 +131,9 @@ export default function CalendarEventModal({
         onChangeText={(text) => updateField("title", text)}
       />
       {state.errors?.title && (
-        <Text style={[styles.error,{color:theme.error}]}>{state.errors.title}</Text>
+        <Text style={[styles.error, { color: theme.error }]}>
+          {state.errors.title}
+        </Text>
       )}
       <Button
         mode="elevated"
@@ -116,11 +146,13 @@ export default function CalendarEventModal({
       >
         Pick Date
       </Button>
-      <Text style={[styles.text,{color:theme.eventBase}]}>
+      <Text style={[styles.text, { color: theme.eventBase }]}>
         Start: {new Date(state.startDate).toDateString() || ""}
       </Text>
       {state.errors?.startDate && (
-        <Text style={[styles.error,{color:theme.error}]}>{state.errors.startDate}</Text>
+        <Text style={[styles.error, { color: theme.error }]}>
+          {state.errors.startDate}
+        </Text>
       )}
       {showStartPicker && (
         <DateTimePicker
@@ -154,17 +186,21 @@ export default function CalendarEventModal({
         </Button>
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={[styles.text,{color:theme.eventBase}]}>
+        <Text style={[styles.text, { color: theme.eventBase }]}>
           Start: {new Date(state.startTime).toLocaleTimeString() || ""}
         </Text>
         {state.errors?.startTime && (
-          <Text style={[styles.error,{color:theme.error}]}>{state.errors.startTime}</Text>
+          <Text style={[styles.error, { color: theme.error }]}>
+            {state.errors.startTime}
+          </Text>
         )}
-        <Text style={[styles.text,{color:theme.eventBase}]}>
+        <Text style={[styles.text, { color: theme.eventBase }]}>
           End: {new Date(state.endTime).toLocaleTimeString() || ""}
         </Text>
         {state.errors?.endTime && (
-          <Text style={[styles.error,{color:theme.error}]}>{state.errors.endTime}</Text>
+          <Text style={[styles.error, { color: theme.error }]}>
+            {state.errors.endTime}
+          </Text>
         )}
       </View>
       {showAndroidStartTimePicker && (
@@ -192,11 +228,13 @@ export default function CalendarEventModal({
       >
         Pick End Date
       </Button>
-      <Text style={[styles.text,{color:theme.eventBase}]}>
+      <Text style={[styles.text, { color: theme.eventBase }]}>
         End: {new Date(state.endDate).toDateString() || ""}
       </Text>
       {state.errors?.endDate && (
-        <Text style={[styles.error,{color:theme.error}]}>{state.errors.endDate}</Text>
+        <Text style={[styles.error, { color: theme.error }]}>
+          {state.errors.endDate}
+        </Text>
       )}
       {showEndPicker && (
         <DateTimePicker
@@ -215,7 +253,9 @@ export default function CalendarEventModal({
         multiline
       />
       <View style={styles.switchContainer}>
-        <Text style={[styles.text,{color:theme.eventBase}]}>Set Reminder</Text>
+        <Text style={[styles.text, { color: theme.eventBase }]}>
+          Set Reminder
+        </Text>
         <Switch
           value={state.reminder}
           thumbColor={theme.eventBase}
@@ -225,7 +265,7 @@ export default function CalendarEventModal({
           }}
         />
       </View>
-      <Text style={[styles.text,{color:theme.eventBase}]}>Recurrence</Text>
+      <Text style={[styles.text, { color: theme.eventBase }]}>Recurrence</Text>
       <SegmentedButtons
         style={styles.verticalMargin}
         value={state.recurrence ? state.recurrence : "none"}
@@ -258,7 +298,7 @@ export default function CalendarEventModal({
       />
       <TextInput
         label="Category"
-       defaultValue={state.category || ""}
+        defaultValue={state.category || ""}
         mode="outlined"
         activeOutlineColor={theme.eventBase}
         style={styles.verticalMargin}

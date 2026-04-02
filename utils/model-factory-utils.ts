@@ -6,7 +6,7 @@ import { Habit } from "../types/habits";
 import { randomUUID } from "expo-crypto";
 import { generateEmbedding } from "@/utils/embedding-engine"
 
-
+// TODO All date fields from AI have to checked and verified before being returned
 
 // Helper for date parsing
 const parseDate = (dateStr: any): Date | undefined => {
@@ -23,6 +23,7 @@ const parseDate = (dateStr: any): Date | undefined => {
 };
 
 const validDate = (date: any): boolean => {
+  if (!date) return false;
   date = new Date(date);
   return date instanceof Date && !isNaN(date.getTime());
 };
@@ -43,8 +44,14 @@ export const createTask = async (
     if (!params.dueDate) {
       throw new Error("DueDate is missing");
     }
+    let dueDate;
+    if (!validDate(params.dueDate)) {
+      dueDate = parseDate(params.dueDate)?.toISOString();
+    }
+    else {
+      dueDate = params.dueDate
+    }
 
-    const dueDate = parseDate(params.dueDate)?.toISOString();
     //TODO Fix reminder date logic for all below
     let reminderDate;
     if (params.reminderDate) {
@@ -53,24 +60,28 @@ export const createTask = async (
           dueDate?.split("T")[0] + "T" + params.reminderDate
         );
       }
+      else {
+        reminderDate = params.reminderDate
+      }
     }
 
     const embeddingVector = await generateEmbedding(params.title, false);
     return {
       id,
-      title: params.title || "",
-      description: params.description || "",
+      title: params.title,
+      ...(params.description && { description: params.description }),
       dueDate,
       reminder: params.reminder,
-      reminderDate,
-      notificationId: params.notificationId || undefined,
+      ...(reminderDate && { reminderDate }),
+      ...(params.notificationId && { notificationId: params.notificationId }),
       priority: ["low", "medium", "high"].includes(params.priority)
         ? params.priority
         : "medium",
       completed: params.completed ?? false,
-      tags: params.tags || [],
-      createdAt: new Date().toISOString(),
+      ...(params.tags && { tags: params.tags }),
+      createdAt: params.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      ...(params.completedAt && { completedAt: params.completedAt }),
       embedding: params.embedding || embeddingVector,
     } as Task;
   } catch (err: any) {
@@ -94,37 +105,62 @@ export const createEvent = async (
     if (!params.startTime || !params.endTime) {
       throw new Error("Time is missing");
     }
-
-    const startDate = parseDate(params.startDate);
-    const endDate = parseDate(params.endDate);
-    let startTime, endTime;
+    let startDate, endDate, startTime, endTime;
+    if (!validDate(params.startDate)) {
+      startDate = parseDate(params.startDate)?.toISOString();
+    }
+    else {
+      startDate = params.startDate
+    }
+    if (!validDate(params.endDate)) {
+      endDate = parseDate(params.endDate)?.toISOString();
+    }
+    else {
+      endDate = params.endDate
+    }
     if (!validDate(params.startTime))
       startTime = parseDate(
         startDate?.toISOString().split("T")[0] + "T" + params.startTime
-      );
+      )?.toISOString();
+    else
+      startTime = params.startTime
+
     if (!validDate(params.endTime))
       endTime = parseDate(
         startDate?.toISOString().split("T")[0] + "T" + params.endTime
-      );
+      )?.toISOString();
+    else
+      endTime = params.endTime
+
     if (startTime && endTime && startTime > endTime)
       throw new Error("End time before start");
+
+    if(!startTime)
+      throw new Error("Start time is missing");
+    if(!endTime)
+      throw new Error("End time is missing");
+    if(!startDate)
+      throw new Error("Start date is missing");
+
     const embeddingVector = await generateEmbedding(params.title, false);
     return {
       id,
-      title: params.title || "",
-      startDate: startDate ? startDate : new Date(),
-      endDate: endDate ? endDate : new Date(),
-      startTime: startTime ? startTime : new Date(),
-      endTime: endTime ? endTime : new Date(),
-      description: params.description || "",
+      title: params.title,
+      startDate,
+      ...(endDate && { endDate }),
+      startTime,
+      endTime,
+      ...(params.description && { description: params.description }),
       reminder: params.reminder,
       recurrence: ["none", "daily", "weekly"].includes(params.recurrence)
         ? params.recurrence
         : "none",
-      category: params.category || "",
-      deletedOccurrences: params.deletedOccurrences || [],
-      notificationIds: params.notificationIds || undefined,
-      embedding: params.embedding || embeddingVector,
+      ...(params.notificationIds && { notificationIds: params.notificationIds }),
+      ...(params.category && { category: params.category }),
+      ...(params. deletedOccurrences && { deletedOccurrences: params.deletedOccurrences }),
+      embedding: embeddingVector,
+      createdAt: params.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
   } catch (err: any) {
     throw new Error(`Invalid Event params: ${err.message}`);
@@ -147,35 +183,42 @@ export const createHabit = async (
     if (!params.goal) {
       throw new Error("End Goal is missing");
     }
+
     let reminderDate;
     if (params.reminderDate) {
       if (!validDate(params.reminderDate)) {
         reminderDate = parseDate(new Date().toISOString().split("T")[0] + "T" + params.reminderDate)?.toISOString();
       }
+      else {
+        reminderDate = params.reminderDate
+      }
     }
-    const goal = params.goal ? parseInt(params.goal) : undefined;
+    const goal = parseInt(params.goal);
     if (goal && isNaN(goal)) throw new Error("Goal must be a number");
+    if (goal && goal <= 0) throw new Error("Goal must be greater than 0");
     const embeddingVector = await generateEmbedding(params.title, false);
     return {
       id,
-      title: params.title || "Untitiled Habit",
+      title: params.title,
       frequency: ["daily", "weekly"].includes(params.frequency)
         ? params.frequency
         : "daily",
       reminder: params.reminder,
-      ...(params.reminder && { reminderDate }),
+      ...(params.reminderDate && { reminderDate }),
       ...(params.targetDays && { targetDays: params.targetDays, }),
-      streak: 0,
-      history: [],
-      streakFreezes: 1,
-      longestStreak: 0,
-      isArchived: false,
+      streak: params.streak ||0,
+      history: params.history || [],
+      streakFreezes: params.streakFreezes || 1,
+      longestStreak: params.longestStreak || 0,
+      isArchived: params.isArchived ?? false,
       goal,
-      goalCompletions: [],
-      ...(params.reminder && { notificationId: params.notificationId || undefined }),
+      goalCompletions: params.goalCompletions || [],
+      ...(params.pendingStreakResetAfter && { pendingStreakResetAfter: params.pendingStreakResetAfter }),
+      ...(params.notificationId && { notificationId: params.notificationId }),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      embedding:  embeddingVector,
+      ...(params.archivedAt && { archivedAt: params.archivedAt }),
+      embedding: embeddingVector,
     };
   } catch (err: any) {
     throw new Error(`Invalid Habit params: ${err.message}`);

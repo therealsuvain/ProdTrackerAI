@@ -37,7 +37,10 @@ export const EditTaskHandler: AIHandler = {
       params.embedding = embeddingVector;
     }
     const oldTask = context.tasks.find((t) => t.id.slice(0, 8) === params.id);
-    const updatedTask = await createTask({ ...oldTask, ...params, id: oldTask?.id })
+    if (!oldTask) {
+      throw new Error("Task not found");
+    }
+    const updatedTask = await createTask({ ...oldTask, ...params, id: oldTask.id })
     /* context.setTasks((prev) =>
       prev.map((t) => (t.id.slice(0, 8) === params.id ? updatedTask : t))
     ); */
@@ -47,14 +50,21 @@ export const EditTaskHandler: AIHandler = {
 
 export const DeleteTaskHandler: AIHandler = {
   execute: async (params, context) => {
-    //context.setTasks((prev) => prev.filter((t) => t.id.slice(0, 8) !== params.id));
-    context.removeTask(params.id);
+    const oldTask = context.tasks.find((t) => t.id.slice(0, 8) === params.id);
+    if (!oldTask) {
+      throw new Error("Task not found");
+    }
+    context.removeTask(oldTask.id);
   }
 };
 
 export const CompleteTaskHandler: AIHandler = {
   execute: async (params, context) => {
-    context.toggleTask(params.id);
+    const oldTask = context.tasks.find((t) => t.id.slice(0, 8) === params.id);
+    if (!oldTask) {
+      throw new Error("Task not found");
+    }
+    context.toggleTask(oldTask.id);
   }
 };
 

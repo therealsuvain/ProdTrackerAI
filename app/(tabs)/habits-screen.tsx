@@ -53,8 +53,8 @@ function HabitsScreenInner() {
 
   const handleUpdate = useCallback(
     async (updated: Habit) => {
-      console.log("Updated Habit:", updated.id);
-      console.log("Updated Habitsss:", habits.map((h)=>h.id));
+      // console.log("Updated Habit:", updated.id);
+      // console.log("Updated Habitsss:", habits.map((h)=>h.id));
       const habit = habits.find((h) => h.id === updated.id);
       if (!habit) return;
       try{
@@ -63,7 +63,7 @@ function HabitsScreenInner() {
           if (habit.history.length < updated.history.length) {
             updateMetrics.push("habitsCheckedIn");
           }
-          if (updated.streak === updated.goal) {
+          if (!updated.pendingStreakResetAfter && (updated.streak === updated.goal)) {
             updateMetrics.push("habitsGoalsCompleted");
           }
           if (

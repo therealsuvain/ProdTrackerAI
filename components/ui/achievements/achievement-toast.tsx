@@ -1,6 +1,12 @@
 import React, { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { Text, Surface, useTheme } from "react-native-paper";
+import {
+  Text,
+  Surface,
+  useTheme,
+  Portal,
+  Provider as PaperProvider,
+} from "react-native-paper";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -24,7 +30,7 @@ export const AchievementToast = ({ badge }: AchievementToastProps) => {
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(-150); // Start hidden off-screen
   const router = useRouter();
-  
+
   const handleToastPress = () => {
     console.log("Badge:", badge);
     if (!badge?.id) return;
@@ -71,44 +77,53 @@ export const AchievementToast = ({ badge }: AchievementToastProps) => {
 
   // We still render the component even if badge is null so the slide-out animation can play
   return (
-    <Animated.View style={[styles.wrapper, animatedStyle, { zIndex: 9999 }]}>
-      <Pressable /* style={{borderWidth: 4, borderColor: "white", padding:40}} */ onPress={handleToastPress}>
-        <Surface
-          style={[
-            styles.container,
-            { backgroundColor: theme.colors.elevation.level5 },
-          ]}
-          elevation={5}
+        <Animated.View
+          style={[styles.wrapper, animatedStyle, { zIndex: 9999 }]}
         >
-          <View
-            style={[
-              styles.iconRing,
-              { borderColor: getTierColor(badge?.tier) },
-            ]}
+          <Pressable
+            /* style={{borderWidth: 4, borderColor: "white", padding:40}} */ onPress={
+              handleToastPress
+            }
           >
-            <Ionicons
-              name="trophy"
-              size={24}
-              color={getTierColor(badge?.tier)}
-            />
-          </View>
-          <View style={styles.textContainer}>
-            <Text
-              variant="labelMedium"
-              style={{ color: getTierColor(badge?.tier), fontWeight: "bold" }}
+            <Surface
+              style={[
+                styles.container,
+                { backgroundColor: theme.colors.elevation.level5 },
+              ]}
+              elevation={5}
             >
-              ACHIEVEMENT UNLOCKED
-            </Text>
-            <Text
-              variant="titleMedium"
-              style={{ color: theme.colors.onSurface, fontWeight: "700" }}
-            >
-              {badge?.title || ""}
-            </Text>
-          </View>
-        </Surface>
-      </Pressable>
-    </Animated.View>
+              <View
+                style={[
+                  styles.iconRing,
+                  { borderColor: getTierColor(badge?.tier) },
+                ]}
+              >
+                <Ionicons
+                  name="trophy"
+                  size={24}
+                  color={getTierColor(badge?.tier)}
+                />
+              </View>
+              <View style={styles.textContainer}>
+                <Text
+                  variant="labelMedium"
+                  style={{
+                    color: getTierColor(badge?.tier),
+                    fontWeight: "bold",
+                  }}
+                >
+                  ACHIEVEMENT UNLOCKED
+                </Text>
+                <Text
+                  variant="titleMedium"
+                  style={{ color: theme.colors.onSurface, fontWeight: "700" }}
+                >
+                  {badge?.title || ""}
+                </Text>
+              </View>
+            </Surface>
+          </Pressable>
+        </Animated.View>
   );
 };
 

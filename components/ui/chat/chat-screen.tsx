@@ -30,6 +30,7 @@ import { DaySeparator } from "./day-seperator";
 import { processCommandAgentic, agenticExecutor } from "@/utils/ai-utils";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { injectDaySeparators } from "@/utils/chat-utils";
+import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 
 interface Props {
   visible: boolean;
@@ -43,6 +44,7 @@ interface Props {
  */
 const EXPIRY_THRESHOLD_MS = 30 * 60 * 1000; // 30 Minutes
 
+// TODO why is useData() being used instead of useContext(), R&D is it better to use a customhook or useContext()
 export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const headerHeight = useHeaderHeight();
   const { theme } = useContext(ThemeContext);
@@ -51,14 +53,15 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const navigation = useNavigation();
   const { isLoading, startRecording, stopRecording, transcript, error } =
     useVoiceInput({});
-  const { messages, setMessages } = context;
+  const { messages, setMessages, addMessage, editMessage } = context;
+  const { toastError, showToast, dismissToast } = useDbErrorToast();
   const [isThinking, setIsThinking] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const audioSource = require("@/assets/audio/record.wav");
   const player = usePlaySound(audioSource);
   const chatItems = useMemo(() => injectDaySeparators(messages), [messages]);
   //const chatItems = injectDaySeparators(messages);
- //console.log(chatItems.map((m) => m.id));
+  //console.log(chatItems.map((m) => m.id));
   useEffect(() => {
     // Add the event listener when the component mounts or when isPortalOpen changes
     const backButtonListener = BackHandler.addEventListener(
@@ -97,7 +100,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   };
 
   const removeIndividualAction = (messageId: string, actionIndex: number) => {
-    console.log(messages.filter((m) => m.id === messageId)[0].pendingActions);
     setMessages((prev) =>
       prev.map((m) => {
         if (m.id === messageId && m.pendingActions) {
@@ -110,7 +112,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         return m;
       }),
     );
-    console.log(messages.filter((m) => m.id === messageId)[0].pendingActions);
   };
 
   const enrichAction = (call: any) => {
@@ -170,7 +171,8 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       timestamp: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    setMessages((prev) => [userMsg, ...prev]); // Inverted list
+    await addMessage(userMsg);
+    //setMessages((prev) => [userMsg, ...prev]); // Inverted list
 
     setIsThinking(true);
 
@@ -189,14 +191,15 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         type: calls && calls.length > 0 ? "action" : "text",
         text:
           (calls && calls.length > 0) || response
-            ? response
+            ? response? response : ""
             : "Sorry, something went wrong. Please try again.",
         pendingActions: calls,
         timestamp: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-
-      setMessages((prev) => [aiMsg, ...prev]);
+      console.log("AI msg:", aiMsg);
+      await addMessage(aiMsg);
+      //setMessages((prev) => [aiMsg, ...prev]);
       context.trackMetric(["chatMessagesSent"], 1);
     } catch (err) {
       // Handle error UI
@@ -217,9 +220,12 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
 
     if (isExpired) {
       // Update the specific bubble to an 'expired' state
-      setMessages((prev) =>
+      const expiredMessage = messages.find((m) => m.id === msgId);
+      if (!expiredMessage) return;
+      await editMessage({ ...expiredMessage, isExpired: true });
+      /* setMessages((prev) =>
         prev.map((m) => (m.id === msgId ? { ...m, isExpired: true } : m)),
-      );
+      ); */
 
       // Add a helpful AI feedback message
       const feedbackMsg: Message = {
@@ -230,13 +236,17 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         timestamp: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      setMessages((prev) => [feedbackMsg, ...prev]);
+      await addMessage(feedbackMsg);
+      //setMessages((prev) => [feedbackMsg, ...prev]);
       context.trackMetric(["chatActionsExpired"], 1);
       return;
     }
-    setMessages((prev) =>
+    const confirmedMessage = messages.find((m) => m.id === msgId);
+    if (!confirmedMessage) return;
+    await editMessage({ ...confirmedMessage, isConfirmed: true });
+    /* setMessages((prev) =>
       prev.map((m) => (m.id === msgId ? { ...m, isConfirmed: true } : m)),
-    );
+    ); */
     try {
       // B. Run the background logic
       await agenticExecutor(actions, {
@@ -256,15 +266,19 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         timestamp: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      setMessages((prev) => [successMsg, ...prev]);
+      await addMessage(successMsg);
+      //setMessages((prev) => [successMsg, ...prev]);
       context.trackMetric(["chatActionsConfirmed"], 1);
     } catch (err) {}
   };
 
-  const handleCancelAction = (msgId: string) => {
-    setMessages((prev) =>
+  const handleCancelAction = async (msgId: string) => {
+    const canclledMessage = messages.find((m) => m.id === msgId);
+    if (!canclledMessage) return;
+    await editMessage({ ...canclledMessage, isConfirmed: true });
+    /*  setMessages((prev) =>
       prev.map((m) => (m.id === msgId ? { ...m, isConfirmed: true } : m)),
-    );
+    ); */
 
     const cancelMsg: Message = {
       id: Date.now().toString(),
@@ -274,7 +288,8 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       timestamp: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    setMessages((prev) => [cancelMsg, ...prev]);
+    await addMessage(cancelMsg);
+    //setMessages((prev) => [cancelMsg, ...prev]);
     context.trackMetric(["chatActionsCancelled"], 1);
   };
 
@@ -355,6 +370,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         >
           <Ionicons size={24} name="close-outline" color="#fff"></Ionicons>
         </Pressable>
+        <DbErrorToast error={toastError} onDismiss={dismissToast} />
       </KeyboardAvoidingView>
     </KeyboardProvider>
   );

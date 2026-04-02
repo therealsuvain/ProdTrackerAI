@@ -102,6 +102,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// TODO Clean-up and document this bloated poo
 export default function TimerProvider({ children }: { children: ReactNode }) {
   const [time, setTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -112,7 +113,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
   const [countdownTarget, setCountdownTarget] = useState(300); // default 5 min
   const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
   const [pausedSeconds, setPausedSeconds] = useState(0);
-  const { timerLogs, setTimerLogs, trackMetric } = useData();
+  const { addLog, trackMetric } = useData();
   const updateIntervalRef = useRef<number | null>(null);
   //const notificationUpdateRef = useRef<number | null>(null);
   const isInitializedRef = useRef(false);
@@ -423,7 +424,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
       [
         {
           text: "Save Session",
-          onPress: () => {
+          onPress: async () => {
             const log: TimerLog = {
               id: randomUUID(),
               title: title || "Untitled Activity",
@@ -435,7 +436,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
               updatedAt: new Date().toISOString(),
               laps: laps.length > 0 ? laps : undefined,
             };
-            setTimerLogs((prev) => [...prev, log]);
+            await addLog(log);
             trackMetric(["timeTracked"], finalTime);
             stopNativeTimer();
             resetState();
@@ -536,7 +537,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
   };
 
   // Stop timer and save log
-  const stop = () => {
+  const stop = async () => {
     const finalTime =
       isRunning && startTimestamp
         ? pausedSeconds + Math.floor((Date.now() - startTimestamp) / 1000)
@@ -555,7 +556,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
         updatedAt: new Date().toISOString(),
         laps: laps.length > 0 ? laps : undefined,
       };
-      setTimerLogs((prev) => [...prev, log]);
+      await addLog(log);
       trackMetric(["timeTracked"], workedTime);
       stopNativeTimer();
     }
@@ -575,7 +576,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
       [
         {
           text: "Save & Reset",
-          onPress: () => {
+          onPress: async () => {
             // Save as partial log so the time isn't lost
             const finalTime =
               isRunning && startTimestamp
@@ -598,7 +599,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
                 updatedAt: new Date().toISOString(),
                 isPartial: true, // flagged so the log item can show "(partial)"
               };
-              setTimerLogs((prev) => [...prev, log]);
+              await addLog(log);
               trackMetric(["timeTracked"], finalTime);
             }
             stopNativeTimer();

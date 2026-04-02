@@ -2,13 +2,13 @@ import {
   ALL_ACHIEVEMENTS,
   ACHIEVEMENTS_ACHIEVEMENTS, AchievementDefinition
 } from '@/types/achievements-ui';
-import { loadUnlockedAchievements, saveUnlockedAchievement } from '@/utils/storage-utils';
 import { AchievementBadge } from '../types/achievements';
 import { MetricKey } from '@/types/metrics';
 
-export const processAchievements = async (metric: number, metricKey: MetricKey): Promise<AchievementBadge[]> => {
-  const unlocked = await loadUnlockedAchievements();
+export const processAchievements = async (unlocked : AchievementBadge[], metric: number, metricKey: MetricKey): Promise<AchievementBadge[]> => {
+  
   const unlockedIds = new Set(unlocked.map(b => b.id));
+  console.log('unlockedIds', unlockedIds);
   const newlyUnlocked: AchievementBadge[] = [];
 
   // 1. Find only the definitions that listen to this exact metric
@@ -22,7 +22,6 @@ export const processAchievements = async (metric: number, metricKey: MetricKey):
         unlockedAt: new Date().toISOString(),
       };
 
-      await saveUnlockedAchievement(newBadge);
       unlockedIds.add(newBadge.id);
       newlyUnlocked.push(newBadge);
     }
@@ -34,7 +33,6 @@ export const processAchievements = async (metric: number, metricKey: MetricKey):
           ...metaAch,
           unlockedAt: new Date().toISOString(),
         };
-        await saveUnlockedAchievement(metaBadge);
         unlockedIds.add(metaBadge.id);
         newlyUnlocked.push(metaBadge);
       }

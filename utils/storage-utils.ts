@@ -1,17 +1,10 @@
 // src/utils/storage.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { Task } from '@/types/task';
-import { CalendarEvent } from '@/types/calendar';
-import { TimerLog } from '@/types/timer';
-import { Habit } from '@/types/habits';
-import { Message } from '@/types/chat';
 import { SettingsConfig, defaultSettings } from '@/types/settings';
-import { AchievementBadge } from '@/types/achievements';
-import { AppMetrics, MetricKey, DailyMetricKey, GlobalMetricKey, DefaultMetrics } from '@/types/metrics';
 
 const SETTINGS_KEY = '@prodtracker_settings';
-const ACHIEVEMENTS_KEY = '@prodtracker_achievements';
+/* const ACHIEVEMENTS_KEY = '@prodtracker_achievements';
 const METRICS_KEY = '@prodtracker_metrics';
 
 // Helper to handle JSON serialization (Dates need conversion)
@@ -22,9 +15,28 @@ const stringify = (data: any) => JSON.stringify(data, (_key, value) =>
 //TODO 49 useless func below, returning same value, was being used when dates were being rehydrated
 const parse = (json: string) => JSON.parse(json, (_key, value) =>
   typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/) ? value : value
-);
+); */
 
-// Tasks
+export const loadSettings = async (): Promise<SettingsConfig> => {
+  try {
+    const jsonValue = await AsyncStorage.getItem(SETTINGS_KEY);
+    return jsonValue != null ? JSON.parse(jsonValue) : defaultSettings;
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    return defaultSettings;
+  }
+};
+
+export const saveSettings = async (settings: SettingsConfig): Promise<void> => {
+  try {
+    const jsonValue = JSON.stringify(settings);
+    await AsyncStorage.setItem(SETTINGS_KEY, jsonValue);
+  } catch (error) {
+    console.error('Error saving settings:', error);
+  }
+};
+
+/* // Tasks
 export const saveTasks = async (tasks: Task[]) => {
   try {
     await AsyncStorage.setItem('tasks', stringify(tasks));
@@ -121,25 +133,6 @@ export const loadAIChatHistory = async () => {
   }
 };
 
-export const loadSettings = async (): Promise<SettingsConfig> => {
-  try {
-    const jsonValue = await AsyncStorage.getItem(SETTINGS_KEY);
-    return jsonValue != null ? JSON.parse(jsonValue) : defaultSettings;
-  } catch (error) {
-    console.error('Error fetching settings:', error);
-    return defaultSettings;
-  }
-};
-
-export const saveSettings = async (settings: SettingsConfig): Promise<void> => {
-  try {
-    const jsonValue = JSON.stringify(settings);
-    await AsyncStorage.setItem(SETTINGS_KEY, jsonValue);
-  } catch (error) {
-    console.error('Error saving settings:', error);
-  }
-};
-
 
 export const loadUnlockedAchievements = async (): Promise<AchievementBadge[]> => {
   try {
@@ -182,10 +175,10 @@ export const saveAppMetrics = async (metrics: AppMetrics): Promise<void> => {
   }
 };
 
-/**
- * Atomic mutation function for metrics. 
- * Handles both Daily and Global updates simultaneously for absolute consistency.
- */
+
+  // Atomic mutation function for metrics. 
+  // Handles both Daily and Global updates simultaneously for absolute consistency.
+ 
 export const mutateMetric = async (
   keys: MetricKey[],
   amount: number, // Use 1 to increment, -1 to decrement
@@ -215,7 +208,7 @@ export const mutateMetric = async (
   console.log("Global metrics:", metrics.global);
   await saveAppMetrics(metrics);
   return metrics;
-};
+}; */
 
 // Optional: Clear all data for testing
 

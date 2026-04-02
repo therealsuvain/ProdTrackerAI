@@ -3,7 +3,6 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 
-import { loadUnlockedAchievements } from "@/utils/storage-utils";
 import { AchievementBadge as BadgeType } from "../types/achievements";
 import AchievementBadge from "@/components/ui/achievements/achievement-badge";
 import { ALL_ACHIEVEMENTS } from "@/types/achievements-ui";
@@ -12,13 +11,14 @@ import { useTheme } from "@/hooks/use-theme-colors";
 
 /**
  * TODO : Configure elevation styling for both dark and light mode
+ * TODO : Hnadle hidden achievements
  */
 export default function AchievementsScreen() {
   const { theme } = useTheme();
   const { targetBadgeId } = useLocalSearchParams<{ targetBadgeId: string }>();
   const scrollViewRef = useRef<ScrollView>(null);
   const itemOffsets = useRef<Record<string, number>>({}); // The Offset Dictionary
-  const { tasks, habits, appMetrics } = useData();
+  const { unlockedAchievements, appMetrics } = useData();
   const [achievements, setAchievements] = useState(ALL_ACHIEVEMENTS);
   const [unlockedData, setUnlockedData] = useState<Record<string, BadgeType>>(
     {},
@@ -26,10 +26,9 @@ export default function AchievementsScreen() {
 
   useEffect(() => {
     const loadBadges = async () => {
-      const unlocked = await loadUnlockedAchievements();
       // Convert array to a dictionary for O(1) lookups during rendering
       const unlockedMap: Record<string, BadgeType> = {};
-      unlocked.forEach((badge) => {
+      unlockedAchievements.forEach((badge) => {
         unlockedMap[badge.id] = badge;
       });
       setUnlockedData(unlockedMap);
@@ -38,7 +37,7 @@ export default function AchievementsScreen() {
       });
     };
     loadBadges();
-  }, [appMetrics]); // Re-run if core data changes
+  }, [unlockedAchievements]); // Re-run if core data changes
 
   useEffect(() => {
     if (targetBadgeId) {
@@ -61,12 +60,12 @@ export default function AchievementsScreen() {
   const unlockedBadgesCount = Object.keys(unlockedData).length;
 
   // Helper function to map an achievement ID to its current metric progress
-  const getProgressForBadge = (badgeId: string): number => {
+/*   const getProgressForBadge = (badgeId: string): number => {
     const achivement = ALL_ACHIEVEMENTS.find((a) => a.id === badgeId);
     if (!achivement) return 0;
     if (achivement.metricTrigger === "meta") return unlockedBadgesCount;
     else return appMetrics?.global[achivement.metricTrigger] || 0;
-  };
+  }; */
 
   return (
     <SafeAreaView

@@ -23,10 +23,11 @@ import { useTimer } from "@/hooks/use-timer";
 import { TimerLog } from "@/types/timer";
 import { getTodayISO, withAlpha, getWeekStartISO } from "@/utils/common-utils";
 import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
+import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 
 function TimerScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { timerLogs, setTimerLogs } = useData();
+  const { timerLogs, setTimerLogs, addLog, removeLog, editLog } = useData();
   //const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
   const {
     time,
@@ -48,6 +49,7 @@ function TimerScreenInner() {
   } = useTimer();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingLog, setEditingLog] = useState<TimerLog | null>(null);
+  const { toastError, showToast, dismissToast } = useDbErrorToast();
   const { todayTotal, weekTotal, topCategory } = useMemo(() => {
     const todayISO = getTodayISO();
     const weekStartISO = getWeekStartISO();
@@ -61,7 +63,7 @@ function TimerScreenInner() {
       const logDate = log.startTime.split("T")[0];
       // typeof log.startTime === "string"
       //   ? log.startTime.split("T")[0]
-      //   : log.startTime.toString().split("T")[0]; 
+      //   : log.startTime.toString().split("T")[0];
 
       if (logDate === todayISO) todayTotal += log.duration;
       if (logDate >= weekStartISO) {
@@ -80,7 +82,7 @@ function TimerScreenInner() {
 
     return { todayTotal, weekTotal, topCategory };
   }, [timerLogs]);
-
+//TODO No lap button in countdown mode - remove it
   // ── Last-used category suggestion ────────────────────────────────────────
   // Find the most recently saved log that has a category — show as a
   // one-tap suggestion chip so the user doesn't have to retype it.
@@ -96,18 +98,19 @@ function TimerScreenInner() {
       { text: "Cancel" },
       {
         text: "Delete",
-        onPress: () =>
-          setTimerLogs((prev) => {
-            return prev.filter((log) => log.id !== id);
-          }),
+        onPress: async () => {
+          try {
+            await removeLog(id);
+          } catch {
+            showToast("Couldn't delete the log. It has been restored.");
+          }
+        },
       },
     ]);
   };
 
-  const handleEdit = (updated: TimerLog) => {
-    setTimerLogs((prev) =>
-      prev.map((l) => (l.id === updated.id ? updated : l)),
-    );
+  const handleEdit = async(updated: TimerLog) => {
+   await editLog(updated);
   };
 
   const showModal = (log: TimerLog) => {
@@ -318,6 +321,7 @@ function TimerScreenInner() {
         )}
         ListEmptyComponent={EmptyState}
       />
+      <DbErrorToast error={toastError} onDismiss={dismissToast} />
       <Portal>
         <TimerEditModal
           visible={modalVisible}
@@ -336,7 +340,6 @@ function TimerScreenInner() {
     </View>
   );
 }
-
 
 function StatCell({
   label,

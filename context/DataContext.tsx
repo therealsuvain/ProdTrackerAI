@@ -22,21 +22,6 @@ import {
 import { AchievementBadge } from "@/types/achievements";
 
 import {
-  loadTasks,
-  saveTasks,
-  loadEvents,
-  saveEvents,
-  loadTimerLogs,
-  saveTimerLogs,
-  loadHabits,
-  saveHabits,
-  loadAIChatHistory,
-  saveAIChatHistory,
-  loadAppMetrics,
-  mutateMetric,
-} from "@/utils/storage-utils";
-
-import {
   getAllTasks,
   getTaskById,
   insertTask,
@@ -76,6 +61,7 @@ import {
 import {
   getAllMessages,
   insertMessage,
+  updateMessage,
   countMessages,
 } from "@/db/repositories/chat-message-repository";
 
@@ -110,6 +96,8 @@ import { AchievementToast } from "@/components/ui/achievements/achievement-toast
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { initDatabase } from "@/db";
 
+//TODO Seperate this monolith itno item specific contexts
+// TODO if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
 interface DataContextType {
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
@@ -146,12 +134,14 @@ interface DataContextType {
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   addMessage: (message: Message) => Promise<void>;
+  editMessage: (message: Message) => Promise<void>;
   getMessages: () => Promise<Message[]>;
   messageCount: () => Promise<number>;
   resolveItemId: <T extends { id: string }>(
     shortOrFullId: string,
     items: T[],
   ) => string | null;
+  unlockedAchievements: AchievementBadge[];
   error: {
     message: string;
     type?: "warning" | "fatal";
@@ -181,8 +171,12 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [appMetrics, setAppMetrics] = useState<AppMetrics>(DefaultMetrics);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<
+    AchievementBadge[]
+  >([]);
   // Ref for appMetric snapshot during Optimistic update
   const appMetricsRef = useRef(appMetrics);
+  const unlockedAchievementsRef = useRef<AchievementBadge[]>([]);
   const [activeBadge, setActiveBadge] = useState<AchievementBadge | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<{
@@ -579,8 +573,18 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   const addMessage = useCallback(
     async (message: Message): Promise<void> => {
       await optimisticMessageMutation(
-        (prev) => [...prev, message],
+        (prev) => [message, ...prev],
         () => insertMessage(message),
+      );
+    },
+    [optimisticMessageMutation],
+  );
+
+  const editMessage = useCallback(
+    async (message: Message): Promise<void> => {
+      await optimisticMessageMutation(
+        (prev) => prev.map((m) => (m.id === message.id ? message : m)),
+        () => updateMessage(message),
       );
     },
     [optimisticMessageMutation],
@@ -596,11 +600,58 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     return messages ?? [];
   }, []);
 
-  /*   const optimisticAppMetricsMutation = useCallback(
+  const optimisticUnlockedAchievementMutation = useCallback(
+    async (
+      optimisticUpdate: (prev: AchievementBadge[]) => AchievementBadge[],
+      dbWrite: () => Promise<void> | Promise<AchievementBadge>,
+    ): Promise<void> => {
+      let snapshot: AchievementBadge[] = [];
+      setUnlockedAchievements((prev) => {
+        snapshot = prev;
+        return prev;
+      });
+      setUnlockedAchievements(optimisticUpdate);
+
+      try {
+        await dbWrite();
+      } catch (err) {
+        // 4. Rollback
+        console.error(
+          "[DataContext] UnlockedAchievement DB write failed, rolling back:",
+          err,
+        );
+        setUnlockedAchievements(snapshot);
+        throw err; // caller catches this and shows DbErrorToast
+      }
+    },
+    [],
+  );
+
+  const addUnlockedAchievement = useCallback(
+    async (achievement: AchievementBadge): Promise<void> => {
+      unlockedAchievementsRef.current = [
+        ...unlockedAchievementsRef.current,
+        achievement,
+      ];
+      await optimisticUnlockedAchievementMutation(
+        (prev) => [...prev, achievement],
+        () => insertUnlockedAchievements(achievement),
+      );
+    },
+    [optimisticUnlockedAchievementMutation],
+  );
+
+  const unlockedAchievementCount = useCallback(async (): Promise<number> => {
+    const result = await countUnlockedAchievements();
+    return result ?? 0;
+  }, []);
+
+  // Remove Dont need optmistic app metrics mutator
+/*   const optimisticAppMetricsMutation = useCallback(
     async (
       optimisticUpdate: (prev: AppMetrics) => AppMetrics,
-      dbWrite: () => Promise<void> | Promise<AppMetrics>,
-    ): Promise<void> => {
+      metricDbWrite: (keys: MetricKey[] , amount: number, dateOverride?: string) => Promise<AppMetrics>,
+    ): AppMetrics => {
       // 1. Snapshot
       let snapshot: AppMetrics = DefaultMetrics;
       setAppMetrics((prev) => {
@@ -613,7 +664,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
 
       // 3. DB write
       try {
-        await dbWrite();
+        const updatedMetrics = await metricDbWrite();
       } catch (err) {
         // 4. Rollback
         console.error(
@@ -623,9 +674,18 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         setAppMetrics(snapshot);
         throw err; // caller catches this and shows DbErrorToast
       }
+
+      return updatedMetrics
     },
     [],
-  ); */
+  );
+
+  const mutateAppMetrics = useCallback(async (): Promise<void> => {
+    await optimisticAppMetricsMutation(
+      (prev) => [...prev, achievement],
+      () => insertUnlockedAchievements(achievement),
+    );
+  }, [optimisticAppMetricsMutation]); */
   /**
    * Compatibility shim for code not yet migrated to the new methods.
    * Syncs the new state AND attempts to persist to SQLite.
@@ -651,57 +711,60 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     date: string,
     all: boolean,
   ) => {
-    setEvents((prev) => {
-      const updated = prev.map((event) => {
-        if (event.id !== eventId) return event;
+    const event = events.find((e) => e.id === eventId);
+    if (!event) return; //TODO add feedback?
+    //TODO what if there is just one occurence and user doesnt choose delete all, UI doesnt show, but DB still has it
+    if (all) {
+      // cancel all notifications
+      event.notificationIds?.forEach((n) => cancelReminder(n.id));
+      await removeEvent(eventId);
+    }
 
-        if (all) {
-          // cancel all notifications
-          event.notificationIds?.forEach((n) => cancelReminder(n.id));
-          return null; // mark for deletion
-        }
+    // cancel only the notification for that date
+    const notifId = event.notificationIds?.find((n) => n.date === date)?.id;
+    if (notifId) cancelReminder(notifId);
 
-        // cancel only the notification for that date
-        const notifId = event.notificationIds?.find((n) => n.date === date)?.id;
-        if (notifId) cancelReminder(notifId);
-
-        return {
-          ...event,
-          deletedOccurrences: [...(event.deletedOccurrences || []), date],
-          notificationIds: event.notificationIds?.filter(
-            (n) => n.date !== date,
-          ),
-        };
-      });
-
-      // remove nulls if "all" deleted
-      return updated.filter((e): e is CalendarEvent => e !== null);
+    await editEvent({
+      ...event,
+      deletedOccurrences: [...(event.deletedOccurrences || []), date],
+      notificationIds: event.notificationIds?.filter((n) => n.date !== date),
     });
   };
 
   const trackMetric = useCallback(
     async (keys: GlobalMetricKey[], amount: number) => {
       // 1. Mutate storage atomically
-      const updatedMetrics = await mutateMetric(keys, amount);
+      const updatedMetrics = await mutateMetricInDb(keys, amount);
       // 2. Update React Context so UI (Heatmaps, Progress Bars) re-renders instantly
       setAppMetrics((prevMetrics) => ({ ...prevMetrics, ...updatedMetrics }));
 
       // 3. If the user advanced a metric (not undid it), check for achievements!
       if (amount > 0) {
+        let localUnlocked = [...unlockedAchievementsRef.current];
         let newlyUnlocked: AchievementBadge[] = [];
-
         try {
           for (const key of keys) {
-            newlyUnlocked = await processAchievements(
+            const newlyUnlockedForKey = await processAchievements(
+              localUnlocked,
               updatedMetrics.global[key],
               key,
             );
+            console.log(
+              `Newly unlocked ${key}:`,
+              newlyUnlockedForKey.map((b) => b.title),
+            );
+            for (const badge of newlyUnlockedForKey) {
+              await addUnlockedAchievement(badge);
+              localUnlocked = [...localUnlocked, badge];
+            }
+            newlyUnlocked = newlyUnlocked.concat(newlyUnlockedForKey);
           }
 
           // Phase 6.3 Prep: If we got badges, we will trigger a global toast here later!
           if (newlyUnlocked.length > 0) {
             const achievementToastQueue = [...newlyUnlocked];
             function showNext() {
+              console.log("showNext:", achievementToastQueue.length);
               const badge = achievementToastQueue.shift();
               if (!badge) return;
               setActiveBadge(badge);
@@ -730,19 +793,20 @@ export default function DataProvider({ children }: { children: ReactNode }) {
 
         //await migrateTasksFromAsyncStorage();
         let loadedTasks = await getAllTasks();
-        let loadedEvents = await loadEvents();
-        let loadedLogs = await loadTimerLogs();
+        let loadedEvents = await getAllCalendarEvents();
+        let loadedLogs = await getAllTimerLogs();
         let loadedHabits = await getAllHabits();
-        let loadedMessages = await loadAIChatHistory();
-        let loadedMetrics = await loadAppMetrics();
+        let loadedMessages = await getAllMessages();
+        let loadedMetrics = await loadAppMetricsFromDb();
+        let loadedUnlockedAchievements = await getAllUnlockedAchievements();
 
         // Initialize with dummy data if enabled and no data exists
-        if (USE_DUMMY_DATA) {
+        /*         if (USE_DUMMY_DATA) {
           if (loadedTasks.length === 0) loadedTasks = dummyTasks;
           if (loadedEvents.length === 0) loadedEvents = dummyEvents;
           if (loadedLogs.length === 0) loadedLogs = dummyTimerLogs;
           if (loadedHabits.length === 0) loadedHabits = dummyHabits;
-        }
+        } */
 
         loadedHabits = loadedHabits.map((habit) => {
           const { status, habit: updatedHabit } = applyMissedDayLogic(habit);
@@ -752,6 +816,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
             trackMetric(["habitsAutoFrozen"], 1);
           }
           if (habit.pendingStreakResetAfter) {
+            editHabit(updatedHabit);
             return restartHabitAfterGoalForeground(updatedHabit);
           }
           return updatedHabit;
@@ -763,6 +828,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         setHabits(loadedHabits);
         setMessages(loadedMessages);
         setAppMetrics(loadedMetrics);
+        setUnlockedAchievements(loadedUnlockedAchievements);
       } catch (err) {
         console.error("[DataContext] Failed to initialise database:", err);
         dispatchError(
@@ -782,6 +848,11 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     appMetricsRef.current = appMetrics;
   }, [appMetrics]);
 
+  // Keep ref in sync whenever state changes
+  useEffect(() => {
+    unlockedAchievementsRef.current = unlockedAchievements;
+  }, [unlockedAchievements]);
+
   /*   useEffect(() => {
     if (!loaded) return;
     saveTasks(tasks);
@@ -793,7 +864,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     ); 
   }, [tasks, loaded]); */
 
-  useEffect(() => {
+  /*   useEffect(() => {
     if (!loaded) return;
     saveEvents(events);
     console.log(
@@ -802,13 +873,13 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         return { ...e, embedding: e.embedding?.[0] };
       }),
     );
-  }, [events, loaded]);
+  }, [events, loaded]); */
 
-  useEffect(() => {
+  /*   useEffect(() => {
     if (!loaded) return;
     saveTimerLogs(timerLogs);
-    //console.log("DATA LOGS", timerLogs);
-  }, [timerLogs, loaded]);
+    console.log("DATA LOGS", timerLogs);
+  }, [timerLogs, loaded]); */
 
   /*   useEffect(() => {
     if (!loaded) return;
@@ -820,13 +891,13 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       }),
     );
   }, [habits, loaded]); */
-
+  /* 
   useEffect(() => {
     if (!loaded) return;
     saveAIChatHistory(messages);
-    //messages.map((m) => console.log(new Date(m.timestamp).toLocaleString()));
-    //console.log("DATA MESSAGES", messages[0]);
-  }, [messages, loaded]);
+    messages.map((m) => console.log(new Date(m.timestamp).toLocaleString()));
+    console.log("DATA MESSAGES", messages[0]);
+  }, [messages, loaded]); */
 
   return (
     <DataContext.Provider
@@ -866,9 +937,11 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         messages,
         setMessages,
         addMessage,
+        editMessage,
         getMessages,
         messageCount,
         resolveItemId,
+        unlockedAchievements,
         error,
         dispatchError,
         clearError,

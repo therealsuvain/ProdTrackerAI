@@ -13,6 +13,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// TODO Test all notifications again
 export const useNotifications = () => {
   const notificationListener = useRef<any>(undefined);
 
@@ -53,9 +54,9 @@ export const cancelAllScheduledNotifications = async () => {
   await Notifications.cancelAllScheduledNotificationsAsync();
 };
 const getTriggerOptionsHabit = (habit: Habit) => {
-  const habitDate = (habit.reminderDate && new Date(habit.reminderDate))|| undefined;
+  const habitDate = (habit.reminderDate && new Date(habit.reminderDate)) || undefined;
   if (habit.frequency === "weekly") {
-    
+
     return {
       type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
       weekday: habitDate?.getDay() || 0 + 1,
@@ -78,8 +79,7 @@ export const scheduleReminderEvents = async (event: CalendarEvent) => {
   const maxScheduledNotifications = 30; // optional limit (to avoid infinite scheduling)
   for (
     let i = 0;
-    i < maxScheduledNotifications &&
-    current.getTime() < new Date(event.endDate).getTime();
+    i < maxScheduledNotifications && current.getTime() < new Date(event.endDate ? event.endDate : current.setDate(current.getDate() + 30)).getTime();
     i++
   ) {
     if (

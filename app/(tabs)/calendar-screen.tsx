@@ -14,10 +14,12 @@ import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-lis
 import CalendarEventModal from "@/components/modal/calendar-event-modal";
 import { ThemeContext } from "@/context/ThemeContext";
 import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
+import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 
+// TODO - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { events, setEvents, deleteEventOccurrence } = useData();
+  const { events, addEvent, editEvent, deleteEventOccurrence } = useData();
   const {
     currentView,
     setCurrentView,
@@ -27,9 +29,10 @@ function CalendarScreenInner() {
   } = useCalendarState(events);
   const [visible, setVisible] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const { toastError, showToast, dismissToast } = useDbErrorToast();
   const { state, updateField, onSubmit } = useEventForm({
-    events,
-    setEvents,
+    addEvent,
+    editEvent,
     editingEvent,
     onClose: () => setVisible(false),
   });
@@ -47,22 +50,28 @@ function CalendarScreenInner() {
       {
         text: "Delete Current Occurrence",
         onPress: async () => {
-          const eventId = events.filter((e) => e.id === id);
-          deleteEventOccurrence(id, date, false);
+          try {
+            await deleteEventOccurrence(id, date, false);
+          } catch {
+            showToast("Couldn't delete the event. It has been restored.");
+          }
         },
       },
       {
         text: "Delete All Occurrences",
         onPress: async () => {
-          const eventId = events.filter((e) => e.id === id);
-          deleteEventOccurrence(id, date, true);
+          try {
+            await deleteEventOccurrence(id, date, true);
+          } catch {
+            showToast("Couldn't delete the event. It has been restored.");
+          }
         },
       },
     ]);
   };
   return (
     <>
-      <View style={[styles.container,{backgroundColor:theme.background}]}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Pressable
           style={[styles.header, { backgroundColor: theme.eventBase }]}
           onPress={() => setSelectedDate(new Date())}
@@ -99,6 +108,7 @@ function CalendarScreenInner() {
         icon="plus"
         onPress={() => showModal()}
       />
+      <DbErrorToast error={toastError} onDismiss={dismissToast} />
       <Portal>
         <CalendarEventModal
           visible={visible}
@@ -113,12 +123,12 @@ function CalendarScreenInner() {
 }
 
 export default function CalendarScreen() {
-    return (
-      <ScreenErrorBoundary screenName="Calendar">
-        <CalendarScreenInner />
-      </ScreenErrorBoundary>
-    );
-  }
+  return (
+    <ScreenErrorBoundary screenName="Calendar">
+      <CalendarScreenInner />
+    </ScreenErrorBoundary>
+  );
+}
 const styles = StyleSheet.create({
   header: {
     borderRadius: 30,

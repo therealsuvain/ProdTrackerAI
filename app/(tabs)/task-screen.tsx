@@ -49,7 +49,6 @@ function TaskScreenInner() {
     onClose: () => setVisible(false),
   });
   const { triggerHaptic } = useHaptics();
-  console.log("Tasks:", tasks.length);
   const filteredTasks = tasks
     .filter(
       (t) =>
@@ -251,15 +250,19 @@ function TaskScreenInner() {
         )}
         <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
         <DbErrorToast error={toastError} onDismiss={dismissToast} />
-        {/*  <FAB
+         <FAB
           style={styles.fab}
           icon="plus"
           onPress={() => {
             clearStorageByKey("timeLogs");
             clearStorageByKey("@prodtracker_metrics");
             clearStorageByKey("@prodtracker_achievements");
+            clearStorageByKey("tasks")
+            clearStorageByKey("habits")
+            clearStorageByKey("events")
+            clearStorageByKey("messages")
           }}
-        /> */}
+        />
       </View>
       <Portal>
         <TaskModal

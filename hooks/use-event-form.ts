@@ -4,11 +4,11 @@ import { useEffect } from "react";
 import { validateEventTimes } from "@/utils/event-utils";
 import { randomUUID } from "expo-crypto";
 import { cancelReminder, scheduleReminderEvents } from "./use-notifications";
-import {generateEmbedding} from '@/utils/embedding-engine'
+import { generateEmbedding } from '@/utils/embedding-engine'
 
-type FormState = Omit<CalendarEvent, "id" | "notificationId"> & {
+type FormState = Omit<CalendarEvent, "id"> & {
   errors: Partial<
-    Record<keyof Omit<CalendarEvent, "id" | "notificationId">, string>
+    Record<keyof Omit<CalendarEvent, "id">, string>
   >;
 };
 
@@ -24,12 +24,11 @@ const initialState: FormState = {
   endDate: new Date().toISOString(),
   startTime: new Date().toISOString(),
   endTime: new Date().toISOString(),
-  description: "",
   reminder: false,
   recurrence: "none",
-  category: "",
-  deletedOccurrences: [],
   errors: {},
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 };
 
 const formReducer = (state: FormState, action: FormAction): FormState => {
@@ -58,8 +57,8 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
 };
 
 interface UseEventFormProps {
-  events: CalendarEvent[];
-  setEvents: (events: CalendarEvent[]) => void;
+  addEvent: (event: CalendarEvent) => Promise<void>;
+  editEvent: (event: CalendarEvent) => Promise<void>;
   editingEvent: CalendarEvent | null;
   onClose: () => void;
 }
@@ -68,23 +67,34 @@ const cancelAllRemniders = async (notifications: { date: string; id: string }[])
   notifications?.forEach((n) => cancelReminder(n.id));
 };
 
-const isTimeEdited = (editingEvent: CalendarEvent|null, newEvent: CalendarEvent) => {
+const isTimeEdited = (editingEvent: CalendarEvent | null, newEvent: CalendarEvent) => {
+  // If this is a new event
   if (!editingEvent) return false;
-  if(!editingEvent.reminder) return false; 
+  // If old event never had a reminder
+  if (!editingEvent.reminder) return false;
+  // Either old event had end date and edited event doesnt or edited has it and old doesnt
+  if ((editingEvent.endDate && !newEvent.endDate) || (!editingEvent.endDate && newEvent.endDate)) return true
+  // Neither have end date so only compare if startDate/Time are diff
+  if (!editingEvent.endDate && !newEvent.endDate) {
+    return (
+      editingEvent.startDate.split("T")[0] !== newEvent.startDate.split("T")[0] ||
+      editingEvent.startTime.split("T")[1] !== newEvent.startTime.split("T")[1] ||
+      editingEvent.endTime.split("T")[1] !== newEvent.endTime.split("T")[1]
+    );
+  }
+  // If execution reaches here then editingEvent and newEvent will have an end date, adding ! after for non-null assertion to overcome type checker cries
   return (
-    editingEvent.startDate.split("T")[0] !==
-      newEvent.startDate.split("T")[0] ||
-    editingEvent.endDate.split("T")[0] !== newEvent.endDate.split("T")[0] ||
-    editingEvent.startTime.split("T")[1] !==
-      newEvent.startTime.split("T")[1] ||
+    editingEvent.startDate.split("T")[0] !== newEvent.startDate.split("T")[0] ||
+    editingEvent.endDate!.split("T")[0] !== newEvent.endDate!.split("T")[0] ||
+    editingEvent.startTime.split("T")[1] !== newEvent.startTime.split("T")[1] ||
     editingEvent.endTime.split("T")[1] !== newEvent.endTime.split("T")[1] ||
     editingEvent.recurrence !== newEvent.recurrence
   );
 };
 
 export const useEventForm = ({
-  events,
-  setEvents,
+  addEvent,
+  editEvent,
   editingEvent,
   onClose,
 }: UseEventFormProps) => {
@@ -106,7 +116,9 @@ export const useEventForm = ({
           deletedOccurrences: editingEvent.deletedOccurrences,
           category: editingEvent.category,
           notificationIds: editingEvent.notificationIds,
-          embedding :editingEvent.embedding
+          createdAt: editingEvent.createdAt,
+          updatedAt: editingEvent.updatedAt,
+          embedding: editingEvent.embedding
         },
       });
     } else {
@@ -162,12 +174,13 @@ export const useEventForm = ({
 
     let newEvent: CalendarEvent = {
       id: editingEvent ? editingEvent.id : randomUUID(),
-      notificationIds: undefined,
       ...state,
-      embedding: state.embedding || await generateEmbedding(state.title,false)
+      createdAt: editingEvent ? editingEvent.createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      embedding: state.embedding || await generateEmbedding(state.title, false)
     };
 
-
+    // If old had reminders ON and new edited doesnt
     if (
       editingEvent &&
       editingEvent.reminder &&
@@ -181,24 +194,25 @@ export const useEventForm = ({
     if (editingEvent && editingEvent.notificationId) {
       await cancelReminder(editingEvent.notificationId);
     } */
+
+    // If old didnt have reminders ON and new edited does
     if (newEvent.reminder && !editingEvent?.reminder) {
       console.log("new reminders")
       const notifIds = await scheduleReminderEvents(newEvent);
       newEvent.notificationIds = notifIds;
     }
 
-    if(isTimeEdited(editingEvent,newEvent) && editingEvent?.notificationIds){
+    // If both had reminders ON and time was edited
+    if (isTimeEdited(editingEvent, newEvent) && editingEvent?.notificationIds) {
       console.log("old cancelled")
       await cancelAllRemniders(editingEvent.notificationIds)
       const notifIds = await scheduleReminderEvents(newEvent);
       newEvent.notificationIds = notifIds;
     }
-    console.log("new", newEvent);
-    console.log("edit", editingEvent);
     if (editingEvent) {
-      setEvents(events.map((e) => (e.id === editingEvent.id ? newEvent : e)));
+      editEvent(newEvent);
     } else {
-      setEvents([...events, newEvent]);
+      addEvent(newEvent);
     }
     onClose();
     dispatch({ type: "RESET" });

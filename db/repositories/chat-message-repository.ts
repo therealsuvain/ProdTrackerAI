@@ -51,6 +51,18 @@ export async function insertMessage(message: Message): Promise<Message> {
     return rowToMessage({ ...insert } as MessageRow);
 }
 
+export async function updateMessage(message: Message): Promise<Message> {
+    const insert = messageToInsert(message);
+    await db
+        .update(messages)
+        .set({
+            ...insert,
+            updatedAt: new Date().toISOString(), // explicit — messageToInsert also sets it
+        })
+        .where(eq(messages.id, message.id));
+    return rowToMessage({ ...insert } as MessageRow);
+}
+
 export async function bulkInsertMessages(messageList: Message[]): Promise<void> {
     if (messageList.length === 0) return;
 
@@ -77,17 +89,6 @@ export async function countMessages(): Promise<number> {
     return rows.length > 0 ? rowToMessage(rows[0]) : null;
 }
 
-export async function updateMessage(message: Message): Promise<Message> {
-    const insert = messageToInsert(message);
-    await db
-        .update(messages)
-        .set({
-            ...insert,
-            updatedAt: new Date().toISOString(), // explicit — messageToInsert also sets it
-        })
-        .where(eq(messages.id, message.id));
-    return rowToMessage({ ...insert } as MessageRow);
-}
 
 export async function deleteMessage(id: string): Promise<void> {
     await db.delete(messages).where(eq(messages.id, id));

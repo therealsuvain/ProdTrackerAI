@@ -17,7 +17,7 @@ interface CalendarListAgendaAltProps {
   onEventSelect?: (event: CalendarEvent) => void;
   onDelete?: (id: string, date: string) => void;
 }
-
+// TODO Optimize maybe
 export default function CalendarListAgendaMain({
   events,
   onDateSelect,

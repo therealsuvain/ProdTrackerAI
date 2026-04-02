@@ -286,7 +286,7 @@ export async function mutateMetricInDb(
 }
 
 // ─── migration helpers ────────────────────────────────────────────────────────
-
+// OLD Was for migration appMetrics state from AsyncStorage to SQLite, what has some other use now?
 /**
  * Seed metrics from an existing AppMetrics object.
  * Called during the AsyncStorage → SQLite migration for metrics.
