@@ -6,7 +6,7 @@ import { Habit } from "../types/habits";
 import { randomUUID } from "expo-crypto";
 import { generateEmbedding } from "@/utils/embedding-engine"
 
-// TODO All date fields from AI have to checked and verified before being returned
+// TODOX All date fields from AI have to checked and verified before being returned
 
 // Helper for date parsing
 const parseDate = (dateStr: any): Date | undefined => {
@@ -52,7 +52,7 @@ export const createTask = async (
       dueDate = params.dueDate
     }
 
-    //TODO Fix reminder date logic for all below
+    //TODOX Fix reminder date logic for all below
     let reminderDate;
     if (params.reminderDate) {
       if (!validDate(params.reminderDate)) {
@@ -78,6 +78,7 @@ export const createTask = async (
         ? params.priority
         : "medium",
       completed: params.completed ?? false,
+      ...(params.category && { category: params.category }),
       ...(params.tags && { tags: params.tags }),
       createdAt: params.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -135,11 +136,11 @@ export const createEvent = async (
     if (startTime && endTime && startTime > endTime)
       throw new Error("End time before start");
 
-    if(!startTime)
+    if (!startTime)
       throw new Error("Start time is missing");
-    if(!endTime)
+    if (!endTime)
       throw new Error("End time is missing");
-    if(!startDate)
+    if (!startDate)
       throw new Error("Start date is missing");
 
     const embeddingVector = await generateEmbedding(params.title, false);
@@ -157,7 +158,8 @@ export const createEvent = async (
         : "none",
       ...(params.notificationIds && { notificationIds: params.notificationIds }),
       ...(params.category && { category: params.category }),
-      ...(params. deletedOccurrences && { deletedOccurrences: params.deletedOccurrences }),
+      ...(params.tags && { tags: params.tags }),
+      ...(params.deletedOccurrences && { deletedOccurrences: params.deletedOccurrences }),
       embedding: embeddingVector,
       createdAt: params.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -206,18 +208,18 @@ export const createHabit = async (
       reminder: params.reminder,
       ...(params.reminderDate && { reminderDate }),
       ...(params.targetDays && { targetDays: params.targetDays, }),
-      streak: params.streak ||0,
+      streak: params.streak || 0,
       history: params.history || [],
       streakFreezes: params.streakFreezes || 1,
       longestStreak: params.longestStreak || 0,
-      isArchived: params.isArchived ?? false,
       goal,
       goalCompletions: params.goalCompletions || [],
       ...(params.pendingStreakResetAfter && { pendingStreakResetAfter: params.pendingStreakResetAfter }),
       ...(params.notificationId && { notificationId: params.notificationId }),
+      ...(params.category && { category: params.category }),
+      ...(params.tags && { tags: params.tags }),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      ...(params.archivedAt && { archivedAt: params.archivedAt }),
       embedding: embeddingVector,
     };
   } catch (err: any) {

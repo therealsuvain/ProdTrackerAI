@@ -8,7 +8,6 @@ import { MetricKey } from '@/types/metrics';
 export const processAchievements = async (unlocked : AchievementBadge[], metric: number, metricKey: MetricKey): Promise<AchievementBadge[]> => {
   
   const unlockedIds = new Set(unlocked.map(b => b.id));
-  console.log('unlockedIds', unlockedIds);
   const newlyUnlocked: AchievementBadge[] = [];
 
   // 1. Find only the definitions that listen to this exact metric

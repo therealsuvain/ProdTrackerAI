@@ -84,6 +84,7 @@ function TaskScreenInner() {
           }
           try {
             await removeTask(id);
+            triggerHaptic();
           } catch {
             showToast("Couldn't delete the task. It has been restored.");
           }
@@ -112,6 +113,7 @@ function TaskScreenInner() {
 
   const handleDragEnd = ({ data }: { data: Task[] }) => {
     setTasks(data);
+    triggerHaptic();
   };
 
   const EmptyState = () => (
@@ -244,7 +246,7 @@ function TaskScreenInner() {
         )}
         <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
         <DbErrorToast error={toastError} onDismiss={dismissToast} />
-        <FAB
+{/*         <FAB
           style={styles.fab}
           icon="plus"
           onPress={() => {
@@ -256,7 +258,7 @@ function TaskScreenInner() {
             clearStorageByKey("events");
             clearStorageByKey("messages");
           }}
-        />
+        /> */}
       </View>
       <Portal>
         <TaskModal

@@ -63,6 +63,7 @@ const globalColumnMap: Record<GlobalMetricKey, keyof GlobalMetricsRow> = {
     chatActionsConfirmed: "chatActionsConfirmed",
     chatActionsExpired: "chatActionsExpired",
     chatActionsCancelled: "chatActionsCancelled",
+    lastSyncedAt: "lastSyncedAt",
 };
 
 /** Maps DailyMetricKey → the Drizzle column object on dailyMetrics table */
@@ -96,6 +97,7 @@ function globalRowToObject(row: GlobalMetricsRow): AppMetrics["global"] {
         chatActionsConfirmed: row.chatActionsConfirmed,
         chatActionsExpired: row.chatActionsExpired,
         chatActionsCancelled: row.chatActionsCancelled,
+        lastSyncedAt: row.lastSyncedAt ?? undefined,
     };
 }
 
@@ -207,7 +209,10 @@ export async function mutateMetricInDb(
         for (const key of keys) {
             if (key in globalColumnMap) {
                 const gKey = key as GlobalMetricKey;
-                updatedGlobal[gKey] = Math.max(0, updatedGlobal[gKey] + amount);
+                if (gKey === 'lastSyncedAt')
+                    updatedGlobal[gKey] = new Date().toISOString();
+                else
+                    updatedGlobal[gKey] = Math.max(0, updatedGlobal[gKey] + amount);
             }
         }
 

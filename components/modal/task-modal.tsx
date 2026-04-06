@@ -14,19 +14,7 @@ interface Props {
   visible: boolean;
   onDismiss: () => void;
   state: any;
-  updateField: (
-    field:
-      | "title"
-      | "description"
-      | "priority"
-      | "dueDate"
-      | "reminder"
-      | "reminderDate"
-      | "category"
-      | "tags"
-      | "errors",
-    value: any,
-  ) => void;
+  updateField: (field: any, value: any) => void;
   onSubmit: () => Promise<void> | void;
 }
 
@@ -183,7 +171,10 @@ export default function TaskModal({
             )}
             {showTimePicker && (
               <DateTimePicker
-                value={(state.reminderDate && new Date(state.reminderDate)) || new Date()}
+                value={
+                  (state.reminderDate && new Date(state.reminderDate)) ||
+                  new Date()
+                }
                 mode="time"
                 onChange={onTimeChange}
               />

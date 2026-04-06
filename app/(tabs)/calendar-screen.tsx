@@ -15,11 +15,12 @@ import CalendarEventModal from "@/components/modal/calendar-event-modal";
 import { ThemeContext } from "@/context/ThemeContext";
 import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
+import { useHaptics } from "@/hooks/use-haptics";
 
 // TODO - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { events, addEvent, editEvent, deleteEventOccurrence } = useEvents();
+  const { events, addEvent, editEvent, deleteEventOccurrence} = useEvents();
   const {
     currentView,
     setCurrentView,
@@ -30,11 +31,13 @@ function CalendarScreenInner() {
   const [visible, setVisible] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const { toastError, showToast, dismissToast } = useDbErrorToast();
+  const { triggerHaptic } = useHaptics();
   const { state, updateField, onSubmit } = useEventForm({
     addEvent,
     editEvent,
     editingEvent,
     onClose: () => setVisible(false),
+    resetEditingEvent: () => setEditingEvent(null),
   });
 
   const showModal = (event?: CalendarEvent) => {
@@ -52,6 +55,7 @@ function CalendarScreenInner() {
         onPress: async () => {
           try {
             await deleteEventOccurrence(id, date, false);
+            triggerHaptic();
           } catch {
             showToast("Couldn't delete the event. It has been restored.");
           }
@@ -62,6 +66,7 @@ function CalendarScreenInner() {
         onPress: async () => {
           try {
             await deleteEventOccurrence(id, date, true);
+            triggerHaptic();
           } catch {
             showToast("Couldn't delete the event. It has been restored.");
           }

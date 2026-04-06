@@ -44,11 +44,9 @@ interface Props {
  * TODO 42: Expire unconfirmed actions automatically
  * TODO 43: use ThemeContext for colors
  * TODO 44: maybe make chat-screen leaner by using chat-utils
- * TODO 45: Deleted items need better placeholder data for the chat message
  */
 const EXPIRY_THRESHOLD_MS = 30 * 60 * 1000; // 30 Minutes
 
-// TODO why is useData() being used instead of useContext(), R&D is it better to use a customhook or useContext()
 export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const headerHeight = useHeaderHeight();
   const { theme } = useContext(ThemeContext);
@@ -280,7 +278,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         stop,
         navigation,
       });
-      //TODO 46: old timestamp updation
       // C. Add Hardcoded Success Message
       const successMsg: Message = {
         id: Date.now().toString(),

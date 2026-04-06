@@ -1,24 +1,4 @@
-import Constants from "expo-constants";
-import { AIIntent, SingleAIIntent } from "@/types/ai-intent";
-import { Alert } from "react-native";
-import { checkInHabit } from "./habit-utils";
-import {
-  createTask,
-  createEvent,
-  createHabit,
-  createTimerLog,
-} from "./model-factory-utils";
-import { Task } from "@/types/task";
 import Fuse from "fuse.js";
-import { CalendarEvent } from "@/types/calendar";
-import { Habit } from "@/types/habits";
-import {
-  cancelReminder,
-  scheduleReminderEvents,
-  scheduleReminderHabits,
-  scheduleReminderTasks,
-} from "@/hooks/use-notifications";
-import { TimerLog } from "@/types/timer";
 import { ActionRegistry, executeActions, SilentHandlerList } from "./AI-utils/registry-handler";
 import { AIActionContext } from "../types/ai-handler";
 import { generateSystemPrompt } from "./AI-utils/system-prompt";

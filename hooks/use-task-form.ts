@@ -72,6 +72,7 @@ export const useTaskForm = ({
 
   useEffect(() => {
     if (editingTask) {
+      console.log("THIS ONE TasksS")
       dispatch({
         type: "RESET",
         payload: {
@@ -89,6 +90,7 @@ export const useTaskForm = ({
         },
       });
     } else {
+      console.log("THIS TWO TASKS")
       dispatch({ type: "RESET" });
     }
   }, [editingTask]);
@@ -140,27 +142,30 @@ export const useTaskForm = ({
     };
 
     if(editingTask && editingTask.reminder && !newTask.reminder){
+      console.log("TASK FORM NOtif: cancelled old:1 new:0")
       if(editingTask.notificationId)
       await cancelReminder(editingTask.notificationId)
     }
 
     if(editingTask && editingTask.reminderDate && newTask.reminderDate 
       && new Date(editingTask.reminderDate).toTimeString()!== new Date(newTask.reminderDate).toTimeString()){
+      console.log("TASK FORM NOtif: cancelled old:1 new:1")
     if(editingTask.notificationId)
       await cancelReminder(editingTask.notificationId)
     }
 
     if (newTask.reminder) {
+      console.log("TASK FORM NOtif: scheduled")
       const notifId = await scheduleReminderTasks(newTask);
       newTask.notificationId = notifId;
     }
     
     if (editingTask) {
-      console.log("EDIT", {...newTask, embedding:[]});
+      //console.log("EDIT", {...newTask, embedding:[]});
       await editTask(newTask);
       //setTasks(tasks.map((t) => (t.id === editingTask.id ? newTask : t)));
     } else {
-      console.log("NEW" ,{...newTask, embedding:[]});
+      //console.log("NEW" ,{...newTask, embedding:[]});
       await addTask(newTask);
       //setTasks([...tasks, newTask]);
     }

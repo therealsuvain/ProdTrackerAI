@@ -3,6 +3,7 @@ import Svg, { Circle } from "react-native-svg";
 import { getTimerDimensions, toTimeStr } from "../time-display.utils";
 import { TimerDisplayProps } from "../time-display";
 import { useTimerDisplayAnimation } from "../use-time-display.animations";
+import { useHaptics } from "@/hooks/use-haptics";
 
 interface TimerDisplayCircleProps {
   timeDisplayProps: TimerDisplayProps;
@@ -18,6 +19,7 @@ export const TimerDisplayCircle = ({
 }: TimerDisplayCircleProps) => {
   const { STROKE, CIRCLE_R, CIRCUMFERENCE } = getTimerDimensions(Size);
   const { aRotate, bRotate, pulseAnim, handleLongPress } = useTimerDisplayAnimation(timeDisplayProps);
+  const { triggerHaptic } = useHaptics();
   const drainRatio =
     timeDisplayProps.countdownTarget > 0
       ? timeDisplayProps.time / timeDisplayProps.countdownTarget
@@ -63,7 +65,7 @@ export const TimerDisplayCircle = ({
   return (
     <TouchableOpacity
       onPress={onCirclePress}
-      onLongPress={handleLongPress}
+      onLongPress={()=>{triggerHaptic();handleLongPress()}}
       delayLongPress={350}
       activeOpacity={timeDisplayProps.isRunning ? 1 : 0.85}
     >

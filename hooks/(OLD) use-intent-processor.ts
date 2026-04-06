@@ -1,4 +1,4 @@
-import { useNavigation } from "expo-router";
+/* import { useNavigation } from "expo-router";
 import { useData } from "./use-data";
 import { useState } from "react";
 import { AIIntent } from "@/types/ai-intent";
@@ -52,3 +52,4 @@ export const useIntentProcessor = () => {
 
   return { isLoading, isProcessing, processCommand, confirmExecute, intent, procesingError };
 };
+ */

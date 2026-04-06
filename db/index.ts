@@ -43,7 +43,8 @@ import * as schema from "./schema";
 export const sqlite = openDatabaseSync("prodtracker.db", {
   enableChangeListener: true, // Enables useLiveQuery if you want reactive queries later
 });
-
+sqlite.execSync('PRAGMA journal_mode = WAL');
+sqlite.execSync("PRAGMA foreign_keys = ON;")
 // The Drizzle instance. Pass schema so Drizzle knows all table shapes.
 export const db = drizzle(sqlite, { schema });
 

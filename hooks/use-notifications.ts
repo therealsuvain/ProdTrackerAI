@@ -10,10 +10,10 @@ Notifications.setNotificationHandler({
     shouldPlaySound: true,
     shouldSetBadge: false,
     shouldShowList: true,
+    proiority: Notifications.AndroidNotificationPriority.HIGH,
   }),
 });
 
-// TODO Test all notifications again
 export const useNotifications = () => {
   const notificationListener = useRef<any>(undefined);
 
@@ -54,37 +54,42 @@ export const cancelAllScheduledNotifications = async () => {
   await Notifications.cancelAllScheduledNotificationsAsync();
 };
 const getTriggerOptionsHabit = (habit: Habit) => {
-  const habitDate = (habit.reminderDate && new Date(habit.reminderDate)) || undefined;
+  const habitDate = new Date(habit.reminderDate!);
+  //console.log(habitDate.toLocaleString());
   if (habit.frequency === "weekly") {
 
     return {
       type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-      weekday: habitDate?.getDay() || 0 + 1,
-      hour: habitDate?.getHours(),
-      minute: habitDate?.getMinutes(),
+      weekday: habitDate.getDay(),
+      hour: habitDate.getHours(),
+      minute: habitDate.getMinutes(),
     } as Notifications.WeeklyTriggerInput;
   }
 
   return {
     type: Notifications.SchedulableTriggerInputTypes.DAILY,
-    hour: habitDate?.getHours(),
-    minute: habitDate?.getMinutes(),
+    hour: habitDate.getHours(),
+    minute: habitDate.getMinutes(),
   } as Notifications.DailyTriggerInput;
 };
 
 export const scheduleReminderEvents = async (event: CalendarEvent) => {
   let ids: { date: string; id: string }[] = [];
-
+  console.log("EVENT NOTIFCATION");
   let current = new Date(event.startTime);
-  const maxScheduledNotifications = 30; // optional limit (to avoid infinite scheduling)
+  const maxScheduledNotifications = event.recurrence === "none" ? 1 : 30; // optional limit (to avoid infinite scheduling)
   for (
     let i = 0;
-    i < maxScheduledNotifications && current.getTime() < new Date(event.endDate ? event.endDate : current.setDate(current.getDate() + 30)).getTime();
+    (i < maxScheduledNotifications)
+    && (event.recurrence === "none" ||
+      current.getTime() < new Date(event.endDate ?
+      event.endDate : current.setDate(current.getDate() + maxScheduledNotifications)).getTime());
     i++
   ) {
     if (
       !event.deletedOccurrences?.includes(current.toISOString().split("T")[0])
     ) {
+      console.log(`Notif no:${i} on ${current.toLocaleString()}`)
       const id = await Notifications.scheduleNotificationAsync({
         content: {
           title: "Upcoming event",
@@ -110,7 +115,8 @@ export const scheduleReminderEvents = async (event: CalendarEvent) => {
 
 export const scheduleReminderTasks = async (task: Task): Promise<string> => {
   const triggerDate = new Date((task.reminderDate && task.reminderDate) || Date.now());
-
+  //console.log("TASK NOTIFCATION");
+  //console.log(triggerDate.toLocaleString());
   const id = await Notifications.scheduleNotificationAsync({
     content: {
       title: "Upcoming Task",
@@ -125,6 +131,7 @@ export const scheduleReminderTasks = async (task: Task): Promise<string> => {
 };
 
 export const scheduleReminderHabits = async (habit: Habit): Promise<string> => {
+ // console.log("HABIT NOTIFCATION");
   const id = await Notifications.scheduleNotificationAsync({
     content: {
       title: "Check in on your habit",
@@ -132,6 +139,7 @@ export const scheduleReminderHabits = async (habit: Habit): Promise<string> => {
     },
     trigger: getTriggerOptionsHabit(habit),
   });
+ // console.log(id);
   return id;
 };
 

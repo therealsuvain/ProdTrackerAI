@@ -24,7 +24,8 @@ function rowToCalendarEvent(
         endDate: row.endDate ?? undefined,
         recurrence: row.recurrence ?? "none" as "none" | "daily" | "weekly",
         reminder: row.reminder,
-        // FIXED: reminderDate stored as INTEGER (unix ms), convert back to Date
+        category: row.category ?? undefined,
+        tags: row.tags ? JSON.parse(row.tags) : undefined,
         embedding: row.embedding ? JSON.parse(row.embedding) : undefined,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
@@ -74,7 +75,7 @@ async function fetchChildRowsForOne(eventId: string): Promise<ChildRows> {
         db.select().from(eventDeletedOccurrences).where(eq(eventDeletedOccurrences.eventId, eventId)),
         db.select().from(eventNotificationIds).where(eq(eventNotificationIds.eventId, eventId)),
     ]);
-    return { deletedOccurrences,notificationIds };
+    return { deletedOccurrences, notificationIds };
 }
 
 /**
@@ -88,7 +89,7 @@ async function fetchChildRowsForMany(
 
     const [allDeletedOccurrences, allNotificationIds] = await Promise.all([
         db.select().from(eventDeletedOccurrences).where(inArray(eventDeletedOccurrences.eventId, eventIds)),
-        db.select().from(eventNotificationIds).where(inArray(eventNotificationIds.eventId, eventIds)),,
+        db.select().from(eventNotificationIds).where(inArray(eventNotificationIds.eventId, eventIds)), ,
     ]);
 
     // Group by eventId
@@ -117,6 +118,8 @@ function eventToInsert(event: CalendarEvent): CalendarEventInsert {
         recurrence: event.recurrence ?? "none",
         reminder: event.reminder,
         // FIXED: convert Date → unix ms for INTEGER column
+        category: event.category ?? null,
+        tags: event.tags ? JSON.stringify(event.tags) : null,
         embedding: event.embedding ? JSON.stringify(event.embedding) : null,
         createdAt: event.createdAt ?? now,
         updatedAt: now,
@@ -139,7 +142,7 @@ export async function getAllCalendarEvents(): Promise<CalendarEvent[]> {
 
     return rows.map((row) => {
         const children = childMap.get(row.id) ?? {
-            deletedOccurrences : [], notificationIds: []
+            deletedOccurrences: [], notificationIds: []
         };
         return rowToCalendarEvent(row, children.deletedOccurrences, children.notificationIds);
     });
@@ -211,7 +214,7 @@ export async function updateCalendarEvent(event: CalendarEvent): Promise<Calenda
         if (deletedOccurrencesRows.length > 0) {
             await tx.insert(eventDeletedOccurrences).values(deletedOccurrencesRows);
         }
-        if ( notificationIdRows.length > 0) {
+        if (notificationIdRows.length > 0) {
             await tx.insert(eventNotificationIds).values(notificationIdRows);
         }
     });
@@ -224,6 +227,7 @@ export async function updateCalendarEvent(event: CalendarEvent): Promise<Calenda
  * ON DELETE CASCADE in the schema handles child deletion automatically.
  */
 export async function deleteCalendarEvent(id: string): Promise<void> {
+    console.log("deleteCalendarEvent", id);
     await db.delete(calendarEvents).where(eq(calendarEvents.id, id));
 }
 
@@ -246,7 +250,7 @@ export async function bulkInsertCalendarEvents(eventList: CalendarEvent[]): Prom
 
             // Children — onConflictDoNothing is safe because ids are deterministic
             const deletedOccurrencesRows = buildEventDeletedOccurrenceRows(event);
-    const notificationIdRows = buildEventNotificationIdRows(event);
+            const notificationIdRows = buildEventNotificationIdRows(event);
 
             if (deletedOccurrencesRows.length > 0) {
                 await tx.insert(eventDeletedOccurrences).values(deletedOccurrencesRows).onConflictDoNothing();

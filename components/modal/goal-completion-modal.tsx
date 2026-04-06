@@ -149,8 +149,8 @@ export const GoalCompletionModal = ({
     // completion — streak resets on next check-in, not right now.
     const oldGoal = habit.goal;
 
-    //TODO - targetDays only work if targeet days selected, if frequency weekly and target days not selected, target days should be undefined, and restart should from next week same day
-    //TODO - Above has been fixed, but there was same issue with Freezing for weekly without targetdays, fixed that too, check was similar 
+    //TODOX - in TESTING : targetDays only work if targeet days selected, if frequency weekly and target days not selected, target days should be undefined, and restart should from next week same day
+    //TODOX - in TESTING : Above has been fixed, but there was same issue with Freezing for weekly without targetdays, fixed that too, check was similar 
     const habitWithUpdates: Habit = {
       ...habit,
       goal: newGoal,

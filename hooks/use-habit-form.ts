@@ -13,7 +13,6 @@ type FormState = Omit<
   | "streak"
   | "longestStreak"
   | "history"
-  | "isArchived"
 > & {
   frequency: Frequency;
   targetDays: number[];
@@ -134,6 +133,32 @@ export const useHabitForm = ({
       return;
     }
 
+    if (!state.goal) {
+      dispatch({
+        type: "SET_ERROR",
+        payload: {
+          field: "goal" as keyof FormState,
+          message: "Goal is required",
+        },
+      });
+      hasError = true;
+      return;
+    }
+
+    if (state.goal <= 0) {
+      dispatch({
+        type: "SET_ERROR",
+        payload: {
+          field: "goal" as keyof FormState,
+          message: "A minimum of 1 goal is required",
+        },
+      });
+      hasError = true;
+      return;
+    }
+
+    
+
     if (hasError) return;
     let newHabit: Habit = {
       id: editingHabit ? editingHabit.id : randomUUID(),
@@ -142,7 +167,6 @@ export const useHabitForm = ({
       streak: editingHabit ? editingHabit.streak : 0,
       history: editingHabit ? editingHabit.history : [],
       targetDays: state.targetDays,
-      isArchived: false,
       streakFreezes: state.streakFreezes,
       longestStreak: editingHabit ? editingHabit.streak : 0,
       reminder: state.reminder,
@@ -158,10 +182,12 @@ export const useHabitForm = ({
     };
 
     if (editingHabit && editingHabit.notificationId) {
+      console.log("HABIT FORM NOTIF: old cancelled");
       await cancelReminder(editingHabit.notificationId);
     }
 
     if (newHabit.reminder) {
+      console.log("HABIT FORM NOTIF: new scheduled");
       const notifId = await scheduleReminderHabits(newHabit);
       newHabit.notificationId = notifId;
     }

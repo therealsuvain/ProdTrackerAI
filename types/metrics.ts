@@ -27,6 +27,7 @@ export interface AppMetrics {
     chatActionsConfirmed: number;
     chatActionsExpired: number;
     chatActionsCancelled: number;
+    lastSyncedAt?: string;
   };
   // O(1) lookup for Heatmaps (UI uses this)
   daily: {

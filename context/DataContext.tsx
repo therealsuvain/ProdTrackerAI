@@ -97,7 +97,6 @@ import { AchievementToast } from "@/components/ui/achievements/achievement-toast
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { initDatabase } from "@/db";
 
-//TODO Seperate this monolith itno item specific contexts
 // TODO if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
 interface DataContextType {
  /*  tasks: Task[];
@@ -715,8 +714,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     all: boolean,
   ) => {
     const event = events.find((e) => e.id === eventId);
-    if (!event) return; //TODO add feedback?
-    //TODO what if there is just one occurence and user doesnt choose delete all, UI doesnt show, but DB still has it
+    if (!event) return; 
     if (all) {
       // cancel all notifications
       event.notificationIds?.forEach((n) => cancelReminder(n.id));
@@ -737,6 +735,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   const trackMetric = useCallback(
     async (keys: GlobalMetricKey[], amount: number) => {
       // 1. Mutate storage atomically
+      // note: For now if lastSyncedAt is passed in it works like trackMetric(["lastSyncedAt"], 0)
       const updatedMetrics = await mutateMetricInDb(keys, amount);
       // 2. Update React Context so UI (Heatmaps, Progress Bars) re-renders instantly
       setAppMetrics((prevMetrics) => ({ ...prevMetrics, ...updatedMetrics }));
@@ -747,14 +746,13 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         let newlyUnlocked: AchievementBadge[] = [];
         try {
           for (const key of keys) {
+            if (key === "lastSyncedAt") {
+              continue;
+            }
             const newlyUnlockedForKey = await processAchievements(
               localUnlocked,
               updatedMetrics.global[key],
               key,
-            );
-            console.log(
-              `Newly unlocked ${key}:`,
-              newlyUnlockedForKey.map((b) => b.title),
             );
             for (const badge of newlyUnlockedForKey) {
               await addUnlockedAchievement(badge);
@@ -767,7 +765,6 @@ export default function DataProvider({ children }: { children: ReactNode }) {
           if (newlyUnlocked.length > 0) {
             const achievementToastQueue = [...newlyUnlocked];
             function showNext() {
-              console.log("showNext:", achievementToastQueue.length);
               const badge = achievementToastQueue.shift();
               if (!badge) return;
               setActiveBadge(badge);

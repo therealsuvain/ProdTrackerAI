@@ -1,4 +1,10 @@
-import React, { useMemo, useCallback, useState, useEffect, useContext } from "react";
+import React, {
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+  useContext,
+} from "react";
 import { View, StyleSheet, Text } from "react-native";
 import {
   Agenda,
@@ -25,7 +31,7 @@ export default function CalendarListAgendaMain({
   onEventSelect,
   onDelete,
 }: CalendarListAgendaAltProps) {
-  const {theme} = useContext(ThemeContext)
+  const { theme } = useContext(ThemeContext);
   const [items, setItems] = useState<AgendaSchedule>({});
 
   // Convert timestamp to date string
@@ -34,48 +40,52 @@ export default function CalendarListAgendaMain({
     return date.toISOString().split("T")[0];
   };
 
-  const getEventsForSingleDay = useCallback((strTime: string, allEvents: any[]) => {
-    
-    const dayEvents = allEvents.filter((event) => {        
+  const getEventsForSingleDay = useCallback(
+    (todayDateString: string, allEvents: any[]) => {
+      const dayEvents = allEvents.filter((event) => {
         const eventStartDate = new Date(event.startDate);
-        eventStartDate.setHours(0, 0, 0, 0);
-        const eventEndDate = new Date(event.endDate);
-        eventEndDate.setHours(0, 0, 0, 0);
-
-        // Current Day (Normalized)
-        const currentDay = new Date(strTime);
-        currentDay.setHours(0,0,0,0);
-        const currentDayTime = currentDay.getTime();
-
-        if (currentDayTime < eventStartDate.getTime()) return false;
-        if (currentDayTime > eventEndDate.getTime()) return false;
-        if (event.deletedOccurrences?.includes(strTime)) return false;
-
         const eventStartDateString = eventStartDate.toISOString().split("T")[0];
+        let eventEndDateString;
+        if (event.endDate) {
+          eventEndDateString = new Date(event.endDate)
+            .toISOString()
+            .split("T")[0];
+        }
+        const currentDay = new Date(todayDateString);
+
+        if (todayDateString < eventStartDateString) return false;
+        if (event.endDate && todayDateString > eventEndDateString!)
+          return false;
+        if (event.deletedOccurrences?.includes(todayDateString)) return false;
 
         if (event.recurrence === "none" || !event.recurrence) {
-          return eventStartDateString === strTime;
+          return eventStartDateString === todayDateString;
         }
         if (event.recurrence === "daily") return true;
         if (event.recurrence === "weekly") {
-           return currentDay.getDay() === eventStartDate.getDay();
+          return currentDay.getDay() === eventStartDate.getDay();
         }
         return false;
-    });
+      });
 
-    if (dayEvents.length > 0) {
-      return dayEvents
-        .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-        .map((event) => ({
-          name: event.title,
-          height: 40,
-          day: strTime,
-          event: event,
-          occurence: strTime,
-        }));
-    }
-    return [];
-  }, []);
+      if (dayEvents.length > 0) {
+        return dayEvents
+          .sort(
+            (a, b) =>
+              new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+          )
+          .map((event) => ({
+            name: event.title,
+            height: 40,
+            day: todayDateString,
+            event: event,
+            occurence: todayDateString,
+          }));
+      }
+      return [];
+    },
+    [],
+  );
 
   const loadItems = (day: DateData) => {
     // We must use the functional form of setItems to prevent an infinite loop
@@ -112,7 +122,7 @@ export default function CalendarListAgendaMain({
     const timestamp = today.getTime();
     const dateData: DateData = {
       year: today.getFullYear(),
-      month: today.getMonth() + 1,
+      month: today.getMonth(),
       day: today.getDate(),
       timestamp,
       dateString: today.toISOString().split("T")[0],
@@ -124,7 +134,7 @@ export default function CalendarListAgendaMain({
     setItems((prevItems) => {
       // 1. Get all dates currently loaded in the calendar
       const loadedDates = Object.keys(prevItems);
-      
+
       // If nothing is loaded yet, do nothing
       if (loadedDates.length === 0) return prevItems;
 
@@ -141,7 +151,6 @@ export default function CalendarListAgendaMain({
       return newItems;
     });
   }, [events, getEventsForSingleDay]);
-
 
   const renderItem = (reservation: AgendaEntry, isFirst: boolean) => {
     const event = (reservation as any).event as CalendarEvent;
@@ -165,7 +174,9 @@ export default function CalendarListAgendaMain({
   const renderEmptyDate = () => {
     return (
       <View style={styles.emptyDate}>
-        <Text style={[styles.emptyText,{color:theme.greyBasePrimary}]}>No events scheduled</Text>
+        <Text style={[styles.emptyText, { color: theme.greyBasePrimary }]}>
+          No events scheduled
+        </Text>
       </View>
     );
   };
@@ -175,8 +186,6 @@ export default function CalendarListAgendaMain({
   };
 
   const selectedStr = selectedDate.toISOString().split("T")[0];
-
-
 
   return (
     <View style={styles.container}>

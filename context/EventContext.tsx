@@ -110,8 +110,10 @@ export default function EventProvider({ children }: { children: ReactNode }) {
       //TODO what if there is just one occurence and user doesnt choose delete all, UI doesnt show, but DB still has it
       if (all) {
         // cancel all notifications
-        event.notificationIds?.forEach((n) => cancelReminder(n.id));
+        //event.notificationIds?.forEach((n) => cancelReminder(n.id));
+        console.log("Context id", eventId);
         await removeEvent(eventId);
+        return ;
       }
   
       // cancel only the notification for that date

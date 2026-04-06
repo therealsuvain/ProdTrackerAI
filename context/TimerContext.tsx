@@ -17,6 +17,7 @@ import {
   stopNativeTimer,
   addTimerActionListener,
 } from "../modules/notifications-timer";
+import { useLogs } from "@/hooks/use-logs";
 
 export type TimerMode = "stopwatch" | "countdown";
 interface TimerContextType {
@@ -93,8 +94,7 @@ interface TimerData {
 // Configure notifications
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false,
+    shouldPlaySound: true,
     shouldSetBadge: false,
     shouldShowBanner: true,
     shouldShowList: true,
@@ -102,7 +102,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// TODO Clean-up and document this bloated poo
+// TODOX Clean-up and document this bloated poo
 export default function TimerProvider({ children }: { children: ReactNode }) {
   const [time, setTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -113,7 +113,8 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
   const [countdownTarget, setCountdownTarget] = useState(300); // default 5 min
   const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
   const [pausedSeconds, setPausedSeconds] = useState(0);
-  const { addLog, trackMetric } = useData();
+  const { trackMetric } = useData();
+  const { addLog } = useLogs()
   const updateIntervalRef = useRef<number | null>(null);
   //const notificationUpdateRef = useRef<number | null>(null);
   const isInitializedRef = useRef(false);
@@ -368,49 +369,6 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     } */
   };
 
-  // Format seconds to HH:MM:SS
-  /*   const formatTime = (seconds: number): string => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
-
-  // Update notification with current time (reuses same notification)
-  const updateNotificationNow = async () => {
-    try {
-      const currentTime = startTimestamp
-        ? pausedSeconds + Math.floor((Date.now() - startTimestamp) / 1000)
-        : pausedSeconds;
-
-      // Use setNotificationChannelAsync to update existing notification on Android
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: title || 'Timer Running',
-          body: formatTime(currentTime),
-          data: { type: 'timer', elapsed: currentTime },
-          sticky: true,
-          categoryIdentifier: 'timer',
-          priority: Notifications.AndroidNotificationPriority.MAX,
-          sound: undefined,
-        },
-        trigger: null,
-        identifier: NOTIFICATION_ID, // Use same identifier to update, not create new
-      });
-    } catch (error) {
-      console.error('Failed to update notification:', error);
-    }
-  };
-
-  // Cancel all timer notifications
-  const cancelAllNotifications = async () => {
-    try {
-      await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_ID);
-      await Notifications.dismissNotificationAsync(NOTIFICATION_ID);
-    } catch (error) {
-      console.error('Failed to cancel notifications:', error);
-    }
-  }; */
   // ── Countdown Zero Handler ────────────────────────────────────────────────
 
   /**

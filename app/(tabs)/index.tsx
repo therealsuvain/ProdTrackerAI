@@ -33,7 +33,6 @@ import { useLogs } from "@/hooks/use-logs";
 import { useEvents } from "@/hooks/use-events";
 
 /**
- * TODO 1 : Check all types again, many new fields have been added which have been marked optional to not break exisitng items, but are required for future items
  * TODO 2 : Many files are very large, try and make it more modular. ALL FILES HAVE TO CHECKED FOR POSSIBLE <REFACTORS></REFACTORS>
  * TODO 3 : Account creation, authentication, login
  * TODO 4 : CLOUD DATA SYNC ABILITY with account
@@ -41,42 +40,35 @@ import { useEvents } from "@/hooks/use-events";
  * TODO 6 : Notifications edits via AI chat
  * TODO 7 : Maybe custom notifications options
  * TODO 8 : Notifcation changes if needed, go through once
- * TODO 9 : Update Form validations and error handling in modals
  * TODO 10 : new Date() is expensive in javascript so have be to memomized everywhere
  * TODO 11 : Input sanitization
  * TODO 12 : Check for Security enhancements and possible securicty concerns for the entire app
  * TODO 13 : Duplicate timer log storage in TImerContext vs DataContext
  * TODO 14: Timer Screen Flip Animation state issues- FIX'em
- * TODO 15 : Duplicate trackmetrics when items updated in index or home-timeline
- * TODO 16 : DB repo's already managing updatedAt, CHECK
  * TODO 17 : Achivements Page color scheme updation
- * TODO 18 : Achievements Badges generation, maybe pixelated or sprite version of meme refered by the achievment phrase
+ * TODOY 18 : Achievements Badges generation, maybe pixelated or sprite version of meme refered by the achievment phrase
  * TODO 19 : Greatly enhancing analytics
  * TODO 20 : More metrics tracking need to added, not all need to for achievements, instead for analytics
  * TODO 21 : Codebase updation for iOS
  * TODO 22 : Testing on bigger/smaller screens. Test on different devices
  * TODO 23 : home page search enhancment or removal. R&D
- * TODO 24: triggerHaptics where required
  * TODO 25 : Habit successful checkin feedback
- * TODO 26 : Pending task , minimal UI change
+ * TODOX 26 : Pending task , minimal UI change
  * TODO 27 : R&D better Calendar screen, refer google calendar maybe.
- * TODO 28 : Add sidebar to other options in sidebar, right now sidebar can only be opened from home or (tabs)
- * TODO 29 : Habit Item Edit Modal for exisitng Habits
- * TODO 30: Maybe add category and tags field to each, maybe category selection from a predefined list. Both potentially arrays
- * TODO 31 : If tags and categoires are added, embeddings for them?, atleast searchable via physical search, AI handlers also would need to be updated
- * TODO 32 : Common UI for tags/tag-list, shape like a literal tag
- * TODO 33 : Light mode color fixes
+ * TODOX 28 : Add sidebar to other options in sidebar, right now sidebar can only be opened from home or (tabs)
+ * TODOX 29 : Habit Item Edit Modal for exisitng Habits
+ * TODOX 31 : If tags and categoires are added, embeddings for them?, atleast searchable via physical search, AI handlers also would need to be updated
+ * TODOX 32 : Common UI for tags/tag-list, shape like a literal tag
+ * TODOX 33 : Light mode color fixes
  * TODO 34 : Maybe keep darkMode as default irrespective of system settings
  * TODO 35 : Item Label(Home-screen Today's tasks , events, habits etc) animations, like ads
  * TODO 36 : Mayeb add more animations for the app. R&D
  * TODO 37 : More settings options
  * TODO 38 : Few more achievements
- * TODO 59 : Add fields lastSyncedAt , and deletedAt. Suggested for cloud sync
  * TODO 60 : R&D how mantain analytics data for deleted items
  * TODO 61 : Allow title change in chat action chips
- * TODO 62 : Add instructions to system prompt for punctuation/spell check/beautify
  * TODO 65 : Check for steps required to adapte date/time fields to different Timezones and day light saving time changes
- * TODO 66 : Changes to event modal for endDate
+ * TODO 102: Ordering of tasks , habits, logs is on consistent on their pages logs should in reverse order based on creating Date
  *
  */
 function HomeScreenInner() {
@@ -85,7 +77,6 @@ function HomeScreenInner() {
   const { events } = useEvents();
   const { timerLogs } = useLogs();
   const { habits, editHabit } = useHabits();
-  const { trackMetric } = useData();
   const [searchVisible, setSearchVisible] = useState(false);
   const { query, performSearch, results } = useSearch();
   const [aiVisible, setAiVisible] = useState(false);
@@ -105,7 +96,6 @@ function HomeScreenInner() {
   };
   const handleHabitUpdate = async (updated: Habit) => {
     await editHabit(updated);
-    //setHabits(habits.map((h) => (h.id === updated.id ? updated : h)));
   };
 
   return (

@@ -11,7 +11,7 @@ import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import { useData } from "@/hooks/use-data";
 import { clearStorage } from "@/utils/storage-utils"; // Make sure clearStorage is exported
 
-//TODO 39: Delete Date only resets state , doesnt affect DB yet
+//TODOX 39: Delete Date only used to reset state , doesnt affect DB yet
 const DATA_SETTINGS: SettingItem[] = [
   {
     id: "deleteTasks",
@@ -43,7 +43,7 @@ const DATA_SETTINGS: SettingItem[] = [
 export default function DataManagementScreen() {
   const { theme } = useTheme();
   // We bring in the setters from your DataContext to clear the UI state instantly
-  const { setTasks, setHabits, setEvents, setTimerLogs, setMessages } = useData();
+  //const { setTasks, setHabits, setEvents, setTimerLogs, setMessages } = useData();
 
   // Unified Modal State
   const [modalVisible, setModalVisible] = useState(false);
@@ -72,7 +72,6 @@ export default function DataManagementScreen() {
           "This will permanently delete all your tasks. Your achievements will not be affected.",
           false,
           () => {
-            setTasks([]); // Clears from UI (your DataContext useEffect will sync this to storage)
             setModalVisible(false);
           }
         );
@@ -83,7 +82,6 @@ export default function DataManagementScreen() {
           "This will permanently delete all habit tracking history and streaks.",
           false,
           () => {
-            setHabits([]);
             setModalVisible(false);
           }
         );
@@ -96,10 +94,6 @@ export default function DataManagementScreen() {
           async () => {
             await clearStorage();
             // Reset all in-memory state
-            setTasks([]);
-            setHabits([]);
-            setEvents([]);
-            setTimerLogs([]);
            // setMessages([]);
             setModalVisible(false);
           }

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import {
   Modal,
@@ -39,6 +39,8 @@ export default function CalendarEventModal({
   updateField,
   onSubmit,
 }: Props) {
+  //console.log("sS", state.startTime);
+  //console.log("sE", state.endTime);
   const { theme } = useContext(ThemeContext);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
@@ -57,9 +59,7 @@ export default function CalendarEventModal({
   const onStartTimeChangeAndroid = (event: any, selected?: Date) => {
     setShowAndroidStartTimerPicker(false);
     let varTime =
-      state.startDate.split("T")[0] +
-      "T" +
-      state.startTime.split("T")[1];
+      state.startDate.split("T")[0] + "T" + state.startTime.split("T")[1];
     if (selected)
       varTime = androidDate
         ? androidDate.toISOString().split("T")[0] +
@@ -69,7 +69,7 @@ export default function CalendarEventModal({
           "T" +
           selected.toISOString().split("T")[1];
     updateField("startTime", varTime);
-   /*  console.log("varTime", varTime);
+    /*  console.log("varTime", varTime);
     console.log("androidDate", androidDate);
     console.log("selected", selected);
     console.log("state.startDate", state.startDate);
@@ -81,16 +81,12 @@ export default function CalendarEventModal({
   };
 
   const onEndTimeChangeAndroid = (event: any, selected?: Date) => {
-    console.log("ENTERED END");
     setShowAndroidEndTimerPicker(false);
 
     let varTime =
-      state.startDate.split("T")[0] +
-      "T" +
-      state.endTime.split("T")[1];
-    console.log("selected1", selected);
+      state.startDate.split("T")[0] + "T" + state.endTime.split("T")[1];
+
     if (selected) {
-      console.log("selected2", selected);
       varTime = androidDate
         ? androidDate.toISOString().split("T")[0] +
           "T" +
@@ -98,9 +94,8 @@ export default function CalendarEventModal({
         : state.startDate.split("T")[0] +
           "T" +
           selected.toISOString().split("T")[1];
-      console.log("selected3", selected);
     }
-   /*  console.log("varTime", varTime);
+    /*  console.log("varTime", varTime);
     console.log("androidDate", androidDate);
     console.log("selected", selected);
     console.log("state.startDate", state.startDate);
@@ -109,6 +104,34 @@ export default function CalendarEventModal({
     updateField("endTime", varTime);
   };
 
+  useEffect(() => {
+    console.log("Auto Time Day Update - useEffect");
+    if (state.startTime && state.endTime && androidDate) {
+      updateField(
+        "startTime",
+        androidDate.toISOString().split("T")[0] +
+          "T" +
+          state.startTime.split("T")[1],
+      );
+      updateField(
+        "endTime",
+        androidDate.toISOString().split("T")[0] +
+          "T" +
+          state.endTime.split("T")[1],
+      );
+      console.log("Auto Time Day Update - useEffect - UPDATION");
+    }
+  }, [androidDate]);
+
+  const hasStartTimeError = !!state.errors?.startTime;
+  const hasEndTimeError = !!state.errors?.endTime;
+  const hasValidStartTime = !!state.startTime && !hasStartTimeError;
+  const hasValidEndTime = !!state.endTime && !hasEndTimeError;
+  const shouldRenderTimeRow =
+    hasStartTimeError ||
+    hasEndTimeError ||
+    hasValidStartTime ||
+    hasValidEndTime;
   //console.log("state", state);
   return (
     <Modal
@@ -146,8 +169,10 @@ export default function CalendarEventModal({
       >
         Pick Date
       </Button>
-      <Text style={[styles.text, { color: theme.eventBase }]}>
-        Start: {new Date(state.startDate).toDateString() || ""}
+      <Text
+        style={[styles.text, { color: theme.eventBase, textAlign: "center" }]}
+      >
+        {new Date(state.startDate).toDateString() || ""}
       </Text>
       {state.errors?.startDate && (
         <Text style={[styles.error, { color: theme.error }]}>
@@ -185,24 +210,34 @@ export default function CalendarEventModal({
           Pick End Time
         </Button>
       </View>
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={[styles.text, { color: theme.eventBase }]}>
-          Start: {new Date(state.startTime).toLocaleTimeString() || ""}
-        </Text>
-        {state.errors?.startTime && (
-          <Text style={[styles.error, { color: theme.error }]}>
-            {state.errors.startTime}
-          </Text>
-        )}
-        <Text style={[styles.text, { color: theme.eventBase }]}>
-          End: {new Date(state.endTime).toLocaleTimeString() || ""}
-        </Text>
-        {state.errors?.endTime && (
-          <Text style={[styles.error, { color: theme.error }]}>
-            {state.errors.endTime}
-          </Text>
-        )}
-      </View>
+      {shouldRenderTimeRow && (
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <View style={{ flex: 1 }}>
+            {hasStartTimeError && (
+              <Text style={[styles.error, { color: theme.error }]}>
+                {state.errors.startTime}
+              </Text>
+            )}
+            {hasValidStartTime && (
+              <Text style={[styles.text, { color: theme.eventBase }]}>
+                {new Date(state.startTime).toLocaleString()}
+              </Text>
+            )}
+          </View>
+          <View style={{ flex: 1, alignItems: "flex-end" }}>
+            {hasEndTimeError && (
+              <Text style={[styles.error, { color: theme.error }]}>
+                {state.errors.endTime}
+              </Text>
+            )}
+            {hasValidEndTime && (
+              <Text style={[styles.text, { color: theme.eventBase }]}>
+                {new Date(state.endTime).toLocaleString()}
+              </Text>
+            )}
+          </View>
+        </View>
+      )}
       {showAndroidStartTimePicker && (
         <DateTimePicker
           value={(state.startTime && new Date(state.startTime)) || new Date()}
@@ -217,25 +252,7 @@ export default function CalendarEventModal({
           onChange={onEndTimeChangeAndroid}
         />
       )}
-      <Button
-        mode="elevated"
-        buttonColor={theme.eventDarkSecondary}
-        textColor={theme.eventBase}
-        style={styles.verticalMargin}
-        onPress={() => {
-          setShowEndPicker(true);
-        }}
-      >
-        Pick End Date
-      </Button>
-      <Text style={[styles.text, { color: theme.eventBase }]}>
-        End: {new Date(state.endDate).toDateString() || ""}
-      </Text>
-      {state.errors?.endDate && (
-        <Text style={[styles.error, { color: theme.error }]}>
-          {state.errors.endDate}
-        </Text>
-      )}
+
       {showEndPicker && (
         <DateTimePicker
           value={(state.endDate && new Date(state.endDate)) || new Date()}
@@ -296,6 +313,27 @@ export default function CalendarEventModal({
           },
         ]}
       />
+      {state.recurrence !== "none" && (
+        <>
+          <Button
+            mode="elevated"
+            buttonColor={theme.eventDarkSecondary}
+            textColor={theme.eventBase}
+            style={styles.verticalMargin}
+            onPress={() => {
+              setShowEndPicker(true);
+            }}
+          >
+            Pick End Date
+          </Button>
+
+          {state.endDate && (
+            <Text style={[styles.text, { color: theme.eventBase }]}>
+              End: {new Date(state.endDate).toDateString()}
+            </Text>
+          )}
+        </>
+      )}
       <TextInput
         label="Category"
         defaultValue={state.category || ""}
@@ -309,7 +347,10 @@ export default function CalendarEventModal({
         buttonColor={theme.eventDarkSecondary}
         textColor={theme.eventBase}
         style={styles.verticalMargin}
-        onPress={onSubmit}
+        onPress={() => {
+          setAndroidDate(undefined);
+          onSubmit();
+        }}
       >
         Save
       </Button>

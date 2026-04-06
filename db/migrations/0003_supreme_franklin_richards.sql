@@ -1,0 +1,1 @@
+ALTER TABLE `global_metrics` ADD `last_synced_at` text;

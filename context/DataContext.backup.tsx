@@ -97,8 +97,6 @@ import { AchievementToast } from "@/components/ui/achievements/achievement-toast
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { initDatabase } from "@/db";
 
-//TODO Seperate this monolith itno item specific contexts
-// TODO if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
 interface DataContextType {
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
@@ -715,8 +713,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     all: boolean,
   ) => {
     const event = events.find((e) => e.id === eventId);
-    if (!event) return; //TODO add feedback?
-    //TODO what if there is just one occurence and user doesnt choose delete all, UI doesnt show, but DB still has it
+    if (!event) return; 
     if (all) {
       // cancel all notifications
       event.notificationIds?.forEach((n) => cancelReminder(n.id));

@@ -15,6 +15,20 @@
       "when": 1774952165368,
       "tag": "0001_ordinary_omega_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1775454272163,
+      "tag": "0002_opposite_mysterio",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1775455198120,
+      "tag": "0003_supreme_franklin_richards",
+      "breakpoints": true
     }
   ]
 }

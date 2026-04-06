@@ -18,9 +18,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useHabitDeniedFeedback } from "@/components/ui/habits/habit-denied-feedback-util";
 import { checkInHabit } from "@/utils/habit-utils";
 import { ThemeContext } from "@/context/ThemeContext";
+import { useData } from "@/hooks/use-data";
 
 // TODO 40 : Optimize this
-// TODO 41: Task checkins are dummies
+// TODO 41 : Task checkins are dummies
+// TODO 103 : on task completion, the scrollview offset resets and entire page reloads very awkwardly
+// TODO 104 : on habit checkin, the entire page relaods very awkwardly
 interface UnifiedTimelineProps {
   events: CalendarEvent[];
   tasks: Task[];
@@ -28,8 +31,8 @@ interface UnifiedTimelineProps {
   habits: Habit[];
   selectedDate: Date;
   onEventSelect?: (event: CalendarEvent) => void;
-  onTaskToggle?: (id: string) => void;
-  onHabitCheckIn?: (habit: Habit) => void;
+  onTaskToggle: (id: string) => void;
+  onHabitCheckIn: (habit: Habit) => void;
   onDeleteEvent?: (id: string) => void;
   onDeleteTask?: (id: string) => void;
 }
@@ -54,6 +57,7 @@ export default function UnifiedTimeline({
   onDeleteTask,
 }: UnifiedTimelineProps) {
   const { theme } = useContext(ThemeContext);
+  const { trackMetric } = useData();
   const getPriorityColor = (priority: "low" | "medium" | "high"): string => {
     return {
       low: theme.success,
@@ -83,7 +87,7 @@ export default function UnifiedTimeline({
       const eventStartDate = new Date(event.startDate);
       const eventStartDatePart = eventStartDate.toISOString().split("T")[0];
       //TODO Fix below ??
-      const eventEndDatePart = new Date(event.endDate?? eventStartDate)
+      const eventEndDatePart = new Date(event.endDate ?? eventStartDate)
         .toISOString()
         .split("T")[0];
       const eventStartDateString = eventStartDate.toDateString();
@@ -280,13 +284,18 @@ export default function UnifiedTimeline({
             backgroundColor: theme.taskBaseTransToo,
           },
         ]}
-        onPress={() => onTaskToggle?.(task.id)}
+        onPress={() => onTaskToggle(task.id)}
       >
         <View>
           <View style={styles.blockHeader}>
             <Checkbox
               status={task.completed ? "checked" : "unchecked"}
-              onPress={() => onTaskToggle?.(task.id)}
+              onPress={() => {
+                if(!task.completed){
+                  trackMetric(["tasksCompleted"], 1);
+                }
+                onTaskToggle?.(task.id);
+              }}
               color={theme.taskBase}
             />
             <Text
@@ -367,7 +376,8 @@ export default function UnifiedTimeline({
           playDeniedFeedback();
           return;
         }
-        onHabitCheckIn?.(result.habit);
+        trackMetric(["habitsCheckedIn"], 1);
+        onHabitCheckIn(result.habit);
       };
 
       return (
@@ -380,7 +390,7 @@ export default function UnifiedTimeline({
               borderColor: theme.habitBaseTrans,
             },
             animatedStyle,
-            completed && [{ borderColor: theme.success }],
+            completed && { borderColor: theme.success },
           ]}
           onPress={handleHabitCheckIn}
         >
@@ -409,13 +419,10 @@ export default function UnifiedTimeline({
             <Text style={[styles.habitStreak, { color: theme.habitBase }]}>
               🔥 {habit.streak} day streak
             </Text>
-            {habit.goal && (
-              <Text
-                style={[styles.habitGoal, { color: theme.greyBaseSecondary }]}
-              >
-                Goal: {habit.goal}
-              </Text>
-            )}
+
+            <Text style={[styles.habitGoal, { color: theme.habitBase }]}>
+              Goal: {habit.goal}
+            </Text>
           </View>
           <ProgressBar
             progress={progress}

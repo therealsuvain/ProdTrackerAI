@@ -3,6 +3,7 @@ import { createEvent } from "../model-factory-utils";
 import { scheduleReminderEvents } from "../../hooks/use-notifications";
 import { generateEmbedding } from "@/utils/embedding-engine"
 
+//TODO cancelling old reminders logic for events, habits and tasks
 export const AddEventHandler: AIHandler = {
   execute: async (params, context) => {
     const newEvent = await createEvent(params);

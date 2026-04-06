@@ -23,7 +23,13 @@ export type Difficulty = "easy" | "medium" | "hard" | "legendary";
 
 
 export const isCompletedToday = (habit: Habit): boolean => new Set(habit.history).has(getTodayISO());
-
+export const isCompletedInLast7Days = (habit: Habit): boolean => {
+  const today = new Date();
+  const lastWeek = new Date(today);
+  lastWeek.setDate(lastWeek.getDate() - 7);
+  const diff = today.getTime() - lastWeek.getTime();
+  return diff < 7;
+}
 /**
  * Maps a habit's goal + frequency to a difficulty tier used by the goal
  * completion modal to scale confetti intensity and message copy.
@@ -48,7 +54,7 @@ export const applyMissedDayLogic = (habit: Habit): AutoCheckInResult => {
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayISO = yesterday.toISOString().split('T')[0];
   // If already done today or yesterday, we are safe.
-  if (habit.history.length == 0 || isCompletedToday(habit) || new Set(habit.history).has(yesterdayISO)) {
+  if (habit.history.length == 0 || isCompletedToday(habit) || isCompletedInLast7Days(habit) || new Set(habit.history).has(yesterdayISO)) {
     return { status: "success", habit };
   }
 
@@ -85,7 +91,6 @@ export const applyMissedDayLogic = (habit: Habit): AutoCheckInResult => {
     };
   }
 };
-
 
 export const wasHabitCheckInMissed = (
   habit: Habit,
@@ -251,7 +256,7 @@ export const freezeHabit = (habit: Habit): FreezeResult => {
       return { status: "denied", reason: "not_a_target_day" };
     }
   }
-  if (isCompletedToday(habit)) {
+  if (isCompletedToday(habit || isCompletedInLast7Days(habit))) {
     return { status: "denied", reason: "already_checked_in" };
   }
   if (isFrozen(habit)) {
@@ -382,10 +387,16 @@ export const restartHabitAfterGoal = (habit: Habit, oldGoal: number): Habit => {
     }
     else{
       const next = new Date(new Date().setDate(new Date(habit.history[habit.history.length - 1]).getDate() + 7));
+      next.setHours(0,0,0,0);
       resetAfter = next.toISOString()
     }
   } else {
     // Midnight tonight — start of the next calendar day
+    if(habit.frequency === "weekly"){
+      const next = new Date(new Date().setDate(new Date(habit.history[habit.history.length - 1]).getDate() + 7));
+      next.setHours(0,0,0,0);
+      resetAfter = next.toISOString()
+    }
     const midnight = new Date();
     midnight.setHours(24, 0, 0, 0); // next midnight
     resetAfter = midnight.toISOString();

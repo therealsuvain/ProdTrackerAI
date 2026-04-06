@@ -54,7 +54,6 @@ const isToday = (dateString?: string) => {
 };
 
 // --- 1. HABITS HANDLER ---
-//TODO All query handlers need to revised
 export const QueryHabitsHandler: AIHandler = {
   execute: async (args: any, context: any) => {
     const { frequency = "all", stateFilter = "all", sortBy = "none", specificHabitId } = args;
@@ -78,7 +77,7 @@ export const QueryHabitsHandler: AIHandler = {
       };
     }
 
-    let filtered = [...(context.habits || [])].filter(h => !h.isArchived);
+    let filtered = [...(context.habits || [])];
 
     // 1. Frequency Filter
     if (frequency !== "all") {

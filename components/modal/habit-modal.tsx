@@ -45,6 +45,8 @@ export default function HabitModal({
   const { theme } = useContext(ThemeContext);
   const onTimeChange = (event: any, selectedDate?: Date) => {
     setShowTimePicker(false);
+    console.log("HABIT MODAL REMINDER DATE", selectedDate);
+    console.log(selectedDate?.toLocaleString());
     if (selectedDate) updateField("reminderDate", selectedDate);
   };
   return (
@@ -108,6 +110,9 @@ export default function HabitModal({
         onChangeText={(text) => updateField("goal", text)}
         keyboardType="numeric"
       />
+      {state.errors?.goal && (
+        <Text style={[styles.error, {color:theme.error}]}>{state.errors.goal}</Text>
+      )}
       <View style={styles.switchContainer}>
         <Text style={[styles.text, { color: theme.habitBase }]}>
           Set Reminder

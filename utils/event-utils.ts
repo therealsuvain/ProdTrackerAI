@@ -7,11 +7,16 @@ export const getEventsForDate = (
 ): CalendarEvent[] => {
   const filtered: CalendarEvent[] = [];
   events.forEach((event) => {
-    //TODO check if this works
-    //const eventDate = new Date(event.startDate).setHours(5,30,0,0);
     const eventDate = event.startDate.split('T')[0];
-    //const eventEndDate = new Date(event.endDate).setHours(23,59,0,0);
-    if (date.toISOString().split('T')[0] === eventDate && !event.deletedOccurrences?.includes(date.toISOString().split('T')[0])) {
+    const dateString = date.toISOString().split('T')[0];
+    if(!event.endDate){
+      if(eventDate <= dateString && !event.deletedOccurrences?.includes(dateString)){
+        filtered.push(event);
+      }
+      return ; 
+    }
+    const eventEndDate =  event.endDate.split('T')[0];
+    if (eventDate <= dateString &&  dateString <= eventEndDate && !event.deletedOccurrences?.includes(dateString)) {
       filtered.push(event);
     }
   });

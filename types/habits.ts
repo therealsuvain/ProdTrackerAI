@@ -10,15 +10,14 @@ export interface Habit {
   streakFreezes: number; // Number of "skips" available
   longestStreak: number; 
   freezeHistory?: string[];
-  isArchived: boolean;
   goal: number; // e.g., 7 days in a row
   goalCompletions: GoalCompletion[]; // Track when goals are completed
   pendingStreakResetAfter?: string;
   notificationId?: string;
-  // ── Audit fields ──────────────────────────────────────────────────────────
   createdAt: string;                 // ISO 8601 — set once, never mutated
-  updatedAt: string;                 // ISO 8601 — updated on every save
-  archivedAt?: string;              // ISO 8601 — set when completed, cleared on un-complete
+  updatedAt: string;                 // ISO 8601 — updated on every save 
+  category?: string;
+  tags?: string[];
   embedding?:number[]; // For Semantic Search
 }
 export interface GoalCompletion {

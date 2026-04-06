@@ -21,9 +21,8 @@ type FormAction =
 const initialState: FormState = {
   title: "",
   startDate: new Date().toISOString(),
-  endDate: new Date().toISOString(),
-  startTime: new Date().toISOString(),
-  endTime: new Date().toISOString(),
+  startTime: "",
+  endTime: "",
   reminder: false,
   recurrence: "none",
   errors: {},
@@ -61,6 +60,7 @@ interface UseEventFormProps {
   editEvent: (event: CalendarEvent) => Promise<void>;
   editingEvent: CalendarEvent | null;
   onClose: () => void;
+  resetEditingEvent: () => void;
 }
 
 const cancelAllRemniders = async (notifications: { date: string; id: string }[]) => {
@@ -97,11 +97,13 @@ export const useEventForm = ({
   editEvent,
   editingEvent,
   onClose,
+  resetEditingEvent
 }: UseEventFormProps) => {
   const [state, dispatch] = useReducer(formReducer, initialState);
 
   useEffect(() => {
     if (editingEvent) {
+      console.log("THIS ONE EVENTS")
       dispatch({
         type: "RESET",
         payload: {
@@ -115,6 +117,7 @@ export const useEventForm = ({
           recurrence: editingEvent.recurrence,
           deletedOccurrences: editingEvent.deletedOccurrences,
           category: editingEvent.category,
+          tags: editingEvent.tags,
           notificationIds: editingEvent.notificationIds,
           createdAt: editingEvent.createdAt,
           updatedAt: editingEvent.updatedAt,
@@ -122,6 +125,7 @@ export const useEventForm = ({
         },
       });
     } else {
+      console.log("THIS TWO EVENTS")
       dispatch({ type: "RESET" });
     }
   }, [editingEvent]);
@@ -174,7 +178,18 @@ export const useEventForm = ({
 
     let newEvent: CalendarEvent = {
       id: editingEvent ? editingEvent.id : randomUUID(),
-      ...state,
+      title: state.title,
+      startDate: state.startDate,
+      endDate: state.endDate,
+      startTime: state.startTime,
+      endTime: state.endTime,
+      description: state.description,
+      reminder: state.reminder,
+      recurrence: state.recurrence,
+      deletedOccurrences: state.deletedOccurrences,
+      category: state.category,
+      notificationIds: state.notificationIds,
+      tags: state.tags,
       createdAt: editingEvent ? editingEvent.createdAt : new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       embedding: state.embedding || await generateEmbedding(state.title, false)
@@ -187,6 +202,7 @@ export const useEventForm = ({
       editingEvent.notificationIds &&
       !newEvent.reminder
     ) {
+      console.log("EVENT FORM NOtifs: old cancelled old:1 , new:0");
       cancelAllRemniders(editingEvent.notificationIds);
     }
 
@@ -197,20 +213,21 @@ export const useEventForm = ({
 
     // If old didnt have reminders ON and new edited does
     if (newEvent.reminder && !editingEvent?.reminder) {
-      console.log("new reminders")
+      console.log("EVENT FORM NOtifs: new reminder old:0 , new:1");
       const notifIds = await scheduleReminderEvents(newEvent);
       newEvent.notificationIds = notifIds;
     }
 
     // If both had reminders ON and time was edited
     if (isTimeEdited(editingEvent, newEvent) && editingEvent?.notificationIds) {
-      console.log("old cancelled")
+      console.log("EVENT FORM NOtifs: new reminder old:1 , new:1");
       await cancelAllRemniders(editingEvent.notificationIds)
       const notifIds = await scheduleReminderEvents(newEvent);
       newEvent.notificationIds = notifIds;
     }
     if (editingEvent) {
       editEvent(newEvent);
+      resetEditingEvent();
     } else {
       addEvent(newEvent);
     }

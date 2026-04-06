@@ -34,7 +34,6 @@ const customComparator = (prev: HabitItemProps, next: HabitItemProps) => {
     prev.habit.goal === next.habit.goal &&
     prev.habit.title === next.habit.title &&
     prev.habit.targetDays === next.habit.targetDays && // array ref — stable if not edited
-    prev.habit.isArchived === next.habit.isArchived &&
     prev.onUpdate === next.onUpdate && // stable via useCallback in screen
     prev.onDelete === next.onDelete && // stable via useCallback in screen
     prev.onGoalReached === next.onGoalReached

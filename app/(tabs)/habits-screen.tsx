@@ -23,10 +23,9 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
+import { useHaptics } from "@/hooks/use-haptics";
 
 // TODO : shifting logic from habit-screen , habit-item, habiit-stats to utils maybe
-// TODO : deleting habit doesnt delete its child rows
-// TODO : Optmistic UI loses the prev state , state resets, reloading too doesnt fix it , but data still tehre in DB
 // TODO : pendingStreakResetAfter does not reset in db only in state
 function HabitsScreenInner() {
   const { theme } = useContext(ThemeContext);
@@ -39,6 +38,7 @@ function HabitsScreenInner() {
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [completedHabit, setCompletedHabit] = useState<Habit | null>(null);
   const { toastError, showToast, dismissToast } = useDbErrorToast();
+  const { triggerHaptic } = useHaptics();
   const { state, updateField, onSubmit } = useHabitForm({
     addHabit,
     editHabit,
@@ -102,6 +102,7 @@ function HabitsScreenInner() {
           }
           try {
             await removeHabit(id);
+            triggerHaptic();
           } catch {
             showToast("Couldn't delete the habit. It has been restored.");
           }

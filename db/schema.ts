@@ -23,7 +23,6 @@
  *   uses them as strings (split('T')[0] etc). No conversion needed.
  */
 
-// TODO 64 : Settings and achievemnts Schema missing
 import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
@@ -92,18 +91,17 @@ export const habits = sqliteTable(
         targetDays: text("target_days"),               // JSON: number[] e.g. [1,3,5]
         streak: integer("streak").notNull().default(0),
         longestStreak: integer("longest_streak").notNull().default(0),
-        streakFreezes: integer("streak_freezes").notNull().default(1),
-        isArchived: integer("is_archived", { mode: "boolean" }).notNull().default(false),
-        archivedAt: text("archived_at"),               // ISO 8601
+        streakFreezes: integer("streak_freezes").notNull().default(1),             // ISO 8601
         goal: integer("goal").notNull().default(7),
         // Pending reset is a transient coordination flag — text date or null
         pendingStreakResetAfter: text("pending_streak_reset_after"),
         notificationId: text("notification_id"),
+        category: text("category"),
+        tags: text("tags"),                            // JSON: string[]
         embedding: text("embedding"),                  // JSON: number[]
         ...auditFields,
     },
     (table) => ([
-        index("habits_archived_idx").on(table.isArchived),
         index("habits_frequency_idx").on(table.frequency),
     ]),
 );
@@ -189,6 +187,7 @@ export const calendarEvents = sqliteTable(
         reminder: integer("reminder", { mode: "boolean" }).notNull().default(false),
         recurrence: text("recurrence",{ enum: ["none", "daily", "weekly"] }).notNull().default("none"), 
         category: text("category"),
+        tags: text("tags"),
         embedding: text("embedding"),                  // JSON: number[]
         ...auditFields,
     },
@@ -302,6 +301,7 @@ export const globalMetrics = sqliteTable("global_metrics", {
     chatActionsConfirmed: integer("chat_actions_confirmed").notNull().default(0),
     chatActionsExpired: integer("chat_actions_expired").notNull().default(0),
     chatActionsCancelled: integer("chat_actions_cancelled").notNull().default(0),
+    lastSyncedAt: text("last_synced_at"),           // ISO 8601
 });
 
 /**

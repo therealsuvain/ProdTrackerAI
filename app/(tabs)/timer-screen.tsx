@@ -24,7 +24,9 @@ import { getTodayISO, withAlpha, getWeekStartISO } from "@/utils/common-utils";
 import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 import { useLogs } from "@/hooks/use-logs";
-
+import { useHaptics } from "@/hooks/use-haptics";
+//TODO right now only showing last 10 logItems, either add pagination or show all
+ //TODO when category TextInput value is changed to defaultValue, the lastCategory press does not get updated into the TextInput
 function TimerScreenInner() {
   const { theme } = useContext(ThemeContext);
   const { timerLogs, setTimerLogs, addLog, removeLog, editLog } = useLogs();
@@ -50,6 +52,7 @@ function TimerScreenInner() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingLog, setEditingLog] = useState<TimerLog | null>(null);
   const { toastError, showToast, dismissToast } = useDbErrorToast();
+  const { triggerHaptic } = useHaptics();
   const { todayTotal, weekTotal, topCategory } = useMemo(() => {
     const todayISO = getTodayISO();
     const weekStartISO = getWeekStartISO();
@@ -82,7 +85,6 @@ function TimerScreenInner() {
 
     return { todayTotal, weekTotal, topCategory };
   }, [timerLogs]);
-//TODO No lap button in countdown mode - remove it
   // ── Last-used category suggestion ────────────────────────────────────────
   // Find the most recently saved log that has a category — show as a
   // one-tap suggestion chip so the user doesn't have to retype it.
@@ -101,6 +103,7 @@ function TimerScreenInner() {
         onPress: async () => {
           try {
             await removeLog(id);
+            triggerHaptic();
           } catch {
             showToast("Couldn't delete the log. It has been restored.");
           }
@@ -109,8 +112,8 @@ function TimerScreenInner() {
     ]);
   };
 
-  const handleEdit = async(updated: TimerLog) => {
-   await editLog(updated);
+  const handleEdit = async (updated: TimerLog) => {
+    await editLog(updated);
   };
 
   const showModal = (log: TimerLog) => {
@@ -202,16 +205,16 @@ function TimerScreenInner() {
           mode="outlined"
           activeOutlineColor={theme.timerBase}
         />
+       
         <TextInput
           placeholder="Category (optional)"
-          defaultValue={category}
+          value={category}
           onChangeText={setCategory}
           style={[styles.input, styles.categoryInput]}
           mode="outlined"
           activeOutlineColor={theme.timerBase}
         />
       </View>
-
       <View style={styles.categoryRow}>
         {/* Last-used suggestion chip — only shown when category field is empty */}
         {!category && lastUsedCategory && (
@@ -234,7 +237,6 @@ function TimerScreenInner() {
         onToggleMode={toggleMode}
         onCountdownTargetChange={setCountdownTarget}
       />
-
       {/* Mode hint below the circle 
           <Text style={[styles.modeHint, { color: theme.timerBase }]}>
             {isRunning
@@ -243,12 +245,30 @@ function TimerScreenInner() {
           </Text>*/}
       <View style={styles.buttons}>
         {!isRunning ? (
-          <XButton icon="play" mode="timer" size="big" onPress={start} />
+          <XButton
+            icon="play"
+            mode="timer"
+            size="big"
+            onPress={() => {
+              triggerHaptic();
+              start();
+            }}
+          />
         ) : (
           <>
             <XButton icon="pause" mode="timer" size="big" onPress={pause} />
-            <XButton icon="stop" mode="timer" size="big" onPress={stop} />
-            <XButton icon="flag" mode="timer" size="big" onPress={lap} />
+            <XButton
+              icon="stop"
+              mode="timer"
+              size="big"
+              onPress={() => {
+                triggerHaptic();
+                stop();
+              }}
+            />
+            {mode === "stopwatch" && (
+              <XButton icon="flag" mode="timer" size="big" onPress={lap} />
+            )}
             <XButton icon="refresh" mode="timer" size="big" onPress={reset} />
           </>
         )}
@@ -289,7 +309,6 @@ function TimerScreenInner() {
           })}
         </View>
       )}
-
       <View style={styles.logDividerContainer}>
         <View
           style={[
@@ -307,6 +326,7 @@ function TimerScreenInner() {
           ]}
         />
       </View>
+      
       <FlatList
         data={timerLogs.slice(-10).toReversed()}
         keyExtractor={(item) => item.id}
