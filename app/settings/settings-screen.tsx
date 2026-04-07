@@ -126,9 +126,6 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Text style={[styles.settingslabel, { color: theme.text }]}>
-        Settings
-      </Text>
       <Searchbar
         placeholder="Search Settings"
         onChangeText={setSearchQuery}
@@ -163,12 +160,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 64,
-  },
-  settingslabel: {
-    marginLeft: 10,
-    fontSize: 35,
-    fontWeight: "bold",
   },
   searchbar: {
     marginHorizontal: 16,

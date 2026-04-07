@@ -18,6 +18,7 @@ import DaySelector from "../ui/day-selector";
 
 interface Props {
   visible: boolean;
+  visibleInEditMode: boolean;
   onDismiss: () => void;
   state: any;
   updateField: (
@@ -29,13 +30,14 @@ interface Props {
       | "targetDays"
       | "goal"
       | "errors",
-    value: any
+    value: any,
   ) => void;
   onSubmit: () => Promise<void> | void;
 }
 
 export default function HabitModal({
   visible,
+  visibleInEditMode,
   onDismiss,
   state,
   updateField,
@@ -47,11 +49,13 @@ export default function HabitModal({
     setShowTimePicker(false);
     console.log("HABIT MODAL REMINDER DATE", selectedDate);
     console.log(selectedDate?.toLocaleString());
-    if (selectedDate) updateField("reminderDate", selectedDate);
+    if (selectedDate) updateField("reminderDate", selectedDate.toDateString());
   };
+
+  //visibleInEditMode && console.log("visibleInEditMode", state.goal);
   return (
     <Modal
-      visible={visible}
+      visible={visible || visibleInEditMode}
       onDismiss={onDismiss}
       contentContainerStyle={[
         styles.modal,
@@ -70,7 +74,9 @@ export default function HabitModal({
         onChangeText={(text) => updateField("title", text)}
       />
       {state.errors?.title && (
-        <Text style={[styles.error, {color:theme.error}]}>{state.errors.title}</Text>
+        <Text style={[styles.error, { color: theme.error }]}>
+          {state.errors.title}
+        </Text>
       )}
 
       <SegmentedButtons
@@ -101,17 +107,23 @@ export default function HabitModal({
         selectedDays={state.targetDays}
         onDaysChange={updateField}
       />
-      <TextInput
-        style={styles.verticalMargin}
-        label="Goal"
-        mode="outlined"
-        activeOutlineColor={theme.habitBase}
-        defaultValue={state.goal}
-        onChangeText={(text) => updateField("goal", text)}
-        keyboardType="numeric"
-      />
-      {state.errors?.goal && (
-        <Text style={[styles.error, {color:theme.error}]}>{state.errors.goal}</Text>
+      {!visibleInEditMode && (
+        <>
+          <TextInput
+            style={styles.verticalMargin}
+            label="Goal"
+            mode="outlined"
+            activeOutlineColor={theme.habitBase}
+            defaultValue={state.goal}
+            onChangeText={(text) => updateField("goal", text)}
+            keyboardType="numeric"
+          />
+          {state.errors?.goal && (
+            <Text style={[styles.error, { color: theme.error }]}>
+              {state.errors.goal}
+            </Text>
+          )}
+        </>
       )}
       <View style={styles.switchContainer}>
         <Text style={[styles.text, { color: theme.habitBase }]}>
@@ -141,7 +153,7 @@ export default function HabitModal({
             </Button>
 
             <Text style={[styles.text, { color: theme.habitBase }]}>
-              {state.reminderDate?.toLocaleTimeString()}
+              {state.reminderDate && new Date(state.reminderDate).toLocaleTimeString()}
             </Text>
             {state.errors?.reminderDate && (
               <Text style={[styles.error, { color: theme.error }]}>

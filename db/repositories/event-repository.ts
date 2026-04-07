@@ -227,7 +227,6 @@ export async function updateCalendarEvent(event: CalendarEvent): Promise<Calenda
  * ON DELETE CASCADE in the schema handles child deletion automatically.
  */
 export async function deleteCalendarEvent(id: string): Promise<void> {
-    console.log("deleteCalendarEvent", id);
     await db.delete(calendarEvents).where(eq(calendarEvents.id, id));
 }
 

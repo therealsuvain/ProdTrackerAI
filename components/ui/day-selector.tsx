@@ -97,7 +97,7 @@ export default function DaySelector({
               key={day.value}
               style={[
                 styles.dayCircle,
-                { borderColor: theme.habitDarkSecondary },
+                { borderColor: "#916f14" },
                 isSelected && {
                   backgroundColor: theme.habitDarkSecondary,
                   borderColor: theme.habitBase,
@@ -129,7 +129,8 @@ const styles = StyleSheet.create({
   },
   container: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
+    gap: 5,
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -138,14 +139,14 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    borderWidth: 3,
+    borderWidth: 2,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "transparent",
   },
 
   dayText: {
-    fontSize: 18,
-    fontWeight: "400",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

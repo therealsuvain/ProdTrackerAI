@@ -21,7 +21,6 @@ import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/use-data";
 
 // TODO 40 : Optimize this
-// TODO 41 : Task checkins are dummies
 // TODO 103 : on task completion, the scrollview offset resets and entire page reloads very awkwardly
 // TODO 104 : on habit checkin, the entire page relaods very awkwardly
 interface UnifiedTimelineProps {

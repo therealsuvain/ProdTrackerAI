@@ -200,7 +200,7 @@ export const aiTools: FunctionDeclaration[] = [
                 },
                 timeRange: {
                     type: Type.STRING,
-                    enum: ["last_week", "yesterday", "today", "tomorrow", "this_week", "next_week", "all"],
+                    enum: ["last_month", "last_week", "yesterday", "today", "tomorrow", "this_week", "next_week", "this_month", "next_month", "all"],
                     description: "Relative time range based on the current date."
                 },
                 sortBy: {
@@ -232,7 +232,7 @@ export const aiTools: FunctionDeclaration[] = [
         parameters: {
             type: Type.OBJECT,
             properties: {
-                timeRange: { type: Type.STRING, enum: ["today", "tomorrow", "this_week", "next_week", "yesterday", "last_week", "all"] },
+                timeRange: { type: Type.STRING, enum: ["last_month", "last_week", "yesterday", "today", "tomorrow", "this_week", "next_week", "this_month", "next_month", "all"] },
                 timeOfDay: { type: Type.STRING, enum: ["morning", "afternoon", "evening", "all"], description: "Filters by the start time of the event, ignoring the date." },
                 specificEventId: { type: Type.STRING, description: "If the user asks about a specific event's details (like recurrences left or deleted instances), pass the ID here." }
             },
@@ -248,7 +248,7 @@ export const aiTools: FunctionDeclaration[] = [
                 minDurationMinutes: { type: Type.NUMBER, description: "Minimum duration in minutes." },
                 maxDurationMinutes: { type: Type.NUMBER, description: "Maximum duration in minutes." },
                 sortBy: { type: Type.STRING, enum: ["duration_desc", "duration_asc", "newest_first", "oldest_first"] },
-                speificTimerLogId: { type: Type.STRING, description: "If the user asks about a specific timer log's details then pass the ID here"}
+                speificTimerLogId: { type: Type.STRING, description: "If the user asks about a specific timer log's details then pass the ID here" }
             },
             required: ["minDurationMinutes", "maxDurationMinutes"] // Default to no limits if not provided
         }

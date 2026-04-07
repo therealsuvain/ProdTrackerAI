@@ -1,5 +1,12 @@
 import React, { useContext, useState } from "react";
-import { View, StyleSheet, Alert, Text, Pressable } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Alert,
+  Text,
+  Pressable,
+  AlertButton,
+} from "react-native";
 import { FAB, Portal } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -20,7 +27,7 @@ import { useHaptics } from "@/hooks/use-haptics";
 // TODO - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { events, addEvent, editEvent, deleteEventOccurrence} = useEvents();
+  const { events, addEvent, editEvent, deleteEventOccurrence } = useEvents();
   const {
     currentView,
     setCurrentView,
@@ -47,10 +54,44 @@ function CalendarScreenInner() {
 
   const hideModal = () => setVisible(false);
 
+  const isSingleOcurrenceHelper = (event: CalendarEvent) => {
+    if (event.recurrence === "none") return true;
+    if (!event.endDate) return false;
+    const start = new Date(event.startDate.split("T")[0]);
+    const end = new Date(event.endDate.split("T")[0]);
+    const dayDiff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+    let totalOccurrences = 0;
+    if (event.recurrence === "daily") {
+      totalOccurrences = dayDiff + 1;
+    } else if (event.recurrence === "weekly") {
+      totalOccurrences = Math.floor(dayDiff / 7) + 1;
+    }
+    // fallback safety
+    else {
+      totalOccurrences = 1;
+    }
+    const deletedOcurrencesCount = event.deletedOccurrences?.length || 0;
+    const remainingOccurrences = totalOccurrences - deletedOcurrencesCount;
+    return remainingOccurrences === 1;
+  };
+
   const handleDelete = (id: string, date: string) => {
-    Alert.alert("Delete Event", "Are you sure?", [
-      { text: "Cancel" },
-      {
+    const event = events.find((e: CalendarEvent) => e.id === id);
+    if (!event) return;
+    const isSingleOcurrence = isSingleOcurrenceHelper(event);
+    const buttons: AlertButton[] = [{ text: "Cancel" },{
+      text: "Delete Event",
+      onPress: async () => {
+        try {
+          await deleteEventOccurrence(id, date, true);
+          triggerHaptic();
+        } catch {
+          showToast("Couldn't delete the event. It has been restored.");
+        }
+      },
+    }];
+    if (!isSingleOcurrence) {
+      buttons.push({
         text: "Delete Current Occurrence",
         onPress: async () => {
           try {
@@ -60,19 +101,10 @@ function CalendarScreenInner() {
             showToast("Couldn't delete the event. It has been restored.");
           }
         },
-      },
-      {
-        text: "Delete All Occurrences",
-        onPress: async () => {
-          try {
-            await deleteEventOccurrence(id, date, true);
-            triggerHaptic();
-          } catch {
-            showToast("Couldn't delete the event. It has been restored.");
-          }
-        },
-      },
-    ]);
+      });
+    }
+
+    Alert.alert("Delete Event", "Are you sure?", buttons);
   };
   return (
     <>

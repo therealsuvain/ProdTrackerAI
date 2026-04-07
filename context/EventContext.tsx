@@ -101,33 +101,37 @@ export default function EventProvider({ children }: { children: ReactNode }) {
   );
 
   const deleteEventOccurrence = async (
-      eventId: string,
-      date: string,
-      all: boolean,
-    ) => {
-      const event = events.find((e) => e.id === eventId);
-      if (!event) return; //TODO add feedback?
-      //TODO what if there is just one occurence and user doesnt choose delete all, UI doesnt show, but DB still has it
-      if (all) {
-        // cancel all notifications
-        //event.notificationIds?.forEach((n) => cancelReminder(n.id));
-        console.log("Context id", eventId);
-        await removeEvent(eventId);
-        return ;
+    eventId: string,
+    date: string,
+    all: boolean,
+  ) => {
+    const event = events.find((e) => e.id === eventId);
+    if (!event) return; //TODO add feedback?
+    if (all) {
+      // cancel all notifications
+      if (event.notificationIds?.length) {
+        const cancelPromises = event.notificationIds.map((n) =>
+          cancelReminder(n.id),
+        );
+        await Promise.all(cancelPromises);
       }
-  
-      // cancel only the notification for that date
-      const notifId = event.notificationIds?.find((n) => n.date === date)?.id;
-      if (notifId) cancelReminder(notifId);
-  
-      await editEvent({
-        ...event,
-        deletedOccurrences: [...(event.deletedOccurrences || []), date],
-        notificationIds: event.notificationIds?.filter((n) => n.date !== date),
-      });
-    };
+      //console.log("Context id", eventId);
+      await removeEvent(eventId);
+      return;
+    }
 
- //Loader
+    // cancel only the notification for that date
+    const notifId = event.notificationIds?.find((n) => n.date === date)?.id;
+    if (notifId) cancelReminder(notifId);
+
+    await editEvent({
+      ...event,
+      deletedOccurrences: [...(event.deletedOccurrences || []), date],
+      notificationIds: event.notificationIds?.filter((n) => n.date !== date),
+    });
+  };
+
+  //Loader
   useEffect(() => {
     const loadEvents = async () => {
       try {

@@ -13,7 +13,7 @@ import Octicons from "@expo/vector-icons/Octicons";
 import { useData } from "@/hooks/use-data";
 import { Task } from "@/types/task";
 import TaskItem from "@/components/ui/tasks/task-item";
-import { cancelReminder } from "@/hooks/use-notifications";
+import { cancelReminder,allScheduledNotificationsLogs, cancelAllScheduledNotifications } from "@/hooks/use-notifications";
 import TaskModal from "@/components/modal/task-modal";
 import { useTaskForm } from "@/hooks/use-task-form";
 import { ThemeContext } from "@/context/ThemeContext";
@@ -246,6 +246,7 @@ function TaskScreenInner() {
         )}
         <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
         <DbErrorToast error={toastError} onDismiss={dismissToast} />
+       {/*  <FAB style={styles.fab} icon="plus" onPress={() => allScheduledNotificationsLogs()} /> */}
 {/*         <FAB
           style={styles.fab}
           icon="plus"

@@ -1,9 +1,9 @@
 import { AIHandler } from "@/types/ai-handler";
 import { createEvent } from "../model-factory-utils";
-import { scheduleReminderEvents } from "../../hooks/use-notifications";
+import { cancelReminder, scheduleReminderEvents } from "../../hooks/use-notifications";
 import { generateEmbedding } from "@/utils/embedding-engine"
+import { getTimeRangeHelper } from "./additional-handlers";
 
-//TODO cancelling old reminders logic for events, habits and tasks
 export const AddEventHandler: AIHandler = {
   execute: async (params, context) => {
     const newEvent = await createEvent(params);
@@ -30,6 +30,15 @@ export const EditEventHandler: AIHandler = {
     const oldEvent = context.events.find((e) => e.id.slice(0, 8) === params.id)
     if (!oldEvent) throw new Error("Event not found");// TODO
     const updatedEvent = await createEvent({ ...oldEvent, ...params, id: oldEvent.id })
+    if (updatedEvent.reminder) {
+      if (oldEvent.notificationIds?.length) {
+        const cancelPromises = oldEvent.notificationIds.map((n) =>
+          cancelReminder(n.id)
+        );
+        await Promise.all(cancelPromises);
+      }
+      updatedEvent.notificationIds = await scheduleReminderEvents(updatedEvent);
+    }
     await context.editEvent(updatedEvent);
   }
 };
@@ -38,6 +47,12 @@ export const DeleteEventHandler: AIHandler = {
   execute: async (params, context) => {
     const oldEvent = context.events.find((e) => e.id.slice(0, 8) === params.id)
     if (!oldEvent) throw new Error("Event not found");// TODO
+    if (oldEvent.notificationIds?.length) {
+      const cancelPromises = oldEvent.notificationIds.map((n) =>
+        cancelReminder(n.id)
+      );
+      await Promise.all(cancelPromises);
+    }
     await context.removeEvent(oldEvent.id);
   }
 };
@@ -96,15 +111,12 @@ export const QueryEventsHandler: AIHandler = {
       });
     }
 
-    // Filter TimeRange (Simplified for brevity, uses startOfToday boundaries)
-    // Note: To handle recurring events properly here, you'd check if today falls 
-    // between startDate and endDate AND matches the recurrence pattern.
-    // For this list, we check the base startDate or active recurrences.
+    const { rangeStart, rangeEnd } = getTimeRangeHelper(timeRange);
     filtered = filtered.filter(e => {
       const eventStart = new Date(e.startDate);
-      if (timeRange === "today") return eventStart >= startOfToday && eventStart < new Date(startOfToday.getTime() + 86400000);
-      // ... add logic for tomorrow/yesterday/week matching your previous task handler boundaries
-      return true;
+      const eventEnd = e.endDate ? new Date(e.endDate) : null;
+      if (!rangeStart || !rangeEnd) return true;
+      return eventStart <= rangeEnd && (eventEnd ?? eventStart) >= rangeStart;
     });
 
     return {

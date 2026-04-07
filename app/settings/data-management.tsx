@@ -15,13 +15,13 @@ import { clearStorage } from "@/utils/storage-utils"; // Make sure clearStorage 
 const DATA_SETTINGS: SettingItem[] = [
   {
     id: "deleteTasks",
-    label: "Delete Task History",
+    label: "Clear Task History",
     icon: "checkmark-circle-outline",
     type: "action",
   },
   {
     id: "deleteHabits",
-    label: "Delete Habit History",
+    label: "Clear Habit History",
     icon: "leaf-outline",
     type: "action",
   },
@@ -33,7 +33,7 @@ const DATA_SETTINGS: SettingItem[] = [
   },
   {
     id: "deleteAllData",
-    label: "Delete All Data",
+    label: "Clear All Data",
     icon: "warning-outline",
     type: "action",
     destructive: true, // This will turn the row text red!
@@ -43,7 +43,7 @@ const DATA_SETTINGS: SettingItem[] = [
 export default function DataManagementScreen() {
   const { theme } = useTheme();
   // We bring in the setters from your DataContext to clear the UI state instantly
-  //const { setTasks, setHabits, setEvents, setTimerLogs, setMessages } = useData();
+  //const { setTasks, setHabits, setEvents, setTimerLogs, setMessages } = useData();-
 
   // Unified Modal State
   const [modalVisible, setModalVisible] = useState(false);

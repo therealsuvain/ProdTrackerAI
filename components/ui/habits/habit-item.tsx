@@ -16,6 +16,7 @@ import { useHabitDeniedFeedback } from "./habit-denied-feedback-util";
 interface HabitItemProps {
   habit: Habit;
   onUpdate: (updated: Habit) => void;
+  onEdit: () => void;
   onDelete: () => void;
   onGoalReached?: (habit: Habit) => void;
 }
@@ -42,6 +43,7 @@ const customComparator = (prev: HabitItemProps, next: HabitItemProps) => {
 function HabitItem({
   habit,
   onUpdate,
+  onEdit,
   onDelete,
   onGoalReached,
 }: HabitItemProps) {
@@ -53,7 +55,13 @@ function HabitItem({
   const isNotHome = route.name !== "index";
   const { playDeniedFeedback, animatedStyle } = useHabitDeniedFeedback();
 
-
+  const handleEditing = useCallback(() =>{
+    if(habit.pendingStreakResetAfter){
+      playDeniedFeedback();
+      return;
+    }
+    onEdit();
+  }, [onEdit, habit, playDeniedFeedback]);
   const handleCheckIn = useCallback(() => {
     const result = checkInHabit(habit);
 
@@ -152,11 +160,18 @@ function HabitItem({
               mode="habit"
               onPress={handleCheckIn}
             ></XButton>
-            <XButton
-              icon="trash-outline"
-              mode="habit"
-              onPress={onDelete}
-            ></XButton>
+            <View style={styles.rightButtons}>
+              <XButton
+                icon="pencil-outline"
+                mode="habit"
+                onPress={handleEditing}
+              ></XButton>
+              <XButton
+                icon="trash-outline"
+                mode="habit"
+                onPress={onDelete}
+              ></XButton>
+            </View>
           </View>
         )}
       </Card.Content>
@@ -186,5 +201,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     top: 5,
     justifyContent: "space-between",
+  },
+  rightButtons: {
+    flexDirection: "row",
   },
 });

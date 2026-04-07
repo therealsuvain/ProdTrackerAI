@@ -12,7 +12,7 @@ export default function TabLayout() {
   const navigation = useNavigation();
   return (
     <PaperProvider>
-      <Tabs
+      <Tabs 
         screenOptions={{
           tabBarStyle: {
             backgroundColor: theme.greyBaseSecondary,

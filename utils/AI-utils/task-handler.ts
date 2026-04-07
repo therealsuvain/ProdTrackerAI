@@ -1,7 +1,8 @@
 import { AIHandler } from "@/types/ai-handler";
 import { createTask } from "../model-factory-utils";
-import { scheduleReminderTasks } from "../../hooks/use-notifications";
+import { scheduleReminderTasks, cancelReminder } from "../../hooks/use-notifications";
 import { generateEmbedding } from "@/utils/embedding-engine";
+import { getTimeRangeHelper } from "./additional-handlers";
 
 export const AddTaskHandler: AIHandler = {
   execute: async (params, context) => {
@@ -41,6 +42,16 @@ export const EditTaskHandler: AIHandler = {
       throw new Error("Task not found");
     }
     const updatedTask = await createTask({ ...oldTask, ...params, id: oldTask.id })
+    if(updatedTask.reminder) {
+      try {
+        if(updatedTask.notificationId) {
+          await cancelReminder(updatedTask.notificationId);
+        }
+        updatedTask.notificationId = await scheduleReminderTasks(updatedTask);
+      } catch (error) {
+        console.warn("Failed to schedule notification:", error);
+      }
+    }
     /* context.setTasks((prev) =>
       prev.map((t) => (t.id.slice(0, 8) === params.id ? updatedTask : t))
     ); */
@@ -53,6 +64,9 @@ export const DeleteTaskHandler: AIHandler = {
     const oldTask = context.tasks.find((t) => t.id.slice(0, 8) === params.id);
     if (!oldTask) {
       throw new Error("Task not found");
+    }
+    if (oldTask.notificationId) {
+      await cancelReminder(oldTask.notificationId);
     }
     context.removeTask(oldTask.id);
   }
@@ -105,30 +119,13 @@ export const QueryTasksHandler: AIHandler = {
       filtered = filtered.filter(t => t.priority === priority);
     }
 
+    const { rangeStart, rangeEnd } = getTimeRangeHelper(timeRange);
     // 3. Filter by Time Range (Relative Logic)
     if (timeRange !== "all") {
       filtered = filtered.filter(t => {
+        if (!rangeStart || !rangeEnd) return true;
         const taskDate = new Date(t.dueDate);
-        if (timeRange === "today") {
-          return taskDate >= startOfToday && taskDate <= endOfToday;
-        }
-        if (timeRange === "yesterday") {
-          const yesterday = new Date(startOfToday);
-          yesterday.setDate(yesterday.getDate() - 1);
-          return taskDate >= yesterday && taskDate < startOfToday;
-        }
-        if (timeRange === "this_week") {
-          const endOfWeek = new Date(startOfToday);
-          endOfWeek.setDate(endOfWeek.getDate() + 7);
-          return taskDate >= startOfToday && taskDate <= endOfWeek;
-        }
-        if (timeRange === "last_week") {
-          const endOfWeek = new Date(startOfToday);
-          endOfWeek.setDate(endOfWeek.getDate() - 7);
-          return taskDate >= startOfToday && taskDate <= endOfWeek;
-        }
-
-        return true;
+        return taskDate >= rangeStart && taskDate <= rangeEnd;
       });
     }
 

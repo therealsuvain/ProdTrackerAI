@@ -60,7 +60,7 @@ export default function AchievementsScreen() {
   const unlockedBadgesCount = Object.keys(unlockedData).length;
 
   // Helper function to map an achievement ID to its current metric progress
-/*   const getProgressForBadge = (badgeId: string): number => {
+  /*   const getProgressForBadge = (badgeId: string): number => {
     const achivement = ALL_ACHIEVEMENTS.find((a) => a.id === badgeId);
     if (!achivement) return 0;
     if (achivement.metricTrigger === "meta") return unlockedBadgesCount;
@@ -68,17 +68,11 @@ export default function AchievementsScreen() {
   }; */
 
   return (
-    <SafeAreaView
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* <SafeAreaView
       style={[styles.container, { backgroundColor: theme.background }]}
-    >
-      <Text style={[styles.achievementslabel, { color: theme.text }]}>
-        Achievements
-      </Text>
-      
-      <ScrollView 
-      ref={scrollViewRef} 
-      contentContainerStyle={styles.content}>
-
+    > */}
+      <ScrollView ref={scrollViewRef} contentContainerStyle={styles.content}>
         {achievements.map((def) => {
           const unlockedInfo = unlockedData[def.id];
           const isUnlocked = !!unlockedInfo;
@@ -106,7 +100,7 @@ export default function AchievementsScreen() {
                 badge={def}
                 isUnlocked={isUnlocked}
                 unlockedAt={unlockedInfo?.unlockedAt}
-                currentProgress={currentProgress}
+                currentProgress={currentProgress as number}
               />
             </View>
           );
@@ -130,18 +124,14 @@ export default function AchievementsScreen() {
           );
         }}
       /> */}
-    </SafeAreaView>
+      {/* </SafeAreaView> */}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  achievementslabel: {
-    marginLeft: 10,
-    fontSize: 35,
-    fontWeight: "bold",
   },
   content: {
     padding: 16,

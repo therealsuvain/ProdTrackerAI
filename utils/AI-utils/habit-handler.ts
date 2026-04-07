@@ -1,6 +1,6 @@
 import { AIHandler } from "@/types/ai-handler";
 import { createHabit } from "../model-factory-utils";
-import { scheduleReminderHabits } from "../../hooks/use-notifications";
+import { cancelReminder, scheduleReminderHabits } from "../../hooks/use-notifications";
 import { checkInHabit } from "../habit-utils"
 import { Habit } from "@/types/habits";
 
@@ -28,6 +28,9 @@ export const DeleteHabitHandler: AIHandler = {
     const oldHabit = context.tasks.find((t) => t.id.slice(0, 8) === params.id);
     if (!oldHabit) {
       throw new Error("Task not found");
+    }
+    if(oldHabit.notificationId){
+      await cancelReminder(oldHabit.notificationId);
     }
     await context.removeHabit(oldHabit.id);
   }

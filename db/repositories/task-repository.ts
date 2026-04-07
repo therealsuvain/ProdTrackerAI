@@ -171,6 +171,15 @@ export async function bulkInsertTasks(taskList: Task[]): Promise<void> {
     });
 }
 
+export async function deleteAllTasks(): Promise<number> {
+  const count = await countTasks();
+  if (count === 0) return 0;
+
+  await db.delete(tasks);
+
+  return count;
+}
+
 /**
  * Count all tasks. Used by migration to confirm it succeeded.
  */

@@ -26,7 +26,7 @@ import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 import { useHaptics } from "@/hooks/use-haptics";
 
 // TODO : shifting logic from habit-screen , habit-item, habiit-stats to utils maybe
-// TODO : pendingStreakResetAfter does not reset in db only in state
+// TODO : In Testing : pendingStreakResetAfter does not reset in db only in state
 function HabitsScreenInner() {
   const { theme } = useContext(ThemeContext);
   const { habits, addHabit, editHabit, removeHabit } = useHabits();
@@ -34,6 +34,7 @@ function HabitsScreenInner() {
   const [filteredHabits, setFilteredHabits] = useState<Habit[]>(habits);
   const [searchQuery, setSearchQuery] = useState("");
   const [visible, setVisible] = useState(false);
+  const [visibleInEditMode, setVisibleInEditMode] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [completedHabit, setCompletedHabit] = useState<Habit | null>(null);
@@ -43,15 +44,26 @@ function HabitsScreenInner() {
     addHabit,
     editHabit,
     editingHabit,
-    onClose: () => setVisible(false),
+    onClose: () => {
+      setVisible(false);
+      setVisibleInEditMode(false);
+    },
   });
   const audioSource = require("@/assets/audio/habit-congrats-2.mp3");
   const audioPlayer = usePlaySound(audioSource, 0.5);
   const showModal = (habit?: Habit) => {
-    setEditingHabit(habit || null);
+    if (habit) {
+      setVisibleInEditMode(true);
+      setEditingHabit(habit);
+      return;
+    }
+    setEditingHabit(null);
     setVisible(true);
   };
-  const hideModal = () => setVisible(false);
+  const hideModal = () => {
+    setVisibleInEditMode(false);
+    setVisible(false);
+  };
 
   const handleUpdate = useCallback(
     async (updated: Habit) => {
@@ -196,6 +208,7 @@ function HabitsScreenInner() {
               habit={item}
               onUpdate={handleUpdate}
               onDelete={() => handleDelete(item.id)}
+              onEdit={() => showModal(item)}
               onGoalReached={handleGoalReached}
             />
           )}
@@ -218,6 +231,7 @@ function HabitsScreenInner() {
       <Portal>
         <HabitModal
           visible={visible}
+          visibleInEditMode={visibleInEditMode}
           onDismiss={hideModal}
           state={state}
           updateField={updateField}

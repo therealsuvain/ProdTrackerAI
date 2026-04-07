@@ -11,7 +11,6 @@ import {
 } from "react-native-paper";
 import { Provider } from "react-native-paper";
 
-import { useData } from "@/hooks/use-data";
 import TaskItem from "@/components/ui/tasks/task-item";
 import EventItem from "@/components/ui/calendar-events/event-item";
 import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
@@ -39,11 +38,9 @@ import { useEvents } from "@/hooks/use-events";
  * TODO 5 : Pay wall, barring paid features for free users
  * TODO 6 : Notifications edits via AI chat
  * TODO 7 : Maybe custom notifications options
- * TODO 8 : Notifcation changes if needed, go through once
  * TODO 10 : new Date() is expensive in javascript so have be to memomized everywhere
  * TODO 11 : Input sanitization
  * TODO 12 : Check for Security enhancements and possible securicty concerns for the entire app
- * TODO 13 : Duplicate timer log storage in TImerContext vs DataContext
  * TODO 14: Timer Screen Flip Animation state issues- FIX'em
  * TODO 17 : Achivements Page color scheme updation
  * TODOY 18 : Achievements Badges generation, maybe pixelated or sprite version of meme refered by the achievment phrase
@@ -53,10 +50,7 @@ import { useEvents } from "@/hooks/use-events";
  * TODO 22 : Testing on bigger/smaller screens. Test on different devices
  * TODO 23 : home page search enhancment or removal. R&D
  * TODO 25 : Habit successful checkin feedback
- * TODOX 26 : Pending task , minimal UI change
  * TODO 27 : R&D better Calendar screen, refer google calendar maybe.
- * TODOX 28 : Add sidebar to other options in sidebar, right now sidebar can only be opened from home or (tabs)
- * TODOX 29 : Habit Item Edit Modal for exisitng Habits
  * TODOX 31 : If tags and categoires are added, embeddings for them?, atleast searchable via physical search, AI handlers also would need to be updated
  * TODOX 32 : Common UI for tags/tag-list, shape like a literal tag
  * TODOX 33 : Light mode color fixes
@@ -209,6 +203,7 @@ function HomeScreenInner() {
                 habit={habit}
                 onUpdate={handleHabitUpdate}
                 onDelete={() => 0}
+                onEdit={() => 0}
               />
             ))
           ) : (

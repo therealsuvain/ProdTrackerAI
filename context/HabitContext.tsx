@@ -33,7 +33,7 @@ export const HabitContext = createContext<HabitContextType | undefined>(
 );
 
 export default function HabitProvider({ children }: { children: ReactNode }) {
-  const { dispatchError, trackMetric} = useData();
+  const { dispatchError, trackMetric } = useData();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -42,7 +42,6 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
       optimisticUpdate: (prev: Habit[]) => Habit[],
       dbWrite: () => Promise<void> | Promise<Habit>,
     ): Promise<void> => {
-
       let snapshot: Habit[] = [];
       setHabits((prev) => {
         snapshot = prev;
@@ -57,7 +56,7 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
           err,
         );
         setHabits(snapshot);
-        throw err; 
+        throw err;
       }
     },
     [],
@@ -93,7 +92,6 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
     [optimisticHabitMutation],
   );
 
-
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -107,8 +105,11 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
             trackMetric(["habitsAutoFrozen"], 1);
           }
           if (habit.pendingStreakResetAfter) {
-            editHabit(updatedHabit);
-            return restartHabitAfterGoalForeground(updatedHabit);
+            const resettedHabit = restartHabitAfterGoalForeground(updatedHabit);
+            if (!resettedHabit.pendingStreakResetAfter) {
+              editHabit(resettedHabit);
+            }
+            return resettedHabit;
           }
           return updatedHabit;
         });

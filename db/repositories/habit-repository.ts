@@ -158,12 +158,12 @@ async function fetchChildRowsForMany(
 
 function habitToInsert(habit: Habit): HabitInsert {
     const now = new Date().toISOString();
+        console.log("habit repo",habit.reminderDate ?? null);
     return {
         id: habit.id,
         title: habit.title,
         frequency: habit.frequency,
         reminder: habit.reminder,
-        // FIXED: convert Date → unix ms for INTEGER column
         reminderDate: habit.reminderDate ?? null,
         targetDays: habit.targetDays ? JSON.stringify(habit.targetDays) : null,
         streak: habit.streak ?? 0,
@@ -228,7 +228,7 @@ export async function insertHabit(habit: Habit): Promise<Habit> {
     const checkInRows = buildCheckInRows(habit);
     const freezeRows = buildFreezeRows(habit);
     const goalCompletionRows = buildGoalCompletionRows(habit);
-
+    console.log("HABIT REPO:",habitToInsert(habit).reminderDate)
     await db.transaction(async (tx) => {
         await tx.insert(habits).values(habitToInsert(habit));
 
@@ -329,6 +329,15 @@ export async function bulkInsertHabits(habitList: Habit[]): Promise<void> {
             }
         }
     });
+}
+
+export async function deleteAllHabits(): Promise<number> {
+  const count = await countHabits();
+  if (count === 0) return 0;
+
+  await db.delete(habits);
+
+  return count;
 }
 
 export async function countHabits(): Promise<number> {

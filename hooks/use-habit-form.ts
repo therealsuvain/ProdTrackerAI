@@ -74,7 +74,6 @@ interface UseHabitFormProps {
 }
 
 export const useHabitForm = ({
-
   addHabit,
   editHabit,
   editingHabit,
@@ -91,6 +90,7 @@ export const useHabitForm = ({
           frequency: (editingHabit.frequency as Frequency) || "daily",
           reminder: editingHabit.reminder,
           reminderDate: editingHabit.reminderDate,
+          targetDays: editingHabit.targetDays,
           goal: editingHabit.goal,
           createdAt: editingHabit.createdAt,
           updatedAt: editingHabit.updatedAt,
@@ -181,6 +181,7 @@ export const useHabitForm = ({
       embedding: state.embedding || await generateEmbedding(state.title,false)
     };
 
+    console.log("HABIT FORM", newHabit.reminderDate);
     if (editingHabit && editingHabit.notificationId) {
       console.log("HABIT FORM NOTIF: old cancelled");
       await cancelReminder(editingHabit.notificationId);

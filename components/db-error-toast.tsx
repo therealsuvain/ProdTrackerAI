@@ -1,26 +1,3 @@
-/**
- * components/ui/db-error-toast.tsx
- *
- * Standalone toast for DB write failures. Rendered inside whatever screen
- * triggered the mutation. Invisible until an error occurs, auto-dismisses
- * after 4 seconds, dismissable by tap.
- *
- * Usage
- * ─────
- *  const { toastError, showToast } = useDbErrorToast();
- *
- *   In your mutation handler:
- *  try {
- *    await taskRepository.updateTask(updated);
- *  } catch (e) {
- *    setTasks(snapshot); // restore optimistic update
- *    showToast("Couldn't save task. Changes have been undone.");
- *  }
- *
- *   In your JSX:
- *  <DbErrorToast error={toastError} />
- */
-
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   Animated,

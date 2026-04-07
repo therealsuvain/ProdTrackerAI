@@ -72,7 +72,7 @@ export const useTaskForm = ({
 
   useEffect(() => {
     if (editingTask) {
-      console.log("THIS ONE TasksS")
+      //console.log("THIS ONE TasksS")
       dispatch({
         type: "RESET",
         payload: {
@@ -90,7 +90,7 @@ export const useTaskForm = ({
         },
       });
     } else {
-      console.log("THIS TWO TASKS")
+      //console.log("THIS TWO TASKS")
       dispatch({ type: "RESET" });
     }
   }, [editingTask]);
@@ -141,18 +141,18 @@ export const useTaskForm = ({
       embedding: state.embedding || await generateEmbedding(state.title,false)
     };
 
-    if(editingTask && editingTask.reminder && !newTask.reminder){
+    if(editingTask && editingTask.reminder){
       console.log("TASK FORM NOtif: cancelled old:1 new:0")
       if(editingTask.notificationId)
       await cancelReminder(editingTask.notificationId)
     }
-
+/* 
     if(editingTask && editingTask.reminderDate && newTask.reminderDate 
       && new Date(editingTask.reminderDate).toTimeString()!== new Date(newTask.reminderDate).toTimeString()){
       console.log("TASK FORM NOtif: cancelled old:1 new:1")
     if(editingTask.notificationId)
       await cancelReminder(editingTask.notificationId)
-    }
+    } */
 
     if (newTask.reminder) {
       console.log("TASK FORM NOtif: scheduled")
