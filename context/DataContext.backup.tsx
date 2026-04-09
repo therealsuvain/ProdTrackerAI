@@ -744,6 +744,9 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         let newlyUnlocked: AchievementBadge[] = [];
         try {
           for (const key of keys) {
+            if (key === "lastSyncedAt") {
+              continue;
+            }
             const newlyUnlockedForKey = await processAchievements(
               localUnlocked,
               updatedMetrics.global[key],

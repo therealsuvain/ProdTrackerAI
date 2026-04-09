@@ -1,5 +1,5 @@
 import { SettingsConfig } from './settings';
-import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export type SettingInputType = 'toggle' | 'link' | 'action' | 'value-link'; // Expanded later for 'timepicker'
@@ -11,7 +11,7 @@ export interface SettingOption {
 export interface SettingItem {
   id: keyof SettingsConfig; 
   label: string;
-  icon: keyof typeof Ionicons.glyphMap | keyof typeof MaterialIcons.glyphMap;
+  icon: keyof typeof Ionicons.glyphMap | keyof typeof MaterialIcons.glyphMap | keyof typeof FontAwesome6.glyphMap;
   type: SettingInputType;
   destructive?: boolean;       // If true, renders the text/icon in theme.colors.error
   options?: SettingOption[];   // Reserved for future inline radio/dropdown implementations

@@ -290,6 +290,11 @@ export async function mutateMetricInDb(
     });
 }
 
+export async function deleteAllMetrics() {
+    await db.delete(globalMetrics);
+    await db.delete(dailyMetrics);
+}
+
 // ─── migration helpers ────────────────────────────────────────────────────────
 // OLD Was for migration appMetrics state from AsyncStorage to SQLite, what has some other use now?
 /**

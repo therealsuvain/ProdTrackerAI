@@ -19,7 +19,7 @@ export interface AppMetrics {
     habitsCheckedIn: number;
     habitsGoalsCompleted: number;
     habitCheckInsMissed: number; 
-    habitsStreakMax: number;  // Longest Streak ever for checking in  in any habit //TODO 48
+    habitsStreakMax: number;  // Longest Streak ever for checking in  in any habit //TODOX 48
     habitsFrozen: number;
     habitsAutoFrozen: number;
     timeTracked: number;

@@ -1,11 +1,14 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import { Text, Switch, TouchableRipple } from "react-native-paper";
+import { View, StyleSheet, Text, Pressable } from "react-native";
+import { Switch, TouchableRipple } from "react-native-paper";
 import {
   Ionicons,
   MaterialIcons,
   MaterialCommunityIcons,
+  FontAwesome6,
+  FontAwesome,
 } from "@expo/vector-icons";
+import glyphMap from "@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/FontAwesome6Free.json";
 
 import { SettingItem } from "@/types/settings-ui";
 import { useTheme } from "@/hooks/use-theme-colors";
@@ -34,7 +37,7 @@ export const SettingsRow = ({
             thumbColor={theme.text}
             trackColor={{ false: theme.whiteBase, true: "red" }}
             value={value}
-            onValueChange={(val) => onToggle &&onToggle(item.id, val)}
+            onValueChange={(val) => onToggle && onToggle(item.id, val)}
           />
         );
 
@@ -44,20 +47,54 @@ export const SettingsRow = ({
             <Text style={{ color: theme.text, marginRight: 8 }}>
               {value !== undefined ? String(value) : ""}
             </Text>
-            <Ionicons name="chevron-forward" size={20} color={theme.text} />
+            <Ionicons name="chevron-forward" size={30} color={theme.text} />
           </View>
         );
 
       case "link":
-        return <Ionicons name="chevron-forward" size={20} color={theme.text} />;
+        return <Ionicons name="chevron-forward" size={30} color={theme.text} />;
 
       case "action":
-        // Actions (like 'Delete All Data') usually don't have a right-side element
+        // Actions (like 'Delete All Data')
         return null;
 
       default:
         return null;
     }
+  };
+  const renderIcon = () => {
+    /*   console.log("item.icon", item.icon);
+    console.log("Ionicons.glyphMap", item.icon in Ionicons.glyphMap);
+    console.log("MaterialCommunityIcons.glyphMap", item.icon in MaterialCommunityIcons.glyphMap);
+    console.log("FontAwesome6.glyphMap", item.icon in glyphMap); */
+    if (item.icon in Ionicons.glyphMap) {
+      return (
+        <Ionicons
+          name={item.icon as keyof typeof Ionicons.glyphMap}
+          size={30}
+          color={theme.text}
+        />
+      );
+    }
+    if (item.icon in MaterialIcons.glyphMap) {
+      return (
+        <MaterialIcons
+          name={item.icon as keyof typeof MaterialIcons.glyphMap}
+          size={30}
+          color={theme.text}
+        />
+      );
+    }
+    if (item.icon in glyphMap) {
+      return (
+        <FontAwesome6
+          name={item.icon as keyof typeof glyphMap}
+          size={30}
+          color={theme.text}
+        />
+      );
+    }
+    return null;
   };
 
   const handleRowPress = () => {
@@ -67,11 +104,19 @@ export const SettingsRow = ({
       onPress(item.id, item.href);
     }
   };
-  
+
   return (
     <TouchableRipple
+      rippleColor={"rgba(0, 0, 0, 0.75)"}
       onPress={handleRowPress}
+      borderless
+      style={{ borderRadius: 12, overflow: "hidden" }}
     >
+      {/* <Pressable
+        android_ripple={{ color: "red" }}
+        onPress={handleRowPress}
+        style={{ borderRadius: 12, overflow: "hidden" }}
+      > */}
       <View
         style={[
           styles.row,
@@ -82,24 +127,22 @@ export const SettingsRow = ({
         ]}
       >
         <View style={styles.leftContent}>
-          {item.icon in Ionicons.glyphMap ? (
+          {renderIcon()}
+          {/* {item.icon in Ionicons.glyphMap ? (
             <Ionicons
               name={item.icon as keyof typeof Ionicons.glyphMap}
-              size={20}
+              size={30}
               color={theme.text}
             />
           ) : (
             <MaterialIcons
               name={item.icon as keyof typeof MaterialIcons.glyphMap}
-              size={20}
+              size={30}
               color={theme.text}
             />
-          )}
+          )} */}
 
-          <Text
-            variant="bodyLarge"
-            style={[styles.label, { color: theme.text }]}
-          >
+          <Text style={[styles.label, { color: theme.text }]}>
             {item.label}
           </Text>
         </View>
@@ -114,7 +157,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 6,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     minHeight: 44,
   },
@@ -133,6 +176,7 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: "500",
     marginLeft: 8,
+    fontSize: 18,
   },
   rightContent: {
     justifyContent: "center",
@@ -140,5 +184,5 @@ const styles = StyleSheet.create({
   valueLinkContainer: {
     flexDirection: "row",
     alignItems: "center",
-  }
+  },
 });

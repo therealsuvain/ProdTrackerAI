@@ -20,12 +20,17 @@ import LogProvider from "@/context/LogContext";
 import ChatProvider from "@/context/ChatContext";
 import TimerProvider from "@/context/TimerContext";
 import { useTheme } from "@/hooks/use-theme-colors";
+import {
+  Provider as PaperProvider,
+  useTheme as usePaperTheme,
+} from "react-native-paper";
 
 export default function RootLayout() {
   const { theme } = useTheme();
+  const paperTheme = usePaperTheme();
 
   return (
-    <GestureHandlerRootView>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <ErrorBoundary FallbackComponent={RootFallbackComponent}>
         <ThemeProvider>
           <DataProvider>
@@ -36,79 +41,81 @@ export default function RootLayout() {
                     <TimerProvider>
                       <ChatProvider>
                         <SettingsProvider>
-                          <Drawer
-                            drawerContent={(props) => <Sidebar {...props} />}
-                            screenOptions={{
-                              //headerShown: false, // Hide the default drawer header to let tabs handle their own headers
-                              drawerStyle: {
-                                width: "65%", // Standard sidebar width
-                              },
-                            }}
-                          >
-                            <Drawer.Screen
-                              name="(tabs)"
-                              options={{
-                                headerShown: false,
+                          <PaperProvider>
+                            <Drawer
+                              drawerContent={(props) => <Sidebar {...props} />}
+                              screenOptions={{
+                                //headerShown: false, // Hide the default drawer header to let tabs handle their own headers
+                                drawerStyle: {
+                                  width: "65%", // Standard sidebar width
+                                },
                               }}
-                            />
-                            <Drawer.Screen
-                              name="settings"
-                              options={({ navigation }) => ({
-                                title: "Settings",
-                                headerStyle: {
-                                  backgroundColor: theme.background,
-                                },
-                                headerTitleStyle: {
-                                  marginLeft: 5,
-                                  fontSize: 35,
-                                  fontWeight: "bold",
-                                  color: theme.text,
-                                },
-                                headerLeft: () => (
-                                  <TouchableOpacity
-                                    // 2. You can now just call toggleDrawer() directly on this scoped object!
-                                    onPress={() => navigation.toggleDrawer()}
-                                    style={{ marginLeft: 10 }}
-                                  >
-                                    <Ionicons
-                                      name="menu"
-                                      size={28}
-                                      color={theme.text}
-                                    />
-                                  </TouchableOpacity>
-                                ),
-                              })}
-                            />
-                            <Drawer.Screen
-                              name="achievements"
-                              options={({ navigation }) => ({
-                                title: "Achievements",
-                                headerStyle: {
-                                  backgroundColor: theme.background,
-                                },
-                                headerTitleStyle: {
-                                  marginLeft: 5,
-                                  fontSize: 35,
-                                  fontWeight: "bold",
-                                  color: theme.text,
-                                },
-                                headerLeft: () => (
-                                  <TouchableOpacity
-                                    // 2. You can now just call toggleDrawer() directly on this scoped object!
-                                    onPress={() => navigation.toggleDrawer()}
-                                    style={{ marginLeft: 10 }}
-                                  >
-                                    <Ionicons
-                                      name="menu"
-                                      size={28}
-                                      color={theme.text}
-                                    />
-                                  </TouchableOpacity>
-                                ),
-                              })}
-                            />
-                          </Drawer>
-                          <StatusBar style="auto" />
+                            >
+                              <Drawer.Screen
+                                name="(tabs)"
+                                options={{
+                                  headerShown: false,
+                                }}
+                              />
+                              <Drawer.Screen
+                                name="settings"
+                                options={({ navigation }) => ({
+                                  title: "Settings",
+                                  headerStyle: {
+                                    backgroundColor: theme.background,
+                                  },
+                                  headerTitleStyle: {
+                                    marginLeft: 5,
+                                    fontSize: 35,
+                                    fontWeight: "bold",
+                                    color: theme.text,
+                                  },
+                                  headerLeft: () => (
+                                    <TouchableOpacity
+                                      // 2. You can now just call toggleDrawer() directly on this scoped object!
+                                      onPress={() => navigation.toggleDrawer()}
+                                      style={{ marginLeft: 10 }}
+                                    >
+                                      <Ionicons
+                                        name="menu"
+                                        size={28}
+                                        color={theme.text}
+                                      />
+                                    </TouchableOpacity>
+                                  ),
+                                })}
+                              />
+                              <Drawer.Screen
+                                name="achievements"
+                                options={({ navigation }) => ({
+                                  title: "Achievements",
+                                  headerStyle: {
+                                    backgroundColor: theme.background,
+                                  },
+                                  headerTitleStyle: {
+                                    marginLeft: 5,
+                                    fontSize: 35,
+                                    fontWeight: "bold",
+                                    color: theme.text,
+                                  },
+                                  headerLeft: () => (
+                                    <TouchableOpacity
+                                      // 2. You can now just call toggleDrawer() directly on this scoped object!
+                                      onPress={() => navigation.toggleDrawer()}
+                                      style={{ marginLeft: 10 }}
+                                    >
+                                      <Ionicons
+                                        name="menu"
+                                        size={28}
+                                        color={theme.text}
+                                      />
+                                    </TouchableOpacity>
+                                  ),
+                                })}
+                              />
+                            </Drawer>
+                            <StatusBar style="auto" />
+                          </PaperProvider>
                         </SettingsProvider>
                       </ChatProvider>
                     </TimerProvider>

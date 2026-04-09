@@ -102,7 +102,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// TODOX Clean-up and document this bloated poo
+// TODOOptim Clean-up and document this bloated poo
 export default function TimerProvider({ children }: { children: ReactNode }) {
   const [time, setTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);

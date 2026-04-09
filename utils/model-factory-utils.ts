@@ -52,7 +52,6 @@ export const createTask = async (
       dueDate = params.dueDate
     }
 
-    //TODOX Fix reminder date logic for all below
     let reminderDate;
     if (params.reminderDate) {
       if (!validDate(params.reminderDate)) {

@@ -9,22 +9,27 @@ import {
 } from "react-native";
 
 // ─── hook ─────────────────────────────────────────────────────────────────────
-
+//Note Undo Vairant has been added, not tested, not being used naywhere tho.
 interface ToastState {
   message: string;
   visible: boolean;
+  title?: string;
+  variant?: "error" | "undo";
+  actionLabel?: string;
+  onAction?: () => void | Promise<void>;
 }
 
 export function useDbErrorToast() {
   const [toastError, setToastError] = useState<ToastState>({
     message: "",
     visible: false,
+    title: "Save failed",
+    variant: "error",
   });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const showToast = useCallback((message: string) => {
     // Clear any existing timer so multiple rapid errors don't overlap
-    if (timerRef.current) clearTimeout(timerRef.current);
+    clearTimer();
 
     setToastError({ message, visible: true });
 
@@ -33,19 +38,66 @@ export function useDbErrorToast() {
     }, 6000);
   }, []);
 
+  const showUndoToast = useCallback(
+    (
+      message: string,
+      onUndo: () => void | Promise<void>,
+      title = "Deleted",
+    ) => {
+      clearTimer();
+
+      setToastError({
+        message,
+        visible: true,
+        title,
+        variant: "undo",
+        actionLabel: "Undo",
+        onAction: onUndo,
+      });
+
+      timerRef.current = setTimeout(() => {
+        setToastError((prev) => ({
+          ...prev,
+          visible: false,
+          onAction: undefined,
+        }));
+      }, 10000);
+    },
+    [],
+  );
+
+  const clearTimer = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
+  };
+
   const dismissToast = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setToastError((prev) => ({ ...prev, visible: false }));
   }, []);
 
+  const runAction = useCallback(async () => {
+    const action = toastError.onAction;
+    clearTimer();
+
+    try {
+      await action?.();
+    } finally {
+      setToastError((prev) => ({
+        ...prev,
+        visible: false,
+        onAction: undefined,
+      }));
+    }
+  }, [toastError.onAction]);
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      clearTimer();
     };
   }, []);
 
-  return { toastError, showToast, dismissToast };
+  return { toastError, showToast, showUndoToast, dismissToast, runAction };
 }
 
 // ─── component ────────────────────────────────────────────────────────────────
@@ -53,11 +105,14 @@ export function useDbErrorToast() {
 interface DbErrorToastProps {
   error: ToastState;
   onDismiss?: () => void;
+  onAction?: () => void;
 }
 
 export function DbErrorToast({ error, onDismiss }: DbErrorToastProps) {
   const translateY = useRef(new Animated.Value(100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+  const isUndo = error.variant === "undo";
+  const borderColor = isUndo ? "#6AA84F" : "#E05252";
 
   useEffect(() => {
     if (error.visible) {
@@ -103,18 +158,24 @@ export function DbErrorToast({ error, onDismiss }: DbErrorToastProps) {
       ]}
       pointerEvents={error.visible ? "auto" : "none"}
     >
-      <View style={styles.toast}>
+      <View style={[styles.toast, { borderColor }]}>
         <View style={styles.iconContainer}>
-          <Text style={styles.icon}>⚠</Text>
+          <Text style={styles.icon}>{isUndo ? "↺" : "⚠"}</Text>
         </View>
 
         <View style={styles.textContainer}>
-          <Text style={styles.title}>Save failed</Text>
+          <Text style={styles.title}>
+            {error.title ?? (isUndo ? "Deleted" : "Save failed")}
+          </Text>
           <Text style={styles.message} numberOfLines={2}>
             {error.message}
           </Text>
         </View>
-
+        {isUndo && error.actionLabel ? (
+          <TouchableOpacity onPress={error.onAction} style={styles.dismissButton}>
+            <Text style={styles.dismissText}>{error.actionLabel}</Text>
+          </TouchableOpacity>
+        ) : null}
         <TouchableOpacity
           style={styles.dismissButton}
           onPress={onDismiss}

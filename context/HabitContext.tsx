@@ -11,6 +11,8 @@ import {
   insertHabit,
   updateHabit,
   deleteHabit,
+  deleteAllHabits,
+  countHabits,
 } from "@/db/repositories/habit-repository";
 
 import { Habit } from "@/types/habits";
@@ -26,6 +28,8 @@ interface HabitContextType {
   addHabit: (habit: Habit) => Promise<void>;
   editHabit: (habit: Habit) => Promise<void>;
   removeHabit: (id: string) => Promise<void>;
+  removeHabits: () => Promise<void>;
+  habitCount: () => Promise<number>;
 }
 
 export const HabitContext = createContext<HabitContextType | undefined>(
@@ -92,16 +96,28 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
     [optimisticHabitMutation],
   );
 
+  const removeHabits = useCallback(async (): Promise<void> => {
+    await deleteAllHabits();
+    setHabits([]);
+  }, []);
+
+  const habitCount = useCallback(async (): Promise<number> => {
+    const result = await countHabits();
+    return result ?? 0;
+  }, []);
+
   useEffect(() => {
     const loadData = async () => {
       try {
         let loadedHabits = await getAllHabits();
 
+        // TODOY async editHabit inside a map without await, something to do?
         loadedHabits = loadedHabits.map((habit) => {
           const { status, habit: updatedHabit } = applyMissedDayLogic(habit);
           if (status === "missed_check_in") {
             trackMetric(["habitCheckInsMissed"], 1);
           } else if (status === "auto_frozen") {
+             editHabit(updatedHabit);
             trackMetric(["habitsAutoFrozen"], 1);
           }
           if (habit.pendingStreakResetAfter) {
@@ -136,6 +152,8 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
         addHabit,
         editHabit,
         removeHabit,
+        removeHabits,
+        habitCount,
       }}
     >
       {children}

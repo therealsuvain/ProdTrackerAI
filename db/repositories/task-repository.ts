@@ -74,7 +74,7 @@ export async function getAllTasks(): Promise<Task[]> {
     const rows = await db
         .select()
         .from(tasks)
-        .orderBy(desc(tasks.createdAt));
+        .orderBy(asc(tasks.createdAt));
     return rows.map(rowToTask);
 }
 

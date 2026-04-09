@@ -11,6 +11,8 @@ import {
   insertCalendarEvent,
   updateCalendarEvent,
   deleteCalendarEvent,
+  deleteAllCalendarEvents,
+  countCalendarEvents,
 } from "@/db/repositories/event-repository";
 
 import { CalendarEvent } from "@/types/calendar";
@@ -23,11 +25,13 @@ interface EventContextType {
   addEvent: (event: CalendarEvent) => Promise<void>;
   editEvent: (event: CalendarEvent) => Promise<void>;
   removeEvent: (id: string) => Promise<void>;
+  removeEvents: () => Promise<void>;
   deleteEventOccurrence: (
     eventId: string,
     date: string,
     all: boolean,
   ) => Promise<void>;
+  eventCount: () => Promise<number>;
 }
 
 export const EventContext = createContext<EventContextType | undefined>(
@@ -100,6 +104,16 @@ export default function EventProvider({ children }: { children: ReactNode }) {
     [optimisticCalendarEventMutation],
   );
 
+  const removeEvents = useCallback(async () => {
+    await deleteAllCalendarEvents();
+    setEvents([]);
+  }, []);
+
+  const eventCount = useCallback(async (): Promise<number> => {
+    const result = await countCalendarEvents();
+    return result ?? 0;
+  }, []);
+
   const deleteEventOccurrence = async (
     eventId: string,
     date: string,
@@ -158,7 +172,9 @@ export default function EventProvider({ children }: { children: ReactNode }) {
         addEvent,
         editEvent,
         removeEvent,
+        removeEvents,
         deleteEventOccurrence,
+        eventCount,
       }}
     >
       {children}

@@ -5,15 +5,28 @@ import {
   View,
   StyleSheet,
   FlatList,
+  Pressable,
 } from "react-native";
-import { Button, FAB, Portal, Searchbar, Text } from "react-native-paper";
+import {
+  Button,
+  FAB,
+  Portal,
+  Searchbar,
+  Text,
+  TouchableRipple,
+  useTheme,
+} from "react-native-paper";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import Octicons from "@expo/vector-icons/Octicons";
 
 import { useData } from "@/hooks/use-data";
 import { Task } from "@/types/task";
 import TaskItem from "@/components/ui/tasks/task-item";
-import { cancelReminder,allScheduledNotificationsLogs, cancelAllScheduledNotifications } from "@/hooks/use-notifications";
+import {
+  cancelReminder,
+  allScheduledNotificationsLogs,
+  cancelAllScheduledNotifications,
+} from "@/hooks/use-notifications";
 import TaskModal from "@/components/modal/task-modal";
 import { useTaskForm } from "@/hooks/use-task-form";
 import { ThemeContext } from "@/context/ThemeContext";
@@ -23,10 +36,12 @@ import { clearStorageByKey } from "@/utils/storage-utils";
 import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 import { useTasks } from "@/hooks/use-tasks";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 function TaskScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { tasks, setTasks, addTask, editTask, removeTask, toggleTask } = useTasks();
+  const { tasks, setTasks, addTask, editTask, removeTask, toggleTask } =
+    useTasks();
   const { trackMetric } = useData();
   const [visible, setVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -150,7 +165,7 @@ function TaskScreenInner() {
       </View>
     </View>
   );
-
+const paperTheme = useTheme()
   return (
     <>
       <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -246,8 +261,8 @@ function TaskScreenInner() {
         )}
         <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
         <DbErrorToast error={toastError} onDismiss={dismissToast} />
-       {/*  <FAB style={styles.fab} icon="plus" onPress={() => allScheduledNotificationsLogs()} /> */}
-{/*         <FAB
+        {/*  <FAB style={styles.fab} icon="plus" onPress={() => allScheduledNotificationsLogs()} /> */}
+        {/*         <FAB
           style={styles.fab}
           icon="plus"
           onPress={() => {

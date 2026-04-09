@@ -4,7 +4,7 @@ import { cancelReminder, scheduleReminderHabits } from "../../hooks/use-notifica
 import { checkInHabit } from "../habit-utils"
 import { Habit } from "@/types/habits";
 
-//TODO Add feedback for bboth if habit not found or check in failed,maybe add feedback for all handlers
+//TODOX Add feedback for bboth if habit not found or check in failed,maybe add feedback for all handlers
 export const AddHabitHandler: AIHandler = {
   execute: async (params, context) => {
     const newHabit = await createHabit(params);
@@ -39,9 +39,9 @@ export const DeleteHabitHandler: AIHandler = {
 export const CheckInHabitHandler: AIHandler = {
   execute: async (params, context) => {
     const habit = context.habits.find((h) => h.id.slice(0, 8) === params.id);
-    if (!habit) return //TODO 
+    if (!habit) return //TODOX 
     const result = checkInHabit(habit);
-    if (result.status === "denied") return //TODO;
+    if (result.status === "denied") return //TODOX;
     await context.editHabit(result.habit);
     /* context.setHabits((prev) =>
       prev.map((h) => (h.id.slice(0, 8) === params.id ? checkInHabit(h) : h))

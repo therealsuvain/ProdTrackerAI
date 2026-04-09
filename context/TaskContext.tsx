@@ -13,7 +13,9 @@ import {
   insertTask,
   updateTask,
   deleteTask,
+  deleteAllTasks,
   toggleTaskCompleted,
+  countTasks,
 } from "@/db/repositories/task-repository";
 
 import { initDatabase } from "@/db";
@@ -25,7 +27,9 @@ interface TaskContextType {
   addTask: (task: Task) => Promise<void>;
   editTask: (task: Task) => Promise<void>;
   removeTask: (id: string) => Promise<void>;
+  removeTasks: () => Promise<void>;
   toggleTask: (id: string) => Promise<void>;
+  taskCount: () => Promise<number>;
 }
 
 export const TaskContext = createContext<TaskContextType | undefined>(
@@ -55,7 +59,7 @@ export default function TaskProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error("[TaskContext] Task DB write failed, rolling back:", err);
         setTasks(snapshot);
-        throw err; 
+        throw err;
       }
     },
     [],
@@ -91,6 +95,11 @@ export default function TaskProvider({ children }: { children: ReactNode }) {
     [optimisticTaskMutation],
   );
 
+  const removeTasks = useCallback(async (): Promise<void> => {
+    await deleteAllTasks();
+    setTasks([]);
+  }, []);
+
   const toggleTask = useCallback(
     async (id: string): Promise<void> => {
       await optimisticTaskMutation(
@@ -115,6 +124,10 @@ export default function TaskProvider({ children }: { children: ReactNode }) {
     [optimisticTaskMutation, tasks],
   );
 
+  const taskCount = useCallback(async (): Promise<number> => {
+    const result = await countTasks();
+    return result ?? 0;
+  }, []);
   useEffect(() => {
     const loadTasks = async () => {
       try {
@@ -142,7 +155,9 @@ export default function TaskProvider({ children }: { children: ReactNode }) {
         addTask,
         editTask,
         removeTask,
+        removeTasks,
         toggleTask,
+        taskCount,
       }}
     >
       {children}

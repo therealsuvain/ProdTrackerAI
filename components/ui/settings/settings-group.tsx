@@ -25,6 +25,7 @@ export const SettingsGroup = ({ title, children }: SettingsGroupProps) => {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     marginBottom: 24,
     paddingHorizontal: 16,
   },
@@ -33,10 +34,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontWeight: '500',
     letterSpacing: 0.6,
-    fontSize : 18
+    fontSize : 22
   },
   surface: {
+    flex:1,
     borderRadius: 12,
-    overflow: 'hidden',
+    //overflow: 'hidden',
   },
 });

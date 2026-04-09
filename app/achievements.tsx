@@ -8,10 +8,11 @@ import AchievementBadge from "@/components/ui/achievements/achievement-badge";
 import { ALL_ACHIEVEMENTS } from "@/types/achievements-ui";
 import { useData } from "../hooks/use-data";
 import { useTheme } from "@/hooks/use-theme-colors";
+import { TouchableRipple } from "react-native-paper";
 
 /**
- * TODO : Configure elevation styling for both dark and light mode
- * TODO : Hnadle hidden achievements
+ * TODOX : Configure elevation styling for both dark and light mode
+ * TODOAdd : Hnadle hidden achievements
  */
 export default function AchievementsScreen() {
   const { theme } = useTheme();
@@ -72,6 +73,7 @@ export default function AchievementsScreen() {
       {/* <SafeAreaView
       style={[styles.container, { backgroundColor: theme.background }]}
     > */}
+
       <ScrollView ref={scrollViewRef} contentContainerStyle={styles.content}>
         {achievements.map((def) => {
           const unlockedInfo = unlockedData[def.id];

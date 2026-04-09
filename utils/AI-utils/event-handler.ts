@@ -28,7 +28,7 @@ export const EditEventHandler: AIHandler = {
       params.embedding = embeddingVector;
     }
     const oldEvent = context.events.find((e) => e.id.slice(0, 8) === params.id)
-    if (!oldEvent) throw new Error("Event not found");// TODO
+    if (!oldEvent) throw new Error("Event not found");// TODOX
     const updatedEvent = await createEvent({ ...oldEvent, ...params, id: oldEvent.id })
     if (updatedEvent.reminder) {
       if (oldEvent.notificationIds?.length) {
@@ -46,7 +46,7 @@ export const EditEventHandler: AIHandler = {
 export const DeleteEventHandler: AIHandler = {
   execute: async (params, context) => {
     const oldEvent = context.events.find((e) => e.id.slice(0, 8) === params.id)
-    if (!oldEvent) throw new Error("Event not found");// TODO
+    if (!oldEvent) throw new Error("Event not found");// TODOX
     if (oldEvent.notificationIds?.length) {
       const cancelPromises = oldEvent.notificationIds.map((n) =>
         cancelReminder(n.id)

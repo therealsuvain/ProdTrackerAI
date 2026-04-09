@@ -117,6 +117,15 @@ export async function bulkInsertTimerLogs(timer_logList: TimerLog[]): Promise<vo
     });
 }
 
+export async function deleteAllTimerLogs(): Promise<number> {
+  const count = await countTimerLogs();
+  if (count === 0) return 0;
+
+  await db.delete(timerLogs);
+
+  return count;
+}
+
 /**
  * Count all timerLogs. Used by migration to confirm it succeeded.
  */

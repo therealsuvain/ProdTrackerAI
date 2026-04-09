@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useContext, useMemo, useState } from "react";
+import { useCallback, useContext, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Button,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 
 import { Portal, TextInput } from "react-native-paper";
@@ -25,8 +26,8 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 import { useLogs } from "@/hooks/use-logs";
 import { useHaptics } from "@/hooks/use-haptics";
-//TODO right now only showing last 10 logItems, either add pagination or show all
- //TODO when category TextInput value is changed to defaultValue, the lastCategory press does not get updated into the TextInput
+//TODOX when a titled log is added, the text input value doesnt reset, but when another log is saved, it takes a empty text input value
+//TODOX when category TextInput value is changed to defaultValue, the lastCategory press does not get updated into the TextInput
 function TimerScreenInner() {
   const { theme } = useContext(ThemeContext);
   const { timerLogs, setTimerLogs, addLog, removeLog, editLog } = useLogs();
@@ -85,6 +86,8 @@ function TimerScreenInner() {
 
     return { todayTotal, weekTotal, topCategory };
   }, [timerLogs]);
+  const ITEMS_PER_PAGE = 15;
+  const [currentPage, setCurrentPage] = useState(1);
   // ── Last-used category suggestion ────────────────────────────────────────
   // Find the most recently saved log that has a category — show as a
   // one-tap suggestion chip so the user doesn't have to retype it.
@@ -120,6 +123,19 @@ function TimerScreenInner() {
     setEditingLog(log);
     setModalVisible(true);
   };
+
+  // 2. Derive the currently visible slice of data based on the page number
+  const displayedLogs = useMemo(() => {
+    return timerLogs.slice(0, currentPage * ITEMS_PER_PAGE);
+  }, [timerLogs, currentPage]);
+
+  const handleLoadMore = useCallback(() => {
+    // Only increment if we haven't reached the end of the array
+    if (displayedLogs.length < timerLogs.length) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  }, [displayedLogs.length, timerLogs.length]);
+
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
       <Ionicons name="timer" size={60} color={theme.timerBase} />
@@ -205,7 +221,7 @@ function TimerScreenInner() {
           mode="outlined"
           activeOutlineColor={theme.timerBase}
         />
-       
+
         <TextInput
           placeholder="Category (optional)"
           value={category}
@@ -326,12 +342,17 @@ function TimerScreenInner() {
           ]}
         />
       </View>
-      
+
       <FlatList
-        data={timerLogs.slice(-10).toReversed()}
+        data={displayedLogs}
         keyExtractor={(item) => item.id}
         style={{ width: "95%" }}
         showsVerticalScrollIndicator={false}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5} // Triggers when user is halfway through the last visible screen
+        initialNumToRender={15} // How many items to render in the exact first batch
+        maxToRenderPerBatch={15} // Limits the amount rendered per scroll chunk to keep JS thread fast
+        windowSize={5} // (Default is 21) Lowering this saves RAM by unmounting views far off-screen
         renderItem={({ item }) => (
           <TimerLogItem
             log={item}
@@ -340,6 +361,14 @@ function TimerScreenInner() {
           />
         )}
         ListEmptyComponent={EmptyState}
+        ListFooterComponent={() => {
+          if (displayedLogs.length >= timerLogs.length) return null;
+          return (
+            <View style={{ paddingVertical: 20 }}>
+              <ActivityIndicator size="small" />
+            </View>
+          );
+        }}
       />
       <DbErrorToast error={toastError} onDismiss={dismissToast} />
       <Portal>

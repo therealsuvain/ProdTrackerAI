@@ -11,6 +11,8 @@ import {
   insertTimerLog,
   updateTimerLog,
   deleteTimerLog,
+  deleteAllTimerLogs,
+  countTimerLogs,
 } from "@/db/repositories/timer-log-repository";
 
 import { TimerLog } from "@/types/timer";
@@ -22,11 +24,11 @@ interface LogContextType {
   addLog: (log: TimerLog) => Promise<void>;
   editLog: (log: TimerLog) => Promise<void>;
   removeLog: (id: string) => Promise<void>;
+  removeLogs: () => Promise<void>;
+  logCount: () => Promise<number>;
 }
 
-export const LogContext = createContext<LogContextType | undefined>(
-  undefined,
-);
+export const LogContext = createContext<LogContextType | undefined>(undefined);
 
 export default function LogProvider({ children }: { children: ReactNode }) {
   const { dispatchError } = useData();
@@ -67,7 +69,7 @@ export default function LogProvider({ children }: { children: ReactNode }) {
   const addLog = useCallback(
     async (log: TimerLog): Promise<void> => {
       await optimisticTimerLogMutation(
-        (prev) => [...prev, log],
+        (prev) => [log, ...prev],
         () => insertTimerLog(log),
       );
     },
@@ -93,6 +95,16 @@ export default function LogProvider({ children }: { children: ReactNode }) {
     },
     [optimisticTimerLogMutation],
   );
+
+  const removeLogs = useCallback(async () => {
+    await deleteAllTimerLogs();
+    setTimerLogs([]);
+  }, []);
+
+  const logCount = useCallback(async (): Promise<number> => {
+    const result = await countTimerLogs();
+    return result ?? 0;
+  }, []);
 
   useEffect(() => {
     const loadLogs = async () => {
@@ -120,6 +132,8 @@ export default function LogProvider({ children }: { children: ReactNode }) {
         addLog,
         editLog,
         removeLog,
+        removeLogs,
+        logCount,
       }}
     >
       {children}

@@ -25,8 +25,7 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 import { useHaptics } from "@/hooks/use-haptics";
 
-// TODO : shifting logic from habit-screen , habit-item, habiit-stats to utils maybe
-// TODO : In Testing : pendingStreakResetAfter does not reset in db only in state
+// TODOOptim : shifting logic from habit-screen , habit-item, habiit-stats to utils maybe
 function HabitsScreenInner() {
   const { theme } = useContext(ThemeContext);
   const { habits, addHabit, editHabit, removeHabit } = useHabits();

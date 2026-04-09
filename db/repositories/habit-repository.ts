@@ -16,7 +16,7 @@
 //
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, asc, desc, inArray } from "drizzle-orm";
 import { db, habits, habitCheckIns, habitFreezeHistory, habitGoalCompletions } from "@/db";
 import type { Habit, GoalCompletion } from "@/types/habits";
 import type {
@@ -45,7 +45,7 @@ function rowToHabit(
         frequency: row.frequency,
         reminder: row.reminder,
         // FIXED: reminderDate stored as INTEGER (unix ms), convert back to Date
-        reminderDate: row.reminderDate?? undefined,
+        reminderDate: row.reminderDate ?? undefined,
         targetDays: row.targetDays ? JSON.parse(row.targetDays) : undefined,
         streak: row.streak,
         longestStreak: row.longestStreak,
@@ -158,7 +158,7 @@ async function fetchChildRowsForMany(
 
 function habitToInsert(habit: Habit): HabitInsert {
     const now = new Date().toISOString();
-        console.log("habit repo",habit.reminderDate ?? null);
+    console.log("habit repo", habit.reminderDate ?? null);
     return {
         id: habit.id,
         title: habit.title,
@@ -187,7 +187,7 @@ export async function getAllHabits(): Promise<Habit[]> {
     const rows = await db
         .select()
         .from(habits)
-        .orderBy(desc(habits.createdAt));
+        .orderBy(asc(habits.createdAt));
 
     if (rows.length === 0) return [];
 
@@ -228,7 +228,7 @@ export async function insertHabit(habit: Habit): Promise<Habit> {
     const checkInRows = buildCheckInRows(habit);
     const freezeRows = buildFreezeRows(habit);
     const goalCompletionRows = buildGoalCompletionRows(habit);
-    console.log("HABIT REPO:",habitToInsert(habit).reminderDate)
+    console.log("HABIT REPO:", habitToInsert(habit).reminderDate)
     await db.transaction(async (tx) => {
         await tx.insert(habits).values(habitToInsert(habit));
 
@@ -332,12 +332,12 @@ export async function bulkInsertHabits(habitList: Habit[]): Promise<void> {
 }
 
 export async function deleteAllHabits(): Promise<number> {
-  const count = await countHabits();
-  if (count === 0) return 0;
+    const count = await countHabits();
+    if (count === 0) return 0;
 
-  await db.delete(habits);
+    await db.delete(habits);
 
-  return count;
+    return count;
 }
 
 export async function countHabits(): Promise<number> {

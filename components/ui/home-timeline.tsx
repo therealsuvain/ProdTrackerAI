@@ -20,9 +20,9 @@ import { checkInHabit } from "@/utils/habit-utils";
 import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/use-data";
 
-// TODO 40 : Optimize this
-// TODO 103 : on task completion, the scrollview offset resets and entire page reloads very awkwardly
-// TODO 104 : on habit checkin, the entire page relaods very awkwardly
+// TODOOptim 40 : Optimize this
+// TODOOptim 103 : on task completion, the scrollview offset resets and entire page reloads very awkwardly
+// TODOOptim 104 : on habit checkin, the entire page relaods very awkwardly
 interface UnifiedTimelineProps {
   events: CalendarEvent[];
   tasks: Task[];
@@ -85,7 +85,7 @@ export default function UnifiedTimeline({
     const dayEvents = events.filter((event) => {
       const eventStartDate = new Date(event.startDate);
       const eventStartDatePart = eventStartDate.toISOString().split("T")[0];
-      //TODO Fix below ??
+      //TODOX Fix below ??
       const eventEndDatePart = new Date(event.endDate ?? eventStartDate)
         .toISOString()
         .split("T")[0];

@@ -261,6 +261,15 @@ export async function bulkInsertCalendarEvents(eventList: CalendarEvent[]): Prom
     });
 }
 
+export async function deleteAllCalendarEvents(): Promise<number> {
+    const count = await countCalendarEvents();
+    if (count === 0) return 0;
+
+    await db.delete(calendarEvents);
+
+    return count;
+}
+
 export async function countCalendarEvents(): Promise<number> {
     const result = await db.select({ id: calendarEvents.id }).from(calendarEvents);
     return result.length;

@@ -8,12 +8,12 @@ import type { UnlockedAchievementsRow, UnlockedAchievementsInsert } from "@/db/s
 function rowToUnlockedAchievements(row: UnlockedAchievementsRow): AchievementBadge {
     return {
         id: row.id,
-       title: row.title,
-       description: row.description,
-       unlockedDescription: row.unlockedDescription,
-       tier: row.tier,
-       target: row.target,
-       unlockedAt: row.unlockedAt
+        title: row.title,
+        description: row.description,
+        unlockedDescription: row.unlockedDescription,
+        tier: row.tier,
+        target: row.target,
+        unlockedAt: row.unlockedAt
     };
 }
 
@@ -39,7 +39,7 @@ export async function getAllUnlockedAchievements(): Promise<AchievementBadge[]> 
 }
 
 export async function insertUnlockedAchievements(achievement: AchievementBadge): Promise<AchievementBadge> {
-    const insert =achievementBadgeToInsert(achievement);
+    const insert = achievementBadgeToInsert(achievement);
     await db.insert(unlockedAchievements).values(insert);
     // Return with the exact timestamps that were written
     return rowToUnlockedAchievements({ ...insert } as UnlockedAchievementsRow);
@@ -57,6 +57,16 @@ export async function bulkInsertUnlockedAchievements(achievementList: Achievemen
         }
     });
 }
+
+export async function deleteAllUnlockedAchievements(): Promise<number> {
+    const count = await countUnlockedAchievements();
+    if (count === 0) return 0;
+
+    await db.delete(unlockedAchievements);
+
+    return count;
+}
+
 export async function countUnlockedAchievements(): Promise<number> {
     const result = await db.select({ id: unlockedAchievements.id }).from(unlockedAchievements);
     return result.length;

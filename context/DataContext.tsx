@@ -70,12 +70,14 @@ import {
   loadAppMetricsFromDb,
   loadDailyMetricsRange,
   mutateMetricInDb,
+  deleteAllMetrics,
 } from "@/db/repositories/metrics-repository";
 
 import {
   getAllUnlockedAchievements,
   insertUnlockedAchievements,
   countUnlockedAchievements,
+  deleteAllUnlockedAchievements,
 } from "@/db/repositories/unlocked-achievement-repository";
 
 import { sqlite } from "@/db/index";
@@ -97,9 +99,9 @@ import { AchievementToast } from "@/components/ui/achievements/achievement-toast
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { initDatabase } from "@/db";
 
-// TODO if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
+// TODOY if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
 interface DataContextType {
- /*  tasks: Task[];
+  /*  tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   addTask: (task: Task) => Promise<void>;
   editTask: (task: Task) => Promise<void>;
@@ -148,13 +150,15 @@ interface DataContextType {
   } | null;
   dispatchError: (err: Error | string, type: "warning" | "fatal") => void;
   clearError: () => void;
- /*  deleteEventOccurrence: (
+  /*  deleteEventOccurrence: (
     eventId: string,
     date: string,
     all: boolean,
   ) => Promise<void>; */
   appMetrics: AppMetrics;
   trackMetric: (key: GlobalMetricKey[], amount: number) => Promise<void>;
+  resetMetrics: () => Promise<void>;
+  resetAchievements: () => Promise<void>;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(
@@ -165,7 +169,7 @@ export const DataContext = createContext<DataContextType | undefined>(
 const USE_DUMMY_DATA = false;
 
 export default function DataProvider({ children }: { children: ReactNode }) {
-/*   const [tasks, setTasks] = useState<Task[]>([]);
+  /*   const [tasks, setTasks] = useState<Task[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [timerLogs, setTimerLogs] = useState<TimerLog[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -218,7 +222,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     [],
   );
 
- /*  const optimisticTaskMutation = useCallback(
+  /*  const optimisticTaskMutation = useCallback(
     async (
       optimisticUpdate: (prev: Task[]) => Task[],
       dbWrite: () => Promise<void> | Promise<Task>,
@@ -643,13 +647,22 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     [optimisticUnlockedAchievementMutation],
   );
 
+  const resetAchievements = useCallback(async (): Promise<void> => {
+    unlockedAchievementsRef.current = [];
+    (await deleteAllUnlockedAchievements(), setUnlockedAchievements([]));
+  }, []);
+
+  const resetMetrics = useCallback(async (): Promise<void> => {
+    (await deleteAllMetrics(), setAppMetrics(DefaultMetrics));
+  }, []);
+
   const unlockedAchievementCount = useCallback(async (): Promise<number> => {
     const result = await countUnlockedAchievements();
     return result ?? 0;
   }, []);
 
   // Remove Dont need optmistic app metrics mutator
-/*   const optimisticAppMetricsMutation = useCallback(
+  /*   const optimisticAppMetricsMutation = useCallback(
     async (
       optimisticUpdate: (prev: AppMetrics) => AppMetrics,
       metricDbWrite: (keys: MetricKey[] , amount: number, dateOverride?: string) => Promise<AppMetrics>,
@@ -708,7 +721,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     },
     [],
   ); */
-/*   const deleteEventOccurrence = async (
+  /*   const deleteEventOccurrence = async (
     eventId: string,
     date: string,
     all: boolean,
@@ -733,10 +746,12 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   }; */
 
   const trackMetric = useCallback(
+    
     async (keys: GlobalMetricKey[], amount: number) => {
       // 1. Mutate storage atomically
       // note: For now if lastSyncedAt is passed in it works like trackMetric(["lastSyncedAt"], 0)
       const updatedMetrics = await mutateMetricInDb(keys, amount);
+      console.log("TRACK");
       // 2. Update React Context so UI (Heatmaps, Progress Bars) re-renders instantly
       setAppMetrics((prevMetrics) => ({ ...prevMetrics, ...updatedMetrics }));
 
@@ -792,7 +807,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         await initDatabase();
 
         //await migrateTasksFromAsyncStorage();
-/*         let loadedTasks = await getAllTasks();
+        /*         let loadedTasks = await getAllTasks();
         let loadedEvents = await getAllCalendarEvents();
         let loadedLogs = await getAllTimerLogs();
         let loadedHabits = await getAllHabits();
@@ -808,7 +823,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
           if (loadedHabits.length === 0) loadedHabits = dummyHabits;
         } */
 
-/*         loadedHabits = loadedHabits.map((habit) => {
+        /*         loadedHabits = loadedHabits.map((habit) => {
           const { status, habit: updatedHabit } = applyMissedDayLogic(habit);
           if (status === "missed_check_in") {
             trackMetric(["habitCheckInsMissed"], 1);
@@ -822,7 +837,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
           return updatedHabit;
         }); */
         //loadedTasks = loadedTasks.filter((t)=>!t.title.includes("testing") && !t.title.includes("Testing"))
-/*         setTasks(loadedTasks);
+        /*         setTasks(loadedTasks);
         setEvents(loadedEvents);
         setTimerLogs(loadedLogs);
         setHabits(loadedHabits);
@@ -948,6 +963,8 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         /* deleteEventOccurrence, */
         appMetrics,
         trackMetric,
+        resetMetrics,
+        resetAchievements,
       }}
     >
       {children}

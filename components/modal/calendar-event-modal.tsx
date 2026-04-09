@@ -10,7 +10,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { ThemeContext } from "@/context/ThemeContext";
 
-//TODO What in case when a user wants to schedule an overnight event, when the start time is later than the end time but of previous date, current logic breaks in case
+//TODOX What in case when a user wants to schedule an overnight event, when the start time is later than the end time but of previous date, current logic breaks in case
 interface Props {
   visible: boolean;
   onDismiss: () => void;

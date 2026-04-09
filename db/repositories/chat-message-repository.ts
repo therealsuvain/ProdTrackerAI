@@ -75,10 +75,21 @@ export async function bulkInsertMessages(messageList: Message[]): Promise<void> 
         }
     });
 }
+
+export async function deleteAllMessages(): Promise<number> {
+  const count = await countMessages();
+  if (count === 0) return 0;
+
+  await db.delete(messages);
+
+  return count;
+}
+
 export async function countMessages(): Promise<number> {
     const result = await db.select({ id: messages.id }).from(messages);
     return result.length;
 }
+
 
 /* export async function getMessageById(id: string): Promise<Message | null> {
     const rows = await db
