@@ -1,6 +1,6 @@
-import { View, StyleSheet, FlatList, Alert } from "react-native";
+import { View, StyleSheet, FlatList, Alert, Text } from "react-native";
 import { useContext, useState, useEffect, useCallback, useRef } from "react";
-import { FAB, Portal, Text, Searchbar } from "react-native-paper";
+import { FAB, Portal, Searchbar } from "react-native-paper";
 
 import { useHabits } from "@/hooks/use-habits";
 import { useData } from "@/hooks/use-data";
@@ -27,7 +27,7 @@ import { useHaptics } from "@/hooks/use-haptics";
 
 // TODOOptim : shifting logic from habit-screen , habit-item, habiit-stats to utils maybe
 function HabitsScreenInner() {
-  const { theme } = useContext(ThemeContext);
+  const { theme, isDarkMode } = useContext(ThemeContext);
   const { habits, addHabit, editHabit, removeHabit } = useHabits();
   const { trackMetric, appMetrics } = useData();
   const [filteredHabits, setFilteredHabits] = useState<Habit[]>(habits);
@@ -149,14 +149,14 @@ function HabitsScreenInner() {
       ),
     );
   }, [searchQuery, habits]);
-
+ const emptyStateColor = isDarkMode ? theme.habitBase : theme.habitDarkPrimary
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
-      <FontAwesome6 name="bars-progress" size={60} color={theme.habitBase} />
+      <FontAwesome6 name="bars-progress" size={60} color={emptyStateColor} />
       <Text
         style={[
           emptyStateStyle.emptyTitle,
-          { color: withAlpha(theme.habitBase, "99") },
+          { color: withAlpha(emptyStateColor, "99") },
         ]}
       >
         This is your habits page
@@ -167,17 +167,17 @@ function HabitsScreenInner() {
       <View
         style={[
           emptyStateStyle.suggestionBox,
-          { borderColor: withAlpha(theme.habitBase, "33") },
+          { borderColor: withAlpha(emptyStateColor, "33") },
         ]}
       >
         <Text
-          style={[emptyStateStyle.suggestionText, { color: theme.habitBase }]}
+          style={[emptyStateStyle.suggestionText, { color: emptyStateColor }]}
         >
           Habits can have daily and weekly goals with on specific days of the
           week
         </Text>
         <Text
-          style={[emptyStateStyle.suggestionText, { color: theme.habitBase }]}
+          style={[emptyStateStyle.suggestionText, { color: emptyStateColor }]}
         >
           1 Free streak freeze is given per habit, every 5 successive check-ins
           earn 1 additional freeze
@@ -192,8 +192,11 @@ function HabitsScreenInner() {
         <Searchbar
           placeholder="Search Habits"
           onChangeText={setSearchQuery}
+          rippleColor="#ffffff96"
+          iconColor={theme.whiteBase}
           value={searchQuery}
           style={[styles.searchbar, { backgroundColor: theme.habitBaseTrans }]}
+          theme={{ colors: { onSurfaceVariant: theme.whiteBase } }}
         />
         <FlatList
           data={filteredHabits}

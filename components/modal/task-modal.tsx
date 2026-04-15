@@ -67,6 +67,14 @@ export default function TaskModal({
         label="Title"
         defaultValue={state.title}
         onChangeText={(text) => updateField("title", text)}
+        textColor={theme.text}
+        style={{ backgroundColor: theme.background }}
+        theme={{
+          colors: {
+            //primary: theme.text, // Color when focused
+            onSurfaceVariant: theme.greyBasePrimary, // Color when unfocused
+          },
+        }}
       />
       {state.errors?.title && (
         <Text style={[styles.error, { color: theme.error }]}>
@@ -78,6 +86,13 @@ export default function TaskModal({
         label="Description"
         defaultValue={state.description}
         onChangeText={(text) => updateField("description", text)}
+        textColor={theme.text}
+        style={{ backgroundColor: theme.background }}
+        theme={{
+          colors: {
+            onSurfaceVariant: theme.greyBasePrimary, // Color when unfocused
+          },
+        }}
         multiline
       />
       <SegmentedButtons
@@ -122,7 +137,7 @@ export default function TaskModal({
         Pick Due Date
       </Button>
       {state.dueDate && (
-        <Text style={[styles.date, { color: theme.taskLightPrimary }]}>
+        <Text style={[styles.date, { color: theme.taskDarkSecondary }]}>
           {new Date(state.dueDate).toDateString()}
         </Text>
       )}
@@ -135,7 +150,7 @@ export default function TaskModal({
         />
       )}
       <View style={styles.switchContainer}>
-        <Text style={[styles.text, { color: theme.taskLightPrimary }]}>
+        <Text style={[styles.text, { color: theme.taskDarkSecondary }]}>
           Set Reminder
         </Text>
         <Switch

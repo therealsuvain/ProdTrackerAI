@@ -1,5 +1,5 @@
-import { StyleSheet, View, TouchableOpacity } from "react-native";
-import { Card, Text, Portal } from "react-native-paper";
+import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
+import { Card } from "react-native-paper";
 import { useRoute } from "@react-navigation/native";
 import { useContext, useState } from "react";
 import { XButton } from "../x-button";
@@ -41,7 +41,7 @@ export default function TimerLogItem({
         <View style={styles.row}>
           <View style={styles.dataBlock}>
             <View style={styles.titleCategoryBlock}>
-              <Text style={{ color: theme.whiteBase }} variant="titleMedium">
+              <Text style={[styles.titleText, { color: theme.whiteBase }]}>
                 {log.title}
                 {log.isPartial && (
                   <Text
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   dataBlock: { flex: 1, paddingRight: 8 },
-  titleCategoryBlock: { flexDirection: "row", gap: 5 , alignItems: "center"},
+  titleCategoryBlock: { flexDirection: "row", gap: 5, alignItems: "center" },
   partialBadge: { fontSize: 12, fontStyle: "italic" },
   categoryPill: {
     alignSelf: "flex-start",
@@ -183,4 +183,5 @@ const styles = StyleSheet.create({
   lapLabel: { fontSize: 11, flex: 1 },
   lapSplit: { fontSize: 11, fontWeight: "700", flex: 1, textAlign: "center" },
   lapTotal: { fontSize: 11, flex: 1, textAlign: "right" },
+  titleText: { fontSize: 16, fontWeight: 500 },
 });

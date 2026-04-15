@@ -1,4 +1,3 @@
-// screens/ChatScreen.tsx
 import React, { useState, useRef, useContext, useEffect, useMemo } from "react";
 import { useNavigation } from "expo-router";
 import { useHeaderHeight } from "@react-navigation/elements";

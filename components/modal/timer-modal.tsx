@@ -76,8 +76,8 @@ export default function TimerEditModal({
   // Seed fields when a log is opened — reset on each new log
   useEffect(() => {
     if (log) {
-      setTitle(log.title === "Untitled Activity"? "" : log.title);
-      setCategory(log.category?? "");
+      setTitle(log.title === "Untitled Activity" ? "" : log.title);
+      setCategory(log.category ?? "");
       // Show current duration in a readable format as the default input value
       //setDurationInput(log.duration ? formatDuration(log.duration) : "");
       setErrors({});
@@ -98,9 +98,10 @@ export default function TimerEditModal({
 
   const handleSave = () => {
     if (!log || !validate()) return;
-   // const parsed = parseDurationInput(durationInput)!;
-   if(category.trim().length>0) onSave({ ...log, title: title.trim(), category: category.trim() });
-   else onSave({ ...log, title: title.trim() ,category: category.trim()});
+    // const parsed = parseDurationInput(durationInput)!;
+    if (category.trim().length > 0)
+      onSave({ ...log, title: title.trim(), category: category.trim() });
+    else onSave({ ...log, title: title.trim(), category: category.trim() });
     onDismiss();
   };
 
@@ -140,13 +141,18 @@ export default function TimerEditModal({
 
       {/* Title input */}
       <TextInput
-        style={styles.verticalMargin}
+        style={[styles.verticalMargin, { backgroundColor: theme.background }]}
+        textColor={theme.text}
         label="Session Title"
         mode="outlined"
         activeOutlineColor={theme.timerBase}
         outlineColor={theme.timerBaseTrans}
-        textColor={theme.whiteBase}
         defaultValue={title}
+        theme={{
+          colors: {
+            onSurfaceVariant: theme.greyBasePrimary, // Color when unfocused
+          },
+        }}
         onChangeText={setTitle}
       />
       {errors.title && (
@@ -154,13 +160,18 @@ export default function TimerEditModal({
       )}
 
       <TextInput
-        style={styles.verticalMargin}
+        style={[styles.verticalMargin, { backgroundColor: theme.background }]}
+        textColor={theme.text}
         label="Category"
         mode="outlined"
         activeOutlineColor={theme.timerBase}
         outlineColor={theme.timerBaseTrans}
-        textColor={theme.whiteBase}
         defaultValue={category}
+        theme={{
+          colors: {
+            onSurfaceVariant: theme.greyBasePrimary, // Color when unfocused
+          },
+        }}
         onChangeText={setCategory}
       />
       {/*       <TextInput

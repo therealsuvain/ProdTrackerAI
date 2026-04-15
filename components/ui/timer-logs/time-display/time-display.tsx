@@ -32,8 +32,9 @@ export default function TimerDisplay({
   onToggleMode,
   onCountdownTargetChange,
 }: TimerDisplayProps) {
-  const { theme } = useContext(ThemeContext);
-  const styles = useMemo(() => createStyles(theme, SIZE), [theme]);
+  const { theme , isDarkMode} = useContext(ThemeContext);
+  console.log("isDarkMode", isDarkMode);
+  const styles = useMemo(() => createStyles(theme, isDarkMode, SIZE), [theme]);
 
   const { pickerVisible, setPickerVisible, handleTap } =
     useTimerDisplayBusiness({

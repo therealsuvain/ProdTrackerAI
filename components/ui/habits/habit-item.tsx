@@ -1,6 +1,6 @@
-import { Card, Text, Button, ProgressBar } from "react-native-paper";
+import { Card, ProgressBar } from "react-native-paper";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Text } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { useContext, useCallback, useRef, useState } from "react";
 import Animated from "react-native-reanimated";
@@ -103,7 +103,7 @@ function HabitItem({
                 inactiveColor={theme.whiteBase} // 20% opacity
               />
             )}
-            <Text variant="titleMedium" style={{ color: theme.whiteBase }}>
+            <Text  style={[styles.title,{ color: theme.whiteBase }]}>
               {habit.title}
             </Text>
             {habit.pendingStreakResetAfter ? (
@@ -150,7 +150,7 @@ function HabitItem({
           )}
         </View>
         {!habit.pendingStreakResetAfter && (
-          <ProgressBar progress={progress} color={theme.habitBase} />
+          <ProgressBar progress={progress} color={theme.habitBase} style={{backgroundColor:theme.greyBaseTertiary}} />
         )}
 
         {isNotHome && (
@@ -205,4 +205,8 @@ const styles = StyleSheet.create({
   rightButtons: {
     flexDirection: "row",
   },
+  title: {
+    fontSize: 16,
+    fontWeight: 500
+  }
 });

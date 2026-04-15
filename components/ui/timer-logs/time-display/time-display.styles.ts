@@ -1,11 +1,11 @@
 import { StyleSheet } from "react-native";
 import { withAlpha } from "@/utils/common-utils";
 
-export const createStyles = (theme: any, size: number) => {
+export const createStyles = (theme: any, isdarkmode: boolean,size: number) => {
   const radius = size / 2;
 
   const styles = StyleSheet.create({
-    base: theme.timerBase,
+    base: isdarkmode ? theme.timerBase: theme.timerBaseLightModeOnly,
     error : theme.error,
     circleStroke : withAlpha(theme.timerBase, "22") as any,
     outer: {
@@ -23,7 +23,7 @@ export const createStyles = (theme: any, size: number) => {
       alignItems: "center",
       overflow: "hidden",
       backgroundColor: "transparent",
-      borderColor: withAlpha(theme.timerBase, "44"),
+      borderColor: withAlpha(isdarkmode ? theme.timerBase: theme.timerBaseLightModeOnly, "44"),
     },
     absoluteFace: {
       position: "absolute",
@@ -33,7 +33,7 @@ export const createStyles = (theme: any, size: number) => {
       fontWeight: "bold",
       textAlign: "center",
       letterSpacing: 2,
-      color: theme.timerBase,
+      color: isdarkmode ? theme.timerBase: theme.timerBaseLightModeOnly,
     },
   });
 

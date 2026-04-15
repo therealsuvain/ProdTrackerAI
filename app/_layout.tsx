@@ -19,14 +19,13 @@ import EventProvider from "@/context/EventContext";
 import LogProvider from "@/context/LogContext";
 import ChatProvider from "@/context/ChatContext";
 import TimerProvider from "@/context/TimerContext";
-import { useTheme } from "@/hooks/use-theme-colors";
 import {
   Provider as PaperProvider,
   useTheme as usePaperTheme,
 } from "react-native-paper";
 
 export default function RootLayout() {
-  const { theme } = useTheme();
+  //Note :  static color values from ThemeContext are usable, dont do not work when theme changes
   const paperTheme = usePaperTheme();
 
   return (
@@ -62,13 +61,13 @@ export default function RootLayout() {
                                 options={({ navigation }) => ({
                                   title: "Settings",
                                   headerStyle: {
-                                    backgroundColor: theme.background,
+                                    backgroundColor: "#333333ff",
                                   },
                                   headerTitleStyle: {
                                     marginLeft: 5,
                                     fontSize: 35,
                                     fontWeight: "bold",
-                                    color: theme.text,
+                                    color: "white",
                                   },
                                   headerLeft: () => (
                                     <TouchableOpacity
@@ -79,7 +78,7 @@ export default function RootLayout() {
                                       <Ionicons
                                         name="menu"
                                         size={28}
-                                        color={theme.text}
+                                        color="white"
                                       />
                                     </TouchableOpacity>
                                   ),
@@ -90,13 +89,13 @@ export default function RootLayout() {
                                 options={({ navigation }) => ({
                                   title: "Achievements",
                                   headerStyle: {
-                                    backgroundColor: theme.background,
+                                    backgroundColor: "#333333ff",
                                   },
                                   headerTitleStyle: {
                                     marginLeft: 5,
                                     fontSize: 35,
                                     fontWeight: "bold",
-                                    color: theme.text,
+                                    color: "white",
                                   },
                                   headerLeft: () => (
                                     <TouchableOpacity
@@ -107,7 +106,7 @@ export default function RootLayout() {
                                       <Ionicons
                                         name="menu"
                                         size={28}
-                                        color={theme.text}
+                                        color="white"
                                       />
                                     </TouchableOpacity>
                                   ),

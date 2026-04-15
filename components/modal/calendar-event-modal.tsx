@@ -149,7 +149,14 @@ export default function CalendarEventModal({
         label="Title"
         defaultValue={state.title}
         mode="outlined"
-        style={styles.verticalMargin}
+        style={[styles.verticalMargin, { backgroundColor: theme.background }]}
+        textColor={theme.text}
+        theme={{
+          colors: {
+           // primary: theme.text, // Color when focused
+            onSurfaceVariant: theme.greyBasePrimary, // Color when unfocused
+          },
+        }}
         activeOutlineColor={theme.eventBase}
         onChangeText={(text) => updateField("title", text)}
       />
@@ -265,7 +272,13 @@ export default function CalendarEventModal({
         defaultValue={state.description || ""}
         mode="outlined"
         activeOutlineColor={theme.eventBase}
-        style={styles.verticalMargin}
+        style={[styles.verticalMargin, { backgroundColor: theme.background }]}
+        textColor={theme.text}
+        theme={{
+          colors: {
+            onSurfaceVariant: theme.greyBasePrimary, // Color when unfocused
+          },
+        }}
         onChangeText={(text) => updateField("description", text)}
         multiline
       />
@@ -339,7 +352,13 @@ export default function CalendarEventModal({
         defaultValue={state.category || ""}
         mode="outlined"
         activeOutlineColor={theme.eventBase}
-        style={styles.verticalMargin}
+        style={[styles.verticalMargin, { backgroundColor: theme.background }]}
+        textColor={theme.text}
+        theme={{
+          colors: {
+            onSurfaceVariant: theme.greyBasePrimary, // Color when unfocused
+          },
+        }}
         onChangeText={(text) => updateField("category", text)}
       />
       <Button

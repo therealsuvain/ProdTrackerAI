@@ -1,8 +1,9 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import { Text, Surface, useTheme, ProgressBar } from "react-native-paper";
+import { View, StyleSheet , Text} from "react-native";
+import {  Surface, useTheme as usePaperTheme, ProgressBar } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { AchievementDefinition } from "@/types/achievements-ui";
+import { useTheme } from "@/hooks/use-theme-colors";
 
 interface AchievementBadgeProps {
   badge: AchievementDefinition;
@@ -11,16 +12,17 @@ interface AchievementBadgeProps {
   currentProgress: number;
 }
 
- function AchievementBadge({
+function AchievementBadge({
   badge,
   isUnlocked,
   unlockedAt,
   currentProgress,
 }: AchievementBadgeProps) {
-  const theme = useTheme();
+  const paperTheme = usePaperTheme();
+  const { theme, isDarkMode } = useTheme();
 
   const getTierColor = () => {
-    if (!isUnlocked) return theme.colors.outlineVariant; // Tone-deaf/muted gray for locked
+    if (!isUnlocked) return paperTheme.colors.outlineVariant; // Tone-deaf/muted gray for locked
     switch (badge.tier) {
       case "diamond":
         return "#C71585";
@@ -33,7 +35,7 @@ interface AchievementBadgeProps {
       case "bronze":
         return "#CD7F32";
       default:
-        return theme.colors.primary;
+        return paperTheme.colors.primary;
     }
   };
 
@@ -45,11 +47,13 @@ interface AchievementBadgeProps {
     <Surface
       style={[
         styles.container,
-        { backgroundColor: theme.colors.elevation.level2 }, 
-        //! Elevation background color : theme.colors.elevation.level2
+        { backgroundColor: isDarkMode ? theme.taskDarkPrimary : theme.greyTimeline,//paperTheme.colors.elevation.level5,
+          shadowColor: paperTheme.colors.elevation.level1
+         },
+        //! Elevation background color : paperTheme.colors.elevation.level2
         !isUnlocked && styles.lockedContainer, // Apply opacity if locked
       ]}
-      elevation={isUnlocked ? 2 : 0} // Flatten the elevation if locked
+      elevation={isUnlocked ? 5 : 0} // Flatten the elevation if locked
     >
       <View style={[styles.iconRing, { borderColor: tierColor }]}>
         <Ionicons
@@ -62,20 +66,21 @@ interface AchievementBadgeProps {
       <View style={styles.textContainer}>
         <View style={styles.headerRow}>
           <Text
-            variant="titleMedium"
             style={[
               styles.title,
               {
                 color: isUnlocked
-                  ? theme.colors.onSurface
-                  : theme.colors.onSurfaceVariant,
+                  ? theme.text
+                  : theme.greyBasePrimary,
               },
             ]}
           >
             {badge.title}
           </Text>
           {!isUnlocked && (
-            <Text variant="labelSmall" style={{ color: theme.colors.outline }}>
+            <Text
+              style={[styles.textVariant, { color: paperTheme.colors.outline }]}
+            >
               {badge.title.includes("timer")
                 ? `${Math.floor(currentProgress / 60)}/${badge.target / 60}`
                 : `${currentProgress} / ${badge.target}`}
@@ -83,13 +88,17 @@ interface AchievementBadgeProps {
           )}
         </View>
         {isUnlocked && (
-          <Text variant="bodySmall" style={{ color: theme.colors.primary }}>
+          <Text
+            style={[styles.description, { color: theme.taskBase }]}
+          >
             "{badge.unlockedDescription}"
           </Text>
         )}
         <Text
-          variant="bodySmall"
-          style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}
+          style={[
+            styles.description,
+            { color: theme.text, marginBottom: 8 },
+          ]}
         >
           {badge.description}
         </Text>
@@ -97,15 +106,14 @@ interface AchievementBadgeProps {
         {!isUnlocked && (
           <ProgressBar
             progress={progressRatio}
-            color={isUnlocked ? tierColor : theme.colors.outlineVariant}
+            color={isUnlocked ? tierColor : paperTheme.colors.outlineVariant}
             style={styles.progressBar}
           />
         )}
 
         {isUnlocked && unlockedAt && (
           <Text
-            variant="labelSmall"
-            style={[styles.date, { color: theme.colors.primary }]}
+            style={[styles.date, { color:theme.taskBase}]}
           >
             Unlocked: {new Date(unlockedAt).toLocaleDateString()}
           </Text>
@@ -121,7 +129,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    marginBottom: 12,
+   // marginBottom: 12,
     borderRadius: 16,
   },
   lockedContainer: {
@@ -151,6 +159,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: "700",
+    fontSize: 16,
   },
   progressBar: {
     height: 6,
@@ -159,6 +168,18 @@ const styles = StyleSheet.create({
   },
   date: {
     marginTop: 6,
+    fontSize: 11,
     fontStyle: "italic",
+    fontWeight: 500,
+  },
+  description: {
+    fontSize: 12,
+    fontWeight: 400,
+    lineHeight: 16
+
+  },
+  textVariant: {
+    fontSize: 11,
+    fontWeight: 500,
   },
 });

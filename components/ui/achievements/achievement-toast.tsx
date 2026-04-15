@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View, Text } from "react-native";
 import {
-  Text,
   Surface,
   useTheme,
   Portal,
@@ -106,17 +105,15 @@ export const AchievementToast = ({ badge }: AchievementToastProps) => {
               </View>
               <View style={styles.textContainer}>
                 <Text
-                  variant="labelMedium"
-                  style={{
+                  style={[styles.unlocked,{
                     color: getTierColor(badge?.tier),
                     fontWeight: "bold",
-                  }}
+                  }]}
                 >
                   ACHIEVEMENT UNLOCKED
                 </Text>
                 <Text
-                  variant="titleMedium"
-                  style={{ color: theme.colors.onSurface, fontWeight: "700" }}
+                  style={[styles.title,{ color: theme.colors.onSurface, fontWeight: "700" }]}
                 >
                   {badge?.title || ""}
                 </Text>
@@ -160,5 +157,13 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     justifyContent: "center",
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: 700,
+  },
+  unlocked: {
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });

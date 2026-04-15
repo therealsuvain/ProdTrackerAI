@@ -66,10 +66,16 @@ export default function HabitModal({
       ]}
     >
       <TextInput
-        style={styles.verticalMargin}
+        style={[styles.verticalMargin, { backgroundColor: theme.background }]}
+        textColor={theme.text}
         label="Habit Name"
         mode="outlined"
         activeOutlineColor={theme.habitBase}
+        theme={{
+          colors: {
+            onSurfaceVariant: theme.greyBasePrimary, // Color when unfocused
+          },
+        }}
         defaultValue={state.title}
         onChangeText={(text) => updateField("title", text)}
       />
@@ -110,10 +116,19 @@ export default function HabitModal({
       {!visibleInEditMode && (
         <>
           <TextInput
-            style={styles.verticalMargin}
+            style={[
+              styles.verticalMargin,
+              { backgroundColor: theme.background },
+            ]}
+            textColor={theme.text}
             label="Goal"
             mode="outlined"
             activeOutlineColor={theme.habitBase}
+            theme={{
+              colors: {
+                onSurfaceVariant: theme.greyBasePrimary, // Color when unfocused
+              },
+            }}
             defaultValue={state.goal}
             onChangeText={(text) => updateField("goal", text)}
             keyboardType="numeric"
@@ -153,7 +168,8 @@ export default function HabitModal({
             </Button>
 
             <Text style={[styles.text, { color: theme.habitBase }]}>
-              {state.reminderDate && new Date(state.reminderDate).toLocaleTimeString()}
+              {state.reminderDate &&
+                new Date(state.reminderDate).toLocaleTimeString()}
             </Text>
             {state.errors?.reminderDate && (
               <Text style={[styles.error, { color: theme.error }]}>

@@ -31,7 +31,7 @@ export default function TabLayout() {
             onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
             style={{ marginLeft: 10 }}
           >
-            <Ionicons name="menu" size={28} color={theme.text} />
+            <Ionicons name="menu" size={28} color="white" />
           </TouchableOpacity>
         ),
       }}
@@ -40,7 +40,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarActiveTintColor: theme.whiteBaseTrans,
+          tabBarActiveTintColor: theme.blueLightPrimary,
+          tabBarInactiveTintColor: theme.whiteBase,
           headerStyle: {
             backgroundColor: theme.greyBaseSecondary,
           },
@@ -58,10 +59,11 @@ export default function TabLayout() {
         options={{
           title: "Tasks",
           tabBarActiveTintColor: theme.taskBase,
+          tabBarInactiveTintColor: theme.whiteBase,
           headerStyle: {
             backgroundColor: theme.taskBase,
           },
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color,focused }) => (
             <Ionicons
               name={focused ? "list" : "list-outline"}
               size={24}
@@ -75,10 +77,11 @@ export default function TabLayout() {
         options={{
           title: "Calendar",
           tabBarActiveTintColor: theme.eventBase,
+          tabBarInactiveTintColor: theme.whiteBase,
           headerStyle: {
             backgroundColor: theme.eventBase,
           },
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({color, focused }) => (
             <Ionicons
               name={focused ? "calendar" : "calendar-outline"}
               size={24}
@@ -92,10 +95,11 @@ export default function TabLayout() {
         options={{
           title: "Habits",
           tabBarActiveTintColor: theme.habitBase,
+          tabBarInactiveTintColor: theme.whiteBase,
           headerStyle: {
             backgroundColor: theme.habitBase,
           },
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color,focused }) => (
             <Ionicons
               name={focused ? "document-text" : "document-text-outline"}
               size={24}
@@ -109,10 +113,11 @@ export default function TabLayout() {
         options={{
           title: "Timer",
           tabBarActiveTintColor: theme.timerBase,
+          tabBarInactiveTintColor: theme.whiteBase,
           headerStyle: {
             backgroundColor: theme.timerBase,
           },
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({color, focused }) => (
             <Ionicons
               name={focused ? "alarm" : "alarm-outline"}
               size={24}

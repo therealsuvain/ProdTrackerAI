@@ -8,8 +8,8 @@ import {
   Portal,
   Modal,
   SegmentedButtons,
+  Provider,
 } from "react-native-paper";
-import { Provider } from "react-native-paper";
 
 import TaskItem from "@/components/ui/tasks/task-item";
 import EventItem from "@/components/ui/calendar-events/event-item";
@@ -53,7 +53,6 @@ import { useEvents } from "@/hooks/use-events";
  * TODOADD 27 : R&D better Calendar screen, refer google calendar maybe.
  * TODOX 31 : If tags and categoires are added, embeddings for them?, atleast searchable via physical search, AI handlers also would need to be updated
  * TODOX 32 : Common UI for tags/tag-list, shape like a literal tag
- * TODOX 33 : Light mode color fixes
  * TODOX 34 : Maybe keep darkMode as default irrespective of system settings
  * TODOAdd 35 : Item Label(Home-screen Today's tasks , events, habits etc) animations, like ads
  * TODOAdd 36 : Mayeb add more animations for the app. R&D
@@ -105,6 +104,7 @@ function HomeScreenInner() {
               value: "overview",
               label: "Overview",
               icon: "view-dashboard",
+              uncheckedColor: theme.text,
               checkedColor: theme.blueLightPrimary,
               style: {
                 backgroundColor:
@@ -117,6 +117,7 @@ function HomeScreenInner() {
               value: "timeline",
               label: "Today's Timeline",
               icon: "timeline",
+              uncheckedColor: theme.text,
               checkedColor: theme.blueLightPrimary,
               style: {
                 backgroundColor:
@@ -247,13 +248,30 @@ function HomeScreenInner() {
           <View style={styles.dateSelector}>
             <Button
               icon="chevron-left"
-              textColor={theme.blueLightPrimary}
+              labelStyle={{
+                fontWeight: "condensedBold",
+                fontSize: 16,
+                color: theme.blueDarkPrimary,
+                textShadowColor: theme.text,
+                textShadowRadius: 0.1,
+                textShadowOffset: { width: 0, height: 0.1 },
+              }}
               onPress={() => {
                 const newDate = new Date(selectedDate);
                 newDate.setDate(newDate.getDate() - 1);
                 setSelectedDate(newDate);
               }}
             >
+              {/*               <Text
+                style={{
+                  color: theme.blueDarkPrimary,
+                  textShadowColor: theme.text,
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 0,
+                }}
+              >
+                Previous
+              </Text> */}
               Previous
             </Button>
             <Button
@@ -268,7 +286,14 @@ function HomeScreenInner() {
             </Button>
             <Button
               icon="chevron-right"
-              textColor={theme.blueLightPrimary}
+              labelStyle={{
+                fontWeight: "condensedBold",
+                fontSize: 16,
+                color: theme.blueDarkPrimary,
+                textShadowColor: "#ffffffa9",
+                textShadowRadius: 0.1,
+                textShadowOffset: { width: 0, height: 0.1 },
+              }}
               onPress={() => {
                 const newDate = new Date(selectedDate);
                 newDate.setDate(newDate.getDate() + 1);

@@ -45,7 +45,7 @@ const DIFFICULTY_CONFIG: Record<Difficulty, DifficultyConfig> = {
     colors: ["#a8edbb", "#78d49e", "#4fc07e", "#ffffff"],
     message: "Nice work!",
     subMessage: "You completed your goal. Keep the momentum going!",
-    accentColor: "#4fc07e",
+    accentColor: "#01bd75",
     borderStyle: "none",
   },
   medium: {
@@ -240,9 +240,9 @@ export const GoalCompletionModal = ({
             {habit.title}
           </Text>
 
-          <Text style={[styles.goalLine, { color: config.accentColor }]}>
+          <Text style={[styles.goalLine, { color: theme.whiteBase, fontSize:16 }]}>
             {habit.frequency === "daily" ? "Daily" : "Weekly"} goal of{" "}
-            <Text style={{ fontWeight: "bold" }}>{habit.goal}</Text> reached!
+            <Text style={{ fontWeight: "bold", fontSize:18, }}>{habit.goal}</Text> reached!
           </Text>
 
           <Text style={[styles.subMessage, { color: theme.whiteBase }]}>
@@ -285,14 +285,14 @@ export const GoalCompletionModal = ({
                 value: "daily",
                 label: "Daily",
                 uncheckedColor: theme.whiteBase,
-                checkedColor: config.accentColor,
+                checkedColor: theme.habitBase,
                 style: { backgroundColor: theme.habitDarkSecondary },
               },
               {
                 value: "weekly",
                 label: "Weekly",
                 uncheckedColor: theme.whiteBase,
-                checkedColor: config.accentColor,
+                checkedColor: theme.habitBase,
                 style: { backgroundColor: theme.habitDarkSecondary },
               },
             ]}
@@ -430,12 +430,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statValue: {
-    fontSize: 22,
-    fontWeight: "bold",
+    fontSize: 28,
+    fontWeight: 900,
   },
   statLabel: {
     fontSize: 10,
-    color: "rgba(255,255,255,0.5)",
+    color: "rgb(255, 255, 255)",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginTop: 2,

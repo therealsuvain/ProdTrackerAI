@@ -26,10 +26,14 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 import { useLogs } from "@/hooks/use-logs";
 import { useHaptics } from "@/hooks/use-haptics";
-//TODOX when a titled log is added, the text input value doesnt reset, but when another log is saved, it takes a empty text input value
-//TODOX when category TextInput value is changed to defaultValue, the lastCategory press does not get updated into the TextInput
+// Note : Timescreen is the only component where value prop is used for the TextInput instead of defaultValue
+// Note ContinuedFromAbove: default Value only takes input once, then doesnt update, the reason its works in other places is because 
+// Note ContinuedFromAbove: the modals re-render everytime, so default value gets feeded the latest state value and it looks ok, 
+// Note ContinuedFromAbove: here though the text inputs are directly on the screen so default value doesnt update with the state change 
+
+ 
 function TimerScreenInner() {
-  const { theme } = useContext(ThemeContext);
+  const { theme, isDarkMode } = useContext(ThemeContext);
   const { timerLogs, setTimerLogs, addLog, removeLog, editLog } = useLogs();
   //const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
   const {
@@ -136,13 +140,14 @@ function TimerScreenInner() {
     }
   }, [displayedLogs.length, timerLogs.length]);
 
+  const timerBaseColor = isDarkMode ? theme.timerBase : theme.timerBaseLightModeOnly;
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
-      <Ionicons name="timer" size={60} color={theme.timerBase} />
+      <Ionicons name="timer" size={60} color={timerBaseColor} />
       <Text
         style={[
           emptyStateStyle.emptyTitle,
-          { color: withAlpha(theme.timerBase, "99") },
+          { color: withAlpha(timerBaseColor, "99") },
         ]}
       >
         This is your timer logs page
@@ -153,16 +158,16 @@ function TimerScreenInner() {
       <View
         style={[
           emptyStateStyle.suggestionBox,
-          { borderColor: withAlpha(theme.timerBase, "33") },
+          { borderColor: withAlpha(timerBaseColor, "33") },
         ]}
       >
         <Text
-          style={[emptyStateStyle.suggestionText, { color: theme.timerBase }]}
+          style={[emptyStateStyle.suggestionText, { color: timerBaseColor }]}
         >
           Logs can have categories and also have lap details
         </Text>
         <Text
-          style={[emptyStateStyle.suggestionText, { color: theme.timerBase }]}
+          style={[emptyStateStyle.suggestionText, { color: timerBaseColor }]}
         >
           You can switch mode to countdown by long pressing the clock
         </Text>
@@ -176,31 +181,31 @@ function TimerScreenInner() {
         <StatCell
           label="Today"
           value={formatDuration(todayTotal)}
-          accent={theme.timerBase}
+          accent={timerBaseColor}
         />
         <View
           style={[
             styles.statDivider,
-            { backgroundColor: withAlpha(theme.timerBase, "33") },
+            { backgroundColor: withAlpha(timerBaseColor, "33") },
           ]}
         />
         <StatCell
           label="This week"
           value={formatDuration(weekTotal)}
-          accent={theme.timerBase}
+          accent={timerBaseColor}
         />
         {topCategory && (
           <>
             <View
               style={[
                 styles.statDivider,
-                { backgroundColor: withAlpha(theme.timerBase, "33") },
+                { backgroundColor: withAlpha(timerBaseColor, "33") },
               ]}
             />
             <StatCell
               label="Top category"
               value={topCategory}
-              accent={theme.timerBase}
+              accent={timerBaseColor}
             />
           </>
         )}
@@ -215,31 +220,44 @@ function TimerScreenInner() {
       >
         <TextInput
           placeholder="Activity name"
-          defaultValue={title}
+          value={title}
+          textColor={theme.text}
           onChangeText={setTitle}
-          style={styles.input}
+
+          style={[styles.input,{backgroundColor: theme.background }]}
           mode="outlined"
+          theme={{
+            colors: {
+              onSurfaceVariant: withAlpha(timerBaseColor, "90"),
+          }}}
           activeOutlineColor={theme.timerBase}
+          outlineColor={timerBaseColor}
         />
 
         <TextInput
           placeholder="Category (optional)"
           value={category}
+          textColor={theme.text}
           onChangeText={setCategory}
-          style={[styles.input, styles.categoryInput]}
+          style={[styles.input, styles.categoryInput, {backgroundColor: theme.background }]}
           mode="outlined"
+          theme={{
+            colors: {
+              onSurfaceVariant:  withAlpha(timerBaseColor, "90"),
+          }}}
           activeOutlineColor={theme.timerBase}
+          outlineColor={timerBaseColor}
         />
       </View>
       <View style={styles.categoryRow}>
         {/* Last-used suggestion chip — only shown when category field is empty */}
         {!category && lastUsedCategory && (
           <TouchableOpacity
-            style={[styles.suggestionChip, { borderColor: theme.timerBase }]}
+            style={[styles.suggestionChip, { borderColor: timerBaseColor }]}
             onPress={() => setCategory(lastUsedCategory)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.suggestionText, { color: theme.timerBase }]}>
+            <Text style={[styles.suggestionText, { color: timerBaseColor }]}>
               ↩ {lastUsedCategory}
             </Text>
           </TouchableOpacity>
@@ -294,7 +312,7 @@ function TimerScreenInner() {
         <View
           style={[
             styles.lapsContainer,
-            { borderColor: withAlpha(theme.timerBase, "33") },
+            { borderColor: withAlpha(timerBaseColor, "33") },
           ]}
         >
           {laps.map((lapTime, idx) => {
@@ -304,18 +322,18 @@ function TimerScreenInner() {
                 <Text
                   style={[
                     styles.lapLabel,
-                    { color: withAlpha(theme.timerBase, "99") },
+                    { color: withAlpha(timerBaseColor, "99") },
                   ]}
                 >
                   Lap {idx + 1}
                 </Text>
-                <Text style={[styles.lapValue, { color: theme.timerBase }]}>
+                <Text style={[styles.lapValue, { color: timerBaseColor }]}>
                   {formatDuration(splitDuration)}
                 </Text>
                 <Text
                   style={[
                     styles.lapTotal,
-                    { color: withAlpha(theme.timerBase, "66") },
+                    { color: withAlpha(timerBaseColor, "66") },
                   ]}
                 >
                   {formatDuration(lapTime)}
@@ -329,16 +347,16 @@ function TimerScreenInner() {
         <View
           style={[
             styles.logDividerLine,
-            { backgroundColor: withAlpha(theme.timerBase, "99") },
+            { backgroundColor: withAlpha(timerBaseColor, "99") },
           ]}
         />
-        <Text style={[styles.logDividerLabel, { color: theme.timerBase }]}>
+        <Text style={[styles.logDividerLabel, { color: timerBaseColor }]}>
           Recent Logs
         </Text>
         <View
           style={[
             styles.logDividerLine,
-            { backgroundColor: withAlpha(theme.timerBase, "99") },
+            { backgroundColor: withAlpha(timerBaseColor, "99") },
           ]}
         />
       </View>
@@ -425,7 +443,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     width: "100%",
-    marginBottom: 2,
+    marginBottom: 8,
   },
   statCell: { flex: 1, alignItems: "center" },
   statValue: { fontSize: 14, fontWeight: "700" },
@@ -435,9 +453,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
     marginTop: 2,
   },
-  statDivider: { width: 1, marginVertical: 4 },
+  statDivider: { width: 2.5, marginVertical: 4 },
 
-  input: { width: "50%", marginBottom: 10, marginHorizontal: 4 },
+  input: { width: "50%", marginBottom: 10, marginHorizontal: 8 },
 
   categoryRow: { width: "100%", marginBottom: 6 },
   categoryInput: { marginBottom: 10 },

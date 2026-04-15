@@ -113,7 +113,7 @@ function CalendarScreenInner() {
           style={[styles.header, { backgroundColor: theme.eventBase }]}
           onPress={() => setSelectedDate(new Date())}
         >
-          <Ionicons size={40} name="calendar"></Ionicons>
+          <Ionicons size={40} name="calendar" color={theme.modalDarkPrimary}></Ionicons>
         </Pressable>
         <Text style={[styles.date, { color: theme.text }]}>
           {selectedDate.toDateString()}

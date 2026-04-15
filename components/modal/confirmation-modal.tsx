@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, TextInput } from "react-native";
+import { StyleSheet, TextInput, Text } from "react-native";
 import {
   Portal,
   Dialog,
   Button,
-  Text,
   useTheme,
   TextInput as PaperTextInput,
 } from "react-native-paper";
@@ -94,7 +93,6 @@ export const ConfirmationModal = ({
         <Dialog.Content>
           {description && (
             <Text
-              variant="bodyMedium"
               style={[
                 styles.warningText,
                 {
@@ -199,6 +197,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: "700",
     marginBottom: 10,
+    letterSpacing: 0.25,
   },
   warningCountText: {
     fontSize: 14,

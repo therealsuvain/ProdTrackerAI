@@ -10,7 +10,8 @@ export const getEventsForDate = (
     const eventDate = event.startDate.split('T')[0];
     const dateString = date.toISOString().split('T')[0];
     if(!event.endDate){
-      if(eventDate <= dateString && !event.deletedOccurrences?.includes(dateString)){
+      if(eventDate < dateString && event.recurrence === "none") return ;
+      if(eventDate <= dateString  && !event.deletedOccurrences?.includes(dateString)){
         filtered.push(event);
       }
       return ; 

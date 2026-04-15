@@ -6,13 +6,13 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
+  Text
 } from "react-native";
 import {
   Button,
   FAB,
   Portal,
   Searchbar,
-  Text,
   TouchableRipple,
   useTheme,
 } from "react-native-paper";

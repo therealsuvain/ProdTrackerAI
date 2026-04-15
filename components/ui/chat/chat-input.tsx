@@ -60,7 +60,7 @@ export const ChatInput = ({
           <MaterialCommunityIcons
             name="send"
             size={24}
-            color={text.trim() ? "#0084FF" : "#CCC"}
+            color={text.trim() ? "#0084FF" : "#ffffff"}
           />
         </TouchableOpacity>
       </View>

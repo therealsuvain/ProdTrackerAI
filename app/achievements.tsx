@@ -92,6 +92,7 @@ export default function AchievementsScreen() {
             <View
               key={def.id}
               // Record the exact Y position of this item as it renders
+              style={{ borderRadius:16, marginBottom:5, marginTop:5 }}
               onLayout={(event) => {
                 const { y } = event.nativeEvent.layout;
                 itemOffsets.current[def.id] = y;
@@ -138,5 +139,6 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 40,
+    borderRadius: 16,
   },
 });

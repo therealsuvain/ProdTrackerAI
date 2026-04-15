@@ -140,8 +140,8 @@ export default function HabitHeatmap({ metrics }: HabitHeatmapProps) {
               backgroundColor:
                 tooltip.opacity > 0
                   ? `rgb(255, 211, 88 , ${tooltip.opacity})`
-                  : theme.greyBasePrimary,
-              //tooltip.opacity > 0 ? tooltip.opacity : theme.greyBasePrimary,
+                  : theme.greyBaseTertiary,
+              //tooltip.opacity > 0 ? tooltip.opacity : theme.greyBaseTertiary,
               padding: 4,
               borderRadius: 10,
               boxShadow: "0px 1px 2px rgba(0,0,0,0.1)",
@@ -188,7 +188,7 @@ export default function HabitHeatmap({ metrics }: HabitHeatmapProps) {
                       backgroundColor:
                         opacity > 0
                           ? theme.habitBase
-                          : `${theme.greyBasePrimary}`, // ~6% white for empty cells
+                          : `${theme.greyBaseTertiary}`, // ~6% white for empty cells
                       opacity: opacity > 0 ? opacity : 1, // empty cells use bg opacity trick
                       // Today gets a distinct ring instead of just colour fill
                       borderWidth: isToday ? 1.5 : 0,
@@ -208,7 +208,7 @@ export default function HabitHeatmap({ metrics }: HabitHeatmapProps) {
 
       {/* Legend */}
       <View style={styles.legend}>
-        <Text style={[styles.legendLabel, { color: theme.greyBasePrimary }]}>
+        <Text style={[styles.legendLabel, { color: theme.greyBaseTertiary }]}>
           Less
         </Text>
         {[0.15, 0.3, 0.55, 0.75, 1].map((op, i) => (
@@ -218,7 +218,7 @@ export default function HabitHeatmap({ metrics }: HabitHeatmapProps) {
               styles.legendCell,
               {
                 backgroundColor:
-                  i === 0 ? theme.greyBasePrimary : theme.habitBase,
+                  i === 0 ? theme.greyBaseTertiary : theme.habitBase,
                 opacity: i === 0 ? 1 : op,
               },
             ]}

@@ -435,7 +435,7 @@ export default function UnifiedTimeline({
       return <HabitCard key={habit.id} habit={habit} />;
     });
   };
-
+// 5:33 , 55gb ~18mins at 50MBps , 36 at 25mbps
   return (
     <View
       style={[styles.container, { backgroundColor: theme.modalDarkPrimary }]}
@@ -446,7 +446,7 @@ export default function UnifiedTimeline({
           style={[
             styles.habitsContainer,
             {
-              backgroundColor: theme.greyTimeline,
+              backgroundColor: theme.background,
               borderBottomColor: theme.greyBaseSecondary,
             },
           ]}
@@ -456,6 +456,7 @@ export default function UnifiedTimeline({
               name="checkmark-circle"
               size={20}
               color={theme.habitBase}
+              style={{ textShadowColor: "black", textShadowOffset: { width: 0.1, height: 0.1 }, textShadowRadius: 0.1 }}
             />
             <Text style={[styles.habitHeaderText, { color: theme.habitBase }]}>
               Daily Habits
@@ -644,6 +645,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 8,
+    textShadowColor:"black",
+    textShadowOffset: { width: 0, height: 0.15 },
+    textShadowRadius: 0.1,
     flex: 1,
   },
   habitCount: {
