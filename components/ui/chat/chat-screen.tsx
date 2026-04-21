@@ -1,48 +1,48 @@
-import React, { useState, useRef, useContext, useEffect, useMemo } from "react";
-import { useNavigation } from "expo-router";
 import { useHeaderHeight } from "@react-navigation/elements";
+import { useNavigation } from "expo-router";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import {
+  BackHandler,
   FlatList,
   Platform,
   Pressable,
   StyleSheet,
-  View,
   Text,
-  BackHandler,
+  View,
 } from "react-native";
 import {
   KeyboardAvoidingView,
   KeyboardProvider,
 } from "react-native-keyboard-controller";
 
+import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 import { ThemeContext } from "@/context/ThemeContext";
+import { useChat } from "@/hooks/use-chat";
 import { useData } from "@/hooks/use-data";
+import { useEvents } from "@/hooks/use-events";
+import { useHabits } from "@/hooks/use-habits";
+import { usePlaySound } from "@/hooks/use-play-sound";
+import { useTasks } from "@/hooks/use-tasks";
 import { useTimer } from "@/hooks/use-timer";
 import { useVoiceInput } from "@/hooks/use-voice-input";
-import { usePlaySound } from "@/hooks/use-play-sound";
 import { Message } from "@/types/chat";
-import { LoadingBubble } from "./loading-bubble";
-import { ChatInput } from "./chat-input";
-import { MessageBubble } from "./message-bubble";
-import { DaySeparator } from "./day-seperator";
-import { processCommandAgentic, agenticExecutor } from "@/utils/ai-utils";
-import Ionicons from "@expo/vector-icons/build/Ionicons";
+import { agenticExecutor, processCommandAgentic } from "@/utils/ai-utils";
 import { injectDaySeparators } from "@/utils/chat-utils";
-import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
-import { useChat } from "@/hooks/use-chat";
-import { useTasks } from "@/hooks/use-tasks";
-import { useHabits } from "@/hooks/use-habits";
-import { useEvents } from "@/hooks/use-events";
+import Ionicons from "@expo/vector-icons/build/Ionicons";
+import { ChatInput } from "./chat-input";
+import { DaySeparator } from "./day-seperator";
+import { LoadingBubble } from "./loading-bubble";
+import { MessageBubble } from "./message-bubble";
 
 interface Props {
   visible: boolean;
   onDismiss: () => void;
 }
 /**
- * TODOX 42: Expire unconfirmed actions automatically
  * TODOY 43: use ThemeContext for colors
  * TODOOptim 44: maybe make chat-screen leaner by using chat-utils
+ * TODOX 108: handle case where an unconfirmed action is modifiying an item, but the user manually edits as well, prevent confimation of that action
  */
 const EXPIRY_THRESHOLD_MS = 30 * 60 * 1000; // 30 Minutes
 
@@ -55,13 +55,18 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     useVoiceInput({});
   const { messages, setMessages, addMessage, editMessage } = useChat();
   const { trackMetric } = useData();
-  const { tasks , addTask, editTask, removeTask, toggleTask} = useTasks();
-  const { habits , addHabit, editHabit, removeHabit } = useHabits();
-  const { events , addEvent, editEvent, removeEvent} = useEvents();
+  const { tasks, addTask, editTask, removeTask, toggleTask } = useTasks();
+  const { habits, addHabit, editHabit, removeHabit } = useHabits();
+  const { events, addEvent, editEvent, removeEvent, deleteEventOccurrence } =
+    useEvents();
   const { toastError, showToast, dismissToast } = useDbErrorToast();
   const [isThinking, setIsThinking] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const audioSource = require("@/assets/audio/record.wav");
+  const messageRef = useRef<Message[]>([]);
+  const actionExpirationTimers = useRef<
+    Map<string, ReturnType<typeof setTimeout>>
+  >(new Map());
   const player = usePlaySound(audioSource);
   const curatedContext = {
     tasks,
@@ -76,8 +81,9 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     events,
     addEvent,
     editEvent,
-    removeEvent
-  }
+    removeEvent,
+    deleteEventOccurrence,
+  };
   const chatItems = useMemo(() => injectDaySeparators(messages), [messages]);
   //const chatItems = injectDaySeparators(messages);
   //console.log(chatItems.map((m) => m.id));
@@ -119,6 +125,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   };
 
   const removeIndividualAction = (messageId: string, actionIndex: number) => {
+    //TODOX check this
     setMessages((prev) =>
       prev.map((m) => {
         if (m.id === messageId && m.pendingActions) {
@@ -134,11 +141,10 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   };
 
   const enrichAction = (call: any) => {
-    const type = call.name.split("-")[1] || "task"; // e.g., 'add-habit' -> 'habit'
     const id = call.args.id || call.args.i;
     let color: string = "";
     let extraInfo = {};
-    if (call.name.includes("task")) {
+    if (call.name.includes("Task")) {
       color = theme.taskBase;
       const task = tasks.find((h: any) => h.id.slice(0, 8) === id);
       if (task) {
@@ -148,7 +154,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
           priority: task.priority,
         };
       }
-    } else if (call.name.includes("habit")) {
+    } else if (call.name.includes("Habit")) {
       color = theme.habitBase;
       const habit = habits.find((h: any) => h.id.slice(0, 8) === id);
       if (habit) {
@@ -159,7 +165,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
           streakFreezes: habit.streakFreezes,
         };
       }
-    } else if (call.name.includes("event")) {
+    } else if (call.name.includes("Event")) {
       color = theme.eventBase;
       const event = events.find((h: any) => h.id.slice(0, 8) === id);
       if (event) {
@@ -204,6 +210,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         navigation,
       });
 
+      console.log("Final Accumulated Function Calls:", calls);
       const aiMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: "ai",
@@ -218,10 +225,22 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         timestamp: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+      if (aiMsg.type === "action") {
+        const msgTime = new Date(aiMsg.timestamp).getTime();
+        //const expiresAt = msgTime + EXPIRY_THRESHOLD_MS;
+        //const expiresIn = EXPIRY_THRESHOLD_MS;
+        const timer = setTimeout(() => {
+          markActionExpired(aiMsg.id);
+          actionExpirationTimers.current.delete(aiMsg.id);
+          console.log("Timer set for : ", EXPIRY_THRESHOLD_MS);
+        }, EXPIRY_THRESHOLD_MS);
+        actionExpirationTimers.current.set(aiMsg.id, timer);
+      }
+
       console.log("AI msg:", aiMsg);
       await addMessage(aiMsg);
       //setMessages((prev) => [aiMsg, ...prev]);
-    trackMetric(["chatMessagesSent"], 1);
+      trackMetric(["chatMessagesSent"], 1);
     } catch (err) {
       // Handle error UI
     } finally {
@@ -229,13 +248,30 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     }
   };
 
+  const markActionExpired = async (messageId: string) => {
+    console.log("markActionExpired", messageId, new Date().getTime());
+    const expiredMessage = messageRef.current.find((m) => m.id === messageId);
+    if (!expiredMessage || !expiredMessage.pendingActions) return;
+    console.log("PASSED");
+    await editMessage({
+      ...expiredMessage,
+      isExpired: true,
+      text: "This action has expired. Please try again.",
+    });
+    await trackMetric(["chatActionsExpired"], 1);
+  };
   // 2. Handle Action Confirmation (Hardcoded Success Message)
   const handleConfirmAction = async (msgId: string, actions: any[]) => {
     // A. Disable buttons in that bubble
     const message = messages.find((m) => m.id === msgId);
-    if (!message || !message.pendingActions) return;
+    if (!message || !message.pendingActions || message.isExpired) return;
+    const t = actionExpirationTimers.current.get(message.id);
+    if (t) {
+      clearTimeout(t);
+      actionExpirationTimers.current.delete(message.id);
+    }
 
-    // 1. Check for Expiry
+    /*     // 1. Check for Expiry
     const isExpired =
       Date.now() - new Date(message.timestamp).getTime() > EXPIRY_THRESHOLD_MS;
 
@@ -244,9 +280,9 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       const expiredMessage = messages.find((m) => m.id === msgId);
       if (!expiredMessage) return;
       await editMessage({ ...expiredMessage, isExpired: true });
-      /* setMessages((prev) =>
-        prev.map((m) => (m.id === msgId ? { ...m, isExpired: true } : m)),
-      ); */
+      //  setMessages((prev) =>
+      //   prev.map((m) => (m.id === msgId ? { ...m, isExpired: true } : m)),
+      // ); 
 
       // Add a helpful AI feedback message
       const feedbackMsg: Message = {
@@ -261,7 +297,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       //setMessages((prev) => [feedbackMsg, ...prev]);
       trackMetric(["chatActionsExpired"], 1);
       return;
-    }
+    } */
     const confirmedMessage = messages.find((m) => m.id === msgId);
     if (!confirmedMessage) return;
     await editMessage({ ...confirmedMessage, isConfirmed: true });
@@ -270,7 +306,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     ); */
     try {
       // B. Run the background logic
-      await agenticExecutor(actions, {
+      const response = await agenticExecutor(actions, {
         ...curatedContext,
         setTitle,
         start,
@@ -282,7 +318,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         id: Date.now().toString(),
         sender: "ai",
         type: "text",
-        text: "Actions confirmed! ✅",
+        text: response || "Actions confirmed! ✅",
         timestamp: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -332,6 +368,9 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     </View>
   );
 
+  useEffect(() => {
+    messageRef.current = messages;
+  }, [messages]);
   if (!visible) return null;
   return (
     <KeyboardProvider>

@@ -42,7 +42,6 @@ import { useEvents } from "@/hooks/use-events";
  * TODOAdd 11 : Input sanitization
  * TODOAdd 12 : Check for Security enhancements and possible securicty concerns for the entire app
  * TODOY 14: Timer Screen Flip Animation state issues- FIX'em
- * TODOY 17 : Achivements Page color scheme updation
  * TODOAdd 18 : Achievements Badges generation, maybe pixelated or sprite version of meme refered by the achievment phrase
  * TODOAdd 19 : Greatly enhancing analytics
  * TODOAdd 20 : More metrics tracking need to added, not all need to for achievements, instead for analytics

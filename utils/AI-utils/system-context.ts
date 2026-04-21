@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
-import { Task } from '../../types/task';
-import { Habit } from '../../types/habits';
 import { CalendarEvent } from '../../types/calendar';
+import { Habit } from '../../types/habits';
+import { Task } from '../../types/task';
 
 /**
  * Generates a string representing the current date and time context.
@@ -15,7 +15,7 @@ let lastState = {
 const getTemporalContext = () => {
     const now = new Date();
 
-    return `CD: ${format(now, 'MMMM do yyyy')}, CT: ${format(now, 'h:mm a')}, TO: ${-now.getTimezoneOffset()}mins
+    return `CD: ${format(now, 'MMMM do yyyy')}, CT: ${format(now, 'h:mm a')}, TO: ${now.getTimezoneOffset()}mins
   `.trim();
 };
 
@@ -48,16 +48,15 @@ const serializeHabits = (habits: Habit[]) => {
 
 const serializeEvents = (events: CalendarEvent[]) => {
     if (events.length === 0) return [];
-    return events.filter(e => new Date(e.endDate) >= new Date()) // Only show upcoming events
-        .map(e => ({
-            i: e.id.slice(0, 8),
-            t: e.title,
-            sd: e.startDate ? format(new Date(e.startDate), 'MM/dd/yyyy') : '-',
-            ed: e.endDate ? format(new Date(e.endDate), 'MM/dd/yyyy') : '-',
-            st: e.startTime ? format(new Date(e.startTime), 'h:mm a') : '-',
-            et: e.endTime ? format(new Date(e.endTime), 'h:mm a') : '-',
-            r: e.recurrence || '-'
-        }))
+    return events.map(e => ({
+        i: e.id.slice(0, 8),
+        t: e.title,
+        sd: e.startDate ? format(new Date(e.startDate), 'MM/dd/yyyy') : '-',
+        ed: e.endDate ? format(new Date(e.endDate), 'MM/dd/yyyy') : '-',
+        st: e.startTime ? format(new Date(e.startTime), 'h:mm a') : '-',
+        et: e.endTime ? format(new Date(e.endTime), 'h:mm a') : '-',
+        r: e.recurrence || '-'
+    }))
 
 };
 

@@ -1,20 +1,14 @@
-import React, {
-  useMemo,
-  useCallback,
-  useState,
-  useEffect,
-  useContext,
-} from "react";
-import { View, StyleSheet, Text } from "react-native";
+import { ThemeContext } from "@/context/ThemeContext";
+import { CalendarEvent } from "@/types/calendar";
+import React, { useCallback, useContext, useEffect, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import {
   Agenda,
   AgendaEntry,
   AgendaSchedule,
   DateData,
 } from "react-native-calendars";
-import { CalendarEvent } from "@/types/calendar";
 import EventItem from "./event-item";
-import { ThemeContext } from "@/context/ThemeContext";
 
 interface CalendarListAgendaAltProps {
   events: CalendarEvent[];
@@ -152,23 +146,35 @@ export default function CalendarListAgendaMain({
     });
   }, [events, getEventsForSingleDay]);
 
+  // set list so that only fist occurence of event renders with edit button
+  const uniqueEventList = new Set<string>();
   const renderItem = (reservation: AgendaEntry, isFirst: boolean) => {
     const event = (reservation as any).event as CalendarEvent;
     const occurence = (reservation as any).occurence;
-
     if (!event) {
       return null;
     }
-
-    return (
-      <View style={styles.itemContainer}>
-        <EventItem
-          event={event}
-          onEdit={() => onEventSelect?.(event)}
-          onDelete={() => onDelete?.(event.id, occurence)}
-        />
-      </View>
-    );
+    if (!uniqueEventList.has(event.id)) {
+      uniqueEventList.add(event.id);
+      return (
+        <View style={styles.itemContainer}>
+          <EventItem
+            event={event}
+            onEdit={() => onEventSelect?.(event)}
+            onDelete={() => onDelete?.(event.id, occurence)}
+          />
+        </View>
+      );
+    } else {
+      return (
+        <View style={styles.itemContainer}>
+          <EventItem
+            event={event}
+            onDelete={() => onDelete?.(event.id, occurence)}
+          />
+        </View>
+      );
+    }
   };
 
   const renderEmptyDate = () => {

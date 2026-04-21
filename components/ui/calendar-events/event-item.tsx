@@ -1,10 +1,10 @@
+import { ThemeContext } from "@/context/ThemeContext";
 import { CalendarEvent } from "@/types/calendar";
-import { Card } from "react-native-paper";
-import { XButton } from "../x-button";
-import { View, StyleSheet, Text } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { useContext } from "react";
-import { ThemeContext } from "@/context/ThemeContext";
+import { StyleSheet, Text, View } from "react-native";
+import { Card } from "react-native-paper";
+import { XButton } from "../x-button";
 
 interface EventItemProps {
   event: CalendarEvent;
@@ -53,10 +53,10 @@ export default function EventItem({ event, onEdit, onDelete }: EventItemProps) {
           )}
         </View>
         <View style={styles.buttonContainer}>
-          {isNotHome && (
+          {onEdit && (
             <XButton icon="pencil-outline" mode="calendar" onPress={onEdit} />
           )}
-          {isNotHome && (
+          {onDelete && (
             <XButton icon="trash-outline" mode="calendar" onPress={onDelete} />
           )}
         </View>

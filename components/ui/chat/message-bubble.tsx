@@ -22,6 +22,7 @@ export const MessageBubble = ({
 }: Props) => {
   const { theme } = useContext(ThemeContext);
   const isUser = message.sender === "user";
+  const isExpired = message.isExpired;
 
   return (
     <View
@@ -33,7 +34,17 @@ export const MessageBubble = ({
       <View
         style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}
       >
-        <Text selectable={true} style={[styles.text, isUser ? styles.userText : styles.aiText]}>
+        <Text
+          selectable={true}
+          style={[
+            styles.text,
+            isUser
+              ? styles.userText
+              : isExpired
+                ? styles.expiredText
+                : styles.aiText,
+          ]}
+        >
           {message.text}
         </Text>
 
@@ -47,6 +58,7 @@ export const MessageBubble = ({
                   action={onEnrichAction(action)}
                   onRemove={() => onRemoveIndividualAction(index)}
                   isConfirmed={message.isConfirmed}
+                  isExpired={message.isExpired}
                 />
               ))}
             </View>
@@ -55,39 +67,39 @@ export const MessageBubble = ({
                 <TouchableOpacity
                   style={[
                     styles.confirmBtn,
-                    message.isExpired
+                    isExpired
                       ? { backgroundColor: theme.greyBaseSecondary }
-                      : { backgroundColor: "rgba(0,132,255,0.1)" },
+                      : { backgroundColor: "#0084ff1a" },
                   ]}
-                  disabled={message.isExpired}
+                  disabled={isExpired}
                   onPress={() => onActionConfirm(message.pendingActions || [])}
                 >
                   <Text
                     style={[
                       styles.btnText,
-                      message.isExpired
+                      isExpired
                         ? { color: theme.greyBasePrimary }
                         : { color: theme.blueLightPrimary },
                     ]}
                   >
-                    {message.isExpired ? "Expired" : "Confirm"}
+                    {isExpired ? "Expired" : "Confirm"}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[
                     styles.cancelBtn,
-                    message.isExpired
+                    isExpired
                       ? { backgroundColor: theme.greyBaseSecondary }
-                      : {},
+                      : { backgroundColor: "#ff81815d" },
                   ]}
-                  disabled={message.isExpired}
+                  disabled={isExpired}
                   onPress={onActionCancel}
                 >
                   <Text
                     style={[
                       styles.btnText,
-                      message.isExpired
-                        ? { color: theme.greyBaseSecondary }
+                      isExpired
+                        ? { color: theme.greyBasePrimary }
                         : { color: theme.error },
                     ]}
                   >
@@ -129,11 +141,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   userBubble: {
-    backgroundColor: "#00BFA5", // Teal
+    backgroundColor:  "#108374", //"#00BFA5", // Teal
     borderBottomRightRadius: 4, // iMessage style
   },
   aiBubble: {
-    backgroundColor: "#F0F0F0", // Neutral Gray
+    backgroundColor: "#e0e0e0",//"#F0F0F0", // Neutral Gray
     borderBottomLeftRadius: 4,
   },
   text: {
@@ -142,6 +154,7 @@ const styles = StyleSheet.create({
   },
   userText: { color: "#FFFFFF" },
   aiText: { color: "#000000" },
+  expiredText: { color: "#8E8E93", fontStyle: "italic" },
   timestamp: {
     fontSize: 10,
     color: "#8E8E93",
@@ -154,6 +167,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: "row",
+    justifyContent: "center",
     paddingTop: 5,
   },
   actionContainer: {
@@ -170,6 +184,7 @@ const styles = StyleSheet.create({
   cancelBtn: {
     paddingVertical: 6,
     paddingHorizontal: 15,
+    borderRadius: 8,
   },
   btnText: {
     fontWeight: "600",

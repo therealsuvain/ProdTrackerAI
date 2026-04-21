@@ -1,10 +1,7 @@
-import React, {
-  useState,
-  forwardRef,
-  useImperativeHandle,
-  useContext,
-} from "react";
-import { StyleSheet, View, Text } from "react-native";
+import { ThemeContext } from "@/context/ThemeContext";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import React, { useContext, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import {
   Button,
   Modal,
@@ -12,8 +9,6 @@ import {
   Switch,
   TextInput,
 } from "react-native-paper";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { ThemeContext } from "@/context/ThemeContext";
 import DaySelector from "../ui/day-selector";
 
 interface Props {
@@ -49,7 +44,7 @@ export default function HabitModal({
     setShowTimePicker(false);
     console.log("HABIT MODAL REMINDER DATE", selectedDate);
     console.log(selectedDate?.toLocaleString());
-    if (selectedDate) updateField("reminderDate", selectedDate.toDateString());
+    if (selectedDate) updateField("reminderDate", selectedDate.toISOString());
   };
 
   //visibleInEditMode && console.log("visibleInEditMode", state.goal);

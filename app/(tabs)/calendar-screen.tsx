@@ -1,27 +1,27 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { useContext, useState } from "react";
 import {
-  View,
-  StyleSheet,
   Alert,
-  Text,
-  Pressable,
   AlertButton,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { FAB, Portal } from "react-native-paper";
-import { Ionicons } from "@expo/vector-icons";
 
-import { useEvents } from "@/hooks/use-events";
 import ViewSwitcher from "@/components/ui/calendar-events/view-switcher-event";
 import { useCalendarState } from "@/hooks/use-calendar-state";
 import { useEventForm } from "@/hooks/use-event-form";
+import { useEvents } from "@/hooks/use-events";
 import { CalendarEvent } from "@/types/calendar";
 
-import Timeline from "@/components/ui/calendar-events/calendar-timeline-view";
-import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-list-agenda-view-main";
-import CalendarEventModal from "@/components/modal/calendar-event-modal";
-import { ThemeContext } from "@/context/ThemeContext";
-import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
+import CalendarEventModal from "@/components/modal/calendar-event-modal";
+import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
+import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-list-agenda-view-main";
+import Timeline from "@/components/ui/calendar-events/calendar-timeline-view";
+import { ThemeContext } from "@/context/ThemeContext";
 import { useHaptics } from "@/hooks/use-haptics";
 
 // TODO - can we getting db write error from useItemForm hook into ItemScreen and display toast?
@@ -54,7 +54,7 @@ function CalendarScreenInner() {
 
   const hideModal = () => setVisible(false);
 
-  const isSingleOcurrenceHelper = (event: CalendarEvent) => {
+  const isSingleOccurrenceHelper = (event: CalendarEvent) => {
     if (event.recurrence === "none") return true;
     if (!event.endDate) return false;
     const start = new Date(event.startDate.split("T")[0]);
@@ -78,19 +78,22 @@ function CalendarScreenInner() {
   const handleDelete = (id: string, date: string) => {
     const event = events.find((e: CalendarEvent) => e.id === id);
     if (!event) return;
-    const isSingleOcurrence = isSingleOcurrenceHelper(event);
-    const buttons: AlertButton[] = [{ text: "Cancel" },{
-      text: "Delete Event",
-      onPress: async () => {
-        try {
-          await deleteEventOccurrence(id, date, true);
-          triggerHaptic();
-        } catch {
-          showToast("Couldn't delete the event. It has been restored.");
-        }
+    const isSingleOccurrence = isSingleOccurrenceHelper(event);
+    const buttons: AlertButton[] = [
+      { text: "Cancel" },
+      {
+        text: "Delete Event",
+        onPress: async () => {
+          try {
+            await deleteEventOccurrence(id, date, true);
+            triggerHaptic();
+          } catch {
+            showToast("Couldn't delete the event. It has been restored.");
+          }
+        },
       },
-    }];
-    if (!isSingleOcurrence) {
+    ];
+    if (!isSingleOccurrence) {
       buttons.push({
         text: "Delete Current Occurrence",
         onPress: async () => {
@@ -113,7 +116,11 @@ function CalendarScreenInner() {
           style={[styles.header, { backgroundColor: theme.eventBase }]}
           onPress={() => setSelectedDate(new Date())}
         >
-          <Ionicons size={40} name="calendar" color={theme.modalDarkPrimary}></Ionicons>
+          <Ionicons
+            size={40}
+            name="calendar"
+            color={theme.modalDarkPrimary}
+          ></Ionicons>
         </Pressable>
         <Text style={[styles.date, { color: theme.text }]}>
           {selectedDate.toDateString()}

@@ -31,7 +31,7 @@ export const ChatContext = createContext<ChatContextType | undefined>(
 );
 
 export default function ChatProvider({ children }: { children: ReactNode }) {
-  const { dispatchError } = useData();
+  const { dispatchError, trackMetric } = useData();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -78,6 +78,7 @@ export default function ChatProvider({ children }: { children: ReactNode }) {
 
   const editMessage = useCallback(
     async (message: Message): Promise<void> => {
+      console.log("Editing into expiry:", message.type, message.isExpired, message.id);
       await optimisticMessageMutation(
         (prev) => prev.map((m) => (m.id === message.id ? message : m)),
         () => updateMessage(message),
@@ -96,10 +97,36 @@ export default function ChatProvider({ children }: { children: ReactNode }) {
     return result ?? 0;
   }, []);
 
+  const auditExpiredActions = async (messages: Message[]) => {
+    const now = Date.now();
+    const processedMessages = [];
+    const expiredMessages = 0;
+    for (const message of messages) {
+      if (
+        message.type === "action" &&
+        !message.isConfirmed &&
+        !message.isExpired &&
+        message.pendingActions &&
+        new Date(message.timestamp).getTime() + 30 * 60 * 1000 < now
+      ) {
+        await editMessage({
+          ...message,
+          isExpired: true,
+          text: "This action has expired. Please try again.",
+        });
+      }
+      processedMessages.push(message);
+    }
+    if (expiredMessages > 0) {
+      await trackMetric(["chatActionsExpired"], expiredMessages);
+    }
+    return processedMessages;
+  };
   useEffect(() => {
     const loadMessages = async () => {
       try {
         let loadedMessages = await getAllMessages();
+        loadedMessages = await auditExpiredActions(loadedMessages);
         setMessages(loadedMessages);
       } catch (err) {
         console.error("[DataContext] Failed to initialise database:", err);

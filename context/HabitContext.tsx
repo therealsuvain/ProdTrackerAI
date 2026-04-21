@@ -110,14 +110,49 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
     const loadData = async () => {
       try {
         let loadedHabits = await getAllHabits();
+        let missedCount = 0;
+        let autoFrozenCount = 0;
+        const processedHabits = [];
+        for (const habit of loadedHabits) {
+          const { status, habit: updatedHabit } = applyMissedDayLogic(habit);
+          let finalHabit = updatedHabit;
 
-        // TODOY async editHabit inside a map without await, something to do?
-        loadedHabits = loadedHabits.map((habit) => {
+          if (status === "missed_check_in") {
+            // Accumulate instead of writing to DB immediately
+            missedCount++;
+          } else if (status === "auto_frozen") {
+            // Safely wait for the DB to update this specific habit
+            await editHabit(updatedHabit);
+            autoFrozenCount++;
+          }
+
+          if (habit.pendingStreakResetAfter) {
+            const resettedHabit = restartHabitAfterGoalForeground(updatedHabit);
+            if (!resettedHabit.pendingStreakResetAfter) {
+              await editHabit(resettedHabit);
+            }
+            finalHabit = resettedHabit;
+          }
+
+          processedHabits.push(finalHabit);
+        }
+
+        // 3. Batch execute the metrics safely.
+        // Now, the DB is only read/written ONCE per metric type.
+        if (missedCount > 0) {
+          await trackMetric(["habitCheckInsMissed"], missedCount);
+        }
+        if (autoFrozenCount > 0) {
+          await trackMetric(["habitsAutoFrozen"], autoFrozenCount);
+        }
+
+        loadedHabits = processedHabits;
+        /* loadedHabits = loadedHabits.map((habit) => {
           const { status, habit: updatedHabit } = applyMissedDayLogic(habit);
           if (status === "missed_check_in") {
             trackMetric(["habitCheckInsMissed"], 1);
           } else if (status === "auto_frozen") {
-             editHabit(updatedHabit);
+            editHabit(updatedHabit);
             trackMetric(["habitsAutoFrozen"], 1);
           }
           if (habit.pendingStreakResetAfter) {
@@ -128,7 +163,7 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
             return resettedHabit;
           }
           return updatedHabit;
-        });
+        }); */
 
         setHabits(loadedHabits);
       } catch (err) {

@@ -1,9 +1,9 @@
 import { AIHandler } from "@/types/ai-handler";
-import { createEvent } from "../model-factory-utils";
 import { cancelReminder, scheduleReminderEvents } from "../../hooks/use-notifications";
-import { generateEmbedding } from "@/utils/embedding-engine"
+import { createEvent } from "../model-factory-utils";
 import { getTimeRangeHelper } from "./additional-handlers";
 
+//! 59567 Port for qbitorent
 export const AddEventHandler: AIHandler = {
   execute: async (params, context) => {
     const newEvent = await createEvent(params);
@@ -12,41 +12,53 @@ export const AddEventHandler: AIHandler = {
         newEvent.notificationIds = await scheduleReminderEvents(newEvent);
       } catch (error) {
         console.warn("Failed to schedule event notifications:", error);
+        return { status: "partial_success", reason: "Failed to schedule notification", task: newEvent };
       }
     }
 
     await context.addEvent(newEvent);
     console.log(`AI Action: Added event "${newEvent.title}"`);
+    return { status: "success", event: newEvent };
   }
 
 }
 
 export const EditEventHandler: AIHandler = {
   execute: async (params, context) => {
-    if (params.title) {
-      const embeddingVector = await generateEmbedding(params.title, false);
-      params.embedding = embeddingVector;
-    }
     const oldEvent = context.events.find((e) => e.id.slice(0, 8) === params.id)
-    if (!oldEvent) throw new Error("Event not found");// TODOX
+    if (!oldEvent) throw new Error("Event not found");
     const updatedEvent = await createEvent({ ...oldEvent, ...params, id: oldEvent.id })
     if (updatedEvent.reminder) {
-      if (oldEvent.notificationIds?.length) {
-        const cancelPromises = oldEvent.notificationIds.map((n) =>
-          cancelReminder(n.id)
-        );
-        await Promise.all(cancelPromises);
+      try {
+        if (oldEvent.notificationIds?.length) {
+          const cancelPromises = oldEvent.notificationIds.map((n) =>
+            cancelReminder(n.id)
+          );
+          await Promise.all(cancelPromises);
+        }
+        updatedEvent.notificationIds = await scheduleReminderEvents(updatedEvent);
+      } catch (error) {
+        console.warn("Failed to schedule event notifications:", error);
+        return { status: "partial_success", reason: "Failed to schedule notifications", task: updatedEvent };
       }
-      updatedEvent.notificationIds = await scheduleReminderEvents(updatedEvent);
     }
     await context.editEvent(updatedEvent);
+    return { status: "success", event: updatedEvent };
+  }
+};
+export const DeleteEventSingleOccurrenceHandler: AIHandler = {
+  execute: async (params, context) => {
+    const oldEvent = context.events.find((e) => e.id.slice(0, 8) === params.id)
+    if (!oldEvent) throw new Error("Event not found");
+    await context.deleteEventOccurrence(oldEvent.id, params.date, false);
+    return { status: "success", event: oldEvent };
   }
 };
 
 export const DeleteEventHandler: AIHandler = {
   execute: async (params, context) => {
     const oldEvent = context.events.find((e) => e.id.slice(0, 8) === params.id)
-    if (!oldEvent) throw new Error("Event not found");// TODOX
+    if (!oldEvent) throw new Error("Event not found");
     if (oldEvent.notificationIds?.length) {
       const cancelPromises = oldEvent.notificationIds.map((n) =>
         cancelReminder(n.id)
@@ -54,6 +66,7 @@ export const DeleteEventHandler: AIHandler = {
       await Promise.all(cancelPromises);
     }
     await context.removeEvent(oldEvent.id);
+    return { status: "success", event: oldEvent };
   }
 };
 
@@ -86,13 +99,15 @@ export const QueryEventsHandler: AIHandler = {
       }
 
       return {
-        id: targetEvent.id,
-        title: targetEvent.title,
-        recurrence: targetEvent.recurrence,
-        instancesRemaining: instancesLeft,
-        deletedOccurrences: targetEvent.deletedOccurrences || [],
-        starts: targetEvent.startDate,
-        ends: targetEvent.endDate
+        output: {
+          id: targetEvent.id,
+          title: targetEvent.title,
+          recurrence: targetEvent.recurrence,
+          instancesRemaining: instancesLeft,
+          deletedOccurrences: targetEvent.deletedOccurrences || [],
+          starts: targetEvent.startDate,
+          ends: targetEvent.endDate
+        }
       };
     }
 
@@ -120,7 +135,7 @@ export const QueryEventsHandler: AIHandler = {
     });
 
     return {
-      results: filtered.map(e => ({
+      output: filtered.map(e => ({
         id: e.id.slice(0, 8),
         title: e.title,
         time: e.startTime, // AI can read the time

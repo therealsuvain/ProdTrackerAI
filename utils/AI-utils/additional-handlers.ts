@@ -1,5 +1,5 @@
 import { AIHandler } from "@/types/ai-handler";
-import { generateEmbedding, fastCosineSimilarity } from '@/utils/embedding-engine';
+import { fastCosineSimilarity, generateEmbedding } from '@/utils/embedding-engine';
 
 
 export const getProductivityStats: AIHandler = {
@@ -54,23 +54,16 @@ export const SearchItemsHandler: AIHandler = {
       .sort((a, b) => b.score - a.score); // Highest similarity first
 
     // 5. Take the Top 5 results to keep the AI's context window clean
-    const topResults = scoredResults.slice(0, 5);
+    //const topResults = scoredResults.slice(0, 5);
+    const topResults = scoredResults;
+    if (topResults.length === 0) return { output: "No relevant id's found" };
     const foundIds = topResults.map(({ id, title, type }) => ({ id: id.slice(0, 8), title, type }));
 
     console.log("FOUND ID'S:", foundIds)
     return {
-      results: foundIds
+      output: foundIds
     }
 
-    // Remove the 'score' before sending to AI to save tokens (it doesn't need the math, just the data)
-    const cleanResults = topResults.map(({ score, ...rest }) => rest);
-    console.log(cleanResults);
-    return cleanResults
-    return {
-      results: cleanResults,
-      totalFound: cleanResults.length,
-      note: cleanResults.length === 0 ? "No relevant items found." : undefined
-    };
   }
 };
 

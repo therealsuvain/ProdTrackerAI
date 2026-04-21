@@ -1,18 +1,15 @@
 import { AIHandler } from "@/types/ai-handler";
+import { cancelReminder, scheduleReminderTasks } from "../../hooks/use-notifications";
 import { createTask } from "../model-factory-utils";
-import { scheduleReminderTasks, cancelReminder } from "../../hooks/use-notifications";
-import { generateEmbedding } from "@/utils/embedding-engine";
 import { getTimeRangeHelper } from "./additional-handlers";
 
+// TODO : If task is marked complete then notification is cancelled in the AI handler, but not in the task item logic, 
+// also if task is then marked incomplete, then a new notificaiton is not scheduled, R&D how it should be ideally
+// TODO task due date, event startdate and end date are just in (YYYY-MM-DD) format, convert to ISO 8601 format
 export const AddTaskHandler: AIHandler = {
   execute: async (params, context) => {
     // 1. Use your existing factory to create a consistent Task object
-    const newTask = await createTask({
-      title: params.title || "New Task",
-      priority: params.priority || "medium",
-      dueDate: params.dueDate,
-      category: params.category || undefined,
-    });
+    const newTask = await createTask(params);
 
     // 2. Handle notifications if a reminder was parsed
     if (newTask.reminder) {
@@ -20,42 +17,42 @@ export const AddTaskHandler: AIHandler = {
         newTask.notificationId = await scheduleReminderTasks(newTask);
       } catch (error) {
         console.warn("Failed to schedule notification:", error);
+        return { status: "partial_success", reason: "Failed to schedule notification", task: newTask };
       }
     }
 
     // 3. Update the global state via the context
     //context.setTasks((prev) => [...prev, newTask]);
     context.addTask(newTask);
-
     console.log(`AI Action: Added task "${newTask.title}"`);
+
+    return { status: "success", task: newTask };
   }
 };
 
 export const EditTaskHandler: AIHandler = {
   execute: async (params, context) => {
-    if (params.title) {
-      const embeddingVector = await generateEmbedding(params.title, false);
-      params.embedding = embeddingVector;
-    }
     const oldTask = context.tasks.find((t) => t.id.slice(0, 8) === params.id);
     if (!oldTask) {
       throw new Error("Task not found");
     }
     const updatedTask = await createTask({ ...oldTask, ...params, id: oldTask.id })
-    if(updatedTask.reminder) {
+    if (updatedTask.reminder) {
       try {
-        if(updatedTask.notificationId) {
+        if (updatedTask.notificationId) {
           await cancelReminder(updatedTask.notificationId);
         }
         updatedTask.notificationId = await scheduleReminderTasks(updatedTask);
       } catch (error) {
         console.warn("Failed to schedule notification:", error);
+        return { status: "partial_success", reason: "Failed to schedule notification", task: updatedTask };
       }
     }
     /* context.setTasks((prev) =>
       prev.map((t) => (t.id.slice(0, 8) === params.id ? updatedTask : t))
     ); */
     context.editTask(updatedTask);
+    return { status: "success", task: updatedTask }
   }
 };
 
@@ -69,6 +66,7 @@ export const DeleteTaskHandler: AIHandler = {
       await cancelReminder(oldTask.notificationId);
     }
     context.removeTask(oldTask.id);
+    return { status: "success", task: oldTask }
   }
 };
 
@@ -78,7 +76,11 @@ export const CompleteTaskHandler: AIHandler = {
     if (!oldTask) {
       throw new Error("Task not found");
     }
+    if (oldTask.notificationId) {
+      await cancelReminder(oldTask.notificationId);
+    }
     context.toggleTask(oldTask.id);
+    return { status: "success", task: oldTask }
   }
 };
 
@@ -91,12 +93,14 @@ export const QueryTasksHandler: AIHandler = {
       if (!targetTask) return { error: "Task not found in database." };
 
       return {
-        id: targetTask.id,
-        title: targetTask.title,
-        status: targetTask.completed ? "completed" : "pending",
-        priority: targetTask.priority,
-        dueDate: targetTask.dueDate || "None",
-        notes: targetTask.notes || "No notes provided."
+        output: {
+          id: targetTask.id,
+          title: targetTask.title,
+          status: targetTask.completed ? "completed" : "pending",
+          priority: targetTask.priority,
+          dueDate: targetTask.dueDate || "None",
+          notes: targetTask.notes || "No notes provided."
+        }
       };
     }
 
@@ -145,7 +149,7 @@ export const QueryTasksHandler: AIHandler = {
 
     // 5. Return Summary (ID, Title, Status, DueDate)
     return {
-      results: filtered.map(t => ({
+      output: filtered.map(t => ({
         id: t.id.slice(0, 8),
         title: t.title,
         status: t.completed ? "completed" : new Date(t.dueDate) < startOfToday ? "overdue" : "pending",

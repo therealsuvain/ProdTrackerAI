@@ -228,43 +228,8 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     const loadData = async () => {
       try {
         await initDatabase();
-
-        //await migrateTasksFromAsyncStorage();
-        /*         let loadedTasks = await getAllTasks();
-        let loadedEvents = await getAllCalendarEvents();
-        let loadedLogs = await getAllTimerLogs();
-        let loadedHabits = await getAllHabits();
-        let loadedMessages = await getAllMessages(); */
         let loadedMetrics = await loadAppMetricsFromDb();
         let loadedUnlockedAchievements = await getAllUnlockedAchievements();
-
-        // Initialize with dummy data if enabled and no data exists
-        /*         if (USE_DUMMY_DATA) {
-          if (loadedTasks.length === 0) loadedTasks = dummyTasks;
-          if (loadedEvents.length === 0) loadedEvents = dummyEvents;
-          if (loadedLogs.length === 0) loadedLogs = dummyTimerLogs;
-          if (loadedHabits.length === 0) loadedHabits = dummyHabits;
-        } */
-
-        /*         loadedHabits = loadedHabits.map((habit) => {
-          const { status, habit: updatedHabit } = applyMissedDayLogic(habit);
-          if (status === "missed_check_in") {
-            trackMetric(["habitCheckInsMissed"], 1);
-          } else if (status === "auto_frozen") {
-            trackMetric(["habitsAutoFrozen"], 1);
-          }
-          if (habit.pendingStreakResetAfter) {
-            editHabit(updatedHabit);
-            return restartHabitAfterGoalForeground(updatedHabit);
-          }
-          return updatedHabit;
-        }); */
-        //loadedTasks = loadedTasks.filter((t)=>!t.title.includes("testing") && !t.title.includes("Testing"))
-        /*         setTasks(loadedTasks);
-        setEvents(loadedEvents);
-        setTimerLogs(loadedLogs);
-        setHabits(loadedHabits);
-        setMessages(loadedMessages); */
         setAppMetrics(loadedMetrics);
         setUnlockedAchievements(loadedUnlockedAchievements);
       } catch (err) {

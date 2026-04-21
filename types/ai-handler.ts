@@ -1,7 +1,6 @@
-import { Task } from '@/types/task';
-import { Habit } from '@/types/habits';
 import { CalendarEvent } from '@/types/calendar';
-import { NavigationProp, NavigationState } from '@react-navigation/native';
+import { Habit } from '@/types/habits';
+import { Task } from '@/types/task';
 
 // This interface defines what every "Action" in your app needs to work.
 // By passing the 'context', we allow the handler to modify the app's state.
@@ -15,6 +14,7 @@ export interface AIActionContext {
   addEvent: (event: CalendarEvent) => Promise<void>;
   editEvent: (event: CalendarEvent) => Promise<void>;
   removeEvent: (id: string) => Promise<void>;
+  deleteEventOccurrence: (id: string, date: string, all: boolean) => Promise<void>;
   habits: Habit[];
   addHabit: (habit: Habit) => Promise<void>;
   editHabit: (habit: Habit) => Promise<void>;

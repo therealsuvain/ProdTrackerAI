@@ -1,8 +1,8 @@
-import { FunctionDeclaration, Type } from '@google/genai'
+import { FunctionDeclaration, Type } from '@google/genai';
 
 export const aiTools: FunctionDeclaration[] = [
     {
-        name: "add-task",
+        name: "addTask",
         description: "Adds a new task to the user's list.",
         parameters: {
             type: Type.OBJECT,
@@ -11,13 +11,14 @@ export const aiTools: FunctionDeclaration[] = [
                 priority: { type: Type.STRING, enum: ["low", "medium", "high"] },
                 dueDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
                 category: { type: Type.STRING },
-                reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" }
+                reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" },
+                reminderDate: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of dueDate and convert the user's local time,  to UTC using the offset provided in the system context. cater for both 12hr and 24hr local time formats conversion to UTC," }
             },
             required: ["title", "priority", "dueDate"]
         }
     },
     {
-        name: "edit-task",
+        name: "editTask",
         description: "Edits an existing task.",
         parameters: {
             type: Type.OBJECT,
@@ -28,13 +29,14 @@ export const aiTools: FunctionDeclaration[] = [
                 dueDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
                 category: { type: Type.STRING },
                 reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" },
-                completed: { type: Type.BOOLEAN }
+                completed: { type: Type.BOOLEAN },
+                reminderDate: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of dueDate and convert the user's local time to UTC using the offset provided in the system context." }
             },
             required: ["id"]
         }
     },
     {
-        name: "complete-task",
+        name: "completeTask",
         description: "Marks a task as complete.",
         parameters: {
             type: Type.OBJECT,
@@ -45,7 +47,7 @@ export const aiTools: FunctionDeclaration[] = [
         }
     },
     {
-        name: "delete-task",
+        name: "deleteTask",
         description: "Deletes an existing task.",
         parameters: {
             type: Type.OBJECT,
@@ -56,7 +58,7 @@ export const aiTools: FunctionDeclaration[] = [
         }
     },
     {
-        name: "add-event",
+        name: "addEvent",
         description: "Adds a new eventto the user's list.",
         parameters: {
             type: Type.OBJECT,
@@ -64,17 +66,17 @@ export const aiTools: FunctionDeclaration[] = [
                 title: { type: Type.STRING, description: "The title of the event" },
                 startDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
                 endDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
-                startTime: { type: Type.STRING, description: "Time string (HH:mm)" },
-                endTime: { type: Type.STRING, description: "Time string (HH:mm)" },
-                recurrence: { type: Type.STRING, enum: ["none", "daily", "weekly", "monthly"] },
+                startTime: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of startDate and convert the user's local time to UTC using the offset provided in the system context." },
+                endTime: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of startDate and convert the user's local time to UTC using the offset provided in the system context." },
+                recurrence: { type: Type.STRING, enum: ["none", "daily", "weekly"] },
                 category: { type: Type.STRING },
                 reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" }
             },
-            required: ["title", "startDate", "endDate", "startTime", "endTime", "recurrence"]
+            required: ["title", "startDate", "startTime", "endTime", "recurrence"]
         }
     },
     {
-        name: "edit-event",
+        name: "editEvent",
         description: "Edits an existing event.",
         parameters: {
             type: Type.OBJECT,
@@ -83,9 +85,9 @@ export const aiTools: FunctionDeclaration[] = [
                 title: { type: Type.STRING },
                 startDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
                 endDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
-                startTime: { type: Type.STRING, description: "Time string (HH:mm)" },
-                endTime: { type: Type.STRING, description: "Time string (HH:mm)" },
-                recurrence: { type: Type.STRING, enum: ["none", "daily", "weekly", "monthly"] },
+                startTime: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of startDate and convert the user's local time to UTC using the offset provided in the system context." },
+                endTime: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of startDate and convert the user's local time to UTC using the offset provided in the system context." },
+                recurrence: { type: Type.STRING, enum: ["none", "daily", "weekly"] },
                 category: { type: Type.STRING },
                 reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" }
             },
@@ -93,7 +95,7 @@ export const aiTools: FunctionDeclaration[] = [
         }
     },
     {
-        name: "delete-event",
+        name: "deleteEvent",
         description: "Deletes an existing event.",
         parameters: {
             type: Type.OBJECT,
@@ -104,7 +106,19 @@ export const aiTools: FunctionDeclaration[] = [
         }
     },
     {
-        name: "add-habit",
+        name: "deleteSingleEvent",
+        description: "Deletes an occurence from an existing event.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                id: { type: Type.STRING, description: "The unique event ID" },
+                date: { type: Type.STRING, description: "The date of the occurence to be deleted in ISO date string (YYYY-MM-DD)" },
+            },
+            required: ["id", "date"]
+        }
+    },
+    {
+        name: "addHabit",
         description: "Adds a new habit to the user's list.",
         parameters: {
             type: Type.OBJECT,
@@ -114,13 +128,14 @@ export const aiTools: FunctionDeclaration[] = [
                 category: { type: Type.STRING },
                 frequency: { type: Type.STRING, enum: ["daily", "weekly"] },
                 goal: { type: Type.NUMBER, description: "The target goal for the habit (e.g., 10 pushups, 8 glasses of water)" },
-                reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" }
+                reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" },
+                reminderDate: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of today's date and convert the user's local time to UTC using the offset provided in the system context." }
             },
             required: ["title", "frequency", "goal"]
         }
     },
     {
-        name: "checkin-habit",
+        name: "checkinHabit",
         description: "Marks a habit as checked in.",
         parameters: {
             type: Type.OBJECT,
@@ -131,7 +146,7 @@ export const aiTools: FunctionDeclaration[] = [
         }
     },
     {
-        name: "delete-habit",
+        name: "deleteHabit",
         description: "Deletes an existing habit.",
         parameters: {
             type: Type.OBJECT,
@@ -142,7 +157,7 @@ export const aiTools: FunctionDeclaration[] = [
         }
     },
     {
-        name: "start-timer",
+        name: "startTimer",
         description: "Starts a focus timer with a specific title.",
         parameters: {
             type: Type.OBJECT,
@@ -153,19 +168,19 @@ export const aiTools: FunctionDeclaration[] = [
         }
     },
     {
-        name: "stop-timer",
+        name: "stopTimer",
         description: "Stops a currently running focus timer.",
         parameters: {
             type: Type.OBJECT,
         }
     },
     {
-        name: "get-stats",
+        name: "getStats",
         description: "Get completion rates, habit streaks, and category breakdowns for coaching.",
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
-        name: "search-items",
+        name: "searchItems",
         description: "Use this to semantically search for existing tasks, habits, or events. Finds items by meaning, not just exact keywords. Do NOT use this for exact regex matches, date filtering, or meta-queries (e.g., do NOT search 'tasks with a weekday'). Instead, search for the core concept (e.g., 'health', 'car repair', 'groceries'). If you need to find tasks by specific dates or string matching, look at the raw data provided in your system prompt instead.",
         parameters: {
             type: Type.OBJECT,
@@ -184,7 +199,7 @@ export const aiTools: FunctionDeclaration[] = [
         }
     },
     {
-        name: "query-tasks",
+        name: "queryTasks",
         description: "Advanced search for tasks using filters like status, priority, and relative time. Use this to answer questions about pending, completed, or missed tasks. Intelligently beautify the results of tool and then only present to the user",
         parameters: {
             type: Type.OBJECT,
@@ -213,7 +228,7 @@ export const aiTools: FunctionDeclaration[] = [
         }
     },
     {
-        name: "query-habits",
+        name: "queryHabits",
         description: "Advanced search for habits. Can find habits that need checking in today, habits with lost streaks, frozen habits, or sort by streak lengths and goals.",
         parameters: {
             type: Type.OBJECT,
@@ -227,7 +242,7 @@ export const aiTools: FunctionDeclaration[] = [
         }
     },
     {
-        name: "query-events",
+        name: "queryEvents",
         description: "Search calendar events. Can filter by time of day (e.g., morning/evening), time range, or fetch deep details about a specific recurring event (like remaining instances and deleted occurrences).",
         parameters: {
             type: Type.OBJECT,
@@ -240,7 +255,7 @@ export const aiTools: FunctionDeclaration[] = [
         }
     },
     {
-        name: "query-timer-logs",
+        name: "queryTimerLogs",
         description: "Retrieve tracked time. Can filter by duration (e.g., logs over 5 hours, or under 1 hour). Default to no limits if minDurationMinutes or maxDurationMinutes are not provided",
         parameters: {
             type: Type.OBJECT,

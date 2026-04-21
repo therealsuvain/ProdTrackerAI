@@ -1,10 +1,9 @@
 import { AIHandler } from "@/types/ai-handler";
-import { createHabit } from "../model-factory-utils";
-import { cancelReminder, scheduleReminderHabits } from "../../hooks/use-notifications";
-import { checkInHabit } from "../habit-utils"
 import { Habit } from "@/types/habits";
+import { cancelReminder, scheduleReminderHabits } from "../../hooks/use-notifications";
+import { checkInHabit } from "../habit-utils";
+import { createHabit } from "../model-factory-utils";
 
-//TODOX Add feedback for bboth if habit not found or check in failed,maybe add feedback for all handlers
 export const AddHabitHandler: AIHandler = {
   execute: async (params, context) => {
     const newHabit = await createHabit(params);
@@ -13,12 +12,14 @@ export const AddHabitHandler: AIHandler = {
         newHabit.notificationId = await scheduleReminderHabits(newHabit);
       } catch (error) {
         console.warn("Failed to schedule habit notifications:", error);
+        return { status: "partial_success", reason: "Failed to schedule notification", task: newHabit };
       }
     }
 
     //context.setHabits((prev) => [...prev, newHabit]);
     context.addHabit(newHabit);
     console.log(`AI Action: Added Habit "${newHabit.title}"`);
+    return { status: "success", habit: newHabit };
   }
 
 }
@@ -29,20 +30,23 @@ export const DeleteHabitHandler: AIHandler = {
     if (!oldHabit) {
       throw new Error("Task not found");
     }
-    if(oldHabit.notificationId){
+    if (oldHabit.notificationId) {
       await cancelReminder(oldHabit.notificationId);
     }
     await context.removeHabit(oldHabit.id);
+    return { status: "success", habit: oldHabit };
   }
 };
 
 export const CheckInHabitHandler: AIHandler = {
   execute: async (params, context) => {
     const habit = context.habits.find((h) => h.id.slice(0, 8) === params.id);
-    if (!habit) return //TODOX 
+    if (!habit) throw new Error("Habit not found");
     const result = checkInHabit(habit);
-    if (result.status === "denied") return //TODOX;
+    if (result.status === "denied")
+      return { status: "denied", reason: result.reason }
     await context.editHabit(result.habit);
+    return { status: "success", habit: result.habit };
     /* context.setHabits((prev) =>
       prev.map((h) => (h.id.slice(0, 8) === params.id ? checkInHabit(h) : h))
     ); */
@@ -67,16 +71,18 @@ export const QueryHabitsHandler: AIHandler = {
       if (!targetHabit) return { error: "Habit not found in database." };
 
       return {
-        id: targetHabit.id,
-        title: targetHabit.title,
-        frequency: targetHabit.frequency,
-        currentStreak: targetHabit.streak,
-        longestStreak: targetHabit.longestStreak,
-        goal: targetHabit.goal || "None",
-        availableFreezes: targetHabit.streakFreezes,
-        totalCheckIns: targetHabit.history?.length || 0,
-        lastCheckedIn: targetHabit.history?.length ? targetHabit.history[targetHabit.history.length - 1] : "Never",
-        freezeHistory: targetHabit.freezeHistory || [] // AI can look at this to see exactly when it was frozen
+        output: {
+          id: targetHabit.id,
+          title: targetHabit.title,
+          frequency: targetHabit.frequency,
+          currentStreak: targetHabit.streak,
+          longestStreak: targetHabit.longestStreak,
+          goal: targetHabit.goal || "None",
+          availableFreezes: targetHabit.streakFreezes,
+          totalCheckIns: targetHabit.history?.length || 0,
+          lastCheckedIn: targetHabit.history?.length ? targetHabit.history[targetHabit.history.length - 1] : "Never",
+          freezeHistory: targetHabit.freezeHistory || [] // AI can look at this to see exactly when it was frozen
+        }
       };
     }
 
@@ -116,7 +122,7 @@ export const QueryHabitsHandler: AIHandler = {
     });
 
     return {
-      results: filtered.map(h => ({
+      output: filtered.map(h => ({
         id: h.id.slice(0, 8),
         title: h.title,
         currentStreak: h.streak,

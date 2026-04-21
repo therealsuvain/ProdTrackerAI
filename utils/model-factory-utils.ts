@@ -1,10 +1,8 @@
 // src/utils/modelFactories.ts
-import { Task } from "../types/task";
-import { CalendarEvent } from "../types/calendar";
-import { TimerLog } from "../types/timer";
-import { Habit } from "../types/habits";
+import { generateEmbedding } from "@/utils/embedding-engine";
 import { randomUUID } from "expo-crypto";
-import { generateEmbedding } from "@/utils/embedding-engine"
+import { Task } from "../types/task";
+import { TimerLog } from "../types/timer";
 
 // TODOX All date fields from AI have to checked and verified before being returned
 
@@ -70,7 +68,7 @@ export const createTask = async (
       title: params.title,
       ...(params.description && { description: params.description }),
       dueDate,
-      reminder: params.reminder,
+      reminder: params.reminder ?? false,
       ...(reminderDate && { reminderDate }),
       ...(params.notificationId && { notificationId: params.notificationId }),
       priority: ["low", "medium", "high"].includes(params.priority)
@@ -151,7 +149,7 @@ export const createEvent = async (
       startTime,
       endTime,
       ...(params.description && { description: params.description }),
-      reminder: params.reminder,
+      reminder: params.reminder ?? false,
       recurrence: ["none", "daily", "weekly"].includes(params.recurrence)
         ? params.recurrence
         : "none",
@@ -159,7 +157,7 @@ export const createEvent = async (
       ...(params.category && { category: params.category }),
       ...(params.tags && { tags: params.tags }),
       ...(params.deletedOccurrences && { deletedOccurrences: params.deletedOccurrences }),
-      embedding: embeddingVector,
+      embedding: params.embedding || embeddingVector,
       createdAt: params.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -204,7 +202,7 @@ export const createHabit = async (
       frequency: ["daily", "weekly"].includes(params.frequency)
         ? params.frequency
         : "daily",
-      reminder: params.reminder,
+      reminder: params.reminder ?? false,
       ...(params.reminderDate && { reminderDate }),
       ...(params.targetDays && { targetDays: params.targetDays, }),
       streak: params.streak || 0,
@@ -219,7 +217,7 @@ export const createHabit = async (
       ...(params.tags && { tags: params.tags }),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      embedding: embeddingVector,
+      embedding: params.embedding || embeddingVector,
     };
   } catch (err: any) {
     throw new Error(`Invalid Habit params: ${err.message}`);
