@@ -1,5 +1,5 @@
 import { AchievementTier } from '@/types/achievements';
-import { MetricKey } from '@/types/metrics';
+import { GlobalMetricNums } from '@/types/metrics';
 
 export interface AchievementDefinition {
     id: string;
@@ -8,7 +8,7 @@ export interface AchievementDefinition {
     unlockedDescription: string;
     tier: AchievementTier;
     target: number;
-    metricTrigger: MetricKey | 'meta';
+    metricTrigger: GlobalMetricNums | 'meta';
 }
 
 // Strictly defining our scalable milestone logic

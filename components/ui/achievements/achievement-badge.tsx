@@ -1,9 +1,9 @@
-import React from "react";
-import { View, StyleSheet , Text} from "react-native";
-import {  Surface, useTheme as usePaperTheme, ProgressBar } from "react-native-paper";
-import { Ionicons } from "@expo/vector-icons";
-import { AchievementDefinition } from "@/types/achievements-ui";
 import { useTheme } from "@/hooks/use-theme-colors";
+import { AchievementDefinition } from "@/types/achievements-ui";
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { ProgressBar, useTheme as usePaperTheme } from "react-native-paper";
 
 interface AchievementBadgeProps {
   badge: AchievementDefinition;
@@ -22,7 +22,7 @@ function AchievementBadge({
   const { theme, isDarkMode } = useTheme();
 
   const getTierColor = () => {
-    if (!isUnlocked) return paperTheme.colors.outlineVariant; // Tone-deaf/muted gray for locked
+    if (!isUnlocked) return theme.greyBasePrimary; // Tone-deaf/muted gray for locked
     switch (badge.tier) {
       case "diamond":
         return "#C71585";
@@ -35,7 +35,7 @@ function AchievementBadge({
       case "bronze":
         return "#CD7F32";
       default:
-        return paperTheme.colors.primary;
+        return theme.blueLightPrimary;
     }
   };
 
@@ -43,17 +43,44 @@ function AchievementBadge({
   // Ensure progress doesn't exceed 1 (100%)
   const progressRatio = Math.min(currentProgress / badge.target, 1);
 
+  const surfaceStyle = isDarkMode
+    ? {
+        backgroundColor: theme.taskDarkPrimary, // #1e1c20
+        shadowColor: theme.whiteBase,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 1,
+        shadowRadius: 16,
+        elevation: 12, // Android elevation
+      }
+    : {
+        backgroundColor: theme.greyTimeline, // #ffffff (light mode white card)
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        elevation: 8,
+      };
+
   return (
-    <Surface
+    <View
       style={[
         styles.container,
-        { backgroundColor: isDarkMode ? theme.taskDarkPrimary : theme.greyTimeline,//paperTheme.colors.elevation.level5,
-          shadowColor: paperTheme.colors.elevation.level1
-         },
+        isUnlocked && surfaceStyle,
+        /*  {
+          backgroundColor: isDarkMode
+            ? theme.taskDarkPrimary
+            : theme.greyTimeline, //paperTheme.colors.elevation.level5,
+          shadowColor: paperTheme.colors.elevation.level1,
+        }, */
         //! Elevation background color : paperTheme.colors.elevation.level2
         !isUnlocked && styles.lockedContainer, // Apply opacity if locked
+        {
+          backgroundColor: isDarkMode
+            ? theme.taskDarkPrimary
+            : theme.greyTimeline,
+        },
       ]}
-      elevation={isUnlocked ? 5 : 0} // Flatten the elevation if locked
+      //elevation={isUnlocked ? 5 : 0} // Flatten the elevation if locked
     >
       <View style={[styles.iconRing, { borderColor: tierColor }]}>
         <Ionicons
@@ -69,9 +96,7 @@ function AchievementBadge({
             style={[
               styles.title,
               {
-                color: isUnlocked
-                  ? theme.text
-                  : theme.greyBasePrimary,
+                color: isUnlocked ? theme.text : theme.greyBasePrimary,
               },
             ]}
           >
@@ -79,7 +104,7 @@ function AchievementBadge({
           </Text>
           {!isUnlocked && (
             <Text
-              style={[styles.textVariant, { color: paperTheme.colors.outline }]}
+              style={[styles.textVariant, { color: theme.greyBasePrimary }]}
             >
               {badge.title.includes("timer")
                 ? `${Math.floor(currentProgress / 60)}/${badge.target / 60}`
@@ -88,17 +113,12 @@ function AchievementBadge({
           )}
         </View>
         {isUnlocked && (
-          <Text
-            style={[styles.description, { color: theme.taskBase }]}
-          >
+          <Text style={[styles.description, { color: theme.taskBase }]}>
             "{badge.unlockedDescription}"
           </Text>
         )}
         <Text
-          style={[
-            styles.description,
-            { color: theme.text, marginBottom: 8 },
-          ]}
+          style={[styles.description, { color: theme.text, marginBottom: 8 }]}
         >
           {badge.description}
         </Text>
@@ -106,20 +126,18 @@ function AchievementBadge({
         {!isUnlocked && (
           <ProgressBar
             progress={progressRatio}
-            color={isUnlocked ? tierColor : paperTheme.colors.outlineVariant}
+            color={isUnlocked ? tierColor : theme.greyBasePrimary}
             style={styles.progressBar}
           />
         )}
 
         {isUnlocked && unlockedAt && (
-          <Text
-            style={[styles.date, { color:theme.taskBase}]}
-          >
+          <Text style={[styles.date, { color: theme.taskBase }]}>
             Unlocked: {new Date(unlockedAt).toLocaleDateString()}
           </Text>
         )}
       </View>
-    </Surface>
+    </View>
   );
 }
 export default React.memo(AchievementBadge);
@@ -129,7 +147,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-   // marginBottom: 12,
+    // marginBottom: 12,
     borderRadius: 16,
   },
   lockedContainer: {
@@ -175,8 +193,7 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 12,
     fontWeight: 400,
-    lineHeight: 16
-
+    lineHeight: 16,
   },
   textVariant: {
     fontSize: 11,

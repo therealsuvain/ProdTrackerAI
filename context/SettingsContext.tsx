@@ -1,21 +1,29 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from "react";
 
-import { SettingsConfig, defaultSettings } from '@/types/settings';
-import { loadSettings, saveSettings } from '@/utils/storage-utils';
-import { useTheme } from '@/hooks/use-theme-colors';
+import { useTheme } from "@/hooks/use-theme-colors";
+import { SettingsConfig, defaultSettings } from "@/types/settings";
+import { loadSettings, saveSettings } from "@/utils/storage-utils";
 
 interface SettingsContextType {
   settings: SettingsConfig;
-  updateSetting: <K extends keyof SettingsConfig>(key: K, value: SettingsConfig[K]) => Promise<void>;
+  updateSetting: <K extends keyof SettingsConfig>(
+    key: K,
+    value: SettingsConfig[K],
+  ) => Promise<void>;
+  resetSettings: () => Promise<void>;
   isLoading: boolean;
 }
 
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+const SettingsContext = createContext<SettingsContextType | undefined>(
+  undefined,
+);
 
-export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [settings, setSettings] = useState<SettingsConfig>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
-  const { isDarkMode,toggleTheme, theme } = useTheme();
+  const { isDarkMode, toggleTheme, theme, setThemeToSystemTheme } = useTheme();
 
   useEffect(() => {
     const loadSettingsFromStorage = async () => {
@@ -28,22 +36,37 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setIsLoading(false);
       }
     };
-    
+
     loadSettingsFromStorage();
   }, []);
 
   // Generic function that enforces strict type-checking based on the key
-  const updateSetting = async <K extends keyof SettingsConfig>(key: K, value: SettingsConfig[K]) => {
-    if(key === 'isDarkMode'){
+  const resetSettings = async () => {
+    await saveSettings(defaultSettings);
+    setSettings(defaultSettings);
+  };
+  const updateSetting = async <K extends keyof SettingsConfig>(
+    key: K,
+    value: SettingsConfig[K],
+  ) => {
+    if (key === "isDarkMode") {
       await toggleTheme();
     }
+    if (key === "isSystemTheme") {
+      await setThemeToSystemTheme();
+    }
     const newSettings = { ...settings, [key]: value };
+    if (key === "isSystemTheme") {
+      newSettings.isDarkMode = true;
+    }
     setSettings(newSettings); // Optimistic UI update
     await saveSettings(newSettings); // Persist to storage
   };
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSetting, isLoading }}>
+    <SettingsContext.Provider
+      value={{ settings, updateSetting, resetSettings, isLoading }}
+    >
       {children}
     </SettingsContext.Provider>
   );
@@ -52,7 +75,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 export const useSettings = () => {
   const context = useContext(SettingsContext);
   if (context === undefined) {
-    throw new Error('useSettings must be used within a SettingsProvider');
+    throw new Error("useSettings must be used within a SettingsProvider");
   }
   return context;
 };

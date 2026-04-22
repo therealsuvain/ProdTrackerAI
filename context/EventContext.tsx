@@ -1,23 +1,23 @@
 import React, {
   createContext,
-  useState,
-  useEffect,
-  useCallback,
   ReactNode,
+  useCallback,
+  useEffect,
+  useState,
 } from "react";
 
 import {
+  countCalendarEvents,
+  deleteAllCalendarEvents,
+  deleteCalendarEvent,
   getAllCalendarEvents,
   insertCalendarEvent,
   updateCalendarEvent,
-  deleteCalendarEvent,
-  deleteAllCalendarEvents,
-  countCalendarEvents,
 } from "@/db/repositories/event-repository";
 
-import { CalendarEvent } from "@/types/calendar";
 import { useData } from "@/hooks/use-data";
 import { cancelReminder } from "@/hooks/use-notifications";
+import { CalendarEvent } from "@/types/calendar";
 
 interface EventContextType {
   events: CalendarEvent[];
@@ -120,7 +120,7 @@ export default function EventProvider({ children }: { children: ReactNode }) {
     all: boolean,
   ) => {
     const event = events.find((e) => e.id === eventId);
-    if (!event) return; //TODO add feedback?
+    if (!event) return; //TODOX add feedback?
     if (all) {
       // cancel all notifications
       if (event.notificationIds?.length) {

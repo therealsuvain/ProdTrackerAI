@@ -5,6 +5,7 @@ import m0000 from './0000_demonic_gorgon.sql';
 import m0001 from './0001_ordinary_omega_sentinel.sql';
 import m0002 from './0002_opposite_mysterio.sql';
 import m0003 from './0003_supreme_franklin_richards.sql';
+import m0004 from './0004_easy_black_cat.sql';
 
   export default {
     journal,
@@ -12,7 +13,8 @@ import m0003 from './0003_supreme_franklin_richards.sql';
       m0000,
 m0001,
 m0002,
-m0003
+m0003,
+m0004
     }
   }
   

@@ -1,17 +1,14 @@
-import React, { useEffect, useState, useMemo, useRef } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
 
-import { AchievementBadge as BadgeType } from "../types/achievements";
 import AchievementBadge from "@/components/ui/achievements/achievement-badge";
+import { useTheme } from "@/hooks/use-theme-colors";
 import { ALL_ACHIEVEMENTS } from "@/types/achievements-ui";
 import { useData } from "../hooks/use-data";
-import { useTheme } from "@/hooks/use-theme-colors";
-import { TouchableRipple } from "react-native-paper";
+import { AchievementBadge as BadgeType } from "../types/achievements";
 
 /**
- * TODOX : Configure elevation styling for both dark and light mode
  * TODOAdd : Hnadle hidden achievements
  */
 export default function AchievementsScreen() {
@@ -19,7 +16,7 @@ export default function AchievementsScreen() {
   const { targetBadgeId } = useLocalSearchParams<{ targetBadgeId: string }>();
   const scrollViewRef = useRef<ScrollView>(null);
   const itemOffsets = useRef<Record<string, number>>({}); // The Offset Dictionary
-  const { unlockedAchievements, appMetrics } = useData();
+  const { unlockedAchievements, appMetrics, achievementMetrics } = useData();
   const [achievements, setAchievements] = useState(ALL_ACHIEVEMENTS);
   const [unlockedData, setUnlockedData] = useState<Record<string, BadgeType>>(
     {},
@@ -84,15 +81,25 @@ export default function AchievementsScreen() {
             def.id === "achievements_all"
               ? true
               : !!unlockedInfo; */
+          let metricValue = 0;
+          let baseLineValue = 0;
+          if (def.metricTrigger !== "meta") {
+            metricValue = appMetrics?.global[def.metricTrigger] || 0;
+            baseLineValue = achievementMetrics[def.metricTrigger] || 0;
+          }
           const currentProgress =
             def.metricTrigger === "meta"
               ? unlockedBadgesCount
-              : appMetrics?.global[def.metricTrigger] || 0;
+              : metricValue - baseLineValue;
           return (
             <View
               key={def.id}
               // Record the exact Y position of this item as it renders
-              style={{ borderRadius:16, marginBottom:5, marginTop:5 }}
+              style={{
+                backgroundColor: "transparent",
+                marginBottom: 5,
+                marginTop: 5,
+              }}
               onLayout={(event) => {
                 const { y } = event.nativeEvent.layout;
                 itemOffsets.current[def.id] = y;
@@ -139,6 +146,5 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 40,
-    borderRadius: 16,
   },
 });

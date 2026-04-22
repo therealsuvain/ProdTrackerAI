@@ -40,7 +40,7 @@ interface Props {
   onDismiss: () => void;
 }
 /**
- * TODOY 43: use ThemeContext for colors
+ * TODOOptim 43: use ThemeContext for colors
  * TODOOptim 44: maybe make chat-screen leaner by using chat-utils
  * TODOX 108: handle case where an unconfirmed action is modifiying an item, but the user manually edits as well, prevent confimation of that action
  */

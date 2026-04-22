@@ -1,13 +1,13 @@
 import * as Haptics from 'expo-haptics';
-import { useSettings } from '../context/SettingsContext';
 import { useCallback } from 'react';
+import { useSettings } from '../context/SettingsContext';
 
-//TODOY Diff Haptic modes for different functions
+//TODOAdd Diff Haptic modes for different functions
 export const useHaptics = () => {
   const { settings } = useSettings();
 
   const triggerHaptic = useCallback(
-    async (style:  Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Soft) => {
+    async (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Soft) => {
       let hapticMode;
       /* switch (style) {
         case
@@ -15,8 +15,8 @@ export const useHaptics = () => {
       // The engine silently intercepts the call and does nothing if the user disabled it
       if (settings.hapticsEnabled) {
         try {
-          //TODOY impactAsync doesnt work with my phone with Android 10, custom One Plus OS - Oxygen OS
-          //TODOY will have to be curated for iOS too
+          //Note impactAsync doesnt work with my phone with Android 10, custom One Plus OS - Oxygen OS
+          //TODOAdd will have to be curated for iOS too
           await Haptics.impactAsync(style);
           //await Haptics.impactAsync(style);
           //await Haptics.selectionAsync();

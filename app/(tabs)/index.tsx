@@ -1,35 +1,35 @@
-import { StyleSheet, ScrollView, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import {
-  Text,
+  Button,
   Divider,
   FAB,
-  Searchbar,
-  Button,
-  Portal,
   Modal,
-  SegmentedButtons,
+  Portal,
   Provider,
+  Searchbar,
+  SegmentedButtons,
+  Text,
 } from "react-native-paper";
 
-import TaskItem from "@/components/ui/tasks/task-item";
-import EventItem from "@/components/ui/calendar-events/event-item";
-import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
-import { useContext, useState } from "react";
-import { useSearch } from "@/hooks/use-search";
+import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { AnalyticsSection } from "@/components/ui/analytics-section";
-import { SearchResults } from "@/components/ui/search-results";
+import EventItem from "@/components/ui/calendar-events/event-item";
+import { ChatScreen } from "@/components/ui/chat/chat-screen";
 import HabitItem from "@/components/ui/habits/habit-item";
 import UnifiedTimeline from "@/components/ui/home-timeline";
-import { useNotifications } from "@/hooks/use-notifications";
-import { Habit } from "@/types/habits";
+import { SearchResults } from "@/components/ui/search-results";
+import TaskItem from "@/components/ui/tasks/task-item";
+import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
 import { ThemeContext } from "@/context/ThemeContext";
-import { ChatScreen } from "@/components/ui/chat/chat-screen";
-import { getTodayISO } from "@/utils/common-utils";
-import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
-import { useTasks } from "@/hooks/use-tasks";
+import { useEvents } from "@/hooks/use-events";
 import { useHabits } from "@/hooks/use-habits";
 import { useLogs } from "@/hooks/use-logs";
-import { useEvents } from "@/hooks/use-events";
+import { useNotifications } from "@/hooks/use-notifications";
+import { useSearch } from "@/hooks/use-search";
+import { useTasks } from "@/hooks/use-tasks";
+import { Habit } from "@/types/habits";
+import { getTodayISO } from "@/utils/common-utils";
+import { useContext, useState } from "react";
 
 /**
  * TODOOptim 2 : Many files are very large, try and make it more modular. ALL FILES HAVE TO CHECKED FOR POSSIBLE <REFACTORS></REFACTORS>
@@ -41,7 +41,7 @@ import { useEvents } from "@/hooks/use-events";
  * TODOOptim 10 : new Date() is expensive in javascript so have be to memomized everywhere
  * TODOAdd 11 : Input sanitization
  * TODOAdd 12 : Check for Security enhancements and possible securicty concerns for the entire app
- * TODOY 14: Timer Screen Flip Animation state issues- FIX'em
+ * TODOX 14: Timer Screen Flip Animation state issues- FIX'em
  * TODOAdd 18 : Achievements Badges generation, maybe pixelated or sprite version of meme refered by the achievment phrase
  * TODOAdd 19 : Greatly enhancing analytics
  * TODOAdd 20 : More metrics tracking need to added, not all need to for achievements, instead for analytics
@@ -58,8 +58,9 @@ import { useEvents } from "@/hooks/use-events";
  * TODOAdd 37 : More settings options
  * TODOAdd 38 : Few more achievements
  * TODOX 60 : R&D how mantain analytics data for deleted items
- * TODOY 61 : Allow title change in chat action chips
- * TODOY 65 : Check for steps required to adapte date/time fields to different Timezones and day light saving time changes
+ * TODOAdd 61 : Allow title change in chat action chips
+ * TODOOptim 65 : Check for steps required to adapte date/time fields to different Timezones and day light saving time changes
+ * TODOX : Confirmation Diagloue for data deletion/reseting in settings
  *
  */
 function HomeScreenInner() {

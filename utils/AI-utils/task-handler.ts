@@ -3,9 +3,9 @@ import { cancelReminder, scheduleReminderTasks } from "../../hooks/use-notificat
 import { createTask } from "../model-factory-utils";
 import { getTimeRangeHelper } from "./additional-handlers";
 
-// TODO : If task is marked complete then notification is cancelled in the AI handler, but not in the task item logic, 
+// TODOX : If task is marked complete then notification is cancelled in the AI handler, but not in the task item logic, 
 // also if task is then marked incomplete, then a new notificaiton is not scheduled, R&D how it should be ideally
-// TODO task due date, event startdate and end date are just in (YYYY-MM-DD) format, convert to ISO 8601 format
+// TODOX task due date, event startdate and end date are just in (YYYY-MM-DD) format, convert to ISO 8601 format
 export const AddTaskHandler: AIHandler = {
   execute: async (params, context) => {
     // 1. Use your existing factory to create a consistent Task object
@@ -25,7 +25,6 @@ export const AddTaskHandler: AIHandler = {
     //context.setTasks((prev) => [...prev, newTask]);
     context.addTask(newTask);
     console.log(`AI Action: Added task "${newTask.title}"`);
-
     return { status: "success", task: newTask };
   }
 };

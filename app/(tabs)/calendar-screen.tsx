@@ -24,7 +24,7 @@ import Timeline from "@/components/ui/calendar-events/calendar-timeline-view";
 import { ThemeContext } from "@/context/ThemeContext";
 import { useHaptics } from "@/hooks/use-haptics";
 
-// TODO - can we getting db write error from useItemForm hook into ItemScreen and display toast?
+// TODOX - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {
   const { theme } = useContext(ThemeContext);
   const { events, addEvent, editEvent, deleteEventOccurrence } = useEvents();

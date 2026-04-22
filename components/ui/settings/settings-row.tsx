@@ -1,23 +1,17 @@
-import React from "react";
-import { View, StyleSheet, Text, Pressable } from "react-native";
-import { Switch, TouchableRipple } from "react-native-paper";
-import {
-  Ionicons,
-  MaterialIcons,
-  MaterialCommunityIcons,
-  FontAwesome6,
-  FontAwesome,
-} from "@expo/vector-icons";
+import { FontAwesome6, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import glyphMap from "@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/FontAwesome6Free.json";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { Switch, TouchableRipple } from "react-native-paper";
 
-import { SettingItem } from "@/types/settings-ui";
 import { useTheme } from "@/hooks/use-theme-colors";
+import { SettingItem } from "@/types/settings-ui";
 
 interface SettingsRowProps {
   item: SettingItem;
   value?: any; // Simplified to boolean for toggles initially
   onToggle?: (id: string, newValue: boolean) => void;
-  onPress?: (id: string, href?: string) => void;
+  onPress?: (id: string, type: string, href?: string) => void;
   isLast: boolean;
 }
 
@@ -28,8 +22,11 @@ export const SettingsRow = ({
   onPress,
   isLast,
 }: SettingsRowProps) => {
-  const { theme } = useTheme();
+  const { theme, preference } = useTheme();
+
+  if (preference === "system" && item.id === "isDarkMode") return null;
   const renderRightElement = () => {
+    //console.log(item.id, value);
     switch (item.type) {
       case "toggle":
         return (
@@ -101,7 +98,7 @@ export const SettingsRow = ({
     if (item.type === "toggle" && onToggle) {
       onToggle(item.id, !value);
     } else if (onPress) {
-      onPress(item.id, item.href);
+      onPress(item.id, item.type, item.href);
     }
   };
 

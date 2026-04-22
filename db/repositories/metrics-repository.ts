@@ -26,20 +26,20 @@
  *    action (completing a task is still completed even if the metric fails).
  */
 
-import { eq, gte, sql } from "drizzle-orm";
-import { db, globalMetrics, dailyMetrics } from "@/db";
+import { dailyMetrics, db, globalMetrics } from "@/db";
 import type {
-    GlobalMetricsRow,
-    GlobalMetricsInsert,
-    DailyMetricsRow,
     DailyMetricsInsert,
+    DailyMetricsRow,
+    GlobalMetricsInsert,
+    GlobalMetricsRow,
 } from "@/db/schema";
 import type {
     AppMetrics,
-    GlobalMetricKey,
     DailyMetricKey,
+    GlobalMetricKey,
     MetricKey,
 } from "@/types/metrics";
+import { eq, gte } from "drizzle-orm";
 
 // ─── column name mapping ──────────────────────────────────────────────────────
 //
@@ -82,7 +82,7 @@ const dailyColumnMap: Record<DailyMetricKey, keyof DailyMetricsRow> = {
 
 // ─── converters ───────────────────────────────────────────────────────────────
 
-function globalRowToObject(row: GlobalMetricsRow): AppMetrics["global"] {
+export function globalRowToObject(row: GlobalMetricsRow): AppMetrics["global"] {
     return {
         tasksCompleted: row.tasksCompleted,
         tasksMissed: row.tasksMissed,
@@ -101,7 +101,7 @@ function globalRowToObject(row: GlobalMetricsRow): AppMetrics["global"] {
     };
 }
 
-const defaultGlobal: AppMetrics["global"] = {
+export const defaultGlobal: AppMetrics["global"] = {
     tasksCompleted: 0,
     tasksMissed: 0,
     habitsCheckedIn: 0,

@@ -23,8 +23,8 @@
  *   uses them as strings (split('T')[0] etc). No conversion needed.
  */
 
-import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -185,7 +185,7 @@ export const calendarEvents = sqliteTable(
         endDate: text("end_date"),
         description: text("description"),
         reminder: integer("reminder", { mode: "boolean" }).notNull().default(false),
-        recurrence: text("recurrence",{ enum: ["none", "daily", "weekly"] }).notNull().default("none"), 
+        recurrence: text("recurrence", { enum: ["none", "daily", "weekly"] }).notNull().default("none"),
         category: text("category"),
         tags: text("tags"),
         embedding: text("embedding"),                  // JSON: number[]
@@ -325,15 +325,32 @@ export const dailyMetrics = sqliteTable("daily_metrics", {
     chatActionsCancelled: integer("chat_actions_cancelled").notNull().default(0),
 });
 
+export const achievementGlobalMetrics = sqliteTable("achievement_global_metrics", {
+    id: integer("id").primaryKey().default(1),       // Always 1
+    tasksCompleted: integer("tasks_completed").notNull().default(0),
+    tasksMissed: integer("tasks_missed").notNull().default(0),
+    habitsCheckedIn: integer("habits_checked_in").notNull().default(0),
+    habitsGoalsCompleted: integer("habits_goals_completed").notNull().default(0),
+    habitCheckInsMissed: integer("habit_check_ins_missed").notNull().default(0),
+    habitsStreakMax: integer("habits_streak_max").notNull().default(0),
+    habitsFrozen: integer("habits_frozen").notNull().default(0),
+    habitsAutoFrozen: integer("habits_auto_frozen").notNull().default(0),
+    timeTracked: integer("time_tracked").notNull().default(0),
+    chatMessagesSent: integer("chat_messages_sent").notNull().default(0),
+    chatActionsConfirmed: integer("chat_actions_confirmed").notNull().default(0),
+    chatActionsExpired: integer("chat_actions_expired").notNull().default(0),
+    chatActionsCancelled: integer("chat_actions_cancelled").notNull().default(0),
+    lastSyncedAt: text("last_synced_at"),           // ISO 8601
+});
 
 export const unlockedAchievements = sqliteTable("unlocked_achievements", {
     id: text("id").primaryKey(),
     title: text("title").notNull(),
     description: text("description").notNull(),
     unlockedDescription: text("unlocked_description").notNull(),
-    tier : text("tier", {enum: ["bronze", "silver", "gold", "platinum", "diamond"]}).notNull(),
+    tier: text("tier", { enum: ["bronze", "silver", "gold", "platinum", "diamond"] }).notNull(),
     target: integer("target").notNull(),
-    unlockedAt : text("unlocked_at").notNull(),
+    unlockedAt: text("unlocked_at").notNull(),
 })
 // ─── Drizzle inferred types ───────────────────────────────────────────────────
 // These are the raw DB row shapes — used internally by repositories.
@@ -363,9 +380,12 @@ export type MessageInsert = typeof messages.$inferInsert;
 
 export type GlobalMetricsRow = typeof globalMetrics.$inferSelect;
 export type GlobalMetricsInsert = typeof globalMetrics.$inferInsert;
- 
+
 export type DailyMetricsRow = typeof dailyMetrics.$inferSelect;
 export type DailyMetricsInsert = typeof dailyMetrics.$inferInsert;
+
+export type AchievementGlobalMetricsRow = typeof achievementGlobalMetrics.$inferSelect
+export type AchievementGlobalMetricsInsert = typeof achievementGlobalMetrics.$inferInsert
 
 export type UnlockedAchievementsRow = typeof unlockedAchievements.$inferSelect
 export type UnlockedAchievementsInsert = typeof unlockedAchievements.$inferInsert

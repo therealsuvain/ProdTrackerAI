@@ -1,6 +1,13 @@
 import { ThemeContext } from "@/context/ThemeContext";
 import { CalendarEvent } from "@/types/calendar";
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, {
+  memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { StyleSheet, Text, View } from "react-native";
 import {
   Agenda,
@@ -17,6 +24,29 @@ interface CalendarListAgendaAltProps {
   onEventSelect?: (event: CalendarEvent) => void;
   onDelete?: (id: string, date: string) => void;
 }
+
+const MemoizedEventItem = memo(
+  ({
+    event,
+    showEdit,
+    onEdit,
+    onDelete,
+  }: {
+    event: CalendarEvent;
+    showEdit: boolean;
+    onEdit?: () => void;
+    onDelete?: () => void;
+  }) => (
+    <View style={styles.itemContainer}>
+      <EventItem
+        event={event}
+        onEdit={showEdit ? onEdit : undefined}
+        onDelete={onDelete}
+      />
+    </View>
+  ),
+);
+
 // TODOOptim Optimize maybe
 export default function CalendarListAgendaMain({
   events,
@@ -27,6 +57,8 @@ export default function CalendarListAgendaMain({
 }: CalendarListAgendaAltProps) {
   const { theme } = useContext(ThemeContext);
   const [items, setItems] = useState<AgendaSchedule>({});
+
+  const seenEventIds = useRef<Set<string>>(new Set());
 
   // Convert timestamp to date string
   const timeToString = (time: number) => {
@@ -81,35 +113,38 @@ export default function CalendarListAgendaMain({
     [],
   );
 
-  const loadItems = (day: DateData) => {
-    // We must use the functional form of setItems to prevent an infinite loop
-    setItems((prevItems) => {
-      const newItems: AgendaSchedule = { ...prevItems };
-      let itemsWereAdded = false; // Flag to check if we're adding new data
+  const loadItems = useCallback(
+    (day: DateData) => {
+      // We must use the functional form of setItems to prevent an infinite loop
+      setItems((prevItems) => {
+        const newItems: AgendaSchedule = { ...prevItems };
+        let itemsWereAdded = false; // Flag to check if we're adding new data
 
-      // Load events for 2 months range (1 month before and 1 month after)
-      for (let i = -30; i < 30; i++) {
-        const time = day.timestamp + i * 24 * 60 * 60 * 1000;
-        const strTime = timeToString(time);
-        //console.log("strTime", strTime)
-        // Only load if we haven't already
-        if (!newItems[strTime]) {
-          newItems[strTime] = getEventsForSingleDay(strTime, events);
-          itemsWereAdded = true; // Mark that we're adding new days
+        // Load events for 2 months range (1 month before and 1 month after)
+        for (let i = -30; i < 30; i++) {
+          const time = day.timestamp + i * 24 * 60 * 60 * 1000;
+          const strTime = timeToString(time);
+          //console.log("strTime", strTime)
+          // Only load if we haven't already
+          if (!newItems[strTime]) {
+            newItems[strTime] = getEventsForSingleDay(strTime, events);
+            itemsWereAdded = true; // Mark that we're adding new days
+          }
         }
-      }
 
-      // If we didn't add any new date keys, return the *previous* state
-      // This is crucial to stop the infinite loop
-      if (!itemsWereAdded) {
-        return prevItems;
-      }
+        // If we didn't add any new date keys, return the *previous* state
+        // This is crucial to stop the infinite loop
+        if (!itemsWereAdded) {
+          return prevItems;
+        }
 
-      // Otherwise, return the new object
-      //console.log(newItems);
-      return newItems;
-    });
-  }; // Only depend on `events`
+        // Otherwise, return the new object
+        //console.log(newItems);
+        return newItems;
+      });
+    },
+    [events, getEventsForSingleDay, timeToString],
+  ); // Only depend on `events`
 
   useEffect(() => {
     const today = new Date();
@@ -147,34 +182,24 @@ export default function CalendarListAgendaMain({
   }, [events, getEventsForSingleDay]);
 
   // set list so that only fist occurence of event renders with edit button
-  const uniqueEventList = new Set<string>();
+
   const renderItem = (reservation: AgendaEntry, isFirst: boolean) => {
     const event = (reservation as any).event as CalendarEvent;
     const occurence = (reservation as any).occurence;
     if (!event) {
       return null;
     }
-    if (!uniqueEventList.has(event.id)) {
-      uniqueEventList.add(event.id);
-      return (
-        <View style={styles.itemContainer}>
-          <EventItem
-            event={event}
-            onEdit={() => onEventSelect?.(event)}
-            onDelete={() => onDelete?.(event.id, occurence)}
-          />
-        </View>
-      );
-    } else {
-      return (
-        <View style={styles.itemContainer}>
-          <EventItem
-            event={event}
-            onDelete={() => onDelete?.(event.id, occurence)}
-          />
-        </View>
-      );
-    }
+    const showEdit = !seenEventIds.current.has(event.id);
+    if (showEdit) seenEventIds.current.add(event.id);
+
+    return (
+      <MemoizedEventItem
+        event={event}
+        showEdit={showEdit}
+        onEdit={() => onEventSelect?.(event)}
+        onDelete={() => onDelete?.(event.id, occurence)}
+      />
+    );
   };
 
   const renderEmptyDate = () => {

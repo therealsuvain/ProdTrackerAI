@@ -1,43 +1,43 @@
+import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 import React, {
   createContext,
-  useState,
-  useEffect,
-  useCallback,
   ReactNode,
+  useCallback,
+  useEffect,
   useRef,
+  useState,
 } from "react";
-import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 
-import {
-  AppMetrics,
-  MetricKey,
-  GlobalMetricKey,
-  DefaultMetrics,
-} from "@/types/metrics";
 import { AchievementBadge } from "@/types/achievements";
+import { AppMetrics, DefaultMetrics, GlobalMetricKey } from "@/types/metrics";
 
 import {
-  loadAppMetricsFromDb,
-  loadDailyMetricsRange,
-  mutateMetricInDb,
   deleteAllMetrics,
+  loadAppMetricsFromDb,
+  mutateMetricInDb,
 } from "@/db/repositories/metrics-repository";
 
 import {
-  getAllUnlockedAchievements,
-  insertUnlockedAchievements,
   countUnlockedAchievements,
   deleteAllUnlockedAchievements,
+  getAllUnlockedAchievements,
+  insertUnlockedAchievements,
 } from "@/db/repositories/unlocked-achievement-repository";
+
+import {
+  loadAchievementMetrics,
+  mutateAchievementMetricsOnReset,
+} from "@/db/repositories/unlocked-achievement-metrics-repository";
 
 import { sqlite } from "@/db/index";
 import { processAchievements } from "@/utils/achievements-util";
 
 import { AchievementToast } from "@/components/ui/achievements/achievement-toast";
-import { usePlaySound } from "@/hooks/use-play-sound";
 import { initDatabase } from "@/db";
+import { usePlaySound } from "@/hooks/use-play-sound";
+import { AchievementMetrics } from "@/types/achievement-metrics";
 
-// TODOY if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
+// TODOX if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
 interface DataContextType {
   resolveItemId: <T extends { id: string }>(
     shortOrFullId: string,
@@ -51,6 +51,7 @@ interface DataContextType {
   dispatchError: (err: Error | string, type: "warning" | "fatal") => void;
   clearError: () => void;
   appMetrics: AppMetrics;
+  achievementMetrics: AchievementMetrics;
   trackMetric: (key: GlobalMetricKey[], amount: number) => Promise<void>;
   resetMetrics: () => Promise<void>;
   resetAchievements: () => Promise<void>;
@@ -65,6 +66,8 @@ const USE_DUMMY_DATA = false;
 
 export default function DataProvider({ children }: { children: ReactNode }) {
   const [appMetrics, setAppMetrics] = useState<AppMetrics>(DefaultMetrics);
+  const [achievementMetrics, setAchievementMetrics] =
+    useState<AchievementMetrics>(DefaultMetrics["global"]);
   const [unlockedAchievements, setUnlockedAchievements] = useState<
     AchievementBadge[]
   >([]);
@@ -155,7 +158,10 @@ export default function DataProvider({ children }: { children: ReactNode }) {
 
   const resetAchievements = useCallback(async (): Promise<void> => {
     unlockedAchievementsRef.current = [];
-    (await deleteAllUnlockedAchievements(), setUnlockedAchievements([]));
+    (await deleteAllUnlockedAchievements(),
+      await mutateAchievementMetricsOnReset(),
+      setUnlockedAchievements([]),
+      setAchievementMetrics(appMetricsRef.current["global"]));
   }, []);
 
   const resetMetrics = useCallback(async (): Promise<void> => {
@@ -167,9 +173,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     return result ?? 0;
   }, []);
 
-
   const trackMetric = useCallback(
-    
     async (keys: GlobalMetricKey[], amount: number) => {
       // 1. Mutate storage atomically
       // note: For now if lastSyncedAt is passed in it works like trackMetric(["lastSyncedAt"], 0)
@@ -189,7 +193,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
             }
             const newlyUnlockedForKey = await processAchievements(
               localUnlocked,
-              updatedMetrics.global[key],
+              updatedMetrics.global[key] - achievementMetrics[key],
               key,
             );
             for (const badge of newlyUnlockedForKey) {
@@ -229,8 +233,10 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       try {
         await initDatabase();
         let loadedMetrics = await loadAppMetricsFromDb();
+        let loadedAchievementMetrics = await loadAchievementMetrics();
         let loadedUnlockedAchievements = await getAllUnlockedAchievements();
         setAppMetrics(loadedMetrics);
+        setAchievementMetrics(loadedAchievementMetrics);
         setUnlockedAchievements(loadedUnlockedAchievements);
       } catch (err) {
         console.error("[DataContext] Failed to initialise database:", err);
@@ -256,7 +262,6 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     unlockedAchievementsRef.current = unlockedAchievements;
   }, [unlockedAchievements]);
 
-  
   return (
     <DataContext.Provider
       value={{
@@ -266,6 +271,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         dispatchError,
         clearError,
         appMetrics,
+        achievementMetrics,
         trackMetric,
         resetMetrics,
         resetAchievements,

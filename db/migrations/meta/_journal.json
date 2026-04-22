@@ -29,6 +29,13 @@
       "when": 1775455198120,
       "tag": "0003_supreme_franklin_richards",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1776766863752,
+      "tag": "0004_easy_black_cat",
+      "breakpoints": true
     }
   ]
 }

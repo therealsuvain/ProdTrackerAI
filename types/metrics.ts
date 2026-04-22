@@ -18,7 +18,7 @@ export interface AppMetrics {
     tasksMissed: number;
     habitsCheckedIn: number;
     habitsGoalsCompleted: number;
-    habitCheckInsMissed: number; 
+    habitCheckInsMissed: number;
     habitsStreakMax: number;  // Longest Streak ever for checking in  in any habit //TODOX 48
     habitsFrozen: number;
     habitsAutoFrozen: number;
@@ -46,4 +46,5 @@ export const DefaultMetrics: AppMetrics = {
 };
 export type MetricKey = keyof DailyMetrics | keyof AppMetrics['global'];
 export type GlobalMetricKey = keyof AppMetrics['global'];
+export type GlobalMetricNums = keyof Omit<AppMetrics['global'], 'lastSyncedAt'>;
 export type DailyMetricKey = keyof DailyMetrics;

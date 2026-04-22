@@ -1,23 +1,20 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { useTheme } from "@/hooks/use-theme-colors";
+import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import { SettingsGroup } from "@/components/ui/settings/settings-group";
 import { SettingsRow } from "@/components/ui/settings/settings-row";
-import { SettingItem } from "@/types/settings-ui";
-import { ConfirmationModal } from "@/components/modal/confirmation-modal";
-import { useData } from "@/hooks/use-data";
-import { clearStorage } from "@/utils/storage-utils"; // Make sure clearStorage is exported
-import { useTasks } from "@/hooks/use-tasks";
-import { useHabits } from "@/hooks/use-habits";
-import { useEvents } from "@/hooks/use-events";
 import { useChat } from "@/hooks/use-chat";
+import { useData } from "@/hooks/use-data";
+import { useEvents } from "@/hooks/use-events";
+import { useHabits } from "@/hooks/use-habits";
 import { useLogs } from "@/hooks/use-logs";
-import { isDate } from "date-fns";
+import { useTasks } from "@/hooks/use-tasks";
+import { useTheme } from "@/hooks/use-theme-colors";
+import { SettingItem } from "@/types/settings-ui";
+import { clearStorage } from "@/utils/storage-utils"; // Make sure clearStorage is exported
 
-//TODOX 105: Reset achievements, resets the achievements table in DB and in React State, but progress doesnt reset as it is maintained by app metrics , so after reseting and then performing a action that leads to any progress for achievements, the progress just continues and all resetted unlocked achievements, immediately unlock again , effectively making reseting them useless  resetting metrics with achievements doesnt make sense, maybe we need a seperate duplicate metrics for achievements progress.
-//TODO 110 : add loading indicator for dark mode atleast
+//TODOOptim 110 : add loading indicator for dark mode atleast
 const DATA_SETTINGS: SettingItem[] = [
   {
     id: "deleteTasks",
@@ -115,7 +112,7 @@ export default function DataManagementScreen() {
           countT,
         );
         break;
-        
+
       case "deleteHabits":
         const countH = await habitCount();
         openModal(

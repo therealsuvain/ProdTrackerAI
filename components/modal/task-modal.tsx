@@ -1,14 +1,14 @@
-import React, { useContext, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { ThemeContext } from "@/context/ThemeContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import React, { useContext, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import {
   Button,
   Modal,
-  TextInput,
   SegmentedButtons,
   Switch,
+  TextInput,
 } from "react-native-paper";
-import { ThemeContext } from "@/context/ThemeContext";
 
 interface Props {
   visible: boolean;
@@ -137,7 +137,7 @@ export default function TaskModal({
         Pick Due Date
       </Button>
       {state.dueDate && (
-        <Text style={[styles.date, { color: theme.taskDarkSecondary }]}>
+        <Text style={[styles.date, { color: theme.taskLightPrimary }]}>
           {new Date(state.dueDate).toDateString()}
         </Text>
       )}
@@ -150,7 +150,7 @@ export default function TaskModal({
         />
       )}
       <View style={styles.switchContainer}>
-        <Text style={[styles.text, { color: theme.taskDarkSecondary }]}>
+        <Text style={[styles.text, { color: theme.taskLightPrimary }]}>
           Set Reminder
         </Text>
         <Switch

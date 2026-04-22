@@ -1,9 +1,10 @@
 export interface SettingsConfig {
   isDarkMode: boolean;
+  isSystemTheme: boolean;
   hapticsEnabled: boolean;
   notificationEnabled: boolean //string | null; // e.g., "09:00" or null if disabled
   soundEffectsEnabled: boolean;
-  resetAchievements : boolean;
+  resetAchievements: boolean;
   enableCloudSync: boolean;
   deleteProfile: boolean;
   deleteAllData: boolean;
@@ -11,11 +12,13 @@ export interface SettingsConfig {
   deleteHabits: boolean;
   deleteEvents: boolean;
   deleteTimerLogs: boolean;
+  resetSettings: boolean
 
 }
 
 export const defaultSettings: SettingsConfig = {
   isDarkMode: true, // Assuming dark mode based on previous context
+  isSystemTheme: true,
   hapticsEnabled: true,
   notificationEnabled: false,
   soundEffectsEnabled: true,
@@ -26,5 +29,6 @@ export const defaultSettings: SettingsConfig = {
   deleteTasks: false,
   deleteHabits: false,
   deleteEvents: false,
-  deleteTimerLogs: false
+  deleteTimerLogs: false,
+  resetSettings: false
 };

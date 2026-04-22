@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { ScrollView, StyleSheet, View, Text } from "react-native";
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { Searchbar } from "react-native-paper";
-import { router } from 'expo-router';
 
-import { useSettings } from "@/context/SettingsContext";
-import { SettingsSection } from "@/types/settings-ui";
 import { SettingsGroup } from "@/components/ui/settings/settings-group";
 import { SettingsRow } from "@/components/ui/settings/settings-row";
+import { useSettings } from "@/context/SettingsContext";
 import { useTheme } from "@/hooks/use-theme-colors";
+import { SettingsSection } from "@/types/settings-ui";
 
 // This is our Configuration map. Adding a new setting is as easy as adding a line here.
 
@@ -50,14 +50,29 @@ const SETTINGS_LAYOUT: SettingsSection[] = [
   {
     title: "Profile",
     data: [
-      
-      { id: "soundEffectsEnabled", label: "ADMIN Mode", icon: "key", type: "link" },
-      { id: "deleteProfile", label: "Delete Profle", icon: "trash", type: "link" },
+      {
+        id: "soundEffectsEnabled",
+        label: "ADMIN Mode",
+        icon: "key",
+        type: "link",
+      },
+      {
+        id: "deleteProfile",
+        label: "Delete Profle",
+        icon: "trash",
+        type: "link",
+      },
     ],
   },
   {
     title: "Appearance",
     data: [
+      {
+        id: "isSystemTheme",
+        label: "Match System Theme",
+        icon: "phonelink-setup",
+        type: "toggle",
+      },
       { id: "isDarkMode", label: "Dark Mode", icon: "moon", type: "toggle" },
     ],
   },
@@ -86,7 +101,7 @@ const SETTINGS_LAYOUT: SettingsSection[] = [
         label: "Delete All Data",
         icon: "folder-delete",
         type: "link",
-        href: "/settings/data-management"
+        href: "/settings/data-management",
       },
       {
         id: "resetAchievements",
@@ -94,19 +109,19 @@ const SETTINGS_LAYOUT: SettingsSection[] = [
         icon: "trophy",
         type: "link",
       },
+      {
+        id: "resetSettings",
+        label: "Reset to default settings",
+        icon: "settings-backup-restore",
+        type: "action",
+      },
     ],
   },
 ];
 
-const handlePress = (id: string, href?: string) => {
-  if (href) {
-    router.push(href as any);
-  }
-};
-
 export default function SettingsScreen() {
   const { theme } = useTheme();
-  const { settings, updateSetting, isLoading } = useSettings();
+  const { settings, updateSetting, resetSettings, isLoading } = useSettings();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredSections, setFilteredSections] =
     useState<SettingsSection[]>(SETTINGS_LAYOUT);
@@ -119,6 +134,14 @@ export default function SettingsScreen() {
   if (isLoading) {
     return null; // Or your existing <LoadingIndicator />
   }
+  const handlePress = (id: string, type: string, href?: string) => {
+    if (href) {
+      router.push(href as any);
+    }
+    if (type === "action" && id === "resetSettings") {
+      resetSettings();
+    }
+  };
 
   useEffect(() => {
     setFilteredSections(filterSettings(SETTINGS_LAYOUT, searchQuery));
