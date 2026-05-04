@@ -2,7 +2,7 @@ import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
 import { Card } from "react-native-paper";
 import { useRoute } from "@react-navigation/native";
 import { useContext, useState } from "react";
-import { XButton } from "../x-button";
+import { XButton } from "../shared/x-button";
 
 import { ThemeContext } from "@/context/ThemeContext";
 import { formatDuration, formatRelativeTime } from "@/context/TimerContext";

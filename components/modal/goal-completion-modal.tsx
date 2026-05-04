@@ -18,7 +18,7 @@ import {
   Difficulty,
   restartHabitAfterGoal,
 } from "@/utils/habit-utils";
-import DaySelector from "@/components/ui/day-selector";
+import DaySelector from "@/components/ui/habits/day-selector";
 
 interface GoalCompletionModalProps {
   visible: boolean;
@@ -94,7 +94,7 @@ export const GoalCompletionModal = ({
   const [newGoal, setNewGoal] = useState(habit.goal);
   const [newTargetDays, setNewTargetDays] = useState(habit.targetDays || []);
   const [newFrequency, setNewFrequency] = useState<"daily" | "weekly">(
-    habit.frequency
+    habit.frequency,
   );
 
   // Two confetti cannons — left and right — staggered 150ms for an explosive
@@ -141,16 +141,16 @@ export const GoalCompletionModal = ({
         })
       : config.accentColor;
 
-  const handleRestart = () => {;
+  const handleRestart = () => {
     if (!newGoal || newGoal < 1) return; // guard against empty/invalid input
- 
+
     // Apply the user's updated goal and frequency before restarting.
     // restartHabitAfterGoal then sets pendingStreakResetAfter and logs the
     // completion — streak resets on next check-in, not right now.
     const oldGoal = habit.goal;
 
     //TODOX - in TESTING : targetDays only work if targeet days selected, if frequency weekly and target days not selected, target days should be undefined, and restart should from next week same day
-    //TODOX - in TESTING : Above has been fixed, but there was same issue with Freezing for weekly without targetdays, fixed that too, check was similar 
+    //TODOX - in TESTING : Above has been fixed, but there was same issue with Freezing for weekly without targetdays, fixed that too, check was similar
     const habitWithUpdates: Habit = {
       ...habit,
       goal: newGoal,
@@ -240,9 +240,14 @@ export const GoalCompletionModal = ({
             {habit.title}
           </Text>
 
-          <Text style={[styles.goalLine, { color: theme.whiteBase, fontSize:16 }]}>
+          <Text
+            style={[styles.goalLine, { color: theme.whiteBase, fontSize: 16 }]}
+          >
             {habit.frequency === "daily" ? "Daily" : "Weekly"} goal of{" "}
-            <Text style={{ fontWeight: "bold", fontSize:18, }}>{habit.goal}</Text> reached!
+            <Text style={{ fontWeight: "bold", fontSize: 18 }}>
+              {habit.goal}
+            </Text>{" "}
+            reached!
           </Text>
 
           <Text style={[styles.subMessage, { color: theme.whiteBase }]}>
@@ -273,44 +278,51 @@ export const GoalCompletionModal = ({
           <View style={styles.divider} />
 
           {/* Actions */}
-          <View style={{ flexDirection: "column", marginBottom: 12, width: "100%", alignItems: "center" }}>
-          <SegmentedButtons
-            //style={styles.verticalMargin}
-            value={newFrequency}
-            onValueChange={(val) =>
-             setNewFrequency( val as "daily" | "weekly")
-            }
-            buttons={[
-              {
-                value: "daily",
-                label: "Daily",
-                uncheckedColor: theme.whiteBase,
-                checkedColor: theme.habitBase,
-                style: { backgroundColor: theme.habitDarkSecondary },
-              },
-              {
-                value: "weekly",
-                label: "Weekly",
-                uncheckedColor: theme.whiteBase,
-                checkedColor: theme.habitBase,
-                style: { backgroundColor: theme.habitDarkSecondary },
-              },
-            ]}
-          />
-          <DaySelector
-            visible={newFrequency == "weekly"}
-            selectedDays={newTargetDays}
-            setTargetDaysOnly={setNewTargetDays}
-          />
-          <TextInput
-            style={{marginVertical: 4, maxHeight: 50, width: "100%" }}
-            label="New Goal"
-            mode="outlined"
-            activeOutlineColor={config.accentColor}
-            defaultValue={String(newGoal)}
-            onChangeText={(text) => setNewGoal(parseInt(text) || 0)}
-            keyboardType="numeric"
-          />
+          <View
+            style={{
+              flexDirection: "column",
+              marginBottom: 12,
+              width: "100%",
+              alignItems: "center",
+            }}
+          >
+            <SegmentedButtons
+              //style={styles.verticalMargin}
+              value={newFrequency}
+              onValueChange={(val) =>
+                setNewFrequency(val as "daily" | "weekly")
+              }
+              buttons={[
+                {
+                  value: "daily",
+                  label: "Daily",
+                  uncheckedColor: theme.whiteBase,
+                  checkedColor: theme.habitBase,
+                  style: { backgroundColor: theme.habitDarkSecondary },
+                },
+                {
+                  value: "weekly",
+                  label: "Weekly",
+                  uncheckedColor: theme.whiteBase,
+                  checkedColor: theme.habitBase,
+                  style: { backgroundColor: theme.habitDarkSecondary },
+                },
+              ]}
+            />
+            <DaySelector
+              visible={newFrequency == "weekly"}
+              selectedDays={newTargetDays}
+              setTargetDaysOnly={setNewTargetDays}
+            />
+            <TextInput
+              style={{ marginVertical: 4, maxHeight: 50, width: "100%" }}
+              label="New Goal"
+              mode="outlined"
+              activeOutlineColor={config.accentColor}
+              defaultValue={String(newGoal)}
+              onChangeText={(text) => setNewGoal(parseInt(text) || 0)}
+              keyboardType="numeric"
+            />
           </View>
           <Pressable
             style={[styles.primaryBtn, { backgroundColor: config.accentColor }]}

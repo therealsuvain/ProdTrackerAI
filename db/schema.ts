@@ -352,6 +352,38 @@ export const unlockedAchievements = sqliteTable("unlocked_achievements", {
     target: integer("target").notNull(),
     unlockedAt: text("unlocked_at").notNull(),
 })
+
+export const tags = sqliteTable(
+    "tags",
+    {
+        id: text("id").primaryKey(),
+        name: text("name").notNull().unique(),
+        count: integer("count").notNull().default(0), // Added for usage-based ranking
+        ...auditFields,
+    },
+    (table) => ([
+        index("user_tags_name_idx").on(table.name),
+        index("user_tags_count_idx").on(table.count), // Optimize sorting by frequency
+    ])
+);
+
+export const categories = sqliteTable(
+    "categories",
+    {
+        id: text("id").primaryKey(),             // UUID v4
+        name: text("name").notNull().unique(),   // e.g., "Work"
+        color: text("color").notNull(),          // Hex code e.g., "#3b82f6"
+        count: integer("count").notNull().default(0), // Usage tracking for ranking
+        ...auditFields,
+    },
+    (table) => ([
+        index("categories_name_idx").on(table.name),
+        index("categories_count_idx").on(table.count),
+    ])
+);
+
+
+
 // ─── Drizzle inferred types ───────────────────────────────────────────────────
 // These are the raw DB row shapes — used internally by repositories.
 // Your application code works with the interfaces in types/*.ts, not these.
@@ -389,3 +421,9 @@ export type AchievementGlobalMetricsInsert = typeof achievementGlobalMetrics.$in
 
 export type UnlockedAchievementsRow = typeof unlockedAchievements.$inferSelect
 export type UnlockedAchievementsInsert = typeof unlockedAchievements.$inferInsert
+
+export type TagRow = typeof tags.$inferSelect;
+export type TagInsert = typeof tags.$inferInsert;
+
+export type CategoryRow = typeof categories.$inferSelect;
+export type CategoryInsert = typeof categories.$inferInsert;

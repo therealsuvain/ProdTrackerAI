@@ -29,6 +29,27 @@ import {
   mutateAchievementMetricsOnReset,
 } from "@/db/repositories/unlocked-achievement-metrics-repository";
 
+import {
+  getAllTags,
+  deleteTag,
+  deleteAllTags,
+  insertTags,
+  updateTag,
+  incrementTagCount,
+  countTags,
+  totalTagUsageCount,
+  getAllCategories,
+  deleteCategory,
+  deleteAllCategories,
+  insertCategory,
+  updateCategory,
+  updateCategoryColor,
+  incrementCategoryCount,
+  countCategories,
+  totalCategoryUsageCount,
+  seedCategoriesIfEmpty,
+} from "@/db/repositories/tags-and-category-repository";
+
 import { sqlite } from "@/db/index";
 import { processAchievements } from "@/utils/achievements-util";
 
@@ -36,6 +57,9 @@ import { AchievementToast } from "@/components/ui/achievements/achievement-toast
 import { initDatabase } from "@/db";
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { AchievementMetrics } from "@/types/achievement-metrics";
+import { Tag } from "@/types/tag";
+import { Category } from "@/types/category";
+import { randomUUID } from "expo-crypto";
 
 // TODOX if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
 interface DataContextType {
@@ -55,6 +79,12 @@ interface DataContextType {
   trackMetric: (key: GlobalMetricKey[], amount: number) => Promise<void>;
   resetMetrics: () => Promise<void>;
   resetAchievements: () => Promise<void>;
+  tags: Tag[];
+  addTags: (tagNames: string[]) => Promise<void>;
+  incrementTagUsage: (id: string) => Promise<void>;
+  categories: Category[];
+  addCategory: (category: Category) => Promise<void>;
+  incrementCategoryUsage: (id: string) => Promise<void>;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(
@@ -71,6 +101,8 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   const [unlockedAchievements, setUnlockedAchievements] = useState<
     AchievementBadge[]
   >([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   // Ref for appMetric snapshot during Optimistic update
   const appMetricsRef = useRef(appMetrics);
   const unlockedAchievementsRef = useRef<AchievementBadge[]>([]);
@@ -142,6 +174,60 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const optimisticTagMutation = useCallback(
+    async (
+      optimisticUpdate: (prev: Tag[]) => Tag[],
+      dbWrite: () => Promise<void> | Promise<Tag>,
+    ): Promise<void> => {
+      let snapshot: Tag[] = [];
+      setTags((prev) => {
+        snapshot = prev;
+        return prev;
+      });
+      setTags(optimisticUpdate);
+
+      try {
+        await dbWrite();
+      } catch (err) {
+        // 4. Rollback
+        console.error(
+          "[DataContext] UnlockedAchievement DB write failed, rolling back:",
+          err,
+        );
+        setTags(snapshot);
+        throw err; // caller catches this and shows DbErrorToast
+      }
+    },
+    [],
+  );
+
+  const optimisticCategoryMutation = useCallback(
+    async (
+      optimisticUpdate: (prev: Category[]) => Category[],
+      dbWrite: () => Promise<void> | Promise<Category>,
+    ): Promise<void> => {
+      let snapshot: Category[] = [];
+      setCategories((prev) => {
+        snapshot = prev;
+        return prev;
+      });
+      setCategories(optimisticUpdate);
+
+      try {
+        await dbWrite();
+      } catch (err) {
+        // 4. Rollback
+        console.error(
+          "[DataContext] Category DB write failed, rolling back:",
+          err,
+        );
+        setCategories(snapshot);
+        throw err; // caller catches this and shows DbErrorToast
+      }
+    },
+    [],
+  );
+
   const addUnlockedAchievement = useCallback(
     async (achievement: AchievementBadge): Promise<void> => {
       unlockedAchievementsRef.current = [
@@ -170,6 +256,125 @@ export default function DataProvider({ children }: { children: ReactNode }) {
 
   const unlockedAchievementCount = useCallback(async (): Promise<number> => {
     const result = await countUnlockedAchievements();
+    return result ?? 0;
+  }, []);
+
+  const addTags = useCallback(
+    async (tagNames: string[]): Promise<void> => {
+      const now = new Date().toISOString();
+      const newTagsPayload: Tag[] = tagNames.map((name) => ({
+        id: randomUUID(),
+        name,
+        count: 1, // Default starting count for a new tag
+        createdAt: now,
+        updatedAt: now,
+      }));
+      await optimisticTagMutation(
+        (prevTags) => {
+          const nextState = [...prevTags];
+          for (const newTag of newTagsPayload) {
+            // Check if the tag name already exists in our local state
+            const existingIndex = nextState.findIndex(
+              (t) => t.name === newTag.name,
+            );
+
+            if (existingIndex >= 0) {
+              // It exists: Increment the local count
+              nextState[existingIndex] = {
+                ...nextState[existingIndex],
+                count: nextState[existingIndex].count + 1,
+                updatedAt: now,
+              };
+            } else {
+              // It's new: Append it
+              nextState.push(newTag);
+            }
+          }
+          return nextState;
+        },
+        () => insertTags(newTagsPayload),
+      );
+    },
+    [optimisticTagMutation],
+  );
+
+  const incrementTagUsage = useCallback(
+    async (id: string): Promise<void> => {
+      await optimisticTagMutation(
+        (prev) =>
+          prev.map((tag) =>
+            tag.id === id ? { ...tag, count: tag.count + 1 } : tag,
+          ),
+        () => incrementTagCount(id),
+      );
+    },
+    [optimisticTagMutation],
+  );
+
+  const deleteUserTag = useCallback(
+    async (id: string): Promise<void> => {
+      await optimisticTagMutation(
+        (prev) => prev.filter((tag) => tag.id !== id),
+        () => deleteTag(id),
+      );
+    },
+    [optimisticTagMutation],
+  );
+
+  const getTotalTagsUsage = useCallback(async (): Promise<number> => {
+    const result = await totalTagUsageCount();
+    return result ?? 0;
+  }, []);
+
+  const addCategory = useCallback(
+    async (category: Category): Promise<void> => {
+      await optimisticCategoryMutation(
+        (prev) => [...prev, category],
+        () => insertCategory(category),
+      );
+    },
+    [optimisticCategoryMutation],
+  );
+
+  const incrementCategoryUsage = useCallback(
+    async (id: string): Promise<void> => {
+      await optimisticCategoryMutation(
+        (prev) =>
+          prev.map((category) =>
+            category.id === id
+              ? { ...category, count: category.count + 1 }
+              : category,
+          ),
+        () => incrementCategoryCount(id),
+      );
+    },
+    [optimisticCategoryMutation],
+  );
+
+  const updateCategorysColor = useCallback(
+    async (id: string, color: string): Promise<void> => {
+      await optimisticCategoryMutation(
+        (prev) =>
+          prev.map((category) =>
+            category.id === id ? { ...category, color } : category,
+          ),
+        () => updateCategoryColor(id, color),
+      );
+    },
+    [optimisticCategoryMutation],
+  );
+
+  const deleteUserCategory = useCallback(
+    async (id: string): Promise<void> => {
+      await optimisticCategoryMutation(
+        (prev) => prev.filter((category) => category.id !== id),
+        () => deleteCategory(id),
+      );
+    },
+    [optimisticCategoryMutation],
+  );
+  const getTotalCategoryUsage = useCallback(async (): Promise<number> => {
+    const result = await countCategories();
     return result ?? 0;
   }, []);
 
@@ -232,12 +437,17 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     const loadData = async () => {
       try {
         await initDatabase();
+        await seedCategoriesIfEmpty();
         let loadedMetrics = await loadAppMetricsFromDb();
         let loadedAchievementMetrics = await loadAchievementMetrics();
         let loadedUnlockedAchievements = await getAllUnlockedAchievements();
+        let loadedTags = await getAllTags();
+        let loadedCategories = await getAllCategories();
         setAppMetrics(loadedMetrics);
         setAchievementMetrics(loadedAchievementMetrics);
         setUnlockedAchievements(loadedUnlockedAchievements);
+        setTags(loadedTags);
+        setCategories(loadedCategories);
       } catch (err) {
         console.error("[DataContext] Failed to initialise database:", err);
         dispatchError(
@@ -275,6 +485,12 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         trackMetric,
         resetMetrics,
         resetAchievements,
+        tags,
+        addTags,
+        incrementTagUsage,
+        categories,
+        addCategory,
+        incrementCategoryUsage,
       }}
     >
       {children}

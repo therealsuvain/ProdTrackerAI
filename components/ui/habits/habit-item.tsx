@@ -8,7 +8,7 @@ import Animated from "react-native-reanimated";
 import { ThemeContext } from "@/context/ThemeContext";
 import { Habit } from "@/types/habits";
 import { checkInHabit } from "@/utils/habit-utils";
-import { XButton } from "../x-button";
+import { XButton } from "../shared/x-button";
 import { HabitStats } from "./habit-stats";
 import { TargetDaysRow } from "./habit-target-days";
 import { useHabitDeniedFeedback } from "./habit-denied-feedback-util";
@@ -55,8 +55,8 @@ function HabitItem({
   const isNotHome = route.name !== "index";
   const { playDeniedFeedback, animatedStyle } = useHabitDeniedFeedback();
 
-  const handleEditing = useCallback(() =>{
-    if(habit.pendingStreakResetAfter){
+  const handleEditing = useCallback(() => {
+    if (habit.pendingStreakResetAfter) {
       playDeniedFeedback();
       return;
     }
@@ -103,7 +103,7 @@ function HabitItem({
                 inactiveColor={theme.whiteBase} // 20% opacity
               />
             )}
-            <Text  style={[styles.title,{ color: theme.whiteBase }]}>
+            <Text style={[styles.title, { color: theme.whiteBase }]}>
               {habit.title}
             </Text>
             {habit.pendingStreakResetAfter ? (
@@ -150,7 +150,11 @@ function HabitItem({
           )}
         </View>
         {!habit.pendingStreakResetAfter && (
-          <ProgressBar progress={progress} color={theme.habitBase} style={{backgroundColor:theme.greyBaseTertiary}} />
+          <ProgressBar
+            progress={progress}
+            color={theme.habitBase}
+            style={{ backgroundColor: theme.greyBaseTertiary }}
+          />
         )}
 
         {isNotHome && (
@@ -207,6 +211,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    fontWeight: 500
-  }
+    fontWeight: 500,
+  },
 });

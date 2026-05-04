@@ -4,7 +4,7 @@ import { useRoute } from "@react-navigation/native";
 import { useContext } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Card } from "react-native-paper";
-import { XButton } from "../x-button";
+import { XButton } from "../shared/x-button";
 
 interface EventItemProps {
   event: CalendarEvent;

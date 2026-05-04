@@ -15,7 +15,7 @@ import { Portal, TextInput } from "react-native-paper";
 
 import TimerDisplay from "@/components/ui/timer-logs/time-display/time-display";
 import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
-import { XButton } from "@/components/ui/x-button";
+import { XButton } from "@/components/ui/shared/x-button";
 import TimerEditModal from "@/components/modal/timer-modal";
 import { ThemeContext } from "@/context/ThemeContext";
 import { formatDuration } from "@/context/TimerContext";
@@ -27,11 +27,10 @@ import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 import { useLogs } from "@/hooks/use-logs";
 import { useHaptics } from "@/hooks/use-haptics";
 // Note : Timescreen is the only component where value prop is used for the TextInput instead of defaultValue
-// Note ContinuedFromAbove: default Value only takes input once, then doesnt update, the reason its works in other places is because 
-// Note ContinuedFromAbove: the modals re-render everytime, so default value gets feeded the latest state value and it looks ok, 
-// Note ContinuedFromAbove: here though the text inputs are directly on the screen so default value doesnt update with the state change 
+// Note ContinuedFromAbove: default Value only takes input once, then doesnt update, the reason its works in other places is because
+// Note ContinuedFromAbove: the modals re-render everytime, so default value gets feeded the latest state value and it looks ok,
+// Note ContinuedFromAbove: here though the text inputs are directly on the screen so default value doesnt update with the state change
 
- 
 function TimerScreenInner() {
   const { theme, isDarkMode } = useContext(ThemeContext);
   const { timerLogs, setTimerLogs, addLog, removeLog, editLog } = useLogs();
@@ -140,7 +139,9 @@ function TimerScreenInner() {
     }
   }, [displayedLogs.length, timerLogs.length]);
 
-  const timerBaseColor = isDarkMode ? theme.timerBase : theme.timerBaseLightModeOnly;
+  const timerBaseColor = isDarkMode
+    ? theme.timerBase
+    : theme.timerBaseLightModeOnly;
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
       <Ionicons name="timer" size={60} color={timerBaseColor} />
@@ -223,13 +224,13 @@ function TimerScreenInner() {
           value={title}
           textColor={theme.text}
           onChangeText={setTitle}
-
-          style={[styles.input,{backgroundColor: theme.background }]}
+          style={[styles.input, { backgroundColor: theme.background }]}
           mode="outlined"
           theme={{
             colors: {
               onSurfaceVariant: withAlpha(timerBaseColor, "90"),
-          }}}
+            },
+          }}
           activeOutlineColor={theme.timerBase}
           outlineColor={timerBaseColor}
         />
@@ -239,12 +240,17 @@ function TimerScreenInner() {
           value={category}
           textColor={theme.text}
           onChangeText={setCategory}
-          style={[styles.input, styles.categoryInput, {backgroundColor: theme.background }]}
+          style={[
+            styles.input,
+            styles.categoryInput,
+            { backgroundColor: theme.background },
+          ]}
           mode="outlined"
           theme={{
             colors: {
-              onSurfaceVariant:  withAlpha(timerBaseColor, "90"),
-          }}}
+              onSurfaceVariant: withAlpha(timerBaseColor, "90"),
+            },
+          }}
           activeOutlineColor={theme.timerBase}
           outlineColor={timerBaseColor}
         />

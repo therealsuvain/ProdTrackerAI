@@ -9,7 +9,7 @@ import {
   Switch,
   TextInput,
 } from "react-native-paper";
-import DaySelector from "../ui/day-selector";
+import DaySelector from "../ui/habits/day-selector";
 
 interface Props {
   visible: boolean;

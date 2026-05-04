@@ -6,7 +6,7 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
-  Text
+  Text,
 } from "react-native";
 import {
   Button,
@@ -42,7 +42,7 @@ function TaskScreenInner() {
   const { theme } = useContext(ThemeContext);
   const { tasks, setTasks, addTask, editTask, removeTask, toggleTask } =
     useTasks();
-  const { trackMetric } = useData();
+  const { trackMetric, addTags } = useData();
   const [visible, setVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -54,6 +54,7 @@ function TaskScreenInner() {
   const { state, updateField, onSubmit } = useTaskForm({
     addTask,
     editTask,
+    addTags,
     editingTask,
     onClose: () => setVisible(false),
   });
@@ -165,7 +166,7 @@ function TaskScreenInner() {
       </View>
     </View>
   );
-const paperTheme = useTheme()
+  const paperTheme = useTheme();
   return (
     <>
       <View style={[styles.container, { backgroundColor: theme.background }]}>

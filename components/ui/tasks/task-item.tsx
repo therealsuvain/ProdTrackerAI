@@ -2,10 +2,13 @@ import { Task } from "@/types/task";
 import { Badge, Card, Checkbox } from "react-native-paper";
 import { StyleSheet, View, Text, Button } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { XButton } from "../x-button";
+import { XButton } from "../shared/x-button";
 import { useRoute } from "@react-navigation/native";
 import { useContext } from "react";
 import { ThemeContext } from "@/context/ThemeContext";
+import { TagList } from "../shared/tags/tag-list";
+import { useData } from "@/hooks/use-data";
+import { CategoryBadge } from "../shared/categories/category-badge";
 
 const today = new Date().toISOString().split("T")[0];
 interface TaskItemProps {
@@ -22,11 +25,16 @@ export default function TaskItem({
   onDelete,
 }: TaskItemProps) {
   const { theme } = useContext(ThemeContext);
+  const { categories } = useData();
   const priorityColor = {
     low: theme.success,
     medium: theme.habitBase,
     high: theme.eventBase,
   }[task.priority];
+  let taskCategory;
+  if (task.category) {
+    taskCategory = categories.find((c) => c.name === task.category);
+  }
   const route = useRoute();
   const isNotHome = route.name !== "index";
   const overDue = task.dueDate.split("T")[0] < today;
@@ -57,12 +65,20 @@ export default function TaskItem({
             >
               {task.title}
             </Text>
-            {overDue && <Text style={[styles.overDueText, { color: theme.error }]}>Overdue</Text>}
+            {taskCategory && <CategoryBadge category={taskCategory} />}
+            {!task.completed && overDue && (
+              <Text style={[styles.overDueText, { color: theme.error }]}>
+                Overdue
+              </Text>
+            )}
           </View>
           {task.dueDate && (
             <Text style={{ color: "white" }}>
               Due : {new Date(task.dueDate).toDateString()}
             </Text>
+          )}
+          {task.tags && (
+            <TagList tags={task.tags} holeColor={theme.taskDarkPrimary} />
           )}
         </View>
         {isNotHome && <XButton icon="pencil-outline" onPress={onEdit} />}
@@ -84,7 +100,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   textContainer: { flex: 1, marginLeft: 8 },
-  titleContainer: { flexDirection: "row", alignItems: "center", gap:5 },
+  titleContainer: { flexDirection: "row", alignItems: "center", gap: 5 },
   overDueText: { fontSize: 11 },
   text: { fontSize: 16 },
   completedText: {

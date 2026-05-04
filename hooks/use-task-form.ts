@@ -3,6 +3,7 @@ import { useReducer, useEffect } from "react";
 import { randomUUID } from "expo-crypto";
 import { cancelReminder, scheduleReminderTasks } from "./use-notifications";
 import { generateEmbedding } from '@/utils/embedding-engine'
+import { tagsDiff } from "@/utils/common-utils";
 
 type FormState = Omit<Task, "id" | "notificationId" | "completed"> & {
   errors: Partial<
@@ -19,7 +20,7 @@ type FormAction =
 const initialState: FormState = {
   title: "",
   description: "",
-  category: "",
+  category: undefined,
   dueDate: new Date().toISOString(),
   reminder: false,
   reminderDate: undefined,
@@ -58,6 +59,7 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
 interface UseTaskFormProps {
   addTask: (task: Task) => Promise<void>;
   editTask: (task: Task) => Promise<void>;
+  addTags: (tags: string[]) => Promise<void>;
   editingTask: Task | null;
   onClose: () => void;
 }
@@ -65,6 +67,7 @@ interface UseTaskFormProps {
 export const useTaskForm = ({
   addTask,
   editTask,
+  addTags,
   editingTask,
   onClose,
 }: UseTaskFormProps) => {
@@ -138,34 +141,41 @@ export const useTaskForm = ({
       tags: state.tags,
       createdAt: editingTask ? editingTask.createdAt : state.createdAt,
       updatedAt: state.updatedAt,
-      embedding: state.embedding || await generateEmbedding(state.title,false)
+      embedding: state.embedding || await generateEmbedding(state.title, false)
     };
 
-    if(editingTask && editingTask.reminder){
+    if (editingTask && editingTask.reminder) {
       console.log("TASK FORM NOtif: cancelled old:1 new:0")
-      if(editingTask.notificationId)
-      await cancelReminder(editingTask.notificationId)
+      if (editingTask.notificationId)
+        await cancelReminder(editingTask.notificationId)
     }
-/* 
-    if(editingTask && editingTask.reminderDate && newTask.reminderDate 
-      && new Date(editingTask.reminderDate).toTimeString()!== new Date(newTask.reminderDate).toTimeString()){
-      console.log("TASK FORM NOtif: cancelled old:1 new:1")
-    if(editingTask.notificationId)
-      await cancelReminder(editingTask.notificationId)
-    } */
+    /* 
+        if(editingTask && editingTask.reminderDate && newTask.reminderDate 
+          && new Date(editingTask.reminderDate).toTimeString()!== new Date(newTask.reminderDate).toTimeString()){
+          console.log("TASK FORM NOtif: cancelled old:1 new:1")
+        if(editingTask.notificationId)
+          await cancelReminder(editingTask.notificationId)
+        } */
 
     if (newTask.reminder) {
       console.log("TASK FORM NOtif: scheduled")
       const notifId = await scheduleReminderTasks(newTask);
       newTask.notificationId = notifId;
     }
-    
+    //console.log("TAGS of TASK", newTask.tags, state.tags);
     if (editingTask) {
+      const finalTags = tagsDiff(newTask.tags, editingTask.tags);
+      if (finalTags.length) {
+        await addTags(finalTags);
+      }
       //console.log("EDIT", {...newTask, embedding:[]});
       await editTask(newTask);
       //setTasks(tasks.map((t) => (t.id === editingTask.id ? newTask : t)));
     } else {
       //console.log("NEW" ,{...newTask, embedding:[]});
+      if (newTask.tags) {
+        await addTags(newTask.tags);
+      }
       await addTask(newTask);
       //setTasks([...tasks, newTask]);
     }
@@ -176,3 +186,4 @@ export const useTaskForm = ({
 
   return { state, updateField, onSubmit, dispatch };
 };
+

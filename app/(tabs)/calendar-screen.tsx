@@ -19,10 +19,11 @@ import { CalendarEvent } from "@/types/calendar";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 import CalendarEventModal from "@/components/modal/calendar-event-modal";
 import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
-import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-list-agenda-view-main";
 import Timeline from "@/components/ui/calendar-events/calendar-timeline-view";
+import CalendarListAgendaV2 from "@/components/ui/calendar-events/v2-calendar-list-agenda-view-v2";
 import { ThemeContext } from "@/context/ThemeContext";
 import { useHaptics } from "@/hooks/use-haptics";
+import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-list-agenda-view-main";
 
 // TODOX - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {

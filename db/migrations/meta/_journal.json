@@ -36,6 +36,13 @@
       "when": 1776766863752,
       "tag": "0004_easy_black_cat",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1777869027593,
+      "tag": "0005_panoramic_genesis",
+      "breakpoints": true
     }
   ]
 }
