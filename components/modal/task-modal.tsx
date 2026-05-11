@@ -13,6 +13,7 @@ import {
 import { TagInput } from "../ui/shared/tags/tag-input";
 import { useData } from "@/hooks/use-data";
 import { CategorySelector } from "../ui/shared/categories/category-selector";
+import { Category } from "@/types/category";
 import { randomUUID } from "expo-crypto";
 
 interface Props {
@@ -20,7 +21,7 @@ interface Props {
   onDismiss: () => void;
   state: any;
   updateField: (field: any, value: any) => void;
-  onSubmit: () => Promise<void> | void;
+  onSubmit: (tagIDs: string[]) => Promise<void> | void;
 }
 
 export default function TaskModal({
@@ -31,13 +32,26 @@ export default function TaskModal({
   onSubmit,
 }: Props) {
   const { theme } = useContext(ThemeContext);
-  const { tags, categories, addCategory } = useData();
+  const {
+    tags,
+    addTags,
+    categories,
+    addCategory,
+    incrementCategoryUsage,
+    deleteUserCategory,
+  } = useData();
   const [dueDate, setDueDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [taskTags, setTaskTags] = useState<string[]>(state.tags ?? []);
+  //const [taskTags, setTaskTags] = useState<string[]>([]);
   const [category, setCategory] = useState<string | null>(null);
-  const taskTagsRef = useRef<string[]>([]);
+  const [sessionCatIds, setSessionCatIds] = useState<Set<string>>(
+    new Set<string>(),
+  );
+  const [tagNames, setTagNames] = useState<string[]>([]);
+  const originalTagIdsRef = useRef<string[]>([]);
+  const originalCategoryRef = useRef<string>(null);
+  //const taskTagsRef = useRef<string[]>([]);
   const onDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
@@ -58,48 +72,107 @@ export default function TaskModal({
       );
   };
 
-  const onSubmitWithTags = () => {
-    setTaskTags([]);
-    onSubmit();
+  const onSubmitWithTags = async () => {
+    let finalIds: string[];
+
+    if (originalTagIdsRef.current && originalTagIdsRef.current.length > 0) {
+      // Get original tag names from the tags store using editingTask's IDs
+      const originalNames = originalTagIdsRef.current
+        .map((id) => tags.find((t) => t.id === id)?.name)
+        .filter(Boolean) as string[];
+
+      // Diff: only names that are NEW (not in original)
+      const newNames = tagNames.filter((name) => !originalNames.includes(name));
+
+      // Names that already existed on this task (no addTags needed for these)
+      const existingNames = tagNames.filter((name) =>
+        originalNames.includes(name),
+      );
+
+      // Get IDs for existing names from the tags store (they're already in DB)
+      const existingIds = existingNames
+        .map((name) => tags.find((t) => t.name === name)?.id)
+        .filter(Boolean) as string[];
+
+      // Only call addTags for the diff — this avoids double-counting
+      const newIds = newNames.length > 0 ? await addTags(newNames) : [];
+
+      finalIds = [...existingIds, ...newIds];
+    } else {
+      // New task — all tagNames are new, pass everything to addTags
+      finalIds = tagNames.length > 0 ? await addTags(tagNames) : [];
+    }
+
+    if (state.category !== originalCategoryRef.current) {
+      await incrementCategoryUsage(state.category);
+    }
+    await onSubmit(finalIds);
   };
 
   const addTagToTask = (tag: string) => {
-    setTaskTags((prev) => [...prev, tag]);
-    updateField("tags", taskTagsRef.current);
-    //console.log(" taskTagsRef.current", taskTagsRef.current);
+    setTagNames((prev) => [...prev, tag]);
   };
 
   const removeTagFromTask = (tag: string) => {
-    setTaskTags((prev) => prev.filter((t) => t !== tag));
-    updateField("tags", taskTagsRef.current);
+    setTagNames((prev) => prev.filter((t) => t !== tag));
   };
 
-  const handleCreateCategory = async (name: string, color: string) => {
-    await addCategory({
-      id: randomUUID(),
-      name,
-      color,
-      count: 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+  const handleCreateCategory = async (
+    name: string,
+    color: string,
+    icon: string,
+  ) => {
+    const id = await addCategory(name, color, icon);
+    setSessionCatIds((prevSet) => {
+      const newSet = new Set(prevSet);
+      newSet.add(id);
+      return newSet;
     });
+    setCategory(id);
+  };
+
+  const handleDeleteCateogry = async (draftId: string) => {
+    if (!sessionCatIds.has(draftId)) {
+      console.log("What Category, not in sessionCreatedCatIds");
+    }
+    setSessionCatIds((prevSet) => {
+      const newSet = new Set(prevSet);
+      newSet.delete(draftId);
+      return newSet;
+    });
+    if (category === draftId) {
+      setCategory(null);
+      updateField("category", null);
+    }
+    await deleteUserCategory(draftId);
   };
 
   useEffect(() => {
     // Assuming 'isVisible' dictates if the modal is open, and 'task' is the passed item
     if (visible) {
       // Populate the draft state when opening an existing task
-      setTaskTags(state.tags ?? []);
+      //setTaskTags(state.tags ?? []);
+      originalTagIdsRef.current = state.tags ?? [];
+      originalCategoryRef.current = state.category ?? null;
+      if (state.tags && state.tags.length > 0) {
+        // tags = your TagRow[] from useData()
+        const names = state.tags
+          .map((id: string) => tags.find((t) => t.id === id)?.name)
+          .filter(Boolean) as string[];
+        setTagNames(names);
+      } else {
+        setTagNames([]);
+      }
       setCategory(state.category ?? null);
     } else if (!visible) {
       // Clean up the draft state when the modal closes to prevent memory leaks
       // and stop old data from flashing on the next open.
-      setTaskTags([]);
+      //setTaskTags([]);
+      originalTagIdsRef.current = [];
+      setTagNames([]);
+      setCategory(null);
     }
   }, [visible, state.tags]);
-  useEffect(() => {
-    taskTagsRef.current = taskTags;
-  }, [taskTags]);
 
   return (
     <Modal
@@ -148,14 +221,16 @@ export default function TaskModal({
       />
       <CategorySelector
         categoriesDb={categories}
+        sessionCategories={sessionCatIds}
         selectedCategory={category}
         onSelectCategory={setCategory}
         onCreateCategory={handleCreateCategory}
+        onDeleteCategory={handleDeleteCateogry}
         updateField={updateField}
       />
       <TagInput
         itemType="task"
-        currentTags={taskTags}
+        currentTags={tagNames}
         userTagsDb={tags} // [{ name: 'high-energy', count: 5 }, ...]
         onAddTag={addTagToTask}
         onRemoveTag={removeTagFromTask}

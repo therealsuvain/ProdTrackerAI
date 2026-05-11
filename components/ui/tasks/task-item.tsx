@@ -33,7 +33,7 @@ export default function TaskItem({
   }[task.priority];
   let taskCategory;
   if (task.category) {
-    taskCategory = categories.find((c) => c.name === task.category);
+    taskCategory = categories.find((c) => c.id === task.category);
   }
   const route = useRoute();
   const isNotHome = route.name !== "index";
@@ -65,7 +65,9 @@ export default function TaskItem({
             >
               {task.title}
             </Text>
-            {taskCategory && <CategoryBadge category={taskCategory} />}
+            {taskCategory && (
+              <CategoryBadge category={taskCategory} variant="iconOnly" />
+            )}
             {!task.completed && overDue && (
               <Text style={[styles.overDueText, { color: theme.error }]}>
                 Overdue

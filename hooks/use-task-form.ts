@@ -57,9 +57,9 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
 };
 
 interface UseTaskFormProps {
-  addTask: (task: Task) => Promise<void>;
-  editTask: (task: Task) => Promise<void>;
-  addTags: (tags: string[]) => Promise<void>;
+  addTask: (task: Task, tagIds: string[]) => Promise<void>;
+  editTask: (task: Task, tagIds: string[]) => Promise<void>;
+  addTags: (tags: string[]) => Promise<string[]>;
   editingTask: Task | null;
   onClose: () => void;
 }
@@ -102,7 +102,7 @@ export const useTaskForm = ({
     dispatch({ type: "UPDATE_FIELD", payload: { field, value } });
   };
 
-  const onSubmit = async () => {
+  const onSubmit = async (tagIds: string[]) => {
     dispatch({ type: "CLEAR_ERRORS" });
     let hasError = false;
     if (!state.title) {
@@ -162,21 +162,25 @@ export const useTaskForm = ({
       const notifId = await scheduleReminderTasks(newTask);
       newTask.notificationId = notifId;
     }
+
+    if (tagIds.length > 0) {
+      newTask.tags = tagIds
+    }
     //console.log("TAGS of TASK", newTask.tags, state.tags);
     if (editingTask) {
-      const finalTags = tagsDiff(newTask.tags, editingTask.tags);
-      if (finalTags.length) {
-        await addTags(finalTags);
-      }
+      /*       const {newTagsDiff, commonTags} = tagsDiff(newTask.tags, editingTask.tags);
+            if (newTagsDiff.length) {
+              await addTags(newTagsDiff);
+            } */
       //console.log("EDIT", {...newTask, embedding:[]});
-      await editTask(newTask);
+      await editTask(newTask, tagIds);
       //setTasks(tasks.map((t) => (t.id === editingTask.id ? newTask : t)));
     } else {
       //console.log("NEW" ,{...newTask, embedding:[]});
-      if (newTask.tags) {
-        await addTags(newTask.tags);
-      }
-      await addTask(newTask);
+      /*  if (newTask.tags) {
+         await addTags(newTask.tags);
+       } */
+      await addTask(newTask, tagIds);
       //setTasks([...tasks, newTask]);
     }
 

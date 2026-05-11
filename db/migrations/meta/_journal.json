@@ -43,6 +43,27 @@
       "when": 1777869027593,
       "tag": "0005_panoramic_genesis",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1777914773351,
+      "tag": "0006_cooing_plazm",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1777915265175,
+      "tag": "0007_odd_ultimo",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1778054857738,
+      "tag": "0008_unknown_arachne",
+      "breakpoints": true
     }
   ]
 }

@@ -80,11 +80,12 @@ interface DataContextType {
   resetMetrics: () => Promise<void>;
   resetAchievements: () => Promise<void>;
   tags: Tag[];
-  addTags: (tagNames: string[]) => Promise<void>;
+  addTags: (tagNames: string[]) => Promise<string[]>;
   incrementTagUsage: (id: string) => Promise<void>;
   categories: Category[];
-  addCategory: (category: Category) => Promise<void>;
+  addCategory: (name: string, color: string, icon: string) => Promise<string>;
   incrementCategoryUsage: (id: string) => Promise<void>;
+  deleteUserCategory: (id: string) => Promise<void>;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(
@@ -260,8 +261,9 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addTags = useCallback(
-    async (tagNames: string[]): Promise<void> => {
+    async (tagNames: string[]): Promise<string[]> => {
       const now = new Date().toISOString();
+      const tagIds: string[] = [];
       const newTagsPayload: Tag[] = tagNames.map((name) => ({
         id: randomUUID(),
         name,
@@ -280,6 +282,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
 
             if (existingIndex >= 0) {
               // It exists: Increment the local count
+              tagIds.push(nextState[existingIndex].id);
               nextState[existingIndex] = {
                 ...nextState[existingIndex],
                 count: nextState[existingIndex].count + 1,
@@ -287,6 +290,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
               };
             } else {
               // It's new: Append it
+              tagIds.push(newTag.id);
               nextState.push(newTag);
             }
           }
@@ -294,8 +298,17 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         },
         () => insertTags(newTagsPayload),
       );
+      return tagIds;
     },
     [optimisticTagMutation],
+  );
+
+  const getTagIdLocal = useCallback(
+    async (tagNames: string[]): Promise<string[]> => {
+      const result = tags.filter((tag) => tagNames.includes(tag.name));
+      return result.map((tag) => tag.id);
+    },
+    [tags],
   );
 
   const incrementTagUsage = useCallback(
@@ -326,7 +339,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     return result ?? 0;
   }, []);
 
-  const addCategory = useCallback(
+  /*   const addCategory = useCallback(
     async (category: Category): Promise<void> => {
       await optimisticCategoryMutation(
         (prev) => [...prev, category],
@@ -334,8 +347,29 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       );
     },
     [optimisticCategoryMutation],
-  );
+  ); */
 
+  const addCategory = useCallback(
+    async (name: string, color: string, icon: string): Promise<string> => {
+      const now = new Date().toISOString();
+      const id = randomUUID();
+      const category: Category = {
+        id,
+        name,
+        color,
+        icon,
+        count: 0,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await optimisticCategoryMutation(
+        (prev) => [...prev, category],
+        () => insertCategory(category),
+      );
+      return id;
+    },
+    [optimisticCategoryMutation],
+  );
   const incrementCategoryUsage = useCallback(
     async (id: string): Promise<void> => {
       await optimisticCategoryMutation(
@@ -491,6 +525,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         categories,
         addCategory,
         incrementCategoryUsage,
+        deleteUserCategory,
       }}
     >
       {children}

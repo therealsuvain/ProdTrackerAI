@@ -1,14 +1,28 @@
 import React, { useContext } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { ThemeContext } from "@/context/ThemeContext";
+import { useData } from "@/hooks/use-data";
 
 interface TagProps {
-  label: string;
+  tagId?: string;
+  tagName?: string;
   holeColor: string;
 }
 
-export const TagBadge = ({ label, holeColor }: TagProps) => {
+export const TagBadge = ({ tagId, tagName, holeColor }: TagProps) => {
   const { theme } = useContext(ThemeContext);
+  const { tags } = useData();
+  let label;
+  if (tagId) {
+    const tag = tags.find((t) => t.id === tagId);
+    if (tag) {
+      label = tag.name;
+    } else {
+      return;
+    }
+  } else if (tagName) {
+    label = tagName;
+  } else return;
 
   return (
     /*   <View style={[styles.tagContainer, { backgroundColor: "#404040" }]}>

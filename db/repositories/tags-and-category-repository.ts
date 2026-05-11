@@ -41,6 +41,7 @@ function rowToCategory(row: CategoryRow): Category {
         name: row.name,
         color: row.color,
         count: row.count,
+        icon: row.icon,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };
@@ -54,6 +55,7 @@ function categoryToInsert(category: Category): CategoryInsert {
         name: category.name,
         color: category.color,
         count: category.count ?? 0,
+        icon: category.icon,
         createdAt: category.createdAt ?? now,
         updatedAt: now, // always stamp updatedAt to now on any write
     };

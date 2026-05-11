@@ -154,7 +154,7 @@ export const TagInput = ({
                 {tag}
               </Text>
             </View> */}
-              <TagBadge label={tag} holeColor={"#000000"} />
+              <TagBadge tagName={tag} holeColor={"#000000"} />
             </Pressable>
           ))}
       </View>

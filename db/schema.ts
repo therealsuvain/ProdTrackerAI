@@ -24,7 +24,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ export const tasks = sqliteTable(
         id: text("id").primaryKey(),                    // UUID v4
         title: text("title").notNull(),
         description: text("description"),
-        category: text("category"),
+        category: text("category").references(() => categories.id, { onDelete: 'set null' }),
         // Stored as unix ms; converted to/from Date at the repository layer
         dueDate: text("due_date").notNull(),
         reminderDate: text("reminder_date"),
@@ -96,7 +96,7 @@ export const habits = sqliteTable(
         // Pending reset is a transient coordination flag — text date or null
         pendingStreakResetAfter: text("pending_streak_reset_after"),
         notificationId: text("notification_id"),
-        category: text("category"),
+        category: text("category").references(() => categories.id, { onDelete: 'set null' }),
         tags: text("tags"),                            // JSON: string[]
         embedding: text("embedding"),                  // JSON: number[]
         ...auditFields,
@@ -186,7 +186,7 @@ export const calendarEvents = sqliteTable(
         description: text("description"),
         reminder: integer("reminder", { mode: "boolean" }).notNull().default(false),
         recurrence: text("recurrence", { enum: ["none", "daily", "weekly"] }).notNull().default("none"),
-        category: text("category"),
+        category: text("category").references(() => categories.id, { onDelete: 'set null' }),
         tags: text("tags"),
         embedding: text("embedding"),                  // JSON: number[]
         ...auditFields,
@@ -275,7 +275,39 @@ export const messages = sqliteTable(
         index("messages_sender_idx").on(table.sender),
     ]),
 );
+// ---  JUNCTION TABLES for Tags (M:N Relationships) ---
 
+export const taskTags = sqliteTable('task_tags', {
+    taskId: text('task_id')
+        .notNull()
+        .references(() => tasks.id, { onDelete: 'cascade' }),
+    tagId: text('tag_id')
+        .notNull()
+        .references(() => tags.id, { onDelete: 'cascade' }),
+}, (t) =>
+    // Composite Primary Key prevents duplicate tag assignments on the exact same task
+    [primaryKey({ columns: [t.taskId, t.tagId] })],
+);
+
+export const habitTags = sqliteTable('habit_tags', {
+    habitId: text('habit_id')
+        .notNull()
+        .references(() => habits.id, { onDelete: 'cascade' }),
+    tagId: text('tag_id')
+        .notNull()
+        .references(() => tags.id, { onDelete: 'cascade' }),
+}, (t) => [primaryKey({ columns: [t.habitId, t.tagId] })],
+);
+
+export const eventTags = sqliteTable('event_tags', {
+    eventId: text('event_id')
+        .notNull()
+        .references(() => calendarEvents.id, { onDelete: 'cascade' }),
+    tagId: text('tag_id')
+        .notNull()
+        .references(() => tags.id, { onDelete: 'cascade' }),
+}, (t) => [primaryKey({ columns: [t.eventId, t.tagId] })],
+);
 // ─── metrics ──────────────────────────────────────────────────────────────────
 
 /**
@@ -373,6 +405,7 @@ export const categories = sqliteTable(
         id: text("id").primaryKey(),             // UUID v4
         name: text("name").notNull().unique(),   // e.g., "Work"
         color: text("color").notNull(),          // Hex code e.g., "#3b82f6"
+        icon: text("icon").notNull(),
         count: integer("count").notNull().default(0), // Usage tracking for ranking
         ...auditFields,
     },

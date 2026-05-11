@@ -18,7 +18,7 @@ export const TagList = ({ tags, holeColor }: TagListProps) => {
   return (
     <View style={styles.listContainer}>
       {parsedTags.map((tag, index) => (
-        <TagBadge key={`${tag}-${index}`} label={tag} holeColor={holeColor} />
+        <TagBadge key={`${tag}-${index}`} tagId={tag} holeColor={holeColor} />
       ))}
     </View>
   );

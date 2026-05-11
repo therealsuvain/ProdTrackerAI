@@ -24,8 +24,8 @@ import { useData } from "@/hooks/use-data";
 interface TaskContextType {
   tasks: Task[];
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
-  addTask: (task: Task) => Promise<void>;
-  editTask: (task: Task) => Promise<void>;
+  addTask: (task: Task, tagIds: string[]) => Promise<void>;
+  editTask: (task: Task, tagIds: string[]) => Promise<void>;
   removeTask: (id: string) => Promise<void>;
   removeTasks: () => Promise<void>;
   toggleTask: (id: string) => Promise<void>;
@@ -66,20 +66,20 @@ export default function TaskProvider({ children }: { children: ReactNode }) {
   );
 
   const addTask = useCallback(
-    async (task: Task): Promise<void> => {
+    async (task: Task, tagIds: string[]): Promise<void> => {
       await optimisticTaskMutation(
         (prev) => [...prev, task],
-        () => insertTask(task),
+        () => insertTask(task, tagIds),
       );
     },
     [optimisticTaskMutation],
   );
 
   const editTask = useCallback(
-    async (task: Task): Promise<void> => {
+    async (task: Task, tagIds: string[]): Promise<void> => {
       await optimisticTaskMutation(
         (prev) => prev.map((t) => (t.id === task.id ? task : t)),
-        () => updateTask(task),
+        () => updateTask(task, tagIds),
       );
     },
     [optimisticTaskMutation],

@@ -19,7 +19,7 @@
  */
 
 import { eq, desc, asc } from "drizzle-orm";
-import { db, tasks } from "@/db";
+import { db, tasks, taskTags } from "@/db";
 import type { Task } from "@/types/task";
 import type { TaskRow, TaskInsert } from "@/db/schema";
 
@@ -95,27 +95,60 @@ export async function getTaskById(id: string): Promise<Task | null> {
  * Throws on DB error — caller is responsible for catching and rolling back
  * optimistic UI state.
  */
-export async function insertTask(task: Task): Promise<Task> {
+export async function insertTask(task: Task, tagIds: string[]): Promise<Task> {
     const insert = taskToInsert(task);
-    await db.insert(tasks).values(insert);
-    // Return with the exact timestamps that were written
-    return rowToTask({ ...insert } as TaskRow);
+    return await db.transaction(async (tx) => {
+        // 1. Insert the parent record and return the generated payload
+        const [insertedTask] = await tx
+            .insert(tasks)
+            .values(insert)
+            .returning();
+
+        // 2. Batch insert the junction records
+        if (tagIds.length > 0) {
+            const junctionData = tagIds.map((tagId) => ({
+                taskId: insertedTask.id,
+                tagId: tagId,
+            }));
+
+            await tx.insert(taskTags).values(junctionData);
+        }
+
+        return rowToTask({ ...insertedTask } as TaskRow);
+    });
 }
 
 /**
  * Update an existing task. Merges the provided fields and stamps updatedAt.
  * Throws on DB error.
  */
-export async function updateTask(task: Task): Promise<Task> {
+export async function updateTask(task: Task, tagIds: string[]): Promise<Task> {
     const insert = taskToInsert(task);
-    await db
-        .update(tasks)
-        .set({
-            ...insert,
-            updatedAt: new Date().toISOString(), // explicit — taskToInsert also sets it
-        })
-        .where(eq(tasks.id, task.id));
-    return rowToTask({ ...insert } as TaskRow);
+    return await db.transaction(async (tx) => {
+        await tx
+            .update(tasks)
+            .set({
+                ...insert,
+                updatedAt: new Date().toISOString(), // explicit — taskToInsert also sets it
+            })
+            .where(eq(tasks.id, task.id));
+
+        await tx
+            .delete(taskTags)
+            .where(eq(taskTags.taskId, task.id));
+
+        if (tagIds.length > 0) {
+            const junctionData = tagIds.map((tagId) => ({
+                taskId: task.id,
+                tagId: tagId,
+            }));
+
+            await tx.insert(taskTags).values(junctionData);
+        }
+
+        return rowToTask({ ...insert } as TaskRow);
+    });
+
 }
 
 /**
@@ -172,12 +205,12 @@ export async function bulkInsertTasks(taskList: Task[]): Promise<void> {
 }
 
 export async function deleteAllTasks(): Promise<number> {
-  const count = await countTasks();
-  if (count === 0) return 0;
+    const count = await countTasks();
+    if (count === 0) return 0;
 
-  await db.delete(tasks);
+    await db.delete(tasks);
 
-  return count;
+    return count;
 }
 
 /**

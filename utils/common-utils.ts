@@ -20,9 +20,12 @@ export const tagsDiff = (newTags?: string[], oldTags?: string[]) => {
   const arrOldTags = oldTags ?? [];
 
   // Case 2: A undefined, oldTags has values → return oldTags
-  if (!newTags && oldTags) return [];
+  if (!newTags && oldTags) return { newTagsDiff: [], commonTags: [] };
 
   // Case 1 & 3 handled naturally below
   const bSet = new Set(arrOldTags);
-  return arrNewTags.filter(item => !bSet.has(item));
+  const newTagsDiff = arrNewTags.filter(item => !bSet.has(item));
+  const commonTags = arrNewTags.filter(item => bSet.has(item));
+
+  return { newTagsDiff, commonTags };
 };
