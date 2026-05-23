@@ -28,21 +28,17 @@ interface CalendarListAgendaAltProps {
 const MemoizedEventItem = memo(
   ({
     event,
-    showEdit,
+    //showEdit,
     onEdit,
     onDelete,
   }: {
     event: CalendarEvent;
-    showEdit: boolean;
+    //showEdit: boolean;
     onEdit?: () => void;
     onDelete?: () => void;
   }) => (
     <View style={styles.itemContainer}>
-      <EventItem
-        event={event}
-        onEdit={showEdit ? onEdit : undefined}
-        onDelete={onDelete}
-      />
+      <EventItem event={event} onEdit={onEdit} onDelete={onDelete} />
     </View>
   ),
 );
@@ -58,7 +54,7 @@ export default function CalendarListAgendaMain({
   const { theme } = useContext(ThemeContext);
   const [items, setItems] = useState<AgendaSchedule>({});
 
-  const seenEventIds = useRef<Set<string>>(new Set());
+  //const seenEventIds = useRef<Set<string>>(new Set());
 
   // Convert timestamp to date string
   const timeToString = (time: number) => {
@@ -106,6 +102,7 @@ export default function CalendarListAgendaMain({
             day: todayDateString,
             event: event,
             occurence: todayDateString,
+            _fingerprint: `${event.category}-${event.tags?.length || 0}-${event.title}-${event.description}`,
           }));
       }
       return [];
@@ -157,6 +154,7 @@ export default function CalendarListAgendaMain({
       dateString: today.toISOString().split("T")[0],
     };
     loadItems(dateData);
+    console.log(events.filter((e) => e.title === "ThirdEvent")[0].category);
   }, [events, loadItems]);
 
   useEffect(() => {
@@ -189,13 +187,13 @@ export default function CalendarListAgendaMain({
     if (!event) {
       return null;
     }
-    const showEdit = !seenEventIds.current.has(event.id);
-    if (showEdit) seenEventIds.current.add(event.id);
+    /*  const showEdit = !seenEventIds.current.has(event.id);
+    if (showEdit) seenEventIds.current.add(event.id); */
 
     return (
       <MemoizedEventItem
         event={event}
-        showEdit={showEdit}
+        //showEdit={showEdit}
         onEdit={() => onEventSelect?.(event)}
         onDelete={() => onDelete?.(event.id, occurence)}
       />

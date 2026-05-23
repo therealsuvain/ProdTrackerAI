@@ -7,9 +7,15 @@ interface TagProps {
   tagId?: string;
   tagName?: string;
   holeColor: string;
+  mode?: "small" | "big";
 }
 
-export const TagBadge = ({ tagId, tagName, holeColor }: TagProps) => {
+export const TagBadge = ({
+  tagId,
+  tagName,
+  holeColor,
+  mode = "small",
+}: TagProps) => {
   const { theme } = useContext(ThemeContext);
   const { tags } = useData();
   let label;
@@ -31,15 +37,32 @@ export const TagBadge = ({ tagId, tagName, holeColor }: TagProps) => {
     </View> */
     <View style={styles.tagContainer}>
       {/* The pointed left edge created via border manipulation */}
-      <View style={[styles.triangle, { borderRightColor: "#A0A0A0" }]} />
+      <View
+        style={[
+          mode === "small" ? styles.triangle : styles.triangleBig,
+          { borderRightColor: "#A0A0A0" },
+        ]}
+      />
 
       {/* The main rectangular body of the tag */}
-      <View style={[styles.body, { backgroundColor: "#A0A0A0" }]}>
-        <Text style={styles.text}>{label}</Text>
+      <View
+        style={[
+          mode === "small" ? styles.body : styles.bodyBig,
+          { backgroundColor: "#A0A0A0" },
+        ]}
+      >
+        <Text style={mode === "small" ? styles.text : styles.textBig}>
+          {label}
+        </Text>
       </View>
 
       {/* The punched hole overlapping the triangle */}
-      <View style={[styles.hole, { backgroundColor: holeColor }]} />
+      <View
+        style={[
+          mode === "small" ? styles.hole : styles.holeBig,
+          { backgroundColor: holeColor },
+        ]}
+      />
     </View>
   );
 };
@@ -85,5 +108,39 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 2.5,
+  },
+  triangleBig: {
+    width: 0,
+    height: 0,
+    backgroundColor: "transparent",
+    borderStyle: "solid",
+    borderRightWidth: 12, // Controls the depth of the point
+    borderTopWidth: 12, // Half of the total height
+    borderBottomWidth: 12, // Half of the total height
+    borderTopColor: "transparent",
+    borderBottomColor: "transparent",
+  },
+  bodyBig: {
+    height: 24, // Must equal borderTopWidth + borderBottomWidth
+    justifyContent: "center",
+    textAlign: "center",
+    alignContent: "center",
+    alignItems: "center",
+    paddingRight: 8,
+    paddingLeft: 4,
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
+  },
+  textBig: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "bold",
+  },
+  holeBig: {
+    position: "absolute",
+    left: 5, // Aligns the hole inside the triangle point
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });

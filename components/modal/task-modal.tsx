@@ -10,11 +10,14 @@ import {
   TextInput,
 } from "react-native-paper";
 
-import { TagInput } from "../ui/shared/tags/tag-input";
-import { useData } from "@/hooks/use-data";
+/* import { TagInput } from "../ui/shared/tags/tag-input";
 import { CategorySelector } from "../ui/shared/categories/category-selector";
 import { Category } from "@/types/category";
 import { randomUUID } from "expo-crypto";
+import { useData } from "@/hooks/use-data";
+ */
+import { TagsAndCategorySection } from "@/components/ui/shared/tags-and-categories-addon";
+import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
 
 interface Props {
   visible: boolean;
@@ -32,25 +35,32 @@ export default function TaskModal({
   onSubmit,
 }: Props) {
   const { theme } = useContext(ThemeContext);
-  const {
+  /*   const {
     tags,
     addTags,
     categories,
     addCategory,
     incrementCategoryUsage,
     deleteUserCategory,
-  } = useData();
+  } = useData(); */
+
+  const tagsAndCategoryEditor = useTagsAndCategories({
+    visible,
+    initialTags: state.tags,
+    initialCategory: state.category,
+    updateField,
+  });
   const [dueDate, setDueDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   //const [taskTags, setTaskTags] = useState<string[]>([]);
-  const [category, setCategory] = useState<string | null>(null);
+  /*   const [category, setCategory] = useState<string | null>(null);
   const [sessionCatIds, setSessionCatIds] = useState<Set<string>>(
     new Set<string>(),
   );
   const [tagNames, setTagNames] = useState<string[]>([]);
   const originalTagIdsRef = useRef<string[]>([]);
-  const originalCategoryRef = useRef<string>(null);
+  const originalCategoryRef = useRef<string>(null); */
   //const taskTagsRef = useRef<string[]>([]);
   const onDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
@@ -73,7 +83,7 @@ export default function TaskModal({
   };
 
   const onSubmitWithTags = async () => {
-    let finalIds: string[];
+    /*    let finalIds: string[];
 
     if (originalTagIdsRef.current && originalTagIdsRef.current.length > 0) {
       // Get original tag names from the tags store using editingTask's IDs
@@ -105,11 +115,15 @@ export default function TaskModal({
 
     if (state.category !== originalCategoryRef.current) {
       await incrementCategoryUsage(state.category);
-    }
-    await onSubmit(finalIds);
+    } */
+
+    const finalTagIds = await tagsAndCategoryEditor.processMetadataOnSave(
+      state.category,
+    );
+    await onSubmit(finalTagIds);
   };
 
-  const addTagToTask = (tag: string) => {
+  /*   const addTagToTask = (tag: string) => {
     setTagNames((prev) => [...prev, tag]);
   };
 
@@ -172,7 +186,7 @@ export default function TaskModal({
       setTagNames([]);
       setCategory(null);
     }
-  }, [visible, state.tags]);
+  }, [visible, state.tags]); */
 
   return (
     <Modal
@@ -219,7 +233,12 @@ export default function TaskModal({
         }}
         multiline
       />
-      <CategorySelector
+      <TagsAndCategorySection
+        editor={tagsAndCategoryEditor}
+        itemType="task"
+        updateField={updateField}
+      />
+      {/*  <CategorySelector
         categoriesDb={categories}
         sessionCategories={sessionCatIds}
         selectedCategory={category}
@@ -234,7 +253,7 @@ export default function TaskModal({
         userTagsDb={tags} // [{ name: 'high-energy', count: 5 }, ...]
         onAddTag={addTagToTask}
         onRemoveTag={removeTagFromTask}
-      />
+      /> */}
       <SegmentedButtons
         value={state.priority}
         onValueChange={(v) =>

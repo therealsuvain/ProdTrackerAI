@@ -33,20 +33,20 @@ import {
   getAllTags,
   deleteTag,
   deleteAllTags,
+  deleteTagSafely,
   insertTags,
   updateTag,
   incrementTagCount,
   countTags,
-  totalTagUsageCount,
+  getTagUsageStats,
   getAllCategories,
-  deleteCategory,
+  deleteCategorySafely,
   deleteAllCategories,
   insertCategory,
   updateCategory,
-  updateCategoryColor,
   incrementCategoryCount,
   countCategories,
-  totalCategoryUsageCount,
+  getCategoryUsage,
   seedCategoriesIfEmpty,
 } from "@/db/repositories/tags-and-category-repository";
 
@@ -60,6 +60,7 @@ import { AchievementMetrics } from "@/types/achievement-metrics";
 import { Tag } from "@/types/tag";
 import { Category } from "@/types/category";
 import { randomUUID } from "expo-crypto";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 // TODOX if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
 interface DataContextType {
@@ -82,10 +83,15 @@ interface DataContextType {
   tags: Tag[];
   addTags: (tagNames: string[]) => Promise<string[]>;
   incrementTagUsage: (id: string) => Promise<void>;
+  updateUserTag: (tag: Tag) => Promise<void>;
+  deleteUserTag: (id: string, fallbackId?: string | null) => Promise<void>;
+  getTagUsageForAll: (id: string) => Promise<any>;
   categories: Category[];
   addCategory: (name: string, color: string, icon: string) => Promise<string>;
   incrementCategoryUsage: (id: string) => Promise<void>;
-  deleteUserCategory: (id: string) => Promise<void>;
+  updateUserCategory: (category: Category) => Promise<void>;
+  deleteUserCategory: (id: string, fallbackId?: string | null) => Promise<void>;
+  getCategoryUsageForAll: (id: string) => Promise<any>;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(
@@ -191,10 +197,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         await dbWrite();
       } catch (err) {
         // 4. Rollback
-        console.error(
-          "[DataContext] UnlockedAchievement DB write failed, rolling back:",
-          err,
-        );
+        console.error("[DataContext] Tag DB write failed, rolling back:", err);
         setTags(snapshot);
         throw err; // caller catches this and shows DbErrorToast
       }
@@ -303,14 +306,6 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     [optimisticTagMutation],
   );
 
-  const getTagIdLocal = useCallback(
-    async (tagNames: string[]): Promise<string[]> => {
-      const result = tags.filter((tag) => tagNames.includes(tag.name));
-      return result.map((tag) => tag.id);
-    },
-    [tags],
-  );
-
   const incrementTagUsage = useCallback(
     async (id: string): Promise<void> => {
       await optimisticTagMutation(
@@ -324,30 +319,37 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     [optimisticTagMutation],
   );
 
+  const updateUserTag = useCallback(
+    async (tag: Tag): Promise<void> => {
+      await optimisticTagMutation(
+        (prev) => prev.map((t) => (t.id === tag.id ? { ...t, ...tag } : t)),
+        () => updateTag(tag),
+      );
+    },
+    [optimisticTagMutation],
+  );
   const deleteUserTag = useCallback(
-    async (id: string): Promise<void> => {
+    async (id: string, fallbackId?: string | null): Promise<void> => {
       await optimisticTagMutation(
         (prev) => prev.filter((tag) => tag.id !== id),
-        () => deleteTag(id),
+        () => deleteTagSafely(id, fallbackId),
       );
     },
     [optimisticTagMutation],
   );
 
-  const getTotalTagsUsage = useCallback(async (): Promise<number> => {
-    const result = await totalTagUsageCount();
-    return result ?? 0;
+  const getTagUsageForAll = useCallback(async (tagId: string): Promise<any> => {
+    const result = await getTagUsageStats(tagId);
+    return (
+      result ?? {
+        tasks: 0,
+        habits: 0,
+        events: 0,
+        logs: 0,
+        total: 0,
+      }
+    );
   }, []);
-
-  /*   const addCategory = useCallback(
-    async (category: Category): Promise<void> => {
-      await optimisticCategoryMutation(
-        (prev) => [...prev, category],
-        () => insertCategory(category),
-      );
-    },
-    [optimisticCategoryMutation],
-  ); */
 
   const addCategory = useCallback(
     async (name: string, color: string, icon: string): Promise<string> => {
@@ -376,7 +378,11 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         (prev) =>
           prev.map((category) =>
             category.id === id
-              ? { ...category, count: category.count + 1 }
+              ? {
+                  ...category,
+                  count: category.count + 1,
+                  updatedAt: new Date().toISOString(),
+                }
               : category,
           ),
         () => incrementCategoryCount(id),
@@ -385,32 +391,44 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     [optimisticCategoryMutation],
   );
 
-  const updateCategorysColor = useCallback(
-    async (id: string, color: string): Promise<void> => {
+  const updateUserCategory = useCallback(
+    async (category: Category): Promise<void> => {
       await optimisticCategoryMutation(
         (prev) =>
-          prev.map((category) =>
-            category.id === id ? { ...category, color } : category,
+          prev.map((cat) =>
+            cat.id === category.id ? { ...cat, ...category } : cat,
           ),
-        () => updateCategoryColor(id, color),
+        () => updateCategory(category),
       );
     },
     [optimisticCategoryMutation],
   );
 
   const deleteUserCategory = useCallback(
-    async (id: string): Promise<void> => {
+    async (id: string, fallbackId?: string | null): Promise<void> => {
       await optimisticCategoryMutation(
         (prev) => prev.filter((category) => category.id !== id),
-        () => deleteCategory(id),
+        () => deleteCategorySafely(id, fallbackId),
       );
     },
     [optimisticCategoryMutation],
   );
-  const getTotalCategoryUsage = useCallback(async (): Promise<number> => {
-    const result = await countCategories();
-    return result ?? 0;
-  }, []);
+
+  const getCategoryUsageForAll = useCallback(
+    async (categoryId: string): Promise<any> => {
+      const result = await getCategoryUsage(categoryId);
+      return (
+        result ?? {
+          tasks: 0,
+          habits: 0,
+          events: 0,
+          logs: 0,
+          total: 0,
+        }
+      );
+    },
+    [],
+  );
 
   const trackMetric = useCallback(
     async (keys: GlobalMetricKey[], amount: number) => {
@@ -522,10 +540,15 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         tags,
         addTags,
         incrementTagUsage,
+        updateUserTag,
+        deleteUserTag,
+        getTagUsageForAll,
         categories,
         addCategory,
         incrementCategoryUsage,
+        updateUserCategory,
         deleteUserCategory,
+        getCategoryUsageForAll,
       }}
     >
       {children}

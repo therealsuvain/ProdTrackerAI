@@ -5,6 +5,7 @@ export interface TimerLog {
   endTime?: string;
   duration?: number; // In seconds
   category?:string;
+  tags?: string[];
   laps?: number[];
   isPartial?: boolean;
    // ── Audit fields ──────────────────────────────────────────────────────────

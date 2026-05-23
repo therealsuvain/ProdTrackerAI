@@ -25,6 +25,8 @@ interface LogContextType {
   editLog: (log: TimerLog) => Promise<void>;
   removeLog: (id: string) => Promise<void>;
   removeLogs: () => Promise<void>;
+  reassignLogCategoryLocal: (oldId: string, newId: string) => void;
+  reassignLogTagLocal: (oldId: string, newId: string) => void;
   logCount: () => Promise<number>;
 }
 
@@ -106,6 +108,42 @@ export default function LogProvider({ children }: { children: ReactNode }) {
     return result ?? 0;
   }, []);
 
+  const reassignLogCategoryLocal = useCallback(
+    (oldCategoryId: string, newCategoryId: string): void => {
+      setTimerLogs((prev) =>
+        prev.map((l) =>
+          l.category === oldCategoryId
+            ? {
+                ...l,
+                category: newCategoryId,
+              }
+            : l,
+        ),
+      );
+    },
+    [],
+  );
+  const reassignLogTagLocal = useCallback(
+    (oldTagId: string, newTagId: string | null): void => {
+      setTimerLogs((prev) =>
+        prev.map((l) => {
+          // If the task doesn'l have the old tag, return it untouched
+          if (!l.tags?.includes(oldTagId)) return l;
+
+          // Remove the old tag
+          const filteredTags = l.tags.filter((id) => id !== oldTagId);
+
+          // Add new tag securely
+          if (newTagId && !filteredTags.includes(newTagId)) {
+            filteredTags.push(newTagId);
+          }
+
+          return { ...l, tags: filteredTags };
+        }),
+      );
+    },
+    [],
+  );
   useEffect(() => {
     const loadLogs = async () => {
       try {
@@ -133,6 +171,8 @@ export default function LogProvider({ children }: { children: ReactNode }) {
         editLog,
         removeLog,
         removeLogs,
+        reassignLogCategoryLocal,
+        reassignLogTagLocal,
         logCount,
       }}
     >

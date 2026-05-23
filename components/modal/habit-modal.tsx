@@ -10,24 +10,16 @@ import {
   TextInput,
 } from "react-native-paper";
 import DaySelector from "../ui/habits/day-selector";
+import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
+import { TagsAndCategorySection } from "../ui/shared/tags-and-categories-addon";
 
 interface Props {
   visible: boolean;
   visibleInEditMode: boolean;
   onDismiss: () => void;
   state: any;
-  updateField: (
-    field:
-      | "title"
-      | "frequency"
-      | "reminder"
-      | "reminderDate"
-      | "targetDays"
-      | "goal"
-      | "errors",
-    value: any,
-  ) => void;
-  onSubmit: () => Promise<void> | void;
+  updateField: (field: any, value: any) => void;
+  onSubmit: (tagIDs: string[]) => Promise<void> | void;
 }
 
 export default function HabitModal({
@@ -40,6 +32,14 @@ export default function HabitModal({
 }: Props) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const { theme } = useContext(ThemeContext);
+
+  const tagsAndCategoryEditor = useTagsAndCategories({
+    visible,
+    initialTags: state.tags,
+    initialCategory: state.category,
+    updateField,
+  });
+
   const onTimeChange = (event: any, selectedDate?: Date) => {
     setShowTimePicker(false);
     console.log("HABIT MODAL REMINDER DATE", selectedDate);
@@ -47,10 +47,16 @@ export default function HabitModal({
     if (selectedDate) updateField("reminderDate", selectedDate.toISOString());
   };
 
+  const onSubmitWithTags = async () => {
+    const finalTagIds = await tagsAndCategoryEditor.processMetadataOnSave(
+      state.category,
+    );
+    await onSubmit(finalTagIds);
+  };
   //visibleInEditMode && console.log("visibleInEditMode", state.goal);
   return (
     <Modal
-      visible={visible || visibleInEditMode}
+      visible={visible}
       onDismiss={onDismiss}
       contentContainerStyle={[
         styles.modal,
@@ -79,7 +85,11 @@ export default function HabitModal({
           {state.errors.title}
         </Text>
       )}
-
+      <TagsAndCategorySection
+        editor={tagsAndCategoryEditor}
+        itemType="habit"
+        updateField={updateField}
+      />
       <SegmentedButtons
         style={styles.verticalMargin}
         value={state.frequency}
@@ -186,7 +196,7 @@ export default function HabitModal({
         mode="elevated"
         buttonColor={theme.habitDarkSecondary}
         textColor={theme.habitBase}
-        onPress={onSubmit}
+        onPress={onSubmitWithTags}
       >
         Save
       </Button>

@@ -1,5 +1,5 @@
 import { eq, desc, asc } from "drizzle-orm";
-import { db, timerLogs } from "@/db";
+import { db, timerLogs, timerTags } from "@/db";
 import type { TimerLog } from "@/types/timer";
 import type { TimerLogRow, TimerLogInsert } from "@/db/schema";
 
@@ -14,6 +14,7 @@ function rowToTimerLog(row: TimerLogRow): TimerLog {
         endTime: row.endTime ?? undefined,
         duration: row.duration ?? undefined,
         category: row.category ?? undefined,
+        tags: row.tags ? JSON.parse(row.tags) : undefined,
         laps: row.laps ? JSON.parse(row.laps) : undefined,
         isPartial: row.isPartial ?? false,
         createdAt: row.createdAt,
@@ -31,6 +32,7 @@ function timer_logToInsert(timer_log: TimerLog): TimerLogInsert {
         endTime: timer_log.endTime ?? null,
         duration: timer_log.duration ?? null,
         category: timer_log.category ?? null,
+        tags: timer_log.tags ? JSON.stringify(timer_log.tags) : null,
         laps: timer_log.laps ? JSON.stringify(timer_log.laps) : null,
         isPartial: timer_log.isPartial ?? false,
         createdAt: timer_log.createdAt ?? now,
@@ -69,6 +71,14 @@ export async function getTimerLogById(id: string): Promise<TimerLog | null> {
 export async function insertTimerLog(timer_log: TimerLog): Promise<TimerLog> {
     const insert = timer_logToInsert(timer_log);
     await db.insert(timerLogs).values(insert);
+    if (timer_log.tags&& timer_log.tags.length>0) {
+        const junctionData = timer_log.tags.map((tagId) => ({
+                logId: timer_log.id,
+                tagId: tagId,
+            }));
+
+            await db.insert(timerTags).values(junctionData);
+        }
     // Return with the exact timestamps that were written
     return rowToTimerLog({ ...insert } as TimerLogRow);
 }
@@ -86,6 +96,14 @@ export async function updateTimerLog(timer_log: TimerLog): Promise<TimerLog> {
             updatedAt: new Date().toISOString(), // explicit — timer_logToInsert also sets it
         })
         .where(eq(timerLogs.id, timer_log.id));
+    if (timer_log.tags&& timer_log.tags.length>0) {
+        const junctionData = timer_log.tags.map((tagId) => ({
+                logId: timer_log.id,
+                tagId: tagId,
+            }));
+            await db.delete(timerTags).where(eq(timerTags.logId, timer_log.id));
+            await db.insert(timerTags).values(junctionData);
+        }
     return rowToTimerLog({ ...insert } as TimerLogRow);
 }
 

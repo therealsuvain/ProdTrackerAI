@@ -17,7 +17,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { eq, asc, desc, inArray } from "drizzle-orm";
-import { db, habits, habitCheckIns, habitFreezeHistory, habitGoalCompletions } from "@/db";
+import { db, habits, habitCheckIns, habitFreezeHistory, habitGoalCompletions, habitTags } from "@/db";
 import type { Habit, GoalCompletion } from "@/types/habits";
 import type {
     HabitRow,
@@ -224,7 +224,7 @@ export async function getHabitById(id: string): Promise<Habit | null> {
  * Insert a new habit with all child rows in a single transaction.
  * Throws on DB error.
  */
-export async function insertHabit(habit: Habit): Promise<Habit> {
+export async function insertHabit(habit: Habit, tagIds: string[]): Promise<Habit> {
     const checkInRows = buildCheckInRows(habit);
     const freezeRows = buildFreezeRows(habit);
     const goalCompletionRows = buildGoalCompletionRows(habit);
@@ -241,8 +241,16 @@ export async function insertHabit(habit: Habit): Promise<Habit> {
         if (goalCompletionRows.length > 0) {
             await tx.insert(habitGoalCompletions).values(goalCompletionRows);
         }
-    });
+        if (tagIds.length > 0) {
+            const junctionData = tagIds.map((tagId) => ({
+                habitId: habit.id,
+                tagId: tagId,
+            }));
 
+            await tx.insert(habitTags).values(junctionData);
+        }
+    });
+ 
     // Return the full assembled habit
     return habit;
 }
@@ -256,7 +264,7 @@ export async function insertHabit(habit: Habit): Promise<Habit> {
  * the transaction guarantees atomicity so there's no window where child rows
  * are missing.
  */
-export async function updateHabit(habit: Habit): Promise<Habit> {
+export async function updateHabit(habit: Habit, tagIds: string[]): Promise<Habit> {
     const checkInRows = buildCheckInRows(habit);
     const freezeRows = buildFreezeRows(habit);
     const goalCompletionRows = buildGoalCompletionRows(habit);
@@ -282,6 +290,19 @@ export async function updateHabit(habit: Habit): Promise<Habit> {
         }
         if (goalCompletionRows.length > 0) {
             await tx.insert(habitGoalCompletions).values(goalCompletionRows);
+        }
+
+         await tx
+            .delete(habitTags)
+            .where(eq(habitTags.habitId, habit.id));
+
+        if (tagIds.length > 0) {
+            const junctionData = tagIds.map((tagId) => ({
+                habitId: habit.id,
+                tagId: tagId,
+            }));
+
+            await tx.insert(habitTags).values(junctionData);
         }
     });
 

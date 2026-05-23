@@ -11,6 +11,7 @@ import { Category } from "@/types/category";
 //TODO duplicate cateogries get added to UI, and count gets updated in db for exisitng one
 // TODO swap color from white to black for icon depending on background color lightness or darkness
 interface CategorySelectorProps {
+  itemType: "task" | "habit" | "event" | "log";
   categoriesDb: Category[]; // Passed down from DataContext
   sessionCategories: Set<string>;
   selectedCategory: string | null;
@@ -21,10 +22,11 @@ interface CategorySelectorProps {
     icon: string,
   ) => Promise<void>; // The DAO call
   onDeleteCategory: (id: string) => Promise<void>;
-  updateField: (field: any, value: any) => void;
+  updateField?: (field: any, value: any) => void;
 }
 
 export const CategorySelector = ({
+  itemType,
   categoriesDb,
   sessionCategories,
   selectedCategory,
@@ -36,27 +38,40 @@ export const CategorySelector = ({
   const { theme } = useContext(ThemeContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-
+  const activeColor = useMemo(() => {
+    switch (itemType) {
+      case "task":
+        return theme.taskDarkPrimary;
+      case "habit":
+        return theme.habitDarkPrimary;
+      case "event":
+        return theme.eventDarkPrimary;
+      case "log":
+        return theme.timerDarkPrimary;
+      default:
+        return theme.greyBasePrimary;
+    }
+  }, [itemType, theme]);
   const selectedTaskCategory = useMemo(() => {
     return categoriesDb.find((c) => c.id === selectedCategory);
   }, [categoriesDb, selectedCategory]);
 
   const handleSelect = (catId: string) => {
     onSelectCategory(catId);
-    updateField("category", catId);
+    if (updateField) updateField("category", catId);
     //setModalVisible(false);
   };
 
   const handleDeSelect = () => {
     onSelectCategory(null);
-    updateField("category", null);
+    if (updateField) updateField("category", null);
   };
 
   return (
     <>
       {/* The Anchor Element in the Form */}
       <Pressable
-        style={[styles.anchor, { backgroundColor: theme.taskDarkPrimary }]}
+        style={[styles.anchor, { backgroundColor: activeColor }]}
         onPress={() => setModalVisible(true)}
       >
         <Text style={{ color: theme.greyBasePrimary, marginRight: 8 }}>

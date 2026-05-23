@@ -21,14 +21,17 @@ import {
   restartHabitAfterGoalForeground,
 } from "@/utils/habit-utils";
 import { useData } from "@/hooks/use-data";
+import { tag } from "@expo/ui/swift-ui/modifiers";
 
 interface HabitContextType {
   habits: Habit[];
   setHabits: React.Dispatch<React.SetStateAction<Habit[]>>;
-  addHabit: (habit: Habit) => Promise<void>;
-  editHabit: (habit: Habit) => Promise<void>;
+  addHabit: (habit: Habit, tagIds: string[]) => Promise<void>;
+  editHabit: (habit: Habit, tagIds: string[]) => Promise<void>;
   removeHabit: (id: string) => Promise<void>;
   removeHabits: () => Promise<void>;
+  reassignHabitCategoryLocal: (oldId: string, newId: string) => void;
+  reassignHabitTagLocal: (oldId: string, newId: string) => void;
   habitCount: () => Promise<number>;
 }
 
@@ -67,20 +70,20 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
   );
 
   const addHabit = useCallback(
-    async (habit: Habit): Promise<void> => {
+    async (habit: Habit, tagIds: string[]): Promise<void> => {
       await optimisticHabitMutation(
         (prev) => [...prev, habit],
-        () => insertHabit(habit),
+        () => insertHabit(habit, tagIds),
       );
     },
     [optimisticHabitMutation],
   );
 
   const editHabit = useCallback(
-    async (habit: Habit): Promise<void> => {
+    async (habit: Habit, tagIds: string[]): Promise<void> => {
       await optimisticHabitMutation(
         (prev) => prev.map((h) => (h.id === habit.id ? habit : h)),
-        () => updateHabit(habit),
+        () => updateHabit(habit, tagIds),
       );
     },
     [optimisticHabitMutation],
@@ -106,6 +109,43 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
     return result ?? 0;
   }, []);
 
+  const reassignHabitCategoryLocal = useCallback(
+    (oldCategoryId: string, newCategoryId: string): void => {
+      setHabits((prev) =>
+        prev.map((h) =>
+          h.category === oldCategoryId
+            ? {
+                ...h,
+                category: newCategoryId,
+              }
+            : h,
+        ),
+      );
+    },
+    [],
+  );
+
+  const reassignHabitTagLocal = useCallback(
+    (oldTagId: string, newTagId: string | null): void => {
+      setHabits((prev) =>
+        prev.map((h) => {
+          // If the task doesn't have the old tag, return it untouched
+          if (!h.tags?.includes(oldTagId)) return h;
+
+          // Remove the old tag
+          const filteredTags = h.tags.filter((id) => id !== oldTagId);
+
+          // Add new tag securely
+          if (newTagId && !filteredTags.includes(newTagId)) {
+            filteredTags.push(newTagId);
+          }
+
+          return { ...h, tags: filteredTags };
+        }),
+      );
+    },
+    [],
+  );
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -122,14 +162,14 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
             missedCount++;
           } else if (status === "auto_frozen") {
             // Safely wait for the DB to update this specific habit
-            await editHabit(updatedHabit);
+            await editHabit(updatedHabit, updatedHabit.tags || []);
             autoFrozenCount++;
           }
 
           if (habit.pendingStreakResetAfter) {
             const resettedHabit = restartHabitAfterGoalForeground(updatedHabit);
             if (!resettedHabit.pendingStreakResetAfter) {
-              await editHabit(resettedHabit);
+              await editHabit(resettedHabit, resettedHabit.tags || []);
             }
             finalHabit = resettedHabit;
           }
@@ -188,6 +228,8 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
         editHabit,
         removeHabit,
         removeHabits,
+        reassignHabitCategoryLocal,
+        reassignHabitTagLocal,
         habitCount,
       }}
     >

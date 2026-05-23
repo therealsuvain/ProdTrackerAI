@@ -48,23 +48,6 @@ const filterSettings = (
 
 const SETTINGS_LAYOUT: SettingsSection[] = [
   {
-    title: "Profile",
-    data: [
-      {
-        id: "soundEffectsEnabled",
-        label: "ADMIN Mode",
-        icon: "key",
-        type: "link",
-      },
-      {
-        id: "deleteProfile",
-        label: "Delete Profle",
-        icon: "trash",
-        type: "link",
-      },
-    ],
-  },
-  {
     title: "Appearance",
     data: [
       {
@@ -104,6 +87,32 @@ const SETTINGS_LAYOUT: SettingsSection[] = [
         href: "/settings/data-management",
       },
       {
+        id: "editCategories",
+        label: "Categories Management",
+        icon: "category",
+        type: "link",
+        options: [
+          {
+            type: "widget",
+            value: "CategoryWidget",
+          },
+        ],
+        href: "/settings/category/category-settings",
+      },
+      {
+        id: "editTags",
+        label: "Tags Management",
+        icon: "pricetags-sharp",
+        type: "link",
+        options: [
+          {
+            type: "widget",
+            value: "TagsWidget",
+          },
+        ],
+        href: "/settings/tags/tags-settings",
+      },
+      {
         id: "resetAchievements",
         label: "Reset Achievements",
         icon: "trophy",
@@ -114,6 +123,23 @@ const SETTINGS_LAYOUT: SettingsSection[] = [
         label: "Reset to default settings",
         icon: "settings-backup-restore",
         type: "action",
+      },
+    ],
+  },
+  {
+    title: "Profile",
+    data: [
+      {
+        id: "soundEffectsEnabled",
+        label: "ADMIN Mode",
+        icon: "key",
+        type: "link",
+      },
+      {
+        id: "deleteProfile",
+        label: "Delete Profle",
+        icon: "trash",
+        type: "link",
       },
     ],
   },

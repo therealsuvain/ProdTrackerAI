@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { ThemeContext } from "@/context/ThemeContext";
 import { CategoryRow } from "@/db/schema";
 import { Ionicons } from "@expo/vector-icons";
+import { cat } from "@huggingface/transformers";
 
 export type CategoryBadgeVariant = "default" | "iconOnly";
 interface CategoryBadgeProps {
@@ -26,12 +27,19 @@ export const CategoryBadge = ({
   if (variant === "iconOnly") {
     return (
       <View
-        style={[styles.iconOnlyContainer, { backgroundColor: category.color }]}
+        style={[
+          styles.iconOnlyContainer,
+          {
+            backgroundColor: `${category.color}33`,
+            borderColor: category.color,
+            borderWidth: 1,
+          },
+        ]}
       >
         <Ionicons
           name={category.icon as keyof typeof Ionicons.glyphMap}
           size={12}
-          color="#FFFFFF"
+          color={category.color}
         />
       </View>
     );
@@ -42,13 +50,13 @@ export const CategoryBadge = ({
       <View
         style={[
           styles.iconOnlyContainer,
-          { backgroundColor: category.color, marginRight: 6 },
+          { backgroundColor: `${category.color}33`, marginRight: 6 },
         ]}
       >
         <Ionicons
           name={category.icon as keyof typeof Ionicons.glyphMap}
           size={15}
-          color="#FFFFFF"
+          color={category.color}
         />
       </View>
       <Text style={[styles.text, { fontSize, color: theme.whiteBase }]}>

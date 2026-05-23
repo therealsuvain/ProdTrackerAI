@@ -59,7 +59,6 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
 interface UseTaskFormProps {
   addTask: (task: Task, tagIds: string[]) => Promise<void>;
   editTask: (task: Task, tagIds: string[]) => Promise<void>;
-  addTags: (tags: string[]) => Promise<string[]>;
   editingTask: Task | null;
   onClose: () => void;
 }
@@ -67,7 +66,6 @@ interface UseTaskFormProps {
 export const useTaskForm = ({
   addTask,
   editTask,
-  addTags,
   editingTask,
   onClose,
 }: UseTaskFormProps) => {

@@ -25,6 +25,8 @@ const initialState: FormState = {
   endTime: "",
   reminder: false,
   recurrence: "none",
+  category: undefined,
+  tags: undefined,
   errors: {},
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -125,7 +127,6 @@ export const useEventForm = ({
         },
       });
     } else {
-      console.log("THIS TWO EVENTS")
       dispatch({ type: "RESET" });
     }
   }, [editingEvent]);
@@ -134,7 +135,7 @@ export const useEventForm = ({
     dispatch({ type: "UPDATE_FIELD", payload: { field, value } });
   };
 
-  const onSubmit = async () => {
+  const onSubmit = async (tagsIds: string[]) => {
     dispatch({ type: "CLEAR_ERRORS" });
     let hasError = false;
 
@@ -224,6 +225,10 @@ export const useEventForm = ({
       await cancelAllRemniders(editingEvent.notificationIds)
       const notifIds = await scheduleReminderEvents(newEvent);
       newEvent.notificationIds = notifIds;
+    }
+
+    if(tagsIds.length > 0) {
+      newEvent.tags = tagsIds
     }
     if (editingEvent) {
       editEvent(newEvent);

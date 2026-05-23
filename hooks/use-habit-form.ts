@@ -3,6 +3,9 @@ import { useReducer, useEffect } from "react";
 import { randomUUID } from "expo-crypto";
 import { cancelReminder, scheduleReminderHabits } from "./use-notifications";
 import {generateEmbedding} from '@/utils/embedding-engine'
+import { stat } from "react-native-fs";
+import { ta } from "date-fns/locale";
+import { tag } from "@expo/ui/swift-ui/modifiers";
 
 type Frequency = "daily" | "weekly";
 
@@ -36,6 +39,8 @@ const initialState: FormState = {
   goal: 0,
   goalCompletions: [],
   targetDays: [],
+  category: undefined,
+  tags: undefined,
   errors: {},
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -67,8 +72,8 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
 };
 
 interface UseHabitFormProps {
-  addHabit: (habit: Habit) => Promise<void>;
-  editHabit: (habit: Habit) => Promise<void>;
+  addHabit: (habit: Habit, tagIds: string[]) => Promise<void>;
+  editHabit: (habit: Habit, tagIds: string[]) => Promise<void>;
   editingHabit: Habit | null;
   onClose: () => void;
 }
@@ -92,6 +97,8 @@ export const useHabitForm = ({
           reminderDate: editingHabit.reminderDate,
           targetDays: editingHabit.targetDays,
           goal: editingHabit.goal,
+          category: editingHabit.category,
+          tags: editingHabit.tags,
           createdAt: editingHabit.createdAt,
           updatedAt: editingHabit.updatedAt,
           embedding : editingHabit.embedding
@@ -106,7 +113,7 @@ export const useHabitForm = ({
     dispatch({ type: "UPDATE_FIELD", payload: { field, value } });
   };
 
-  const onSubmit = async () => {
+  const onSubmit = async (tagIds: string[]) => {
     dispatch({ type: "CLEAR_ERRORS" });
     let hasError = false;
     if (!state.title) {
@@ -175,6 +182,8 @@ export const useHabitForm = ({
           ? parseInt(state.goal)
           : state.goal,
       goalCompletions: state.goalCompletions || [],
+      category: state.category,
+      tags: state.tags,
       createdAt: editingHabit ? editingHabit.createdAt : state.createdAt,
       updatedAt: state.updatedAt,
       notificationId: editingHabit ? editingHabit.notificationId : undefined,
@@ -193,10 +202,14 @@ export const useHabitForm = ({
       newHabit.notificationId = notifId;
     }
 
+    if(tagIds.length > 0){
+      newHabit.tags = tagIds
+    }
+    
     if (editingHabit) {
-      await editHabit(newHabit);
+      await editHabit(newHabit, tagIds);
     } else {
-      await addHabit(newHabit);
+      await addHabit(newHabit, tagIds);
     }
 
     onClose();

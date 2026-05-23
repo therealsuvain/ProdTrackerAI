@@ -32,7 +32,7 @@ interface TimerContextType {
   setCountdownTarget: (seconds: number) => void;
   start: () => void;
   pause: () => void;
-  stop: () => void;
+  stop: () => Promise<TimerLog | null>;
   reset: () => void;
   lap: () => void;
   setTitle: (title: string) => void;
@@ -114,7 +114,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
   const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
   const [pausedSeconds, setPausedSeconds] = useState(0);
   const { trackMetric } = useData();
-  const { addLog } = useLogs()
+  const { addLog } = useLogs();
   const updateIntervalRef = useRef<number | null>(null);
   //const notificationUpdateRef = useRef<number | null>(null);
   const isInitializedRef = useRef(false);
@@ -500,10 +500,10 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
       isRunning && startTimestamp
         ? pausedSeconds + Math.floor((Date.now() - startTimestamp) / 1000)
         : pausedSeconds;
-
+    var log: TimerLog | null = null;
     const workedTime = mode === "countdown" ? finalTime : finalTime;
     if (workedTime > 0) {
-      const log: TimerLog = {
+      log = {
         id: randomUUID(),
         title: title || "Untitled Activity",
         category: category.trim() || undefined,
@@ -520,6 +520,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     }
 
     resetState();
+    return log;
   };
   const resetWithConfirmation = () => {
     if (time === 0) {

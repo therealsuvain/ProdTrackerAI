@@ -8,6 +8,9 @@ import { ThemeContext } from "@/context/ThemeContext";
 import { formatDuration, formatRelativeTime } from "@/context/TimerContext";
 import { TimerLog } from "@/types/timer";
 import { withAlpha } from "@/utils/common-utils";
+import { TagList } from "@/components/ui/shared/tags/tag-list";
+import { useData } from "@/hooks/use-data";
+import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
 interface TimerLogItemProps {
   log: TimerLog;
   onDelete: () => void;
@@ -20,6 +23,11 @@ export default function TimerLogItem({
   onEdit,
 }: TimerLogItemProps) {
   const { theme } = useContext(ThemeContext);
+  const { categories } = useData();
+  let logCategory;
+  if (log.category) {
+    logCategory = categories.find((c) => c.id === log.category);
+  }
   const route = useRoute();
   const isNotHome = route.name !== "index";
 
@@ -59,14 +67,13 @@ export default function TimerLogItem({
                     { borderColor: withAlpha(theme.timerBase, "66") },
                   ]}
                 >
-                  <Text
-                    style={[styles.categoryText, { color: theme.timerBase }]}
-                  >
-                    {log.category}
-                  </Text>
+                  <CategoryBadge category={logCategory} variant="iconOnly" />
                 </View>
               )}
             </View>
+            {log.tags && (
+              <TagList tags={log.tags} holeColor={theme.timerDarkPrimary} />
+            )}
             {/* ── Duration + start time ── */}
             <Text style={{ color: theme.whiteBase }}>
               {duration}
@@ -160,12 +167,8 @@ const styles = StyleSheet.create({
   categoryPill: {
     alignSelf: "flex-start",
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginTop: 4,
+    borderRadius: 20,
   },
-  categoryText: { fontSize: 11, fontWeight: "600" },
   lapToggle: { marginTop: 6 },
   lapToggleText: { fontSize: 12, fontWeight: "600" },
   lapsBlock: {

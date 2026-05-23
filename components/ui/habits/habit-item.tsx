@@ -12,6 +12,9 @@ import { XButton } from "../shared/x-button";
 import { HabitStats } from "./habit-stats";
 import { TargetDaysRow } from "./habit-target-days";
 import { useHabitDeniedFeedback } from "./habit-denied-feedback-util";
+import { useData } from "@/hooks/use-data";
+import { CategoryBadge } from "../shared/categories/category-badge";
+import { TagList } from "../shared/tags/tag-list";
 
 interface HabitItemProps {
   habit: Habit;
@@ -35,6 +38,9 @@ const customComparator = (prev: HabitItemProps, next: HabitItemProps) => {
     prev.habit.goal === next.habit.goal &&
     prev.habit.title === next.habit.title &&
     prev.habit.targetDays === next.habit.targetDays && // array ref — stable if not edited
+    prev.habit.category === next.habit.category &&
+    prev.habit.tags === next.habit.tags &&
+    prev.onEdit === next.onEdit && // stable via useCallback in screen
     prev.onUpdate === next.onUpdate && // stable via useCallback in screen
     prev.onDelete === next.onDelete && // stable via useCallback in screen
     prev.onGoalReached === next.onGoalReached
@@ -48,13 +54,17 @@ function HabitItem({
   onGoalReached,
 }: HabitItemProps) {
   const { theme } = useContext(ThemeContext);
+  const { categories } = useData();
   const progress = habit.goal ? habit.streak / habit.goal : 0;
   /* const handleCheckIn = () =>
      onUpdate(checkInHabit(habit)); */
   const route = useRoute();
   const isNotHome = route.name !== "index";
   const { playDeniedFeedback, animatedStyle } = useHabitDeniedFeedback();
-
+  let habitCategory;
+  if (habit.category) {
+    habitCategory = categories.find((c) => c.id === habit.category);
+  }
   const handleEditing = useCallback(() => {
     if (habit.pendingStreakResetAfter) {
       playDeniedFeedback();
@@ -103,9 +113,14 @@ function HabitItem({
                 inactiveColor={theme.whiteBase} // 20% opacity
               />
             )}
-            <Text style={[styles.title, { color: theme.whiteBase }]}>
-              {habit.title}
-            </Text>
+            <View style={styles.titleContainer}>
+              <Text style={[styles.title, { color: theme.whiteBase }]}>
+                {habit.title}
+              </Text>
+              {habitCategory && (
+                <CategoryBadge category={habitCategory} variant="iconOnly" />
+              )}
+            </View>
             {habit.pendingStreakResetAfter ? (
               <>
                 <Text
@@ -156,6 +171,9 @@ function HabitItem({
             style={{ backgroundColor: theme.greyBaseTertiary }}
           />
         )}
+        {habit.tags && (
+          <TagList tags={habit.tags} holeColor={theme.habitDarkPrimary} />
+        )}
 
         {isNotHome && (
           <View style={styles.buttons}>
@@ -200,6 +218,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     flex: 1,
   },
+  titleContainer: { flexDirection: "row", alignItems: "center", gap: 5 },
   buttons: {
     position: "relative",
     flexDirection: "row",

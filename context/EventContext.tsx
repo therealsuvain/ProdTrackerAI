@@ -31,6 +31,8 @@ interface EventContextType {
     date: string,
     all: boolean,
   ) => Promise<void>;
+  reassignEventCategoryLocal: (oldId: string, newId: string) => void;
+  reassignEventTagLocal: (oldId: string, newId: string) => void;
   eventCount: () => Promise<number>;
 }
 
@@ -87,7 +89,7 @@ export default function EventProvider({ children }: { children: ReactNode }) {
   const editEvent = useCallback(
     async (event: CalendarEvent): Promise<void> => {
       await optimisticCalendarEventMutation(
-        (prev) => prev.map((e) => (e.id === event.id ? event : e)),
+        (prev) => prev.map((e) => (e.id === event.id ? { ...event } : e)),
         () => updateCalendarEvent(event),
       );
     },
@@ -144,7 +146,43 @@ export default function EventProvider({ children }: { children: ReactNode }) {
       notificationIds: event.notificationIds?.filter((n) => n.date !== date),
     });
   };
+  const reassignEventCategoryLocal = useCallback(
+    (oldCategoryId: string, newCategoryId: string): void => {
+      setEvents((prev) =>
+        prev.map((e) =>
+          e.category === oldCategoryId
+            ? {
+                ...e,
+                category: newCategoryId,
+              }
+            : e,
+        ),
+      );
+    },
+    [],
+  );
 
+  const reassignEventTagLocal = useCallback(
+    (oldTagId: string, newTagId: string | null): void => {
+      setEvents((prev) =>
+        prev.map((e) => {
+          // If the task doesn'e have the old tag, return it untouched
+          if (!e.tags?.includes(oldTagId)) return e;
+
+          // Remove the old tag
+          const filteredTags = e.tags.filter((id) => id !== oldTagId);
+
+          // Add new tag securely
+          if (newTagId && !filteredTags.includes(newTagId)) {
+            filteredTags.push(newTagId);
+          }
+
+          return { ...e, tags: filteredTags };
+        }),
+      );
+    },
+    [],
+  );
   //Loader
   useEffect(() => {
     const loadEvents = async () => {
@@ -174,6 +212,8 @@ export default function EventProvider({ children }: { children: ReactNode }) {
         removeEvent,
         removeEvents,
         deleteEventOccurrence,
+        reassignEventCategoryLocal,
+        reassignEventTagLocal,
         eventCount,
       }}
     >

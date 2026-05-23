@@ -5,7 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 export type SettingInputType = 'toggle' | 'link' | 'action' | 'value-link'; // Expanded later for 'timepicker'
 
 export interface SettingOption {
-  label: string;
+  type: 'widget' | 'radio' | 'dropdown';
   value: string | number | boolean;
 }
 export interface SettingItem {

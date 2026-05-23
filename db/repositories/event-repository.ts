@@ -1,5 +1,5 @@
 import { eq, desc, inArray } from "drizzle-orm";
-import { db, calendarEvents, eventDeletedOccurrences, eventNotificationIds } from "@/db";
+import { db, calendarEvents, eventDeletedOccurrences, eventNotificationIds, eventTags } from "@/db";
 import type { CalendarEvent } from "@/types/calendar";
 import type { CalendarEventRow, CalendarEventInsert, EventDeletedOccurrenceRow, EventNotificationIdRow } from "@/db/schema";
 
@@ -181,6 +181,13 @@ export async function insertCalendarEvent(event: CalendarEvent): Promise<Calenda
         if (notificationIdRows.length > 0) {
             await tx.insert(eventNotificationIds).values(notificationIdRows);
         }
+        if(event.tags && event.tags.length > 0) {
+            const junctionData = event.tags.map((tagId) => ({
+                eventId: event.id,
+                tagId: tagId,
+            }));
+            await tx.insert(eventTags).values(junctionData);
+        }
     });
 
     // Return the full assembled event
@@ -216,6 +223,14 @@ export async function updateCalendarEvent(event: CalendarEvent): Promise<Calenda
         }
         if (notificationIdRows.length > 0) {
             await tx.insert(eventNotificationIds).values(notificationIdRows);
+        }
+        if(event.tags && event.tags.length > 0) {
+            const junctionData = event.tags.map((tagId) => ({
+                eventId: event.id,
+                tagId: tagId,
+            }));
+             await tx.delete(eventTags).where(eq(eventTags.eventId, event.id));
+            await tx.insert(eventTags).values(junctionData);
         }
     });
 

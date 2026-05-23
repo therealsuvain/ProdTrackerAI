@@ -53,6 +53,7 @@ function HabitsScreenInner() {
   const showModal = (habit?: Habit) => {
     if (habit) {
       setVisibleInEditMode(true);
+      setVisible(true);
       setEditingHabit(habit);
       return;
     }
@@ -71,7 +72,7 @@ function HabitsScreenInner() {
       const habit = habits.find((h) => h.id === updated.id);
       if (!habit) return;
       try {
-        await editHabit(updated);
+        await editHabit(updated, updated.tags || []);
         let updateMetrics: GlobalMetricKey[] = [];
         if (habit.history.length < updated.history.length) {
           updateMetrics.push("habitsCheckedIn");
@@ -149,7 +150,7 @@ function HabitsScreenInner() {
       ),
     );
   }, [searchQuery, habits]);
- const emptyStateColor = isDarkMode ? theme.habitBase : theme.habitDarkPrimary
+  const emptyStateColor = isDarkMode ? theme.habitBase : theme.habitDarkPrimary;
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
       <FontAwesome6 name="bars-progress" size={60} color={emptyStateColor} />

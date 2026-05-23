@@ -29,6 +29,8 @@ interface TaskContextType {
   removeTask: (id: string) => Promise<void>;
   removeTasks: () => Promise<void>;
   toggleTask: (id: string) => Promise<void>;
+  reassignTaskCategoryLocal: (oldId: string, newId: string) => void;
+  reassignTaskTagLocal: (oldId: string, newId: string) => void;
   taskCount: () => Promise<number>;
 }
 
@@ -100,6 +102,45 @@ export default function TaskProvider({ children }: { children: ReactNode }) {
     setTasks([]);
   }, []);
 
+  const reassignTaskCategoryLocal = useCallback(
+    (oldCategoryId: string, newCategoryId: string): void => {
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.category === oldCategoryId
+            ? {
+                ...t,
+                category: newCategoryId,
+              }
+            : t,
+        ),
+      );
+    },
+    [],
+  );
+
+  // Example for TaskContext:
+  const reassignTaskTagLocal = useCallback(
+    (oldTagId: string, newTagId: string | null): void => {
+      setTasks((prev) =>
+        prev.map((t) => {
+          // If the task doesn't have the old tag, return it untouched
+          if (!t.tags?.includes(oldTagId)) return t;
+
+          // Remove the old tag
+          const filteredTags = t.tags.filter((id) => id !== oldTagId);
+
+          // Add new tag securely
+          if (newTagId && !filteredTags.includes(newTagId)) {
+            filteredTags.push(newTagId);
+          }
+
+          return { ...t, tags: filteredTags };
+        }),
+      );
+    },
+    [],
+  );
+
   const toggleTask = useCallback(
     async (id: string): Promise<void> => {
       await optimisticTaskMutation(
@@ -157,6 +198,8 @@ export default function TaskProvider({ children }: { children: ReactNode }) {
         removeTask,
         removeTasks,
         toggleTask,
+        reassignTaskCategoryLocal,
+        reassignTaskTagLocal,
         taskCount,
       }}
     >

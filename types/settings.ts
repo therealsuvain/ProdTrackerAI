@@ -12,6 +12,8 @@ export interface SettingsConfig {
   deleteHabits: boolean;
   deleteEvents: boolean;
   deleteTimerLogs: boolean;
+  editCategories: boolean
+  editTags: boolean
   resetSettings: boolean
 
 }
@@ -30,5 +32,7 @@ export const defaultSettings: SettingsConfig = {
   deleteHabits: false,
   deleteEvents: false,
   deleteTimerLogs: false,
+  editCategories: false,
+  editTags: false,
   resetSettings: false
 };

@@ -54,7 +54,6 @@ function TaskScreenInner() {
   const { state, updateField, onSubmit } = useTaskForm({
     addTask,
     editTask,
-    addTags,
     editingTask,
     onClose: () => setVisible(false),
   });

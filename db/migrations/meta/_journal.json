@@ -64,6 +64,13 @@
       "when": 1778054857738,
       "tag": "0008_unknown_arachne",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1779455666542,
+      "tag": "0009_complex_zarda",
+      "breakpoints": true
     }
   ]
 }

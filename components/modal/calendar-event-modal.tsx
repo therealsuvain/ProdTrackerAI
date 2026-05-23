@@ -9,27 +9,16 @@ import {
 } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { ThemeContext } from "@/context/ThemeContext";
+import { TagsAndCategorySection } from "@/components/ui/shared/tags-and-categories-addon";
+import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
 
 //TODOX What in case when a user wants to schedule an overnight event, when the start time is later than the end time but of previous date, current logic breaks in case
 interface Props {
   visible: boolean;
   onDismiss: () => void;
   state: any;
-  updateField: (
-    field:
-      | "title"
-      | "startDate"
-      | "endDate"
-      | "startTime"
-      | "endTime"
-      | "description"
-      | "reminder"
-      | "recurrence"
-      | "category"
-      | "errors",
-    value: any,
-  ) => void;
-  onSubmit: () => Promise<void> | void;
+  updateField: (field: any, value: any) => void;
+  onSubmit: (tagsIds: string[]) => Promise<void> | void;
 }
 
 export default function CalendarEventModal({
@@ -49,7 +38,12 @@ export default function CalendarEventModal({
   const [showAndroidEndTimePicker, setShowAndroidEndTimerPicker] =
     useState(false);
   const [androidDate, setAndroidDate] = useState<Date>();
-
+  const tagsAndCategoryEditor = useTagsAndCategories({
+    visible,
+    initialTags: state.tags,
+    initialCategory: state.category,
+    updateField,
+  });
   const onStartChange = (event: any, selected?: Date) => {
     setShowStartPicker(false);
     setAndroidDate(selected);
@@ -69,11 +63,6 @@ export default function CalendarEventModal({
           "T" +
           selected.toISOString().split("T")[1];
     updateField("startTime", varTime);
-    /*  console.log("varTime", varTime);
-    console.log("androidDate", androidDate);
-    console.log("selected", selected);
-    console.log("state.startDate", state.startDate);
-    console.log("state.startTime", state.startTime); */
   };
   const onEndChange = (event: any, selected?: Date) => {
     setShowEndPicker(false);
@@ -95,13 +84,15 @@ export default function CalendarEventModal({
           "T" +
           selected.toISOString().split("T")[1];
     }
-    /*  console.log("varTime", varTime);
-    console.log("androidDate", androidDate);
-    console.log("selected", selected);
-    console.log("state.startDate", state.startDate);
-    console.log("state.endTime", state.endTime); */
 
     updateField("endTime", varTime);
+  };
+
+  const onSubmitWithTags = async () => {
+    const finalTagIds = await tagsAndCategoryEditor.processMetadataOnSave(
+      state.category,
+    );
+    await onSubmit(finalTagIds);
   };
 
   useEffect(() => {
@@ -153,7 +144,7 @@ export default function CalendarEventModal({
         textColor={theme.text}
         theme={{
           colors: {
-           // primary: theme.text, // Color when focused
+            // primary: theme.text, // Color when focused
             onSurfaceVariant: theme.greyBasePrimary, // Color when unfocused
           },
         }}
@@ -165,6 +156,11 @@ export default function CalendarEventModal({
           {state.errors.title}
         </Text>
       )}
+      <TagsAndCategorySection
+        editor={tagsAndCategoryEditor}
+        itemType="event"
+        updateField={updateField}
+      />
       <Button
         mode="elevated"
         buttonColor={theme.eventDarkSecondary}
@@ -347,20 +343,6 @@ export default function CalendarEventModal({
           )}
         </>
       )}
-      <TextInput
-        label="Category"
-        defaultValue={state.category || ""}
-        mode="outlined"
-        activeOutlineColor={theme.eventBase}
-        style={[styles.verticalMargin, { backgroundColor: theme.background }]}
-        textColor={theme.text}
-        theme={{
-          colors: {
-            onSurfaceVariant: theme.greyBasePrimary, // Color when unfocused
-          },
-        }}
-        onChangeText={(text) => updateField("category", text)}
-      />
       <Button
         mode="elevated"
         buttonColor={theme.eventDarkSecondary}
@@ -368,7 +350,7 @@ export default function CalendarEventModal({
         style={styles.verticalMargin}
         onPress={() => {
           setAndroidDate(undefined);
-          onSubmit();
+          onSubmitWithTags();
         }}
       >
         Save

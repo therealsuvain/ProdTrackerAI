@@ -244,7 +244,8 @@ export const timerLogs = sqliteTable(
         startTime: text("start_time").notNull(),        // ISO 8601
         endTime: text("end_time"),                      // ISO 8601
         duration: integer("duration"),                  // seconds
-        category: text("category"),
+        category: text("category").references(() => categories.id, { onDelete: 'set null' }),
+        tags: text("tags"),
         laps: text("laps"),                            // JSON: number[]
         isPartial: integer("is_partial", { mode: "boolean" }).default(false),
         ...auditFields,
@@ -308,6 +309,17 @@ export const eventTags = sqliteTable('event_tags', {
         .references(() => tags.id, { onDelete: 'cascade' }),
 }, (t) => [primaryKey({ columns: [t.eventId, t.tagId] })],
 );
+
+export const timerTags = sqliteTable('timer_tags', {
+    logId: text('log_id')
+        .notNull()
+        .references(() => timerLogs.id, { onDelete: 'cascade' }),
+    tagId: text('tag_id')
+        .notNull()
+        .references(() => tags.id, { onDelete: 'cascade' }),
+}, (t) => [primaryKey({ columns: [t.logId, t.tagId] })],
+);
+
 // ─── metrics ──────────────────────────────────────────────────────────────────
 
 /**

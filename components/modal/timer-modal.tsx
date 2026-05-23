@@ -5,11 +5,14 @@ import { ThemeContext } from "@/context/ThemeContext";
 import { TimerLog } from "@/types/timer";
 import { formatDuration } from "@/context/TimerContext";
 import { withAlpha } from "@/utils/common-utils";
+import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
+import { TagsAndCategorySection } from "../ui/shared/tags-and-categories-addon";
+import { log_softmax } from "@huggingface/transformers";
 
 //!COMMENT ed out code is for duration editing
 interface Props {
   visible: boolean;
-  log: TimerLog | null;
+  log: TimerLog;
   onDismiss: () => void;
   onSave: (updated: TimerLog) => void;
 }
@@ -64,17 +67,20 @@ export default function TimerEditModal({
 }: Props) {
   const { theme } = useContext(ThemeContext);
 
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("");
+  const [title, setTitle] = useState(log.title);
   //const [durationInput, setDurationInput] = useState("");
   const [errors, setErrors] = useState<{
     title?: string;
     category?: string;
     //duration?: string;
   }>({});
-
+  const tagsAndCategoryEditor = useTagsAndCategories({
+    visible,
+    initialTags: log.tags,
+    initialCategory: log.category,
+  });
   // Seed fields when a log is opened — reset on each new log
-  useEffect(() => {
+  /*   useEffect(() => {
     if (log) {
       setTitle(log.title === "Untitled Activity" ? "" : log.title);
       setCategory(log.category ?? "");
@@ -82,7 +88,7 @@ export default function TimerEditModal({
       //setDurationInput(log.duration ? formatDuration(log.duration) : "");
       setErrors({});
     }
-  }, [log?.id]);
+  }, [log?.id]); */
 
   const validate = (): boolean => {
     const next: typeof errors = {};
@@ -96,12 +102,35 @@ export default function TimerEditModal({
     return Object.keys(next).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!log || !validate()) return;
     // const parsed = parseDurationInput(durationInput)!;
-    if (category.trim().length > 0)
-      onSave({ ...log, title: title.trim(), category: category.trim() });
-    else onSave({ ...log, title: title.trim(), category: category.trim() });
+    const finalTagIds = await tagsAndCategoryEditor.processMetadataOnSave(
+      tagsAndCategoryEditor.state.category,
+    );
+    /*     if (category.trim().length > 0)
+      onSave({
+        ...log,
+        title: title.trim(),
+        ...(tagsAndCategoryEditor.state.category && {
+          category: tagsAndCategoryEditor.state.category,
+        }),
+        ...(finalTagIds.length > 0 && {
+          tags: finalTagIds,
+        }),
+      });
+    else */
+    console.log("finalTagIds", finalTagIds);
+    onSave({
+      ...log,
+      title: title.trim(),
+      ...(tagsAndCategoryEditor.state.category && {
+        category: tagsAndCategoryEditor.state.category,
+      }),
+      ...(finalTagIds.length > 0 && {
+        tags: finalTagIds,
+      }),
+    });
     onDismiss();
   };
 
@@ -159,21 +188,7 @@ export default function TimerEditModal({
         <Text style={[styles.error, { color: "#ef4444" }]}>{errors.title}</Text>
       )}
 
-      <TextInput
-        style={[styles.verticalMargin, { backgroundColor: theme.background }]}
-        textColor={theme.text}
-        label="Category"
-        mode="outlined"
-        activeOutlineColor={theme.timerBase}
-        outlineColor={theme.timerBaseTrans}
-        defaultValue={category}
-        theme={{
-          colors: {
-            onSurfaceVariant: theme.greyBasePrimary, // Color when unfocused
-          },
-        }}
-        onChangeText={setCategory}
-      />
+      <TagsAndCategorySection editor={tagsAndCategoryEditor} itemType="log" />
       {/*       <TextInput
         style={styles.verticalMargin}
         label="Duration"

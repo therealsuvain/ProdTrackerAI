@@ -26,6 +26,9 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 import { useLogs } from "@/hooks/use-logs";
 import { useHaptics } from "@/hooks/use-haptics";
+import { useData } from "@/hooks/use-data";
+import { Category } from "@/types/category";
+import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
 // Note : Timescreen is the only component where value prop is used for the TextInput instead of defaultValue
 // Note ContinuedFromAbove: default Value only takes input once, then doesnt update, the reason its works in other places is because
 // Note ContinuedFromAbove: the modals re-render everytime, so default value gets feeded the latest state value and it looks ok,
@@ -34,6 +37,7 @@ import { useHaptics } from "@/hooks/use-haptics";
 function TimerScreenInner() {
   const { theme, isDarkMode } = useContext(ThemeContext);
   const { timerLogs, setTimerLogs, addLog, removeLog, editLog } = useLogs();
+  const { categories } = useData();
   //const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
   const {
     time,
@@ -54,7 +58,7 @@ function TimerScreenInner() {
     reset,
   } = useTimer();
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingLog, setEditingLog] = useState<TimerLog | null>(null);
+  const [editingLog, setEditingLog] = useState<TimerLog>();
   const { toastError, showToast, dismissToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
   const { todayTotal, weekTotal, topCategory } = useMemo(() => {
@@ -76,6 +80,7 @@ function TimerScreenInner() {
       if (logDate >= weekStartISO) {
         weekTotal += log.duration;
         if (log.category) {
+          //const category = categories.find((c) => c.id === log.category);
           categoryTotals[log.category] =
             (categoryTotals[log.category] ?? 0) + log.duration;
         }
@@ -83,10 +88,13 @@ function TimerScreenInner() {
     }
 
     // Top category this week by total time
-    const topCategory =
+    const topCategoryId =
       Object.entries(categoryTotals).sort(([, a], [, b]) => b - a)[0]?.[0] ??
       null;
-
+    var topCategory = null;
+    if (topCategoryId) {
+      topCategory = categories.find((c) => c.id === topCategoryId);
+    }
     return { todayTotal, weekTotal, topCategory };
   }, [timerLogs]);
   const ITEMS_PER_PAGE = 15;
@@ -235,7 +243,7 @@ function TimerScreenInner() {
           outlineColor={timerBaseColor}
         />
 
-        <TextInput
+        {/*  <TextInput
           placeholder="Category (optional)"
           value={category}
           textColor={theme.text}
@@ -253,10 +261,9 @@ function TimerScreenInner() {
           }}
           activeOutlineColor={theme.timerBase}
           outlineColor={timerBaseColor}
-        />
+        /> */}
       </View>
-      <View style={styles.categoryRow}>
-        {/* Last-used suggestion chip — only shown when category field is empty */}
+      {/*     <View style={styles.categoryRow}>
         {!category && lastUsedCategory && (
           <TouchableOpacity
             style={[styles.suggestionChip, { borderColor: timerBaseColor }]}
@@ -268,7 +275,7 @@ function TimerScreenInner() {
             </Text>
           </TouchableOpacity>
         )}
-      </View>
+      </View> */}
       <TimerDisplay
         time={time}
         mode={mode}
@@ -301,9 +308,10 @@ function TimerScreenInner() {
               icon="stop"
               mode="timer"
               size="big"
-              onPress={() => {
+              onPress={async () => {
                 triggerHaptic();
-                stop();
+                const log = await stop();
+                if (log) showModal(log);
               }}
             />
             {mode === "stopwatch" && (
@@ -396,19 +404,21 @@ function TimerScreenInner() {
       />
       <DbErrorToast error={toastError} onDismiss={dismissToast} />
       <Portal>
-        <TimerEditModal
-          visible={modalVisible}
-          log={editingLog}
-          onDismiss={() => {
-            setModalVisible(false);
-            setEditingLog(null);
-          }}
-          onSave={(updated) => {
-            handleEdit(updated);
-            setModalVisible(false);
-            setEditingLog(null);
-          }}
-        />
+        {editingLog && (
+          <TimerEditModal
+            visible={modalVisible}
+            log={editingLog}
+            onDismiss={() => {
+              setModalVisible(false);
+              setEditingLog(undefined);
+            }}
+            onSave={(updated) => {
+              handleEdit(updated);
+              setModalVisible(false);
+              setEditingLog(undefined);
+            }}
+          />
+        )}
       </Portal>
     </View>
   );
@@ -420,12 +430,18 @@ function StatCell({
   accent,
 }: {
   label: string;
-  value: string;
+  value: string | Category;
   accent: string;
 }) {
   return (
     <View style={styles.statCell}>
-      <Text style={[styles.statValue, { color: accent }]}>{value}</Text>
+      {typeof value === "string" ? (
+        <Text style={[styles.statValue, { color: accent }]}>{value}</Text>
+      ) : (
+        <View>
+          <CategoryBadge category={value} />
+        </View>
+      )}
       <Text style={[styles.statLabel, { color: accent }]}>{label}</Text>
     </View>
   );
@@ -449,9 +465,10 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     width: "100%",
+
     marginBottom: 8,
   },
-  statCell: { flex: 1, alignItems: "center" },
+  statCell: { flex: 1, alignItems: "center", justifyContent: "center" },
   statValue: { fontSize: 14, fontWeight: "700" },
   statLabel: {
     fontSize: 10,
@@ -461,7 +478,7 @@ const styles = StyleSheet.create({
   },
   statDivider: { width: 2.5, marginVertical: 4 },
 
-  input: { width: "50%", marginBottom: 10, marginHorizontal: 8 },
+  input: { width: "100%", marginBottom: 10, marginHorizontal: 8 },
 
   categoryRow: { width: "100%", marginBottom: 6 },
   categoryInput: { marginBottom: 10 },

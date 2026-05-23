@@ -6,7 +6,14 @@ import { Switch, TouchableRipple } from "react-native-paper";
 
 import { useTheme } from "@/hooks/use-theme-colors";
 import { SettingItem } from "@/types/settings-ui";
+import { CategorySettingsWidget } from "@/components/ui/shared/categories/category-settings-widget";
+import { TagSettingsWidget } from "@/components/ui/shared/tags/tags-settings-widget";
 
+const WidgetRegistry: Record<string, React.FC<any>> = {
+  CategoryWidget: CategorySettingsWidget,
+  TagsWidget: TagSettingsWidget,
+  // Future widgets go here...
+};
 interface SettingsRowProps {
   item: SettingItem;
   value?: any; // Simplified to boolean for toggles initially
@@ -94,6 +101,87 @@ export const SettingsRow = ({
     return null;
   };
 
+  const renderOptions = () => {
+    if (!item.options || item.options.length === 0) {
+      return null;
+    }
+
+    return (
+      <View>
+        {item.options.map((option, index) => {
+          switch (option.type) {
+            case "widget": {
+              // Ensure the value is a string and exists in our registry
+              const WidgetComponent =
+                typeof option.value === "string"
+                  ? WidgetRegistry[option.value]
+                  : null;
+
+              if (WidgetComponent) {
+                return <WidgetComponent key={`widget-${index}`} />;
+              }
+
+              console.warn(
+                `[Settings] Widget component '${option.value}' not found in registry.`,
+              );
+              return null;
+            }
+
+            case "radio": {
+              // Placeholder for future radio logic
+              return (
+                <View key={`radio-${index}`}>
+                  <Text>Radio Component (Value: {String(option.value)})</Text>
+                </View>
+              );
+            }
+
+            case "dropdown": {
+              // Placeholder for future dropdown logic
+              return (
+                <View key={`dropdown-${index}`}>
+                  <Text>
+                    Dropdown Component (Value: {String(option.value)})
+                  </Text>
+                </View>
+              );
+            }
+
+            default:
+              console.warn(`[Settings] Unknown option type: ${option.type}`);
+              return null;
+          }
+        })}
+      </View>
+    );
+  };
+
+  /*   const renderOptions = () => {
+    if (item.options) {
+      if (item.options[0].value === "CategorySettingsWidget") {
+        return (
+          <View>
+            {item.options.map((option, index) =>
+              option.type === "widget" ? (
+                <CategorySettingsWidget key={index} />
+              ) : null,
+            )}
+          </View>
+        );
+      } else {
+        return (
+          <View>
+            {item.options.map((option, index) =>
+              option.type === "widget" ? (
+                <TagSettingsWidget key={index} />
+              ) : null,
+            )}
+          </View>
+        );
+      }
+    }
+    return null;
+  }; */
   const handleRowPress = () => {
     if (item.type === "toggle" && onToggle) {
       onToggle(item.id, !value);
@@ -116,16 +204,17 @@ export const SettingsRow = ({
       > */}
       <View
         style={[
-          styles.row,
+          styles.container,
           !isLast && {
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: theme.text,
           },
         ]}
       >
-        <View style={styles.leftContent}>
-          {renderIcon()}
-          {/* {item.icon in Ionicons.glyphMap ? (
+        <View style={styles.row}>
+          <View style={styles.leftContent}>
+            {renderIcon()}
+            {/* {item.icon in Ionicons.glyphMap ? (
             <Ionicons
               name={item.icon as keyof typeof Ionicons.glyphMap}
               size={30}
@@ -139,24 +228,28 @@ export const SettingsRow = ({
             />
           )} */}
 
-          <Text style={[styles.label, { color: theme.text }]}>
-            {item.label}
-          </Text>
+            <Text style={[styles.label, { color: theme.text }]}>
+              {item.label}
+            </Text>
+          </View>
+          <View style={styles.rightContent}>{renderRightElement()}</View>
         </View>
-        <View style={styles.rightContent}>{renderRightElement()}</View>
+        {renderOptions()}
       </View>
     </TouchableRipple>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    minHeight: 44,
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    minHeight: 44,
   },
   leftContent: {
     flexDirection: "row",

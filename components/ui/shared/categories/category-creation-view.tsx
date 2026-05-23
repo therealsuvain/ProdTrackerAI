@@ -25,6 +25,7 @@ import {
 } from "@/utils/category-color-cache";
 import { CategoryColorPicker } from "./category-color-modal";
 import { CategoryIconPicker } from "./category-icon-modal";
+import { Category } from "@/types/category";
 
 const colorPalette = [
   "#ef4444",
@@ -46,21 +47,30 @@ interface CategoryCreatorProps {
     color: string,
     icon: string,
   ) => Promise<void>; // The DAO call
+  editingCategory?: Category;
 }
 export const CategoryCreator = ({
   isCreating,
   onClose,
   onCreateCategory,
+  editingCategory,
 }: CategoryCreatorProps) => {
   const { theme } = useContext(ThemeContext);
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [selectedColor, setSelectedColor] = useState("#3b82f6");
-  const selectedColorValue = useSharedValue("#3b82f6");
+  const [newCategoryName, setNewCategoryName] = useState(
+    editingCategory?.name || "",
+  );
+  const [selectedColor, setSelectedColor] = useState(
+    editingCategory?.color || "#3b82f6",
+  );
+  const selectedColorValue = useSharedValue(
+    editingCategory?.color || "#3b82f6",
+  );
   const [displayPalette, setDisplayPalette] = useState<string[]>(colorPalette);
   const [fullSavedPalette, setFullSavedPalette] = useState<string[]>([]);
   const [isColorPickerVisible, setIsColorPickerVisible] = useState(false);
-  const [selectedIcon, setSelectedIcon] =
-    useState<keyof typeof Ionicons.glyphMap>("briefcase"); // Default icon
+  const [selectedIcon, setSelectedIcon] = useState<
+    keyof typeof Ionicons.glyphMap
+  >((editingCategory?.icon as keyof typeof Ionicons.glyphMap) || "briefcase"); // Default icon
   const [isIconPickerVisible, setIsIconPickerVisible] = useState(false);
 
   const handleCreate = async () => {
@@ -102,13 +112,16 @@ export const CategoryCreator = ({
       ];
       setFullSavedPalette(paletteWithPlaceholders);
       // Merge recents with base, filter duplicates via Set, and slice to exactly 9 slots
-      const mergedQueue = Array.from(
-        new Set([...recents, ...colorPalette]),
-      ).slice(0, 9);
+      const editingCategoryColor = editingCategory?.color;
+      const mergedQueue = Array.from(new Set([...recents, ...colorPalette]));
 
-      setDisplayPalette(mergedQueue);
+      if (editingCategoryColor && !mergedQueue.includes(editingCategoryColor)) {
+        mergedQueue.unshift(editingCategoryColor);
+      }
+      setDisplayPalette(mergedQueue.slice(0, 9));
       // Optional: Default to the user's most recently used color instead of the base red
       if (recents.length > 0) setSelectedColor(recents[0]);
+      if (editingCategoryColor) setSelectedColor(editingCategoryColor);
     };
 
     hydrateQueue();
