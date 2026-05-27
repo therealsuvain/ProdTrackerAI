@@ -10,6 +10,7 @@ import { recordGeminiUsage } from "./dev-util-token-monitor";
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_STT_API_KEY//Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
 const HF_TOKEN = process.env.EXPO_PUBLIC_HUGGING_FACE_API_TOKEN;
 const HF_ENDPOINT = "https://router.huggingface.co/v1/chat/completions";
+let globalTranscript: string = "";
 
 export const transcribeAudio = async (
   input: string,
@@ -84,7 +85,7 @@ export const transcribeAudio = async (
       .trim();
 
     console.log("Full Transcript:", transcript || "(empty)");
-
+   
     return transcript;
   } catch (error) {
     console.error("STT error", error);
@@ -119,20 +120,20 @@ export const chatIntialize = async (context: any) => {
           tools: [{ functionDeclarations: aiTools }],
           systemInstruction,
         }
-        ,
+/*         ,
         history: [
           { role: "user", parts: [{ text: `${systemContext}` }] },
           { role: "model", parts: [{ text: "Understood. I have access to the user's state and tools." }] }
-        ]
+        ] */
       });
       //console.log("chatty", activeChatSession)
       return activeChatSession
     }
-    const updatedSnapshot = getAppStatusSnapshot(context);
+    /* const updatedSnapshot = getAppStatusSnapshot(context);
     if (updatedSnapshot) {
       console.log("Sending context patch to Gemini:", updatedSnapshot);
       await activeChatSession.sendMessage({ message: `${updatedSnapshot}` });
-    }
+    } */
   } catch (error) {
     console.error("Chat initialization failed:", error);
     activeChatSession = null;
@@ -187,9 +188,10 @@ export const BACKUP_processCommandAgentic = async (transcript: string, context: 
 
 export const processCommandAgentic = async (transcript: string, context: any) => {
   //const systemContext = generateSystemPrompt(context);
+  globalTranscript = transcript;
   const chat = await chatIntialize(context);
   let iteration = 0;
-  const MAX_ITERATIONS = 5;
+  const MAX_ITERATIONS = 15;
   let accumulatedConfirmationCalls: any[] = [];
   try {
     let result = await chat.sendMessage({ message: transcript });
@@ -332,10 +334,11 @@ export const processExecutionFeedback = async (executionResults: any[], context:
   if (!executionResults || executionResults.length === 0) return null;
 
   // Re-initialize the chat so it has the current history
-  const chat = await chatIntialize(context);
+  //const chat = await chatIntialize(context);
 
   // Create a silent system prompt telling the AI what just happened
   const feedbackPrompt = `
+  The user originally asked: "${globalTranscript}"
   [SYSTEM PROTOCOL: EXECUTION RESULTS]
   The user confirmed your proposed actions. Here are the real-world results of those executions:
   ${JSON.stringify(executionResults, null, 2)}
@@ -348,7 +351,11 @@ export const processExecutionFeedback = async (executionResults: any[], context:
   `;
 
   try {
-    const result = await chat.sendMessage({ message: feedbackPrompt });
+    const result = await gemini_ai.models.generateContent({
+      model: "gemini-2.5-flash-lite",
+      contents: [{ role: "user", parts: [{ text: feedbackPrompt }] }]
+    });
+    //await chat.sendMessage({ message: feedbackPrompt });
     recordGeminiUsage(result);
 
     // Return the AI's final natural language summary to display in the chat UI
@@ -359,3 +366,180 @@ export const processExecutionFeedback = async (executionResults: any[], context:
     return executionResults.map(r => r.result.message).join("\n");
   }
 };
+
+
+/* 
+let activeChatSession: any = null;
+let currentActiveDomain: string | null = null; // Tracks which bucket is currently loaded
+let currentToolBucket: any[] = AllTools;       // Fallback to all tools initially
+
+export const chatIntialize = async (context: any, newDomain?: string, newTools?: any[]) => {
+  try {
+    // If the router tells us we are in a new domain, we MUST reset the chat 
+    // to load the new tools, otherwise we just keep the active session.
+    const domainChanged = newDomain && newDomain !== currentActiveDomain;
+
+    if (!activeChatSession || domainChanged) {
+      if (domainChanged && newTools) {
+        console.log(`[Router] Switching domain from ${currentActiveDomain} to ${newDomain}. Reloading tools.`);
+        currentActiveDomain = newDomain;
+        currentToolBucket = newTools;
+      }
+
+      const { systemInstruction, systemContext } = generateSystemPrompt(context);
+      
+      activeChatSession = gemini_ai.chats.create({
+        model: "gemini-2.5-flash", // This is your Pass 2 (Executor) model
+        config: {
+          tools: [{ functionDeclarations: currentToolBucket }],
+          systemInstruction,
+        },
+        history: [
+          { role: "user", parts: [{ text: `${systemContext}` }] },
+          { role: "model", parts: [{ text: "Understood. I have access to the user's state and tools." }] }
+        ]
+      });
+      return activeChatSession;
+    }
+
+    // If session exists and domain didn't change, just patch the context
+    const updatedSnapshot = getAppStatusSnapshot(context);
+    if (updatedSnapshot) {
+      console.log("Sending context patch to Gemini:", updatedSnapshot);
+      await activeChatSession.sendMessage({ message: `${updatedSnapshot}` });
+    }
+  } catch (error) {
+    console.error("Chat initialization failed:", error);
+    activeChatSession = null;
+  }
+  return activeChatSession;
+}
+
+// Import your tool buckets and router tools from the previous step
+import { RouterTools, TaskTools, HabitTools, EventTools, TimerTools, TaxonomyTools, GeneralTools, AllTools } from './tool-buckets';
+
+export const processCommandAgentic = async (transcript: string, context: any) => {
+  // =========================================================
+  // PASS 1: THE ROUTER
+  // =========================================================
+  console.log("[AI] Starting Pass 1: Routing...");
+  let selectedBucket = AllTools;
+  let selectedDomain = "routeToMultiDomain"; // Safe fallback
+  
+  try {
+    // We use a stateless generation call for the Router, not the chat session
+    const routerResponse = await gemini_ai.models.generateContent({
+      model: "gemini-2.5-flash", // Fast/Cheap model for Pass 1
+      contents: [{ role: "user", parts: [{ text: transcript }] }],
+      config: {
+        systemInstruction: "You are an AI router. Analyze the user's prompt and call the single most appropriate routing tool. Do not answer the prompt directly.",
+        tools: [{ functionDeclarations: RouterTools }],
+        // In newer Gemini SDKs, this forces it to use a tool
+        toolConfig: { functionCallingConfig: { mode: "ANY" } } 
+      }
+    });
+
+    const routeCall = routerResponse.functionCalls?.[0];
+    
+    if (routeCall) {
+      selectedDomain = routeCall.name;
+      console.log(`[AI] Pass 1 Complete. Selected Route: ${selectedDomain}`);
+
+      // Map the route to the specific tools
+      switch (selectedDomain) {
+        case "routeToTasks": selectedBucket = [...TaskTools, ...GeneralTools]; break;
+        case "routeToHabits": selectedBucket = [...HabitTools, ...GeneralTools]; break;
+        case "routeToEvents": selectedBucket = [...EventTools, ...GeneralTools]; break;
+        case "routeToTimers": selectedBucket = [...TimerTools, ...GeneralTools]; break;
+        case "routeToTaxonomy": selectedBucket = [...TaxonomyTools, ...GeneralTools]; break;
+        case "routeToMultiDomain": 
+        default:
+          selectedBucket = AllTools;
+          break;
+      }
+    } else {
+      console.warn("[AI] Router failed to select a tool, defaulting to MultiDomain.");
+    }
+  } catch (routeError) {
+    console.error("Router Pass Failed, falling back to all tools:", routeError);
+  }
+
+  // =========================================================
+  // PASS 2: THE EXECUTOR (Your Existing Logic)
+  // =========================================================
+  
+  // Initialize or retrieve the chat, passing in the dynamically selected tools
+  const chat = await chatIntialize(context, selectedDomain, selectedBucket);
+  
+  let iteration = 0;
+  const MAX_ITERATIONS = 5;
+  let accumulatedConfirmationCalls: any[] = [];
+  
+  try {
+    let result = await chat.sendMessage({ message: transcript });
+    // recordGeminiUsage(result);
+    console.log("FUNCTIONCALLS", result.functionCalls);
+    // ... [REST OF YOUR EXISTING LOOP STAYS EXACTLY THE SAME] ...
+    
+    let currentCalls = result.functionCalls;
+    let responseText = result.text;
+    
+    // 1. Isolate the first candidate safely
+    const candidate = result.candidates?.[0];
+
+    // 2. Structurally check if 'parts' is missing while 'role' is model
+    const hasEmptyContent =
+      candidate?.content?.role === "model" &&
+      (!candidate.content.parts || candidate.content.parts.length === 0);
+
+    if (!currentCalls && !responseText && (hasEmptyContent || result.candidates?.[0]?.finishReason === "STOP")) {
+      console.log("Model returned empty candidate. Forcing tool usage...");
+      const joltResult = await chat.sendMessage({
+        message: "System Override: You failed to respond. You MUST use a tool (like query-tasks or search-items) to fulfill the user's previous request right now."
+      });
+      currentCalls = joltResult.functionCalls;
+      responseText = joltResult.text;
+    }
+
+    const toolResponses = [];
+    while (iteration < MAX_ITERATIONS) {
+      const silentCalls = currentCalls?.filter((c: any) => SilentHandlerList.includes(c.name)) || [];
+      const confirmationCalls = currentCalls?.filter((c: any) => !SilentHandlerList.includes(c.name)) || [];
+
+      accumulatedConfirmationCalls = [...accumulatedConfirmationCalls, ...confirmationCalls];
+
+      if (silentCalls.length === 0) break;
+
+      for (const call of silentCalls) {
+        console.log(`[Silent-Agent] Calling ${call.name} with:`, call.args);
+        const handler = ActionRegistry[call.name];
+        const data = await handler.execute(call.args, context);
+        console.log(`[Silent-Agent]  ${call.name} returned:`, data);
+        toolResponses.push({
+          functionResponse: { name: call.name, response: data }
+        });
+      }
+      
+      const nextStep = await chat.sendMessage({
+        message: { role: "user", parts: toolResponses }
+      });
+      
+      // recordGeminiUsage(nextStep);
+      result = nextStep;
+      currentCalls = nextStep.functionCalls;
+      responseText = nextStep.text;
+      iteration++;
+    }
+
+    return {
+      response: responseText?.replace(/```json|```/g, "").trim(),
+      calls: accumulatedConfirmationCalls
+    };
+
+  } catch (error) {
+    console.error("Agent Loop Failed:", error);
+    throw error;
+  }
+};
+
+*/

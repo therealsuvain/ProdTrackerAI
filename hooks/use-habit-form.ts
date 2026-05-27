@@ -72,8 +72,8 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
 };
 
 interface UseHabitFormProps {
-  addHabit: (habit: Habit, tagIds: string[]) => Promise<void>;
-  editHabit: (habit: Habit, tagIds: string[]) => Promise<void>;
+  addHabit: (habit: Habit) => Promise<void>;
+  editHabit: (habit: Habit) => Promise<void>;
   editingHabit: Habit | null;
   onClose: () => void;
 }
@@ -207,9 +207,9 @@ export const useHabitForm = ({
     }
     
     if (editingHabit) {
-      await editHabit(newHabit, tagIds);
+      await editHabit(newHabit);
     } else {
-      await addHabit(newHabit, tagIds);
+      await addHabit(newHabit);
     }
 
     onClose();

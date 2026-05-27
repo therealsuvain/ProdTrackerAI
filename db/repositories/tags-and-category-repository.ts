@@ -178,9 +178,28 @@ export const deleteTagSafely = async (tagIdToDelete: string, fallbackTagId: stri
           .values(logsWithOldTag.map(l => ({ logId: l.logId, tagId: fallbackTagId })))
           .onConflictDoNothing();
       }
+
+      // --- 5. UPDATE USAGE COUNT ---
+      const [taskC, habitC, eventC, logC] = await Promise.all([
+    tx.select({ count: sql<number>`count(*)` }).from(taskTags).where(eq(taskTags.tagId, fallbackTagId)),
+    tx.select({ count: sql<number>`count(*)` }).from(habitTags).where(eq(habitTags.tagId, fallbackTagId)),
+    tx.select({ count: sql<number>`count(*)` }).from(eventTags).where(eq(eventTags.tagId, fallbackTagId)),
+    tx.select({ count: sql<number>`count(*)` }).from(timerTags).where(eq(timerTags.tagId, fallbackTagId)),
+  ]);
+
+  const trueTotal = taskC[0].count + habitC[0].count + eventC[0].count + logC[0].count;
+
+  await tx.update(tags)
+    .set({ 
+      count: trueTotal,
+      updatedAt: new Date().toISOString() 
+    })
+    .where(eq(tags.id, fallbackTagId));
     }
 
-    // --- 5. CLEANUP ---
+    
+
+    // --- 6. CLEANUP ---
     // Now that the fallback tags are safely duplicated across all items, wipe the old tag entirely.
     await tx.delete(taskTags).where(eq(taskTags.tagId, tagIdToDelete));
     await tx.delete(habitTags).where(eq(habitTags.tagId, tagIdToDelete));
@@ -422,6 +441,23 @@ export const deleteCategorySafely = async (categoryIdToDelete: string, fallbackC
   await db.transaction(async (tx) => {
     // If a fallback is provided, migrate all attached items
     if (fallbackCategoryId) {
+
+      // 1. Fetch the count of the category we are about to delete
+  const [catToDelete] = await tx
+    .select({ count: categories.count })
+    .from(categories)
+    .where(eq(categories.id, categoryIdToDelete));
+
+  if (catToDelete) {
+    // 2. Add its count directly to the fallback category
+    await tx.update(categories)
+      .set({ 
+        count: sql`${categories.count} + ${catToDelete.count}`,
+        updatedAt: new Date().toISOString() 
+      })
+      .where(eq(categories.id, fallbackCategoryId));
+  }
+
       await tx.update(tasks).set({ category: fallbackCategoryId }).where(eq(tasks.category, categoryIdToDelete));
       await tx.update(habits).set({ category: fallbackCategoryId }).where(eq(habits.category, categoryIdToDelete));
       await tx.update(calendarEvents).set({ category: fallbackCategoryId }).where(eq(calendarEvents.category, categoryIdToDelete));

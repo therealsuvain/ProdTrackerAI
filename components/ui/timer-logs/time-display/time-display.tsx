@@ -1,5 +1,5 @@
 import { useContext, useMemo } from "react";
-import {Dimensions } from "react-native";
+import { Dimensions } from "react-native";
 
 import CountdownPickerModal from "@/components/ui/timer-logs/time-display/components/countdown-picker-modal/countdown-picker-modal";
 import { ThemeContext } from "@/context/ThemeContext";
@@ -32,8 +32,7 @@ export default function TimerDisplay({
   onToggleMode,
   onCountdownTargetChange,
 }: TimerDisplayProps) {
-  const { theme , isDarkMode} = useContext(ThemeContext);
-  console.log("isDarkMode", isDarkMode);
+  const { theme, isDarkMode } = useContext(ThemeContext);
   const styles = useMemo(() => createStyles(theme, isDarkMode, SIZE), [theme]);
 
   const { pickerVisible, setPickerVisible, handleTap } =
@@ -48,7 +47,7 @@ export default function TimerDisplay({
 
   return (
     <>
-       <TimerDisplayCircle
+      <TimerDisplayCircle
         timeDisplayProps={{
           time,
           mode,
@@ -59,9 +58,8 @@ export default function TimerDisplay({
         }}
         styles={styles}
         Size={SIZE}
-        onCirclePress = {handleTap}
-
-      /> 
+        onCirclePress={handleTap}
+      />
       <CountdownPickerModal
         visible={pickerVisible}
         countdownTarget={countdownTarget}
@@ -71,4 +69,3 @@ export default function TimerDisplay({
     </>
   );
 }
-

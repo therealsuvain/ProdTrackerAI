@@ -328,10 +328,20 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     },
     [optimisticTagMutation],
   );
+
   const deleteUserTag = useCallback(
     async (id: string, fallbackId?: string | null): Promise<void> => {
       await optimisticTagMutation(
-        (prev) => prev.filter((tag) => tag.id !== id),
+        (prev) => {
+          const deletedTag = prev.find((t) => t.id === id);
+          const deletedCount = deletedTag?.count || 0;
+
+          return prev
+            .filter((t) => t.id !== id)
+            .map((t) =>
+              t.id === fallbackId ? { ...t, count: t.count + deletedCount } : t,
+            );
+        },
         () => deleteTagSafely(id, fallbackId),
       );
     },
@@ -407,7 +417,19 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   const deleteUserCategory = useCallback(
     async (id: string, fallbackId?: string | null): Promise<void> => {
       await optimisticCategoryMutation(
-        (prev) => prev.filter((category) => category.id !== id),
+        (prev) => {
+          const deletedCat = prev.find((c) => c.id === id);
+          const deletedCount = deletedCat?.count || 0;
+
+          return prev
+            .filter((c) => c.id !== id) // Remove the old
+            .map((c) =>
+              c.id === fallbackId
+                ? { ...c, count: c.count + deletedCount } // Add the counts safely
+                : c,
+            );
+          /* prev.filter((category) => category.id !== id) */
+        },
         () => deleteCategorySafely(id, fallbackId),
       );
     },

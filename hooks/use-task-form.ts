@@ -57,8 +57,8 @@ const formReducer = (state: FormState, action: FormAction): FormState => {
 };
 
 interface UseTaskFormProps {
-  addTask: (task: Task, tagIds: string[]) => Promise<void>;
-  editTask: (task: Task, tagIds: string[]) => Promise<void>;
+  addTask: (task: Task) => Promise<void>;
+  editTask: (task: Task) => Promise<void>;
   editingTask: Task | null;
   onClose: () => void;
 }
@@ -171,14 +171,14 @@ export const useTaskForm = ({
               await addTags(newTagsDiff);
             } */
       //console.log("EDIT", {...newTask, embedding:[]});
-      await editTask(newTask, tagIds);
+      await editTask(newTask);
       //setTasks(tasks.map((t) => (t.id === editingTask.id ? newTask : t)));
     } else {
       //console.log("NEW" ,{...newTask, embedding:[]});
       /*  if (newTask.tags) {
          await addTags(newTask.tags);
        } */
-      await addTask(newTask, tagIds);
+      await addTask(newTask);
       //setTasks([...tasks, newTask]);
     }
 

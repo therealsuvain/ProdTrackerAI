@@ -5,6 +5,8 @@ import { getTimeRangeHelper } from "./additional-handlers";
 
 // TODOX : If task is marked complete then notification is cancelled in the AI handler, but not in the task item logic, 
 // also if task is then marked incomplete, then a new notificaiton is not scheduled, R&D how it should be ideally
+
+//TODO CAtch high demand errors nad return a suitable response, catch any other possibel errors too
 // TODOX task due date, event startdate and end date are just in (YYYY-MM-DD) format, convert to ISO 8601 format
 export const AddTaskHandler: AIHandler = {
   execute: async (params, context) => {
@@ -25,13 +27,14 @@ export const AddTaskHandler: AIHandler = {
     //context.setTasks((prev) => [...prev, newTask]);
     context.addTask(newTask);
     console.log(`AI Action: Added task "${newTask.title}"`);
-    return { status: "success", task: newTask };
+     const { id, embedding, ...rest} = newTask;
+    return { status: "success", task: {id:id.slice(0, 8), ...rest} }
   }
 };
 
 export const EditTaskHandler: AIHandler = {
   execute: async (params, context) => {
-    const oldTask = context.tasks.find((t) => t.id.slice(0, 8) === params.id);
+    const oldTask = context.tasks.find((t) => t.id.slice(0, 8) === params.id.slice(0, 8));
     if (!oldTask) {
       throw new Error("Task not found");
     }
@@ -50,8 +53,10 @@ export const EditTaskHandler: AIHandler = {
     /* context.setTasks((prev) =>
       prev.map((t) => (t.id.slice(0, 8) === params.id ? updatedTask : t))
     ); */
+    
     context.editTask(updatedTask);
-    return { status: "success", task: updatedTask }
+    const { id, embedding, ...rest} = updatedTask;
+    return { status: "success", task: {id:id.slice(0, 8), ...rest} }
   }
 };
 
@@ -65,7 +70,8 @@ export const DeleteTaskHandler: AIHandler = {
       await cancelReminder(oldTask.notificationId);
     }
     context.removeTask(oldTask.id);
-    return { status: "success", task: oldTask }
+     const {id, title} = oldTask;
+    return { status: "success", task: {id:id.slice(0, 8), title} }
   }
 };
 
@@ -79,7 +85,8 @@ export const CompleteTaskHandler: AIHandler = {
       await cancelReminder(oldTask.notificationId);
     }
     context.toggleTask(oldTask.id);
-    return { status: "success", task: oldTask }
+    const {id, title} = oldTask;
+    return { status: "success", task: {id:id.slice(0, 8), title} }
   }
 };
 

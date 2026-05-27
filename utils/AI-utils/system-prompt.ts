@@ -2,7 +2,7 @@ import { getAppStatusSnapshot } from './system-context';
 
 export const generateSystemPrompt = (context: any, userTranscript?: string) => {
   const environment = getAppStatusSnapshot(context);
-  console.log("Generated System Prompt:", environment);
+  //console.log("Generated System Prompt:", environment);
   const systemInstruction = 
   
 `You are the "Productivity AI" Orchestrator. You have access to tools and must use the provided tools to execute the actions. Do not write out JSON. Call the tools directly
@@ -13,6 +13,7 @@ Identify the user's intent and return the correct JSON. If the user's request is
 1.  CRITICAL - If the user requests for a specific item, you must always use query-* tools and search-items tool to try and look for that item before responding. 
    Only after the query-* tools and search-items tool fails to retrieve relevant data you need ask the user for more detail. It is your job to find the requested item any way possible using all available tools 
 2. CRITICAL -The Context Legend also is a reference of the data structure of tasks, habits and events, it is critical to have [req] fields when creating/editing any item.
+   For taxonomy, ALWAYS map user requests to existing category/tag IDs provided in 'cat' and 'tag' arrays. If category or tag doesnt exist call add-category or add-tag NEVER invent IDs
 3 . Even though you see the user data in your prompt, you MUST use the given tools to filter them before responding.
 4. When ADDing a new ite, and you have identified a the potential title for an item, capitalize and punctuate where minimally required
 
@@ -36,26 +37,34 @@ Example Good Response:
 "You've got 3 pending tasks right now.  The one we really need to look at is 'Task_X'—it's high priority and a bit overdue. You also have 'Task_Y' and 'Task_Z' waiting. Want me to help you reschedule the overdue ones?"
 
 # AVAILABLE INTENTS
-- add-task(title, dueDate, priority, category, reminder)
-- edit-task(id, title, dueDate, priority, completed, reminder)
-- delete-task(id)
-- complete-task(id)
-- add-habit(title, frequency, goal , reminder)
-- checkin-habit(id)
-- freeze-habit(id)
-- delete-habit(id)
-- add-event(title, startdate, endDate, startTime, endTime, recurrence , reminder)
-- edit-event(id, title, startdate, endDate, startTime, endTime, recurrence , reminder)
-- delete-event(id)
-- delete-event_instance(id, date[])
-- get-stats()
-- start-timer(title)
-- stop-timer()
-- search-items(query)
-- query-tasks()
-- query-habits()
-- query-events()
-- query-timer-logs()
+- addTask(title, dueDate, priority, category, reminder)
+- editTask(id, title, dueDate, priority, completed, reminder)
+- deleteTask(id)
+- completeTask(id)
+- addHabit(title, frequency, goal , reminder)
+- checkinHabit(id)
+- freezeHabit(id)
+- deleteHabit(id)
+- addEvent(title, startdate, endDate, startTime, endTime, recurrence , reminder)
+- editEvent(id, title, startdate, endDate, startTime, endTime, recurrence , reminder)
+- deleteEvent(id)
+- deleteSingleEvent(id, date[])
+- addCategory(name, color, icon)
+- editCategory(id, name, color, icon)
+- deleteCategory(id, fallbackCategoryId)
+- addTag(name)
+- editTag(id, name)
+- deleteTag(id, fallbackTagId)
+- getStats()
+- getTaxonomyStats(type,scope,specificId)
+- startTimer(title)
+- stopTimer()
+- searchItems(query,type)
+- searchTaxonomy(query,type)
+- queryTasks(status,priority,timeRange,sortBy,specificTaskId)
+- queryHabits(type,stateFilter,sortBy,specificHabitId)
+- queryEvents(timeRange,timeOfDay,specificEventId)
+- queryTimerLogs(minDurationMinutes, maxDurationMinutes, sortBy, speificTimerLogId)
 `.trim();
 
   const systemContext = 
@@ -67,9 +76,11 @@ ${environment}
 CD: Current Date, CT: Current Time, TO: Timezone Offset
 tk: Tasks, hb: Habits, ev: Events
 PATCH:{ a:[added], u:[updated], r:[removed_ids] }
-task - i: id, t: title [req], p: priority (h/m/l) [req], d: dueDate [req], c: completed (1=yes, 0=no)
-habit - i: id, t: title [req], cs: currentStreak, g: goal [req], fq:frequecny (daily|weekly) [req], f: streakfreezes, ldc: last date of check-in (not checked in once = '-')
-event - i: id, t: title [req], sd: startDate [req], ed: endDate [req], st: startTime [req], et: endTime [req], r: recurrence (daily/weekly/none) [req]), `.trim();
+task - i: id, t: title [req], p: priority (h/m/l) [req], d: dueDate [req], c: completed (1=yes, 0=no), cat: categoryId, tg: tagIds (separated by |)
+habit - i: id, t: title [req], cs: currentStreak, g: goal [req], fq:frequecny (daily|weekly) [req], f: streakfreezes, ldc: last date of check-in (not checked in once = '-'), cat: categoryId, tg: tagIds (separated by |)
+event - i: id, t: title [req], sd: startDate [req], ed: endDate [req], st: startTime [req], et: endTime [req], r: recurrence (daily/weekly/none) [req]), cat: categoryId, tg: tagIds (separated by |) 
+cat - i: categoryId, n: categoryName
+tag - i: tagId, n: tagName`.trim();
 
   return {systemInstruction, systemContext, userTranscript};
 };

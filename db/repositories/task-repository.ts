@@ -95,7 +95,7 @@ export async function getTaskById(id: string): Promise<Task | null> {
  * Throws on DB error — caller is responsible for catching and rolling back
  * optimistic UI state.
  */
-export async function insertTask(task: Task, tagIds: string[]): Promise<Task> {
+export async function insertTask(task: Task): Promise<Task> {
     const insert = taskToInsert(task);
     return await db.transaction(async (tx) => {
         // 1. Insert the parent record and return the generated payload
@@ -105,8 +105,8 @@ export async function insertTask(task: Task, tagIds: string[]): Promise<Task> {
             .returning();
 
         // 2. Batch insert the junction records
-        if (tagIds.length > 0) {
-            const junctionData = tagIds.map((tagId) => ({
+        if (task.tags && task.tags.length > 0) {
+            const junctionData = task.tags.map((tagId) => ({
                 taskId: insertedTask.id,
                 tagId: tagId,
             }));
@@ -122,7 +122,7 @@ export async function insertTask(task: Task, tagIds: string[]): Promise<Task> {
  * Update an existing task. Merges the provided fields and stamps updatedAt.
  * Throws on DB error.
  */
-export async function updateTask(task: Task, tagIds: string[]): Promise<Task> {
+export async function updateTask(task: Task): Promise<Task> {
     const insert = taskToInsert(task);
     return await db.transaction(async (tx) => {
         await tx
@@ -137,8 +137,8 @@ export async function updateTask(task: Task, tagIds: string[]): Promise<Task> {
             .delete(taskTags)
             .where(eq(taskTags.taskId, task.id));
 
-        if (tagIds.length > 0) {
-            const junctionData = tagIds.map((tagId) => ({
+        if (task.tags && task.tags.length > 0) {
+            const junctionData = task.tags.map((tagId) => ({
                 taskId: task.id,
                 tagId: tagId,
             }));

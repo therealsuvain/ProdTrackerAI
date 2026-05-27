@@ -26,8 +26,8 @@ import { tag } from "@expo/ui/swift-ui/modifiers";
 interface HabitContextType {
   habits: Habit[];
   setHabits: React.Dispatch<React.SetStateAction<Habit[]>>;
-  addHabit: (habit: Habit, tagIds: string[]) => Promise<void>;
-  editHabit: (habit: Habit, tagIds: string[]) => Promise<void>;
+  addHabit: (habit: Habit) => Promise<void>;
+  editHabit: (habit: Habit) => Promise<void>;
   removeHabit: (id: string) => Promise<void>;
   removeHabits: () => Promise<void>;
   reassignHabitCategoryLocal: (oldId: string, newId: string) => void;
@@ -70,20 +70,20 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
   );
 
   const addHabit = useCallback(
-    async (habit: Habit, tagIds: string[]): Promise<void> => {
+    async (habit: Habit): Promise<void> => {
       await optimisticHabitMutation(
         (prev) => [...prev, habit],
-        () => insertHabit(habit, tagIds),
+        () => insertHabit(habit),
       );
     },
     [optimisticHabitMutation],
   );
 
   const editHabit = useCallback(
-    async (habit: Habit, tagIds: string[]): Promise<void> => {
+    async (habit: Habit): Promise<void> => {
       await optimisticHabitMutation(
         (prev) => prev.map((h) => (h.id === habit.id ? habit : h)),
-        () => updateHabit(habit, tagIds),
+        () => updateHabit(habit),
       );
     },
     [optimisticHabitMutation],
@@ -162,14 +162,14 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
             missedCount++;
           } else if (status === "auto_frozen") {
             // Safely wait for the DB to update this specific habit
-            await editHabit(updatedHabit, updatedHabit.tags || []);
+            await editHabit(updatedHabit);
             autoFrozenCount++;
           }
 
           if (habit.pendingStreakResetAfter) {
             const resettedHabit = restartHabitAfterGoalForeground(updatedHabit);
             if (!resettedHabit.pendingStreakResetAfter) {
-              await editHabit(resettedHabit, resettedHabit.tags || []);
+              await editHabit(resettedHabit);
             }
             finalHabit = resettedHabit;
           }

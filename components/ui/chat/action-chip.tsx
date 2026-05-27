@@ -1,7 +1,14 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import {
+  ArrowSquareRight,
+  ArrowSquareRightIcon,
+  Tag,
+} from "@phosphor-icons/react";
 import { format } from "date-fns";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { TagList } from "../shared/tags/tag-list";
+import { CategoryBadge } from "../shared/categories/category-badge";
 
 interface Props {
   action: any;
@@ -15,10 +22,10 @@ export const ActionChip = ({
   isConfirmed,
   isExpired,
 }: Props) => {
+  //console.log("ACTION CHIP", action.args);
   const getActionSubtitle = (action: any) => {
     const data = { ...action.extraInfo, ...action.args }; // Use extraInfo for existing, args for new
     const parts: string[] = [];
-
     if (action.name.includes("Task")) {
       if (data.dueDate)
         parts.push(`Due: ${new Date(data.dueDate).toLocaleDateString()}`);
@@ -47,6 +54,10 @@ export const ActionChip = ({
     return "pencil"; // Edit
   };
 
+  /* const doWeHaveTags =
+    (action.args.tags && action.args.tags.length > 0) ||
+    (action.args.tagIds && action.args.tagIds.length > 0) ||
+    false; */
   return (
     <View style={[styles.chip, { borderLeftColor: action.color }]}>
       <View style={styles.iconContainer}>
@@ -57,14 +68,37 @@ export const ActionChip = ({
         />
       </View>
       <View
-      //style={styles.content}
+        style={{
+          flexDirection: "column",
+          justifyContent: "space-between",
+        }}
       >
-        <Text style={styles.actionTitle} numberOfLines={1}>
-          {action.args.title ||
-            action.args.t ||
-            action.extraInfo?.title ||
-            "Deleted Item"}
-        </Text>
+        <View style={{ flexDirection: "row", gap: 4 }}>
+          <Text style={styles.actionTitle} numberOfLines={1}>
+            {action.args.title ||
+              action.args.t ||
+              action.extraInfo?.title ||
+              "Deleted Item"}
+          </Text>
+          {action.extraInfo?.category && (
+            <CategoryBadge
+              category={action.extraInfo.category}
+              variant="iconOnly"
+            />
+          )}
+        </View>
+        <View
+          style={{
+            flex: 1,
+            flexDirection: "row",
+            flexWrap: "wrap",
+            width: "85%",
+          }}
+        >
+          {action.args.tags && action.args.tags.length > 0 && (
+            <TagList tags={action.args.tags} holeColor={"#ffffff"} />
+          )}
+        </View>
         <Text style={styles.extraInfo}>{getActionSubtitle(action)}</Text>
       </View>
 

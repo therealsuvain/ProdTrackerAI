@@ -266,7 +266,8 @@ function TaskScreenInner() {
           style={styles.fab}
           icon="plus"
           onPress={() => {
-            clearStorageByKey("timeLogs");
+            clearStorageByKey("AI_TOKEN_MONITOR_STATS");
+              clearStorageByKey("timeLogs");
             clearStorageByKey("@prodtracker_metrics");
             clearStorageByKey("@prodtracker_achievements");
             clearStorageByKey("tasks");

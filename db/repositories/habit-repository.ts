@@ -224,7 +224,7 @@ export async function getHabitById(id: string): Promise<Habit | null> {
  * Insert a new habit with all child rows in a single transaction.
  * Throws on DB error.
  */
-export async function insertHabit(habit: Habit, tagIds: string[]): Promise<Habit> {
+export async function insertHabit(habit: Habit): Promise<Habit> {
     const checkInRows = buildCheckInRows(habit);
     const freezeRows = buildFreezeRows(habit);
     const goalCompletionRows = buildGoalCompletionRows(habit);
@@ -241,8 +241,8 @@ export async function insertHabit(habit: Habit, tagIds: string[]): Promise<Habit
         if (goalCompletionRows.length > 0) {
             await tx.insert(habitGoalCompletions).values(goalCompletionRows);
         }
-        if (tagIds.length > 0) {
-            const junctionData = tagIds.map((tagId) => ({
+       if (habit.tags && habit.tags.length > 0) {
+            const junctionData = habit.tags.map((tagId) => ({
                 habitId: habit.id,
                 tagId: tagId,
             }));
@@ -264,7 +264,7 @@ export async function insertHabit(habit: Habit, tagIds: string[]): Promise<Habit
  * the transaction guarantees atomicity so there's no window where child rows
  * are missing.
  */
-export async function updateHabit(habit: Habit, tagIds: string[]): Promise<Habit> {
+export async function updateHabit(habit: Habit): Promise<Habit> {
     const checkInRows = buildCheckInRows(habit);
     const freezeRows = buildFreezeRows(habit);
     const goalCompletionRows = buildGoalCompletionRows(habit);
@@ -296,8 +296,8 @@ export async function updateHabit(habit: Habit, tagIds: string[]): Promise<Habit
             .delete(habitTags)
             .where(eq(habitTags.habitId, habit.id));
 
-        if (tagIds.length > 0) {
-            const junctionData = tagIds.map((tagId) => ({
+        if (habit.tags && habit.tags.length > 0) {
+            const junctionData = habit.tags.map((tagId) => ({
                 habitId: habit.id,
                 tagId: tagId,
             }));
