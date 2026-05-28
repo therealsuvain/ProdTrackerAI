@@ -34,10 +34,11 @@ import { ChatInput } from "./chat-input";
 import { DaySeparator } from "./day-seperator";
 import { LoadingBubble } from "./loading-bubble";
 import { MessageBubble } from "./message-bubble";
-import { ca } from "date-fns/locale";
 import { Habit } from "@/types/habits";
 import { Task } from "@/types/task";
 import { CalendarEvent } from "@/types/calendar";
+import { Category } from "@/types/category";
+import { ta } from "date-fns/locale";
 
 interface Props {
   visible: boolean;
@@ -176,16 +177,23 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     const category = call.args.category
       ? categories.find((c: any) => c.id === call.args.category)
       : undefined;
+    const fallbackCategory = call.args.fallbackCategoryId
+      ? categories.find((c: any) => c.id === call.args.fallbackCategoryId)
+      : undefined;
     const colorMap: Record<string, string> = {
       Task: theme.taskBase,
       Habit: theme.habitBase,
       Event: theme.eventBase,
+      Category: theme.blueDarkPrimary,
     };
 
     const color = Object.keys(colorMap).find((key) => call.name.includes(key));
     const entityMap: Record<
       string,
-      { list: Task[] | Habit[] | CalendarEvent[]; pick: (item: any) => object }
+      {
+        list: Task[] | Habit[] | CalendarEvent[] | Category[];
+        pick: (item: any) => object;
+      }
     > = {
       Task: {
         list: tasks,
@@ -193,6 +201,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
           title: t.title,
           dueDate: t.dueDate,
           priority: t.priority,
+          tags: t.tags,
         }),
       },
       Habit: {
@@ -202,6 +211,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
           streak: h.streak,
           goal: h.goal,
           streakFreezes: h.streakFreezes,
+          tags: h.tags,
         }),
       },
       Event: {
@@ -212,6 +222,15 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
           endDate: e.endDate,
           startTime: e.startTime,
           endTime: e.endTime,
+          tags: e.tags,
+        }),
+      },
+      Category: {
+        list: categories,
+        pick: (c) => ({
+          name: c.name,
+          color: c.color,
+          icon: c.icon,
         }),
       },
     };
@@ -222,13 +241,17 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     const entityInfo = matchedKey
       ? (() => {
           const { list, pick } = entityMap[matchedKey];
-          const item = list.find((x: any) => x.id.slice(0, 8) === id);
+          let item;
+          if (call.name.includes("Category")) {
+            item = list.find((x: any) => x.id === id);
+          } else item = list.find((x: any) => x.id.slice(0, 8) === id);
           return item ? pick(item) : {};
         })()
       : {};
 
     const extraInfo = {
       ...(category ? { category } : {}),
+      ...(fallbackCategory ? { fallbackCategory } : {}),
       ...entityInfo,
     };
 
@@ -237,45 +260,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       color: color ? colorMap[color] : "",
       ...(Object.keys(extraInfo).length > 0 ? { extraInfo } : {}),
     };
-
-    /* if (call.name.includes("Task")) {
-      color = theme.taskBase;
-      const task = tasks.find((h: any) => h.id.slice(0, 8) === id);
-      if (task) {
-        extraInfo = {
-          title: task.title,
-          dueDate: task.dueDate,
-          priority: task.priority,
-        };
-      }
-    } else if (call.name.includes("Habit")) {
-      color = theme.habitBase;
-      const habit = habits.find((h: any) => h.id.slice(0, 8) === id);
-      if (habit) {
-        extraInfo = {
-          title: habit.title,
-          streak: habit.streak,
-          goal: habit.goal,
-          streakFreezes: habit.streakFreezes,
-        };
-      }
-    } else if (call.name.includes("Event")) {
-      color = theme.eventBase;
-      const event = events.find((h: any) => h.id.slice(0, 8) === id);
-      if (event) {
-        extraInfo = {
-          title: event.title,
-          startDate: event.startDate,
-          endDate: event.endDate,
-          startTime: event.startTime,
-          endTime: event.endTime,
-        };
-      }
-    }
-    if (Object.keys(extraInfo).length === 0) {
-      return { ...call, color };
-    }
-    return { ...call, color, extraInfo }; */
   };
   // 1. Handle sending new commands
   const handleSendMessage = async (text: string) => {

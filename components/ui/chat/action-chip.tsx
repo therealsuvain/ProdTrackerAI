@@ -1,14 +1,24 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { format, set } from "date-fns";
+import React, { useEffect, useState } from "react";
 import {
-  ArrowSquareRight,
-  ArrowSquareRightIcon,
-  Tag,
-} from "@phosphor-icons/react";
-import { format } from "date-fns";
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+  ActionSheetIOS,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { TagList } from "../shared/tags/tag-list";
 import { CategoryBadge } from "../shared/categories/category-badge";
+import { TagBadge } from "../shared/tags/tag-badge";
+import { resolveIcon } from "@/utils/AI-utils/tags-and-categories-handlers";
+import { Category } from "@/types/category";
+import { CategoryCreator } from "../shared/categories/category-creation-view";
+import { TagsEditModal } from "../shared/tags/tags-edit-modal";
+import { Tag } from "@phosphor-icons/react";
+import { ThemeContext } from "@react-navigation/native";
+import { th } from "date-fns/locale";
 
 interface Props {
   action: any;
@@ -22,7 +32,10 @@ export const ActionChip = ({
   isConfirmed,
   isExpired,
 }: Props) => {
-  //console.log("ACTION CHIP", action.args);
+  const [openCategoryEditor, setOpenCategoryEditor] = useState(false);
+  const [openTagEditor, setOpenTagEditor] = useState(false);
+  const [tagName, setTagName] = useState("");
+
   const getActionSubtitle = (action: any) => {
     const data = { ...action.extraInfo, ...action.args }; // Use extraInfo for existing, args for new
     const parts: string[] = [];
@@ -54,10 +67,28 @@ export const ActionChip = ({
     return "pencil"; // Edit
   };
 
-  /* const doWeHaveTags =
-    (action.args.tags && action.args.tags.length > 0) ||
-    (action.args.tagIds && action.args.tagIds.length > 0) ||
-    false; */
+  const getActionItemType = (name: string) => {
+    if (name.includes("Task")) return "Task";
+    if (name.includes("Habit")) return "Habit";
+    if (name.includes("Event")) return "Event";
+    if (name.includes("Log")) return "Log";
+    if (name.includes("Category")) return "Category";
+    if (name.includes("Tag")) return "Tag";
+
+    return "Other";
+  };
+
+  const getPropsedIconConcept = (name?: string) => {
+    return resolveIcon(name);
+  };
+
+  const actionItemType = getActionItemType(action.name);
+  useEffect(() => {
+    if (actionItemType === "Tag") {
+      setTagName(action.args.name);
+    }
+  }, [actionItemType, action.args.name]);
+
   return (
     <View style={[styles.chip, { borderLeftColor: action.color }]}>
       <View style={styles.iconContainer}>
@@ -67,40 +98,112 @@ export const ActionChip = ({
           color={action.color}
         />
       </View>
-      <View
-        style={{
-          flexDirection: "column",
-          justifyContent: "space-between",
-        }}
-      >
-        <View style={{ flexDirection: "row", gap: 4 }}>
-          <Text style={styles.actionTitle} numberOfLines={1}>
-            {action.args.title ||
-              action.args.t ||
-              action.extraInfo?.title ||
-              "Deleted Item"}
-          </Text>
-          {action.extraInfo?.category && (
+      {actionItemType === "Category" ? (
+        <>
+          <Pressable onPress={() => setOpenCategoryEditor(true)}>
             <CategoryBadge
-              category={action.extraInfo.category}
-              variant="iconOnly"
+              category={
+                {
+                  name: action.args.name || action.extraInfo.name,
+                  color:
+                    action.args.hexColor || action.extraInfo?.color || "black",
+                  icon:
+                    action.extraInfo?.icon ||
+                    getPropsedIconConcept(action.args.proposedIconConcept) ||
+                    "folder",
+                } as Category
+              }
+              size="big"
+            />
+          </Pressable>
+          {action.args.fallbackCategoryId &&
+            action.extraInfo?.fallbackCategory && (
+              <>
+                <Ionicons
+                  name="arrow-redo-circle-outline"
+                  size={30}
+                  style={{ marginHorizontal: 5 }}
+                  color={"black"}
+                />
+                <CategoryBadge
+                  category={action.extraInfo.fallbackCategory}
+                  size="big"
+                />
+              </>
+            )}
+          {!isConfirmed && !isExpired && openCategoryEditor && (
+            <CategoryCreator
+              isCreating={true}
+              onClose={() => setOpenCategoryEditor(false)}
+              onCreateCategory={
+                async (/* name, color, icon */) => {
+                  /*  await updateUserCategory({ ...editData, name, color, icon });
+            setCategoryToEdit(null); */
+                }
+              }
+              editingCategory={
+                {
+                  name: action.args.name || action.extraInfo.name,
+                  color:
+                    action.args.hexColor || action.extraInfo?.color || "black",
+                  icon:
+                    action.extraInfo?.icon ||
+                    getPropsedIconConcept(action.args.proposedIconConcept) ||
+                    "folder",
+                } as Category
+              }
+              mode="ai"
             />
           )}
-        </View>
-        <View
-          style={{
-            flex: 1,
-            flexDirection: "row",
-            flexWrap: "wrap",
-            width: "85%",
-          }}
-        >
-          {action.args.tags && action.args.tags.length > 0 && (
-            <TagList tags={action.args.tags} holeColor={"#ffffff"} />
+        </>
+      ) : actionItemType === "Tag" ? (
+        <>
+          <View style={styles.tagList}>
+            {action.args.names ? (
+              action.args.names.map((name: string, index: any) => (
+                <Pressable key={index} onPress={() => setOpenTagEditor(true)}>
+                  <TagBadge tagName={name} holeColor={"white"} mode="big" />
+                </Pressable>
+              ))
+            ) : (
+              <TagBadge tagId={action.args.id} holeColor={"white"} mode="big" />
+            )}
+          </View>
+          {!isConfirmed && !isExpired && openTagEditor && (
+            <TagsEditModal
+              tagToEdit="true"
+              editNameValue={tagName}
+              setEditNameValue={setTagName}
+              onSave={() => {}}
+              onClose={() => setOpenTagEditor(false)}
+              mode="ai"
+            />
           )}
+        </>
+      ) : (
+        <View style={styles.actionContainer}>
+          <View style={styles.actionHeader}>
+            <Text style={styles.actionTitle} numberOfLines={1}>
+              {action.args.title ||
+                action.args.t ||
+                action.extraInfo?.title ||
+                "Deleted Item"}
+            </Text>
+            {action.extraInfo?.category && (
+              <CategoryBadge
+                category={action.extraInfo.category}
+                variant="iconOnly"
+              />
+            )}
+          </View>
+          <View style={styles.tagList}>
+            {action.args.tags && action.args.tags.length > 0 && (
+              <TagList tags={action.args.tags} holeColor={"#ffffff"} />
+            )}
+          </View>
+          <Text style={styles.extraInfo}>{getActionSubtitle(action)}</Text>
         </View>
-        <Text style={styles.extraInfo}>{getActionSubtitle(action)}</Text>
-      </View>
+      )}
 
       {!isConfirmed && !isExpired && (
         <TouchableOpacity onPress={onRemove} style={styles.removeBtn}>
@@ -129,7 +232,17 @@ const styles = StyleSheet.create({
   },
   //content: { flex: 1 },
   iconContainer: { marginRight: 10 },
+  actionContainer: {
+    flexDirection: "column",
+    justifyContent: "space-between",
+  },
+  actionHeader: { flexDirection: "row", gap: 4 },
   actionTitle: { fontSize: 14, fontWeight: "600", color: "#333" },
   extraInfo: { fontSize: 11, color: "#8E8E93", marginTop: 2 },
+  tagList: {
+    //flex: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
   removeBtn: { padding: 4, marginLeft: 10, alignItems: "flex-end" },
 });

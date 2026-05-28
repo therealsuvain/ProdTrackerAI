@@ -4,8 +4,6 @@ import { randomUUID } from "expo-crypto";
 import { cancelReminder, scheduleReminderHabits } from "./use-notifications";
 import {generateEmbedding} from '@/utils/embedding-engine'
 import { stat } from "react-native-fs";
-import { ta } from "date-fns/locale";
-import { tag } from "@expo/ui/swift-ui/modifiers";
 
 type Frequency = "daily" | "weekly";
 

@@ -16,10 +16,10 @@ export const AddHabitHandler: AIHandler = {
       }
     }
 
-    //context.setHabits((prev) => [...prev, newHabit]);
     context.addHabit(newHabit);
     console.log(`AI Action: Added Habit "${newHabit.title}"`);
-    return { status: "success", habit: newHabit };
+    const { id, embedding, ...rest } = newHabit;
+    return { status: "success", habit:{ id: id.slice(0, 8), ...rest } };
   }
 
 }
@@ -34,7 +34,8 @@ export const DeleteHabitHandler: AIHandler = {
       await cancelReminder(oldHabit.notificationId);
     }
     await context.removeHabit(oldHabit.id);
-    return { status: "success", habit: oldHabit };
+    const { id, title } = oldHabit;
+    return { status: "success", habit: { id: id.slice(0, 8), title } };
   }
 };
 
@@ -46,10 +47,8 @@ export const CheckInHabitHandler: AIHandler = {
     if (result.status === "denied")
       return { status: "denied", reason: result.reason }
     await context.editHabit(result.habit);
-    return { status: "success", habit: result.habit };
-    /* context.setHabits((prev) =>
-      prev.map((h) => (h.id.slice(0, 8) === params.id ? checkInHabit(h) : h))
-    ); */
+    const { id, title } = result.habit;
+    return { status: "success", habit: { id: id.slice(0, 8), title } };
   }
 };
 
@@ -73,15 +72,23 @@ export const QueryHabitsHandler: AIHandler = {
       return {
         output: {
           id: targetHabit.id,
-          title: targetHabit.title,
-          frequency: targetHabit.frequency,
-          currentStreak: targetHabit.streak,
-          longestStreak: targetHabit.longestStreak,
-          goal: targetHabit.goal || "None",
-          availableFreezes: targetHabit.streakFreezes,
+          t: targetHabit.title,
+          fq: targetHabit.frequency,
+          cs: targetHabit.streak,
+          ls: targetHabit.longestStreak,
+          g: targetHabit.goal || "None",
+          f: targetHabit.streakFreezes,
           totalCheckIns: targetHabit.history?.length || 0,
-          lastCheckedIn: targetHabit.history?.length ? targetHabit.history[targetHabit.history.length - 1] : "Never",
-          freezeHistory: targetHabit.freezeHistory || [] // AI can look at this to see exactly when it was frozen
+          ldc: targetHabit.history?.length ? targetHabit.history[targetHabit.history.length - 1] : "Never",
+          fh: targetHabit.freezeHistory || [], // AI can look at this to see exactly when it was frozen
+          cat: targetHabit.category,
+          tg: targetHabit.tags,
+          rem : targetHabit.reminder,
+          rd : targetHabit.reminderDate,
+          psrar : targetHabit.pendingStreakResetAfter||'',
+          gc: targetHabit.goalCompletions? targetHabit.goalCompletions.map((gc:any) => JSON.stringify(gc)) : [],
+          ct : targetHabit.createdAt,
+          ut : targetHabit.updatedAt,
         }
       };
     }
@@ -124,12 +131,24 @@ export const QueryHabitsHandler: AIHandler = {
     return {
       output: filtered.map(h => ({
         id: h.id.slice(0, 8),
-        title: h.title,
-        currentStreak: h.streak,
-        longestStreak: h.longestStreak,
-        goal: h.goal,
-        lastCheckedIn: h.history.length > 0 ? h.history[h.history.length - 1] : "Never",
-        currentlyFrozen: h.freezeHistory?.length ? isToday(h.freezeHistory[h.freezeHistory.length - 1]) : false
+        t: h.title,
+        fq: h.frequency,
+        csk: h.streak,
+        ls: h.longestStreak,
+        g: h.goal,
+        f: h.streakFreezes,
+        fh : h.freezeHistory,
+        totalCheckIns: h.history.length,
+        ldc: h.history.length > 0 ? h.history[h.history.length - 1] : "Never",
+        currentlyFrozen: h.freezeHistory?.length ? isToday(h.freezeHistory[h.freezeHistory.length - 1]) : false,
+        cat: h.category||'',// ? h.category.slice(0, 8) : '-',
+        tg: h.tags||[],//?.length ? h.tags.map((id:string) => id.slice(0, 8)).join('|') : '-',
+        rem : h.reminder,
+        psrar : h.pendingStreakResetAfter||'',
+        gc: h.goalCompletions? h.goalCompletions.map((gc:any) => JSON.stringify(gc)) : [],
+        rd : h.reminderDate,
+        ct : h.createdAt,
+        ut : h.updatedAt
       }))
     };
   }

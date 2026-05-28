@@ -18,7 +18,8 @@ export const AddEventHandler: AIHandler = {
 
     await context.addEvent(newEvent);
     console.log(`AI Action: Added event "${newEvent.title}"`);
-    return { status: "success", event: newEvent };
+    const { id, embedding, ...rest } = newEvent;
+    return { status: "success", event: { id: id.slice(0, 8), ...rest } };
   }
 
 }
@@ -27,7 +28,16 @@ export const EditEventHandler: AIHandler = {
   execute: async (params, context) => {
     const oldEvent = context.events.find((e) => e.id.slice(0, 8) === params.id)
     if (!oldEvent) throw new Error("Event not found");
-    const updatedEvent = await createEvent({ ...oldEvent, ...params, id: oldEvent.id })
+    let currentTags = Array.isArray(oldEvent.tags) ? [...oldEvent.tags] : [];
+
+    if (params.addTagIds && Array.isArray(params.addTagIds)) {
+      currentTags = [...new Set([...currentTags, ...params.addTagIds])];
+    }
+
+    if (params.removeTagIds && Array.isArray(params.removeTagIds)) {
+      currentTags = currentTags.filter(id => !params.removeTagIds.includes(id));
+    }
+    const updatedEvent = await createEvent({ ...oldEvent, ...params, tags: currentTags, id: oldEvent.id })
     if (updatedEvent.reminder) {
       try {
         if (oldEvent.notificationIds?.length) {
@@ -43,7 +53,8 @@ export const EditEventHandler: AIHandler = {
       }
     }
     await context.editEvent(updatedEvent);
-    return { status: "success", event: updatedEvent };
+    const { id, embedding, ...rest } = updatedEvent;
+    return { status: "success", event: { id: id.slice(0, 8), ...rest } };
   }
 };
 export const DeleteEventSingleOccurrenceHandler: AIHandler = {
@@ -51,7 +62,8 @@ export const DeleteEventSingleOccurrenceHandler: AIHandler = {
     const oldEvent = context.events.find((e) => e.id.slice(0, 8) === params.id)
     if (!oldEvent) throw new Error("Event not found");
     await context.deleteEventOccurrence(oldEvent.id, params.date, false);
-    return { status: "success", event: oldEvent };
+    const { id, title } = oldEvent;
+    return { status: "success", event: { id: id.slice(0, 8), title } };
   }
 };
 
@@ -66,7 +78,8 @@ export const DeleteEventHandler: AIHandler = {
       await Promise.all(cancelPromises);
     }
     await context.removeEvent(oldEvent.id);
-    return { status: "success", event: oldEvent };
+    const { id, title } = oldEvent;
+    return { status: "success", event: { id: id.slice(0, 8), title } };
   }
 };
 
@@ -100,13 +113,21 @@ export const QueryEventsHandler: AIHandler = {
 
       return {
         output: {
-          id: targetEvent.id,
-          title: targetEvent.title,
-          recurrence: targetEvent.recurrence,
+          id: targetEvent.id.slice(0, 8),
+          t: targetEvent.title,
+          d: targetEvent.description || '',
+          r: targetEvent.recurrence,
           instancesRemaining: instancesLeft,
-          deletedOccurrences: targetEvent.deletedOccurrences || [],
-          starts: targetEvent.startDate,
-          ends: targetEvent.endDate
+          do: targetEvent.deletedOccurrences || [],
+          sd: targetEvent.startDate,
+          st: targetEvent.startTime.split('T')[1],
+          ed: targetEvent.endDate || '',
+          et: targetEvent.endTime.split('T')[1],
+          rem: targetEvent.reminder ? 1 : 0,
+          tg: targetEvent.tags || [],
+          cat: targetEvent.category || "",
+          ct: targetEvent.createdAt,
+          ut: targetEvent.updatedAt,
         }
       };
     }
@@ -136,10 +157,20 @@ export const QueryEventsHandler: AIHandler = {
 
     return {
       output: filtered.map(e => ({
-        id: e.id.slice(0, 8),
-        title: e.title,
-        time: e.startTime, // AI can read the time
-        recurrence: e.recurrence
+        i: e.id.slice(0, 8),
+        t: e.title,
+        d: e.description || '',
+        r: e.recurrence,
+        do: e.deletedOccurrences || [],
+        sd: e.startDate,
+        st: e.startTime.split('T')[1], // AI can read the time
+        ed: e.endDate || '',
+        et: e.endTime.split('T')[1],
+        tg: e.tags || [],
+        rem: e.reminder ? 1 : 0,
+        cat: e.category || "",
+        ct: e.createdAt,
+        ut: e.updatedAt
       }))
     };
   }

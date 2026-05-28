@@ -27,8 +27,8 @@ export const AddTaskHandler: AIHandler = {
     //context.setTasks((prev) => [...prev, newTask]);
     context.addTask(newTask);
     console.log(`AI Action: Added task "${newTask.title}"`);
-     const { id, embedding, ...rest} = newTask;
-    return { status: "success", task: {id:id.slice(0, 8), ...rest} }
+    const { id, embedding, ...rest } = newTask;
+    return { status: "success", task: { id: id.slice(0, 8), ...rest } }
   }
 };
 
@@ -38,7 +38,16 @@ export const EditTaskHandler: AIHandler = {
     if (!oldTask) {
       throw new Error("Task not found");
     }
-    const updatedTask = await createTask({ ...oldTask, ...params, id: oldTask.id })
+    let currentTags = Array.isArray(oldTask.tags) ? [...oldTask.tags] : [];
+
+    if (params.addTagIds && Array.isArray(params.addTagIds)) {
+      currentTags = [...new Set([...currentTags, ...params.addTagIds])];
+    }
+
+    if (params.removeTagIds && Array.isArray(params.removeTagIds)) {
+      currentTags = currentTags.filter(id => !params.removeTagIds.includes(id));
+    }
+    const updatedTask = await createTask({ ...oldTask, ...params, tags: currentTags, id: oldTask.id })
     if (updatedTask.reminder) {
       try {
         if (updatedTask.notificationId) {
@@ -53,10 +62,10 @@ export const EditTaskHandler: AIHandler = {
     /* context.setTasks((prev) =>
       prev.map((t) => (t.id.slice(0, 8) === params.id ? updatedTask : t))
     ); */
-    
+
     context.editTask(updatedTask);
-    const { id, embedding, ...rest} = updatedTask;
-    return { status: "success", task: {id:id.slice(0, 8), ...rest} }
+    const { id, embedding, ...rest } = updatedTask;
+    return { status: "success", task: { id: id.slice(0, 8), ...rest } }
   }
 };
 
@@ -70,8 +79,8 @@ export const DeleteTaskHandler: AIHandler = {
       await cancelReminder(oldTask.notificationId);
     }
     context.removeTask(oldTask.id);
-     const {id, title} = oldTask;
-    return { status: "success", task: {id:id.slice(0, 8), title} }
+    const { id, title } = oldTask;
+    return { status: "success", task: { id: id.slice(0, 8), title } }
   }
 };
 
@@ -85,8 +94,8 @@ export const CompleteTaskHandler: AIHandler = {
       await cancelReminder(oldTask.notificationId);
     }
     context.toggleTask(oldTask.id);
-    const {id, title} = oldTask;
-    return { status: "success", task: {id:id.slice(0, 8), title} }
+    const { id, title } = oldTask;
+    return { status: "success", task: { id: id.slice(0, 8), title } }
   }
 };
 
@@ -101,11 +110,18 @@ export const QueryTasksHandler: AIHandler = {
       return {
         output: {
           id: targetTask.id,
-          title: targetTask.title,
+          t: targetTask.title,
+          d: targetTask.description || "",
+          p: targetTask.priority,
+          due: targetTask.dueDate || "",
+          tg: targetTask.tags || [],
+          cat: targetTask.category || "",
           status: targetTask.completed ? "completed" : "pending",
-          priority: targetTask.priority,
-          dueDate: targetTask.dueDate || "None",
-          notes: targetTask.notes || "No notes provided."
+          rem: targetTask.reminder ? 1 : 0,
+          rd: targetTask.reminderDate || "",
+          cd: targetTask.completedDate || "",
+          ct: targetTask.createdAt,
+          ut: targetTask.updatedAt
         }
       };
     }
@@ -157,10 +173,18 @@ export const QueryTasksHandler: AIHandler = {
     return {
       output: filtered.map(t => ({
         id: t.id.slice(0, 8),
-        title: t.title,
-        status: t.completed ? "completed" : new Date(t.dueDate) < startOfToday ? "overdue" : "pending",
+        t: t.title,
+        d: t.description,
         due: t.dueDate,
-        priority: t.priority
+        p: t.priority,
+        tg: t.tags,
+        cat: t.category,
+        rem: t.reminder ? 1 : 0,
+        rd: t.reminderDate,
+        cd: t.completedDate,
+        ct: t.createdAt,
+        ut: t.updatedAt,
+        status: t.completed ? "completed" : new Date(t.dueDate) < startOfToday ? "overdue" : "pending",
       })),
       count: filtered.length
     };

@@ -17,7 +17,7 @@ const iconFuse = new Fuse(VALID_ICONS, {
  * Helper to resolve AI icon concepts into valid Ionicons
  * e.g., AI suggests "dumbbell" -> Fuse finds "barbell"
  */
-const resolveIcon = (proposedConcept?: string): string => {
+export const resolveIcon = (proposedConcept?: string): string => {
   if (!proposedConcept) return "folder"; // Default fallback
   
   const results = iconFuse.search(proposedConcept);
@@ -98,7 +98,8 @@ export const AddCategoryHandler: AIHandler = {
 
     // 3. Update global context/database
     // Ensure your context has this addCategory function available!
-    const id = await context.addCategory(params.name, finalColor, finalIcon);
+     const id = randomUUID();
+    await context.addCategory({id, name:params.name, color:finalColor, icon:finalIcon});
 
     
     // Return the newly created ID so the AI can immediately chain it to an addTask call!
@@ -152,12 +153,16 @@ export const AddTagHandler: AIHandler = {
     if (!names || !Array.isArray(names) || names.length === 0) {
       return { status: "error", message: "No tag names provided." };
     }
+  const newlyCreatedTags = names.map(name => ({
+       id: randomUUID(), 
+      name: name.replace(/^#/, ""), 
+     }));
 
-    const newTagIds = await context.addTags(names);
+     await context.addTags(newlyCreatedTags);
 
 
     // Return the new ID so the AI can use it in tool chaining
-    return { status: "success", tag: newTagIds }; 
+    return { status: "success", tag: newlyCreatedTags }; 
   },
 };
 

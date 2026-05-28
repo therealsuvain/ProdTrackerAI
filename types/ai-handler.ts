@@ -22,13 +22,13 @@ export interface AIActionContext {
   editHabit: (habit: Habit) => Promise<void>;
   removeHabit: (id: string) => Promise<void>;
   categories: Category[];
-  addCategory: (name: string, color: string, icon: string) => Promise<string>;
+  addCategory: (categoryPayload: {id: string, name: string, color: string, icon: string}) => Promise<string>;
   incrementCategoryUsage: (id: string) => Promise<void>;
   updateUserCategory: (category: Category) => Promise<void>;
   deleteUserCategory: (id: string, fallbackId?: string | null) => Promise<void>;
   getCategoryUsageForAll: (id: string) => Promise<any>;
    tags: Tag[];
-  addTags: (tagNames: string[]) => Promise<string[]>;
+  addTags: (tagsPayload: { id: string; name: string }[]) => Promise<string[]>;
   incrementTagUsage: (id: string) => Promise<void>;
   updateUserTag: (tag: Tag) => Promise<void>;
   deleteUserTag: (id: string, fallbackId?: string | null) => Promise<void>;

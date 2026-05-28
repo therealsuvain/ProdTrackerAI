@@ -23,7 +23,10 @@ export const MessageBubble = ({
   const { theme } = useContext(ThemeContext);
   const isUser = message.sender === "user";
   const isExpired = message.isExpired;
-
+  /*   if (message.type === "action") {
+    console.log(message.pendingActions);
+  }
+ */
   return (
     <View
       style={[
@@ -141,11 +144,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   userBubble: {
-    backgroundColor:  "#108374", //"#00BFA5", // Teal
+    backgroundColor: "#108374", //"#00BFA5", // Teal
     borderBottomRightRadius: 4, // iMessage style
   },
   aiBubble: {
-    backgroundColor: "#e0e0e0",//"#F0F0F0", // Neutral Gray
+    backgroundColor: "#e0e0e0", //"#F0F0F0", // Neutral Gray
     borderBottomLeftRadius: 4,
   },
   text: {

@@ -26,6 +26,7 @@ import {
 import { CategoryColorPicker } from "./category-color-modal";
 import { CategoryIconPicker } from "./category-icon-modal";
 import { Category } from "@/types/category";
+import { text } from "drizzle-orm/gel-core";
 
 const colorPalette = [
   "#ef4444",
@@ -48,12 +49,14 @@ interface CategoryCreatorProps {
     icon: string,
   ) => Promise<void>; // The DAO call
   editingCategory?: Category;
+  mode?: "ai" | "settings";
 }
 export const CategoryCreator = ({
   isCreating,
   onClose,
   onCreateCategory,
   editingCategory,
+  mode = "settings",
 }: CategoryCreatorProps) => {
   const { theme } = useContext(ThemeContext);
   const [newCategoryName, setNewCategoryName] = useState(
@@ -103,6 +106,7 @@ export const CategoryCreator = ({
     setIsColorPickerVisible(false); // Close the picker modal
   };
 
+  const textColor = mode === "ai" ? theme.blackBase : theme.greyBasePrimary;
   useEffect(() => {
     const hydrateQueue = async () => {
       const recents = await getRecentColors();
@@ -126,23 +130,31 @@ export const CategoryCreator = ({
 
     hydrateQueue();
   }, []);
+
   return (
     <>
       <Modal visible={isCreating} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View
-            style={[styles.modalContent, { backgroundColor: theme.background }]}
+            style={[
+              styles.modalContent,
+              {
+                backgroundColor:
+                  mode === "ai" ? theme.greyBaseTrans : theme.background,
+              },
+            ]}
           >
             <View style={[styles.modalHeader, { marginBottom: 5 }]}>
-              <Text style={[styles.modalTitle, { color: theme.whiteBase }]}>
+              <Text
+                style={[
+                  styles.modalTitle,
+                  { color: mode === "ai" ? theme.blackBase : theme.whiteBase },
+                ]}
+              >
                 Create Category
               </Text>
               <Pressable onPress={onClose}>
-                <Ionicons
-                  name="close"
-                  size={24}
-                  color={theme.greyBasePrimary}
-                />
+                <Ionicons name="close" size={24} color={textColor} />
               </Pressable>
             </View>
             <View style={styles.creationContainer}>
@@ -150,8 +162,8 @@ export const CategoryCreator = ({
                 style={[
                   styles.input,
                   {
-                    color: theme.whiteBase,
-                    borderColor: theme.greyBasePrimary,
+                    color: mode === "ai" ? theme.blackBase : theme.whiteBase,
+                    borderColor: textColor,
                   },
                 ]}
                 placeholder="Category Name"
@@ -163,7 +175,7 @@ export const CategoryCreator = ({
               <View style={styles.iconRow}>
                 <Text
                   style={{
-                    color: theme.greyBasePrimary,
+                    color: textColor,
                     //margin: "auto",
                     marginRight: 8,
                   }}
@@ -187,7 +199,7 @@ export const CategoryCreator = ({
                   />
                 </Pressable>
               </View>
-              <Text style={{ color: theme.greyBasePrimary, marginBottom: 8 }}>
+              <Text style={{ color: textColor, marginBottom: 8 }}>
                 Select Color
               </Text>
               <View style={styles.colorPalette}>
@@ -229,7 +241,7 @@ export const CategoryCreator = ({
               </View>
               <View style={styles.creationActions}>
                 <Pressable onPress={onClose} style={styles.actionBtn}>
-                  <Text style={{ color: theme.greyBasePrimary }}>Cancel</Text>
+                  <Text style={{ color: textColor }}>Cancel</Text>
                 </Pressable>
                 <Pressable
                   onPress={handleCreate}

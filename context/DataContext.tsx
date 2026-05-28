@@ -81,13 +81,18 @@ interface DataContextType {
   resetMetrics: () => Promise<void>;
   resetAchievements: () => Promise<void>;
   tags: Tag[];
-  addTags: (tagNames: string[]) => Promise<string[]>;
+  addTags: (tagsPayload: { id: string; name: string }[]) => Promise<string[]>;
   incrementTagUsage: (id: string) => Promise<void>;
   updateUserTag: (tag: Tag) => Promise<void>;
   deleteUserTag: (id: string, fallbackId?: string | null) => Promise<void>;
   getTagUsageForAll: (id: string) => Promise<any>;
   categories: Category[];
-  addCategory: (name: string, color: string, icon: string) => Promise<string>;
+  addCategory: (categoryPayload: {
+    id: string;
+    name: string;
+    color: string;
+    icon: string;
+  }) => Promise<string>;
   incrementCategoryUsage: (id: string) => Promise<void>;
   updateUserCategory: (category: Category) => Promise<void>;
   deleteUserCategory: (id: string, fallbackId?: string | null) => Promise<void>;
@@ -264,11 +269,11 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addTags = useCallback(
-    async (tagNames: string[]): Promise<string[]> => {
+    async (tagsPayload: { id: string; name: string }[]): Promise<string[]> => {
       const now = new Date().toISOString();
       const tagIds: string[] = [];
-      const newTagsPayload: Tag[] = tagNames.map((name) => ({
-        id: randomUUID(),
+      const newTagsPayload: Tag[] = tagsPayload.map(({ id, name }) => ({
+        id,
         name,
         count: 1, // Default starting count for a new tag
         createdAt: now,
@@ -362,9 +367,14 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addCategory = useCallback(
-    async (name: string, color: string, icon: string): Promise<string> => {
+    async (categoryPayload: {
+      id: string;
+      name: string;
+      color: string;
+      icon: string;
+    }): Promise<string> => {
       const now = new Date().toISOString();
-      const id = randomUUID();
+      const { id, name, color, icon } = categoryPayload;
       const category: Category = {
         id,
         name,

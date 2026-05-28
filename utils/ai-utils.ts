@@ -243,11 +243,11 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
     while (iteration < MAX_ITERATIONS) {
       // 1. Separate current calls into Silent vs. Confirmation
       const silentCalls = currentCalls?.filter((c: any) =>
-        SilentHandlerList.includes(c.name)
+        SilentHandlerList.includes(c.name)|| c.args?.isPrerequisite === true
       ) || [];
 
       const confirmationCalls = currentCalls?.filter((c: any) =>
-        !SilentHandlerList.includes(c.name)
+        !SilentHandlerList.includes(c.name) && c.args?.isPrerequisite !== true
       ) || [];
 
       // 2. Add confirmation calls to our global list for the user
@@ -332,7 +332,7 @@ export const agenticExecutor = async (calls: FunctionCall[] | undefined, context
 export const processExecutionFeedback = async (executionResults: any[], context: any) => {
   // If nothing was executed, do nothing
   if (!executionResults || executionResults.length === 0) return null;
-
+  console.log("FEEDBACK LOOP, EXECUTION RESUTLS", JSON.stringify(executionResults, null, 2));
   // Re-initialize the chat so it has the current history
   //const chat = await chatIntialize(context);
 

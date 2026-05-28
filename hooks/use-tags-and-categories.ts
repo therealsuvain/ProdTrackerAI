@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { randomUUID } from "expo-crypto";
 import { useData } from "@/hooks/use-data"; // Adjust path as needed
 
 interface UseTagsAndCategoriesProps {
@@ -55,7 +56,8 @@ export function useTagsAndCategories({ visible, initialTags, initialCategory, up
   const removeTag = (tag: string) => setTagNames((prev) => prev.filter((t) => t !== tag));
 
   const handleCreateCategory = async (name: string, color: string, icon: string) => {
-    const id = await addCategory(name, color, icon);
+    const id = randomUUID();
+    await addCategory({ id, name, color, icon });
     setSessionCatIds((prev) => new Set(prev).add(id));
     setCategory(id);
     if(updateField)
@@ -92,10 +94,12 @@ export function useTagsAndCategories({ visible, initialTags, initialCategory, up
         .map((name) => tags.find((t) => t.name === name)?.id)
         .filter(Boolean) as string[];
 
-      const newIds = newNames.length > 0 ? await addTags(newNames) : [];
+      const newIds = newNames.length > 0 ? await addTags(newNames.map(name => ({ id: randomUUID(), name }))) : [];
       finalIds = [...existingIds, ...newIds];
     } else {
-      finalIds = tagNames.length > 0 ? await addTags(tagNames) : [];
+      finalIds = tagNames.length > 0 
+        ? await addTags(tagNames.map(name => ({ id: randomUUID(), name }))) 
+        : [];
     }
 
     if (currentFormCategory !== originalCategoryRef.current && currentFormCategory) {

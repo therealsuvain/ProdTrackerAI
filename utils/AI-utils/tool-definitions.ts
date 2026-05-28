@@ -11,8 +11,8 @@ export const aiTools: FunctionDeclaration[] = [
                 title: { type: Type.STRING, description: "The title of the task" },
                 priority: { type: Type.STRING, enum: ["low", "medium", "high"] },
                 dueDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
-                category: { type: Type.STRING , description: "ID of the category" },
-                tags: { type: Type.ARRAY ,items: { type: Type.STRING }, description: "IDs of the tag" },
+                category: { type: Type.STRING, description: "ID of the category" },
+                tags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "IDs of the tag" },
                 reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" },
                 reminderDate: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of dueDate and convert the user's local time,  to UTC using the offset provided in the system context. cater for both 12hr and 24hr local time formats conversion to UTC," }
             },
@@ -29,8 +29,17 @@ export const aiTools: FunctionDeclaration[] = [
                 title: { type: Type.STRING },
                 priority: { type: Type.STRING, enum: ["low", "medium", "high"] },
                 dueDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
-                 category: { type: Type.STRING , description: "ID of the category" },
-                tags: { type: Type.ARRAY , items: { type: Type.STRING },description: "IDs of the tag" },
+                category: { type: Type.STRING, description: "ID of the category" },
+                addTagIds: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING },
+                    description: "An array of Tag IDs to ADD to the item."
+                },
+                removeTagIds: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING },
+                    description: "An array of Tag IDs to REMOVE from the item."
+                },
                 reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" },
                 completed: { type: Type.BOOLEAN },
                 reminderDate: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of dueDate and convert the user's local time to UTC using the offset provided in the system context." }
@@ -72,8 +81,8 @@ export const aiTools: FunctionDeclaration[] = [
                 startTime: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of startDate and convert the user's local time to UTC using the offset provided in the system context." },
                 endTime: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of startDate and convert the user's local time to UTC using the offset provided in the system context." },
                 recurrence: { type: Type.STRING, enum: ["none", "daily", "weekly"] },
-                category: { type: Type.STRING , description: "ID of the category" },
-                tags: { type: Type.ARRAY , items: { type: Type.STRING },description: "IDs of the tag" },
+                category: { type: Type.STRING, description: "ID of the category" },
+                tags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "IDs of the tag" },
                 reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" }
             },
             required: ["title", "startDate", "startTime", "endTime", "recurrence"]
@@ -92,8 +101,17 @@ export const aiTools: FunctionDeclaration[] = [
                 startTime: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of startDate and convert the user's local time to UTC using the offset provided in the system context." },
                 endTime: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of startDate and convert the user's local time to UTC using the offset provided in the system context." },
                 recurrence: { type: Type.STRING, enum: ["none", "daily", "weekly"] },
-                 category: { type: Type.STRING , description: "ID of the category" },
-                tags: { type: Type.ARRAY , items: { type: Type.STRING }, description: "IDs of the tag" },
+                category: { type: Type.STRING, description: "ID of the category" },
+                addTagIds: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING },
+                    description: "An array of Tag IDs to ADD to the item."
+                },
+                removeTagIds: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING },
+                    description: "An array of Tag IDs to REMOVE from the item."
+                },
                 reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" }
             },
             required: ["id"]
@@ -130,8 +148,17 @@ export const aiTools: FunctionDeclaration[] = [
             properties: {
                 title: { type: Type.STRING, description: "The title of the habit" },
                 description: { type: Type.STRING },
-                 category: { type: Type.STRING , description: "ID of the category" },
-                tags: { type: Type.ARRAY , items: { type: Type.STRING }, description: "IDs of the tag" },
+                category: { type: Type.STRING, description: "ID of the category" },
+                addTagIds: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING },
+                    description: "An array of Tag IDs to ADD to the item."
+                },
+                removeTagIds: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING },
+                    description: "An array of Tag IDs to REMOVE from the item."
+                },
                 frequency: { type: Type.STRING, enum: ["daily", "weekly"] },
                 goal: { type: Type.NUMBER, description: "The target goal for the habit (e.g., 10 pushups, 8 glasses of water)" },
                 reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" },
@@ -281,10 +308,10 @@ export const aiTools: FunctionDeclaration[] = [
             type: Type.OBJECT,
             properties: {
                 // CHANGED to an Array of Strings
-                queries: { 
-                    type: Type.ARRAY, 
+                queries: {
+                    type: Type.ARRAY,
                     items: { type: Type.STRING },
-                    description: "A list of category/tag names or concepts to search for (e.g., ['fitness', 'urgent', 'groceries'])." 
+                    description: "A list of category/tag names or concepts to search for (e.g., ['fitness', 'urgent', 'groceries'])."
                 },
                 type: { type: Type.STRING, enum: ["category", "tag", "both"] }
             },
@@ -293,15 +320,19 @@ export const aiTools: FunctionDeclaration[] = [
     },
     {
         name: "addCategory",
-        description: "Creates a new category. Provide a general concept for the icon (e.g., 'money', 'health', 'dog') and the system will auto-assign the best matching visual icon.",
+        description: "Creates a new category. Provide a general concept for the icon (e.g., 'money', 'health', 'dog') and the system will auto-assign the best matching visual icon. RETURNS: The exact UUID of the new category. CRITICAL: Once you receive the new UUID from this tool, DO NOT call searchTaxonomy to verify it. You MUST immediately use the returned UUID in your next tool call (like addTask).",
         parameters: {
             type: Type.OBJECT,
             properties: {
                 name: { type: Type.STRING, description: "The display name of the category" },
                 hexColor: { type: Type.STRING, description: "A valid 6-character hex color code starting with # (e.g., #FF0000)" },
-                proposedIconConcept: { type: Type.STRING, description: "A semantic keyword representing the category's visual theme (e.g., 'fitness', 'car', 'education')" }
+                proposedIconConcept: { type: Type.STRING, description: "A semantic keyword representing the category's visual theme (e.g., 'fitness', 'car', 'education')" },
+                isPrerequisite: {
+                    type: Type.BOOLEAN,
+                    description: "CRITICAL: Set to TRUE if you are creating this category as a necessary background step before creating a Task/Habit/Event. Set to FALSE if the user explicitly asked to create or manage a category."
+                }
             },
-            required: ["name"]
+            required: ["name", "isPrerequisite"]
         }
     },
     {
@@ -332,18 +363,22 @@ export const aiTools: FunctionDeclaration[] = [
     },
     {
         name: "addTag",
-       description: "Creates new organizational tags. You can add multiple tags at once.",
+        description: "Creates new organizational tags. You can add multiple tags at once. RETURNS: An array of the new tags and their UUIDs. CRITICAL: Once you receive the new UUIDs, DO NOT call searchTaxonomy to verify them. You MUST immediately use the returned UUIDs in your next tool call (like addTask)..",
         parameters: {
             type: Type.OBJECT,
             properties: {
                 // CHANGED to an Array of Strings
-                names: { 
-                    type: Type.ARRAY, 
+                names: {
+                    type: Type.ARRAY,
                     items: { type: Type.STRING },
-                    description: "An array of tag names to create (without the # symbol). E.g., ['urgent', 'health', 'finance']" 
+                    description: "An array of tag names to create (without the # symbol). E.g., ['urgent', 'health', 'finance']"
+                },
+                isPrerequisite: {
+                    type: Type.BOOLEAN,
+                    description: "CRITICAL: Set to TRUE if you are creating this category as a necessary background step before creating a Task/Habit/Event. Set to FALSE if the user explicitly asked to create or manage a category."
                 }
             },
-            required: ["names"]
+            required: ["names", "isPrerequisite"]
         }
     },
     {

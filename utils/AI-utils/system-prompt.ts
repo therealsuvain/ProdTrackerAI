@@ -1,13 +1,20 @@
+import { format } from 'date-fns';
 import { getAppStatusSnapshot } from './system-context';
 
 export const generateSystemPrompt = (context: any, userTranscript?: string) => {
   const environment = getAppStatusSnapshot(context);
+  const todayISO = format(new Date(), 'yyyy-MM-dd');
+  const todayHuman = format(new Date(), 'MMMM do yyyy, h:mm a');
   //console.log("Generated System Prompt:", environment);
   const systemInstruction = 
   
 `You are the "Productivity AI" Orchestrator. You have access to tools and must use the provided tools to execute the actions. Do not write out JSON. Call the tools directly
 # GOAL
 Identify the user's intent and return the correct JSON. If the user's request is complex, return a "compound" intent with multiple actions.
+
+# TEMPORAL CONTEXT
+- Today's Date (ISO): ${todayISO}
+- Current Time: ${todayHuman}
 
 # RULES
 1.  CRITICAL - If the user requests for a specific item, you must always use query-* tools and search-items tool to try and look for that item before responding. 
@@ -18,7 +25,7 @@ Identify the user's intent and return the correct JSON. If the user's request is
 4. When ADDing a new ite, and you have identified a the potential title for an item, capitalize and punctuate where minimally required
 
 #TOOL CHAINING PROTOCOL (Specific Items):
-If the user asks for deep details about a specific, named item (e.g., "What are my notes for the Taxes task?", "When did I last check into my Gym habit?", "How many instances are left for my Yoga event?"), you MUST follow this two-step process:
+If the user asks for deep details about a specific, named item (e.g., "What is the description for [Task_Name]?", "When did I last check into my [Habit_Name]?", "How many instances are left for my [Event_Name?"), you MUST follow this two-step process:
 
 Step 1: Call the search-items tool with the semantic name of the item to retrieve its exact id.
 Step 2: Once you have the id, call the appropriate query-* tool (e.g., query-habits using the specificHabitId parameter) to fetch the deep analytics and details for that specific item.
@@ -76,9 +83,9 @@ ${environment}
 CD: Current Date, CT: Current Time, TO: Timezone Offset
 tk: Tasks, hb: Habits, ev: Events
 PATCH:{ a:[added], u:[updated], r:[removed_ids] }
-task - i: id, t: title [req], p: priority (h/m/l) [req], d: dueDate [req], c: completed (1=yes, 0=no), cat: categoryId, tg: tagIds (separated by |)
-habit - i: id, t: title [req], cs: currentStreak, g: goal [req], fq:frequecny (daily|weekly) [req], f: streakfreezes, ldc: last date of check-in (not checked in once = '-'), cat: categoryId, tg: tagIds (separated by |)
-event - i: id, t: title [req], sd: startDate [req], ed: endDate [req], st: startTime [req], et: endTime [req], r: recurrence (daily/weekly/none) [req]), cat: categoryId, tg: tagIds (separated by |) 
+task - i: id, t: title [req], d:description, p: priority (h/m/l) [req], due: dueDate [req], c: completed (1=yes, 0=no), rem: if reminder set (1=yes, 0=no), rd: reminderDate, cd: completedDate cat: categoryId, tg: tagIds (separated by |), ct: createdTime, ut: updatedTime
+habit - i: id, t: title [req], cs: currentStreak, g: goal [req], fq:frequecny (daily|weekly) [req], f: streakfreezes, fh: historical dates of when the habit was frozen, ldc: last date of check-in (not checked in once = '-'), psrar: date when the habit shpuld reset state after goal completion, gc: historical dates of when the goal was completed, rem: if reminder set (1=yes, 0=no), rd: reminderDate , cat: categoryId, tg: tagIds (separated by |), ct: createdTime, ut: updatedTime
+event - i: id, t: title [req] , d:description, sd: startDate [req], ed: endDate, st: startTime [req], et: endTime [req], r: recurrence (daily/weekly/none) [req]), do: list of the event doesnt occur on, rem: if reminder set (1=yes, 0=no), cat: categoryId, tg: tagIds (separated by |), ct: createdTime, ut: updatedTime
 cat - i: categoryId, n: categoryName
 tag - i: tagId, n: tagName`.trim();
 

@@ -8,7 +8,7 @@ import { cat } from "@huggingface/transformers";
 export type CategoryBadgeVariant = "default" | "iconOnly";
 interface CategoryBadgeProps {
   category: CategoryRow | null | undefined;
-  size?: "small" | "medium";
+  size?: "small" | "medium" | "big";
   variant?: CategoryBadgeVariant;
 }
 
@@ -21,8 +21,8 @@ export const CategoryBadge = ({
 
   if (!category) return null;
 
-  const height = size === "small" ? 24 : 32;
-  const fontSize = size === "small" ? 12 : 14;
+  const height = size === "small" ? 24 : size === "medium" ? 32 : 48;
+  const fontSize = size === "small" ? 12 : size === "medium" ? 14 : 18;
 
   if (variant === "iconOnly") {
     return (
@@ -50,16 +50,22 @@ export const CategoryBadge = ({
       <View
         style={[
           styles.iconOnlyContainer,
+          size === "big" && styles.bigIconOnlyContainer,
           { backgroundColor: `${category.color}33`, marginRight: 6 },
         ]}
       >
         <Ionicons
           name={category.icon as keyof typeof Ionicons.glyphMap}
-          size={15}
+          size={size === "big" ? 24 : 15}
           color={category.color}
         />
       </View>
-      <Text style={[styles.text, { fontSize, color: theme.whiteBase }]}>
+      <Text
+        style={[
+          styles.text,
+          { fontSize, color: size === "big" ? "black" : theme.whiteBase },
+        ]}
+      >
         {category.name}
       </Text>
     </View>
@@ -79,6 +85,13 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10, // Perfect circle
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bigIconOnlyContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18, // Perfect circle
     alignItems: "center",
     justifyContent: "center",
   },

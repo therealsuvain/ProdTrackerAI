@@ -18,8 +18,10 @@ import { useTasks } from "@/hooks/use-tasks";
 import { useHabits } from "@/hooks/use-habits";
 import { useEvents } from "@/hooks/use-events";
 import { useLogs } from "@/hooks/use-logs";
-import { TagEditModal } from "@/components/ui/shared/tags/tags-edit-modal";
+import { TagAnalyticsModal } from "@/components/ui/shared/tags/tags-modal";
 import { TagBadge } from "@/components/ui/shared/tags/tag-badge";
+import { TagsDeleteModal } from "@/components/ui/shared/tags/tags-delete-modal";
+import { TagsEditModal } from "@/components/ui/shared/tags/tags-edit-modal";
 
 export default function TagsSettingsScreen() {
   const { theme } = useContext(ThemeContext);
@@ -182,149 +184,31 @@ export default function TagsSettingsScreen() {
         </View>
       </ScrollView>
 
-      <Modal
-        visible={!!selectedTagId}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setSelectedTagId(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <View
-            style={[styles.modalContent, { backgroundColor: theme.background }]}
-          >
-            <TagEditModal
-              tagId={selectedTagId!}
-              onClose={() => setSelectedTagId(null)}
-              onEdit={handleEditRequest}
-              onDelete={handleDeleteRequest}
-            />
-          </View>
-        </View>
-      </Modal>
+      <TagAnalyticsModal
+        tagId={selectedTagId!}
+        onClose={() => setSelectedTagId(null)}
+        onEdit={handleEditRequest}
+        onDelete={handleDeleteRequest}
+      />
+
       {/* 2. Mini Edit Modal */}
       {tagToEdit && (
-        <Modal visible={true} animationType="fade" transparent={true}>
-          <View style={styles.modalOverlay}>
-            <View
-              style={[
-                styles.modalContent,
-                {
-                  backgroundColor: theme.background,
-                  minHeight: "30%",
-                  justifyContent: "center",
-                },
-              ]}
-            >
-              <Text
-                style={{
-                  color: theme.whiteBase,
-                  fontSize: 18,
-                  fontWeight: "bold",
-                  marginBottom: 16,
-                }}
-              >
-                Rename Tag
-              </Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  borderColor: theme.taskDarkSecondary,
-                  color: theme.whiteBase,
-                  padding: 12,
-                  borderRadius: 8,
-                  fontSize: 16,
-                  marginBottom: 24,
-                }}
-                value={editNameValue}
-                onChangeText={setEditNameValue}
-                autoFocus
-                placeholder="Tag Name..."
-                placeholderTextColor={theme.greyBasePrimary}
-              />
-              <View style={{ flexDirection: "row", gap: 12 }}>
-                <Pressable
-                  onPress={() => setTagToEdit(null)}
-                  style={{
-                    flex: 1,
-                    padding: 14,
-                    alignItems: "center",
-                    borderRadius: 8,
-                    backgroundColor: theme.taskDarkSecondary,
-                  }}
-                >
-                  <Text style={{ color: theme.whiteBase }}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  onPress={handleSaveEdit}
-                  style={{
-                    flex: 1,
-                    padding: 14,
-                    alignItems: "center",
-                    borderRadius: 8,
-                    backgroundColor: theme.taskLightPrimary,
-                  }}
-                >
-                  <Text style={{ color: theme.whiteBase, fontWeight: "bold" }}>
-                    Save
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
+        <TagsEditModal
+          tagToEdit={tagToEdit}
+          editNameValue={editNameValue}
+          setEditNameValue={setEditNameValue}
+          onSave={handleSaveEdit}
+          onClose={() => setTagToEdit(null)}
+        />
       )}
-
       {/* 3. Reassignment Modal */}
       {tagToDelete && (
-        <Modal visible={true} animationType="fade" transparent={true}>
-          <View style={styles.modalOverlay}>
-            <View
-              style={[
-                styles.modalContent,
-                { backgroundColor: theme.background, minHeight: "50%" },
-              ]}
-            >
-              <Text
-                style={{
-                  color: theme.whiteBase,
-                  fontSize: 18,
-                  fontWeight: "bold",
-                  marginBottom: 16,
-                }}
-              >
-                Select Fallback Tag
-              </Text>
-              <Text style={{ color: theme.greyBasePrimary, marginBottom: 20 }}>
-                Choose a tag to absorb the items currently using this tag.
-              </Text>
-
-              <ScrollView contentContainerStyle={styles.wrapContainer}>
-                {tags
-                  .filter((t) => t.id !== tagToDelete)
-                  .map((t) => (
-                    <Pressable
-                      key={t.id}
-                      onPress={() => executeReassignment(t.id)}
-                    >
-                      <TagBadge
-                        tagId={t.id}
-                        tagName={t.name}
-                        holeColor={theme.background}
-                        mode="big"
-                      />
-                    </Pressable>
-                  ))}
-              </ScrollView>
-
-              <Pressable
-                onPress={() => setTagToDelete(null)}
-                style={{ marginTop: 20, alignItems: "center", padding: 10 }}
-              >
-                <Text style={{ color: theme.greyBasePrimary }}>Cancel</Text>
-              </Pressable>
-            </View>
-          </View>
-        </Modal>
+        <TagsDeleteModal
+          tags={tags}
+          tagToDelete={tagToDelete}
+          onClose={() => setTagToDelete(null)}
+          onReassign={executeReassignment}
+        />
       )}
     </View>
   );
@@ -358,14 +242,4 @@ const styles = StyleSheet.create({
   tagPill: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16 },
   tagText: { fontSize: 14, fontWeight: "600" },
   emptyText: { marginTop: 20, fontStyle: "italic" },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
-    borderRadius: 20,
-    padding: 24,
-    margin: 20,
-  },
 });

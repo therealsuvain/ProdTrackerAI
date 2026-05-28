@@ -37,6 +37,7 @@ import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
 import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
 import { useTasks } from "@/hooks/use-tasks";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function TaskScreenInner() {
   const { theme } = useContext(ThemeContext);
@@ -262,18 +263,20 @@ function TaskScreenInner() {
         <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
         <DbErrorToast error={toastError} onDismiss={dismissToast} />
         {/*  <FAB style={styles.fab} icon="plus" onPress={() => allScheduledNotificationsLogs()} /> */}
-        {/*         <FAB
+        {/* <FAB
           style={styles.fab}
           icon="plus"
-          onPress={() => {
+          onPress={async () => {
+             const stored = await AsyncStorage.getItem("AI_TOKEN_MONITOR_STATS");
+            if (stored) console.log(JSON.parse(stored)); 
             clearStorageByKey("AI_TOKEN_MONITOR_STATS");
-              clearStorageByKey("timeLogs");
+               clearStorageByKey("timeLogs");
             clearStorageByKey("@prodtracker_metrics");
             clearStorageByKey("@prodtracker_achievements");
             clearStorageByKey("tasks");
             clearStorageByKey("habits");
             clearStorageByKey("events");
-            clearStorageByKey("messages");
+            clearStorageByKey("messages"); 
           }}
         /> */}
       </View>

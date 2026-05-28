@@ -16,10 +16,11 @@ import { SearchTaxonomyHandler, AddCategoryHandler, EditCategoryHandler, DeleteC
  * TODOAdd 66 : - delete-event_instance(id, date[]), - freeze-habit(id) handlers
 //TODO : the current execution fails when the user asks to retry, the AI cannot comprehend how to retry for some reason, maybe resend chat history when prompted to retry
 //TODO :  Query handler should be able to query based on categories and tags
-//TODO : search handler should be able to return all categories and tags, currently its not able to handle query type of all/.
+//TODO : searchTaxonomy handler should be able to return all categories and tags, currently its not able to handle query type of all/.
 //TODO : Add category and tags preview for handlers, some sort of feeback is needed
 //TODO : you add additional tags, the old tags get removed, add logic for appedning as well instead of just overwriting
-
+//TODO : exisitng category icon getting replcaed
+//TODO : Additional Habit Handlers
  */
 export const SilentHandlerList: string[] = [
     "searchItems",
@@ -29,8 +30,6 @@ export const SilentHandlerList: string[] = [
     "queryHabits",
     "queryEvents",
     "queryTimerLogs",
-    "addCategory",
-    "addTag",
     "getTaxonomyStats"
 ]
 export const ActionRegistry: Record<string, AIHandler> = {
