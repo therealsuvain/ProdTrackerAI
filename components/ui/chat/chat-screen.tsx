@@ -47,7 +47,9 @@ interface Props {
 /**
  * TODOOptim 43: use ThemeContext for colors
  * TODOOptim 44: maybe make chat-screen leaner by using chat-utils
+ * TODO: Action expiry not working
  * TODOX 108: handle case where an unconfirmed action is modifiying an item, but the user manually edits as well, prevent confimation of that action
+ * TODO : update Ui when all pending actions are removed, so pendingActions is empty
  */
 const EXPIRY_THRESHOLD_MS = 30 * 60 * 1000; // 30 Minutes
 
@@ -427,6 +429,40 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     trackMetric(["chatActionsCancelled"], 1);
   };
 
+  // chat-screen.tsx
+
+  const handleUpdateActionArgs = async (
+    messageId: string,
+    actionIndex: number,
+    updatedArgs: any,
+  ) => {
+    // 1. Find the target message in your current 'messages' state
+    const targetMessage = messages.find((m) => m.id === messageId);
+
+    if (!targetMessage || !targetMessage.pendingActions) {
+      console.warn(
+        "Attempted to edit an action on a message that doesn't exist or has no actions.",
+      );
+      return;
+    }
+
+    // 2. Clone the pending actions to respect immutability
+    const newActions = [...targetMessage.pendingActions];
+    newActions[actionIndex] = {
+      ...newActions[actionIndex],
+      args: updatedArgs, // Inject the mutated args from the modal
+    };
+
+    // 3. Construct the fully updated Message object
+    const updatedMessage = {
+      ...targetMessage,
+      pendingActions: newActions,
+    };
+
+    // 4. Dispatch through your DAO layer for optimistic UI + SQLite persistence
+    await editMessage(updatedMessage);
+  };
+
   const EmptyState = () => (
     <View style={styles.emptyContainer}>
       <Ionicons name="diamond-outline" size={60} color="#CCC" />
@@ -479,6 +515,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
                   removeIndividualAction(item.id, actionIndex)
                 }
                 onEnrichAction={enrichAction}
+                onUpdateAction={handleUpdateActionArgs}
               />
             );
           }}

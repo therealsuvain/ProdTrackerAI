@@ -16,9 +16,6 @@ import { resolveIcon } from "@/utils/AI-utils/tags-and-categories-handlers";
 import { Category } from "@/types/category";
 import { CategoryCreator } from "../shared/categories/category-creation-view";
 import { TagsEditModal } from "../shared/tags/tags-edit-modal";
-import { Tag } from "@phosphor-icons/react";
-import { ThemeContext } from "@react-navigation/native";
-import { th } from "date-fns/locale";
 
 interface Props {
   action: any;
@@ -83,6 +80,7 @@ export const ActionChip = ({
   };
 
   const actionItemType = getActionItemType(action.name);
+
   useEffect(() => {
     if (actionItemType === "Tag") {
       setTagName(action.args.name);

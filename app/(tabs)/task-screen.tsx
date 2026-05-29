@@ -279,6 +279,15 @@ function TaskScreenInner() {
             clearStorageByKey("messages"); 
           }}
         /> */}
+        {/*  <FAB
+          style={styles.fab}
+          icon="plus"
+          onPress={async () => {
+            clearStorageByKey("AI_TOKEN_MONITOR_STATS");
+            const stored = await AsyncStorage.getItem("AI_TOKEN_MONITOR_STATS");
+            if (stored) console.log(JSON.parse(stored));
+          }}
+        /> */}
       </View>
       <Portal>
         <TaskModal

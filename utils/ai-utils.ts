@@ -1,4 +1,4 @@
-import { FunctionCall } from "@google/genai";
+import { FunctionCall, FunctionCallingConfigMode } from "@google/genai";
 import { AIActionContext } from "../types/ai-handler";
 import { gemini_ai } from "./AI-utils/llm-client";
 import { ActionRegistry, SilentHandlerList } from "./AI-utils/registry-handler";
@@ -6,6 +6,9 @@ import { getAppStatusSnapshot } from "./AI-utils/system-context";
 import { generateSystemPrompt } from "./AI-utils/system-prompt";
 import { aiTools } from "./AI-utils/tool-definitions";
 import { recordGeminiUsage } from "./dev-util-token-monitor";
+import { RouterTools } from './AI-utils/router-tools';
+import { TaskTools, HabitTools, EventTools, TimerTools, TaxonomyTools, GeneralTools, AllTools } from './AI-utils/tool-def-buckets';
+import { AgentState } from "@/types/agent-state";
 
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_STT_API_KEY//Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
 const HF_TOKEN = process.env.EXPO_PUBLIC_HUGGING_FACE_API_TOKEN;
@@ -85,7 +88,7 @@ export const transcribeAudio = async (
       .trim();
 
     console.log("Full Transcript:", transcript || "(empty)");
-   
+
     return transcript;
   } catch (error) {
     console.error("STT error", error);
@@ -110,86 +113,105 @@ export const DESTRUCTIVE_ACTIONS = ['delete_task', 'delete_event', 'delete_habit
 export const isDestructive = (intent: string) => DESTRUCTIVE_ACTIONS.includes(intent);
 
 let activeChatSession: any = null;
-export const chatIntialize = async (context: any) => {
+let currentActiveDomain: string | null = null; // Tracks which bucket is currently loaded
+let currentToolBucket: any[] = AllTools;       // Fallback to all tools initially
+export const chatIntialize = async (context: any, newDomain?: string, newTools?: any[]) => {
   try {
-    if (!activeChatSession) {
-      const { systemInstruction, systemContext } = generateSystemPrompt(context);
+    // If the router tells us we are in a new domain, we MUST reset the chat
+    // to load the new tools, otherwise we just keep the active session.
+    const domainChanged = newDomain && newDomain !== currentActiveDomain;
+
+    if (!activeChatSession || domainChanged) {
+      if (domainChanged && newTools) {
+        console.log(`[Router] Switching domain from ${currentActiveDomain} to ${newDomain}. Reloading tools.`);
+        currentActiveDomain = newDomain;
+        currentToolBucket = newTools;
+      }
+      const { systemInstruction } = generateSystemPrompt(context);
+
       activeChatSession = gemini_ai.chats.create({
         model: "gemini-2.5-flash",
         config: {
-          tools: [{ functionDeclarations: aiTools }],
+          tools: [{ functionDeclarations: currentToolBucket }],
           systemInstruction,
         }
-/*         ,
-        history: [
-          { role: "user", parts: [{ text: `${systemContext}` }] },
-          { role: "model", parts: [{ text: "Understood. I have access to the user's state and tools." }] }
-        ] */
       });
-      //console.log("chatty", activeChatSession)
+
       return activeChatSession
     }
-    /* const updatedSnapshot = getAppStatusSnapshot(context);
-    if (updatedSnapshot) {
-      console.log("Sending context patch to Gemini:", updatedSnapshot);
-      await activeChatSession.sendMessage({ message: `${updatedSnapshot}` });
-    } */
+
   } catch (error) {
     console.error("Chat initialization failed:", error);
     activeChatSession = null;
   }
-  //console.log("chatty", activeChatSession)
   return activeChatSession;
 }
 
+export const processCommandAgenticPAUSED = async (transcript: string, context: any) => {
 
+  console.log("=========================================================");
+  console.log("[AI] Starting PASS 1: ROUTING...");
+  console.log("=========================================================");
 
-export const BACKUP_processCommandAgentic = async (transcript: string, context: any) => {
-  //const systemContext = generateSystemPrompt(context);
-  const chat = await chatIntialize(context);
+  let selectedBucket = AllTools;
+  globalTranscript = transcript;
+  let selectedDomain = "routeToMultiDomain"; // Safe fallback
+
   try {
-    const result = await chat.sendMessage({ message: transcript });
-    console.log("Token:", result.usageMetadata);
-    console.log("FUNCTIONCALLS", result.functionCalls);
-    const response = result.text?.replace(/```json|```/g, "").trim();
-    console.log("CHAT RESPONSE:", response);
-    const calls = result.functionCalls;
+    // We use a stateless generation call for the Router, not the chat session
+    const routerResponse = await gemini_ai.models.generateContent({
+      model: "gemini-2.5-flash", // Fast/Cheap model for Pass 1
+      contents: [{ role: "user", parts: [{ text: transcript }] }],
+      config: {
+        systemInstruction: "You are an AI router. Analyze the user's prompt and call the single most appropriate routing tool. Do not answer the prompt directly.",
+        tools: [{ functionDeclarations: RouterTools }],
+        // In newer Gemini SDKs, this forces it to use a tool
+        toolConfig: { functionCallingConfig: { mode: FunctionCallingConfigMode.ANY } }
+      }
+    });
 
-    if (calls?.some((call: any) => call.name === 'search-tasks')) {
-      const toolResults = [];
+    recordGeminiUsage(routerResponse)
+    const routeCall = routerResponse.functionCalls?.[0];
 
-      for (const call of calls) {
-        if (call.name === 'search-tasks') {
-          const handler = ActionRegistry[call.name];
-          const data = await handler.execute(call.args, context);
-
-          toolResults.push({
-            functionResponse: { name: call.name, response: { content: data } }
-          });
-        }
+    if (routeCall) {
+      if (routeCall.name) {
+        selectedDomain = routeCall.name;
+        console.log(`[AI] Pass 1 Complete. Selected Route: ${selectedDomain}`);
+      }
+      else {
+        console.warn("[AI] routeCall.name was UNDEFINED, failed to select specific Domain, defaulting to MultiDomain.");
       }
 
-      const finalResult = await chat.sendMessage(toolResults);
-      return {
-        response: finalResult.text,
-        calls: finalResult.functionCalls // Now contains the 'Edit/Delete' calls based on search
-      };
+      console.log("=========================================================");
+
+      // Map the route to the specific tools
+      switch (selectedDomain) {
+        case "routeToTasks": selectedBucket = [...TaskTools, ...GeneralTools]; break;
+        case "routeToHabits": selectedBucket = [...HabitTools, ...GeneralTools]; break;
+        case "routeToEvents": selectedBucket = [...EventTools, ...GeneralTools]; break;
+        case "routeToTimers": selectedBucket = [...TimerTools, ...GeneralTools]; break;
+        case "routeToTaxonomy": selectedBucket = [...TaxonomyTools, ...GeneralTools]; break;
+        case "routeToMultiDomain":
+        default:
+          selectedBucket = AllTools;
+          break;
+      }
+    } else {
+      console.log("=========================================================");
+      console.warn("[AI] Router failed to select a tool, defaulting to MultiDomainTool.");
+      console.log("=========================================================");
     }
-    return { response, calls };
-
-
-    //return  response ;
-  } catch (error) {
-    console.error("Agent Loop Failed:", error);
-    throw error;
-
+  } catch (routeError) {
+    console.log("=========================================================");
+    console.error("Router Pass Failed, falling back to all tools:", routeError);
+    console.log("=========================================================");
   }
-};
 
-export const processCommandAgentic = async (transcript: string, context: any) => {
-  //const systemContext = generateSystemPrompt(context);
-  globalTranscript = transcript;
-  const chat = await chatIntialize(context);
+  console.log("=========================================================");
+  console.log("[AI] Starting PASS 2: THE EXECUTOR....");
+  console.log("=========================================================");
+
+  const chat = await chatIntialize(context, selectedDomain, selectedBucket);
   let iteration = 0;
   const MAX_ITERATIONS = 15;
   let accumulatedConfirmationCalls: any[] = [];
@@ -202,10 +224,9 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
     console.log("FULL RESPONSE", result)
     let currentCalls = result.functionCalls;
     let responseText = result.text;
-    // 1. Isolate the first candidate safely
-    const candidate = result.candidates?.[0];
 
-    // 2. Structurally check if 'parts' is missing while 'role' is model
+    // Note: Check if the response is empty, so that we can send a silent, hidden system message to jolt it out of paralysis
+    const candidate = result.candidates?.[0];
     const hasEmptyContent =
       candidate?.content?.role === "model" &&
       (!candidate.content.parts || candidate.content.parts.length === 0);
@@ -213,7 +234,7 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
     if (!currentCalls && !responseText && (hasEmptyContent || result.candidates?.[0]?.finishReason === "STOP")) {
       console.log("Model returned empty candidate. Forcing tool usage...");
 
-      // Send a silent, hidden system message to jolt it out of paralysis
+
       const joltResult = await chat.sendMessage({
         message: "System Override: You failed to respond. You MUST use a tool (like query-tasks or search-items) to fulfill the user's previous request right now."
       });
@@ -241,19 +262,17 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
     // }
     const toolResponses = [];
     while (iteration < MAX_ITERATIONS) {
-      // 1. Separate current calls into Silent vs. Confirmation
       const silentCalls = currentCalls?.filter((c: any) =>
-        SilentHandlerList.includes(c.name)|| c.args?.isPrerequisite === true
+        SilentHandlerList.includes(c.name) || c.args?.isPrerequisite === true
       ) || [];
 
       const confirmationCalls = currentCalls?.filter((c: any) =>
         !SilentHandlerList.includes(c.name) && c.args?.isPrerequisite !== true
       ) || [];
 
-      // 2. Add confirmation calls to our global list for the user
       accumulatedConfirmationCalls = [...accumulatedConfirmationCalls, ...confirmationCalls];
 
-      // 3. If there are no more silent tools to run, we are done
+      // If there are no more silent tools to run, we are done
       if (silentCalls.length === 0) break;
 
       for (const call of silentCalls) {
@@ -335,7 +354,7 @@ export const processExecutionFeedback = async (executionResults: any[], context:
   console.log("FEEDBACK LOOP, EXECUTION RESUTLS", JSON.stringify(executionResults, null, 2));
   // Re-initialize the chat so it has the current history
   //const chat = await chatIntialize(context);
-
+  console.log("SERVING FEEDBACK FOR USER REQUEST: ", globalTranscript)
   // Create a silent system prompt telling the AI what just happened
   const feedbackPrompt = `
   The user originally asked: "${globalTranscript}"
@@ -368,64 +387,56 @@ export const processExecutionFeedback = async (executionResults: any[], context:
 };
 
 
-/* 
-let activeChatSession: any = null;
-let currentActiveDomain: string | null = null; // Tracks which bucket is currently loaded
-let currentToolBucket: any[] = AllTools;       // Fallback to all tools initially
+const executePlannerNode = async (transcript: string): Promise<string[]> => {
+  console.log("=========================================================");
+  console.log("[DAG] Node 1: PLANNER (Extracting Checklist)...");
 
-export const chatIntialize = async (context: any, newDomain?: string, newTools?: any[]) => {
+  const plannerPrompt = `
+  Extract a strict, separate list of actions the user wants to perform. 
+  Example: "Create task Sleep and category Leisure" -> ["Create task Sleep", "Create category Leisure"]
+  CRITICAL: If the user's input is just conversational filler, agreement, or a greeting (e.g., "Ok", "Go ahead", "Thanks", "Yes"), return an empty array [].
+  User Input: "${transcript}"
+  `;
+
   try {
-    // If the router tells us we are in a new domain, we MUST reset the chat 
-    // to load the new tools, otherwise we just keep the active session.
-    const domainChanged = newDomain && newDomain !== currentActiveDomain;
-
-    if (!activeChatSession || domainChanged) {
-      if (domainChanged && newTools) {
-        console.log(`[Router] Switching domain from ${currentActiveDomain} to ${newDomain}. Reloading tools.`);
-        currentActiveDomain = newDomain;
-        currentToolBucket = newTools;
+    const result = await gemini_ai.models.generateContent({
+      model: "gemini-2.5-flash", // Use the cheapest model here
+      contents: [{ role: "user", parts: [{ text: plannerPrompt }] }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "ARRAY",
+          items: { type: "STRING" },
+          description: "List of distinct tasks requested by the user."
+        }
       }
+    });
 
-      const { systemInstruction, systemContext } = generateSystemPrompt(context);
-      
-      activeChatSession = gemini_ai.chats.create({
-        model: "gemini-2.5-flash", // This is your Pass 2 (Executor) model
-        config: {
-          tools: [{ functionDeclarations: currentToolBucket }],
-          systemInstruction,
-        },
-        history: [
-          { role: "user", parts: [{ text: `${systemContext}` }] },
-          { role: "model", parts: [{ text: "Understood. I have access to the user's state and tools." }] }
-        ]
-      });
-      return activeChatSession;
-    }
+    recordGeminiUsage(result); // Hook up your metrics
+    console.log("[DAG] Node 1:FUNCTIONCALLS", result.functionCalls);
+    console.log("[DAG] Node 1:CHAT RESPONSE TEXT:", result.text);
+    console.log("[DAG] Node 1:CHAT Candidates.content:", result.candidates?.[0]?.content);
+    console.log("[DAG] Node 1:FULL RESPONSE", result)
+    const checklist = JSON.parse(result.text || "[]");
+    console.log("[DAG] Checklist generated:", checklist);
+    console.log("=========================================================");
+    return checklist;
 
-    // If session exists and domain didn't change, just patch the context
-    const updatedSnapshot = getAppStatusSnapshot(context);
-    if (updatedSnapshot) {
-      console.log("Sending context patch to Gemini:", updatedSnapshot);
-      await activeChatSession.sendMessage({ message: `${updatedSnapshot}` });
-    }
-  } catch (error) {
-    console.error("Chat initialization failed:", error);
-    activeChatSession = null;
+  } catch (e) {
+    console.error("Planner Node Failed:", e);
+    console.log("=========================================================");
+    return [transcript]; // Fallback to just the raw transcript
   }
-  return activeChatSession;
-}
 
-// Import your tool buckets and router tools from the previous step
-import { RouterTools, TaskTools, HabitTools, EventTools, TimerTools, TaxonomyTools, GeneralTools, AllTools } from './tool-buckets';
+};
 
-export const processCommandAgentic = async (transcript: string, context: any) => {
-  // =========================================================
-  // PASS 1: THE ROUTER
-  // =========================================================
-  console.log("[AI] Starting Pass 1: Routing...");
+const executeRouterNode = async (transcript: string): Promise<{ domain: string, tools: any[] }> => {
+  console.log("=========================================================");
+  console.log("[DAG] Node 2: ROUTER (Selecting Tool Bucket)...");
+
+  globalTranscript = transcript;
+  let selectedDomain = "routeToMultiDomain";
   let selectedBucket = AllTools;
-  let selectedDomain = "routeToMultiDomain"; // Safe fallback
-  
   try {
     // We use a stateless generation call for the Router, not the chat session
     const routerResponse = await gemini_ai.models.generateContent({
@@ -435,15 +446,26 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
         systemInstruction: "You are an AI router. Analyze the user's prompt and call the single most appropriate routing tool. Do not answer the prompt directly.",
         tools: [{ functionDeclarations: RouterTools }],
         // In newer Gemini SDKs, this forces it to use a tool
-        toolConfig: { functionCallingConfig: { mode: "ANY" } } 
+        toolConfig: { functionCallingConfig: { mode: FunctionCallingConfigMode.ANY } }
       }
     });
 
+    recordGeminiUsage(routerResponse)
+    console.log("[DAG] Node 2:FUNCTIONCALLS", routerResponse.functionCalls);
+    console.log("[DAG] Node 2:CHAT RESPONSE TEXT:", routerResponse.text);
+    console.log("[DAG] Node 2:CHAT Candidates.content:", routerResponse.candidates?.[0]?.content);
+    console.log("[DAG] Node 2:FULL RESPONSE", routerResponse)
+
     const routeCall = routerResponse.functionCalls?.[0];
-    
+
     if (routeCall) {
-      selectedDomain = routeCall.name;
-      console.log(`[AI] Pass 1 Complete. Selected Route: ${selectedDomain}`);
+      if (routeCall.name) {
+        selectedDomain = routeCall.name;
+        console.log(`[DAG] Node 2 Complete. Selected Route: ${selectedDomain}`);
+      }
+      else {
+        console.warn("[DAG] Node 2 Failed: routeCall.name was UNDEFINED, failed to select specific Domain, defaulting to MultiDomain.");
+      }
 
       // Map the route to the specific tools
       switch (selectedDomain) {
@@ -452,94 +474,157 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
         case "routeToEvents": selectedBucket = [...EventTools, ...GeneralTools]; break;
         case "routeToTimers": selectedBucket = [...TimerTools, ...GeneralTools]; break;
         case "routeToTaxonomy": selectedBucket = [...TaxonomyTools, ...GeneralTools]; break;
-        case "routeToMultiDomain": 
+        case "routeToMultiDomain":
         default:
           selectedBucket = AllTools;
           break;
       }
     } else {
-      console.warn("[AI] Router failed to select a tool, defaulting to MultiDomain.");
+
+      console.warn("[DAG] Node 2 Failed: Router failed to select a tool, defaulting to MultiDomainTool.");
+      console.log("=========================================================");
     }
   } catch (routeError) {
-    console.error("Router Pass Failed, falling back to all tools:", routeError);
+
+    console.error("[DAG] Node 2 Failed: Router Pass Failed, falling back to all tools:", routeError);
+    console.log("=========================================================");
   }
 
-  // =========================================================
-  // PASS 2: THE EXECUTOR (Your Existing Logic)
-  // =========================================================
-  
-  // Initialize or retrieve the chat, passing in the dynamically selected tools
-  const chat = await chatIntialize(context, selectedDomain, selectedBucket);
-  
-  let iteration = 0;
-  const MAX_ITERATIONS = 5;
-  let accumulatedConfirmationCalls: any[] = [];
-  
+  console.log("=========================================================");
+  return { domain: selectedDomain, tools: selectedBucket };
+};
+
+const executeActionNode = async (state: AgentState, context: any): Promise<Partial<AgentState>> => {
+  console.log("=========================================================");
+  console.log("[DAG] Node 3: EXECUTOR (Running Tools)...");
+  console.log("_________________________________________________________");
+  console.log("[DAG] Node 3: State Recieved:", JSON.stringify({ ...state, selectedTools: state.selectedDomain }));
+  console.log("_________________________________________________________");
+  // Initialize chat session (your existing function)
+  const chat = await chatIntialize(context, state.selectedDomain, state.selectedTools);
+  const payload = state.chatHistory.length === 0 ? state.transcript : state.chatHistory;
+  // Inject the ongoing chat history so it remembers previous turns!
+  const response = await chat.sendMessage({ message: payload });
+
+  recordGeminiUsage(response);
+  console.log("[DAG] Node 3:FUNCTIONCALLS", response.functionCalls);
+  console.log("[DAG] Node 3:CHAT RESPONSE TEXT:", response.text);
+  console.log("[DAG] Node 3:CHAT Candidates.content:", response.candidates?.[0]?.content);
+  console.log("[DAG] Node 3:FULL RESPONSE", response)
+
+  const currentCalls = response.functionCalls || [];
+  let toolResponsesForNextTurn: any[] = [];
+  let newConfirmationCalls: any[] = [];
+
+  // 1. Sort calls into Silent vs Confirmation
+  for (const call of currentCalls) {
+    if (SilentHandlerList.includes(call.name) || call.args?.isPrerequisite === true) {
+      console.log(`[Silent-Agent] Executing ${call.name}...`);
+      const data = await ActionRegistry[call.name].execute(call.args, context);
+      const formattedData = typeof data === 'object' && data !== null ? data : { result: data };
+      toolResponsesForNextTurn.push({ functionResponse: { name: call.name, response: formattedData } });
+    } else {
+      newConfirmationCalls.push(call);
+    }
+  }
+
+  //! 2. VERY BASIC Checklist cross-referencing (We can make this smarter later)
+  // !For now, if we executed tools, we assume we knocked items off the list.
+  let remainingChecklist = [...state.checklist];
+  if (newConfirmationCalls.length > 0 && remainingChecklist.length > 0) {
+    remainingChecklist.shift();
+  }
+  console.log("_________________________________________________________");
+  console.log("[DAG] Node 3: Results", {
+    accumulatedConfirmationCalls: [...state.accumulatedConfirmationCalls, ...newConfirmationCalls],
+    finalTextResponse: response.text?.replace(/```json|```/g, "").trim(),
+    checklist: remainingChecklist,
+    chatHistory: toolResponsesForNextTurn.length > 0
+      ? { role: "user", parts: toolResponsesForNextTurn } // Feed DB results back next loop
+      : []
+  });
+  console.log("=========================================================");
+  return {
+    accumulatedConfirmationCalls: [...state.accumulatedConfirmationCalls, ...newConfirmationCalls],
+    finalTextResponse: response.text?.replace(/```json|```/g, "").trim(),
+    checklist: remainingChecklist,
+    chatHistory: toolResponsesForNextTurn.length > 0
+      ? toolResponsesForNextTurn // Feed DB results back next loop
+      : []
+  };
+};
+
+export const processCommandAgentic = async (transcript: string, context: any) => {
+  // 1. Initialize State
+  let state: AgentState = {
+    transcript,
+    checklist: [],
+    selectedDomain: "",
+    selectedTools: [],
+    chatHistory: [],
+    accumulatedConfirmationCalls: [],
+    finalTextResponse: ""
+  };
+
   try {
-    let result = await chat.sendMessage({ message: transcript });
-    // recordGeminiUsage(result);
-    console.log("FUNCTIONCALLS", result.functionCalls);
-    // ... [REST OF YOUR EXISTING LOOP STAYS EXACTLY THE SAME] ...
-    
-    let currentCalls = result.functionCalls;
-    let responseText = result.text;
-    
-    // 1. Isolate the first candidate safely
-    const candidate = result.candidates?.[0];
-
-    // 2. Structurally check if 'parts' is missing while 'role' is model
-    const hasEmptyContent =
-      candidate?.content?.role === "model" &&
-      (!candidate.content.parts || candidate.content.parts.length === 0);
-
-    if (!currentCalls && !responseText && (hasEmptyContent || result.candidates?.[0]?.finishReason === "STOP")) {
-      console.log("Model returned empty candidate. Forcing tool usage...");
-      const joltResult = await chat.sendMessage({
-        message: "System Override: You failed to respond. You MUST use a tool (like query-tasks or search-items) to fulfill the user's previous request right now."
-      });
-      currentCalls = joltResult.functionCalls;
-      responseText = joltResult.text;
+    // 2. Run Planner (Only if prompt looks complex, otherwise skip to save tokens)
+    if (transcript.includes("and") || transcript.includes(",")) {
+      state.checklist = await executePlannerNode(state.transcript);
+    } else {
+      state.checklist = [state.transcript];
     }
 
-    const toolResponses = [];
-    while (iteration < MAX_ITERATIONS) {
-      const silentCalls = currentCalls?.filter((c: any) => SilentHandlerList.includes(c.name)) || [];
-      const confirmationCalls = currentCalls?.filter((c: any) => !SilentHandlerList.includes(c.name)) || [];
+    // 3. Run Router
+    const { domain, tools } = await executeRouterNode(state.transcript);
+    state.selectedDomain = domain;
+    state.selectedTools = tools;
 
-      accumulatedConfirmationCalls = [...accumulatedConfirmationCalls, ...confirmationCalls];
+    // 4. The Graph Edge Loop
+    console.log("_________________________________________________________");
+    console.log("[DAG] Node Main: State:", JSON.stringify({ ...state, selectedTools: state.selectedDomain }));
+    console.log("_________________________________________________________");
+    let safetyCounter = 0;
+    while (safetyCounter < 5) {
+      // Run the Executor
+      const nodeResult = await executeActionNode(state, context);
 
-      if (silentCalls.length === 0) break;
+      // Mutate State
+      state = { ...state, ...nodeResult };
 
-      for (const call of silentCalls) {
-        console.log(`[Silent-Agent] Calling ${call.name} with:`, call.args);
-        const handler = ActionRegistry[call.name];
-        const data = await handler.execute(call.args, context);
-        console.log(`[Silent-Agent]  ${call.name} returned:`, data);
-        toolResponses.push({
-          functionResponse: { name: call.name, response: data }
-        });
+      // THE CONDITIONAL EDGE: Are we done?
+      if (state.chatHistory.length > 0) {
+        // We have silent DB results to feed back to the AI. Loop again.
+        console.log("[DAG] Edge: Silent tools executed, looping back to Executor...");
       }
-      
-      const nextStep = await chat.sendMessage({
-        message: { role: "user", parts: toolResponses }
-      });
-      
-      // recordGeminiUsage(nextStep);
-      result = nextStep;
-      currentCalls = nextStep.functionCalls;
-      responseText = nextStep.text;
-      iteration++;
-    }
+      else if (state.checklist.length > 0 && state.accumulatedConfirmationCalls.length === 0) {
+        // TUNNEL VISION DETECTED! The AI stopped, but the checklist isn't empty.
+        console.log(`[DAG] Edge: Tunnel Vision detected! Forcing AI to complete: ${state.checklist}`);
 
+        // Jolt the AI with a strict system override
+        state.chatHistory = [{
+          role: "user",
+          parts: [{ text: `System Override: You stopped, but you still need to fulfill this request: "${state.checklist[0]}". Call the required tools now.` }]
+        }];
+      }
+      else {
+        // Checklist is empty, and no pending silent tools. We are officially done.
+        console.log("[DAG] Edge: Execution complete. Exiting graph.");
+        break;
+      }
+
+      safetyCounter++;
+    }
+    console.log("_________________________________________________________");
+    console.log("[DAG] Node Main: FINAL State:", JSON.stringify({ ...state, selectedTools: state.selectedDomain }));
+    console.log("_________________________________________________________");
+    // 5. Return exact same payload to the UI
     return {
-      response: responseText?.replace(/```json|```/g, "").trim(),
-      calls: accumulatedConfirmationCalls
+      response: state.finalTextResponse,
+      calls: state.accumulatedConfirmationCalls
     };
 
   } catch (error) {
-    console.error("Agent Loop Failed:", error);
+    console.error("[DAG] Critical Graph Failure:", error);
     throw error;
   }
 };
-
-*/

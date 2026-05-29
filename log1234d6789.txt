@@ -1,0 +1,589 @@
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 1: ROUTING...
+ LOG  =========================================================
+ LOG  [AI] Pass 1 Complete. Selected Route: routeToMultiDomain
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 2: THE EXECUTOR....
+ LOG  =========================================================
+ LOG  FUNCTIONCALLS [{"args": {"queries": [Array], "type": "category"}, "name": "searchTaxonomy"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  CHAT RESPONSE TEXT: undefined
+ LOG  CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "CoIEAQw51sdTvSSa6tCFyjGQiKVQ1egGZtfX2DVLFn0ysjGu38Hbz0ndFU8qA/xpYRlDQBwwWLy8NeNbiJlsBFu3txYoE1j7pLdvvz/pWxCcIyny3YWqFTzjcIo3vqxw7LdpkBj7P/D5JYLi8n5c6wsr9U6xrFMlvyNlaG5jn3A3TRi0OJtRCrZcaLAuq1PY+TjwWhKImzNqpE4u9vmNmkVXL9hWT4uHPhEbG/nXD57/eK7D0WFQhd9gWWqU+Jyvef/rBUT//GlWq721yhFvb3h8MZdbC/MOo2c3KGOzvNVKL0+JjVRcrJq2TwWgjsUxz17RS6oTGUFSb/XZpzT4M7dg/txTmZeEtw+2SIYYXT1cSxnMGENGsQgO10fUW5/0lHdrzAaxppGmu2++no6d3gQhUF6d6+bSWfxE7IdkFBVZGsbA9CMJtb81n47Lzvznv9Q0vSOxKTfywIPQ0Dq2IRpsRH/aXO3lBgOFcme1GjumhjxINX25+FRv5+Cu41UNPf/m2FeAM5AVaLAevuoZfCFaqvhg27SVp75B4xY01krv96UWzrZLSiU5Ygefi9hrRNpHBOQoF4BQPtg2mtrK6mO/uGyfYajWQKT8RYlFr2ceQiXzEUOmcGnj4B4r9WJnnlpfK+gF4uOusuBMLWzsCC8V2Kirx0cLbeUOvPsbIxrhSXfdtg=="}], "role": "model"}
+ LOG  FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "ekwZasrFFaXUqfkPuZeBqQY", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 08:21:16 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2232", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 20, "promptTokenCount": 5668, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 125, "totalTokenCount": 5813}}
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [Silent-Agent] Calling searchTaxonomy with: {"queries": ["Sleep"], "type": "category"}
+ LOG  [Silent-Agent]  searchTaxonomy returned: {"output": {"Sleep": [[Object]]}}
+ LOG  ----------------------------
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  Final Accumulated Function Calls: [{"args": {"category": "82ea8dd2-04b3-4f6e-9a46-914a8c9cbf30", "dueDate": "2026-05-29", "priority": "high", "title": "Sleeping"}, "name": "addTask"}]
+ LOG  AI msg: {"id": "1780042876713", "pendingActions": [{"args": [Object], "name": "addTask"}], "sender": "ai", "text": "", "timestamp": "2026-05-29T08:21:16.712Z", "type": "action", "updatedAt": "2026-05-29T08:21:16.712Z"}
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 57, "chatActionsExpired": 3, "chatMessagesSent": 137, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  Editing into expiry: action undefined 1780042876713
+ LOG  Executing agentic actions: [{"args": {"category": "82ea8dd2-04b3-4f6e-9a46-914a8c9cbf30", "dueDate": "2026-05-29", "priority": "high", "title": "Sleeping"}, "name": "addTask"}]
+ LOG  [Agent] Calling addTask with: {"category": "82ea8dd2-04b3-4f6e-9a46-914a8c9cbf30", "dueDate": "2026-05-29", "priority": "high", "title": "Sleeping"}
+ LOG  AI Action: Added task "Sleeping"
+ LOG  FEEDBACK LOOP, EXECUTION RESUTLS [
+  {
+    "tool": "addTask",
+    "args": {
+      "dueDate": "2026-05-29",
+      "priority": "high",
+      "title": "Sleeping",
+      "category": "82ea8dd2-04b3-4f6e-9a46-914a8c9cbf30"
+    },
+    "result": {
+      "status": "success",
+      "task": {
+        "id": "32cb11a6",
+        "title": "Sleeping",
+        "dueDate": "2026-05-29",
+        "reminder": false,
+        "priority": "high",
+        "completed": false,
+        "category": "82ea8dd2-04b3-4f6e-9a46-914a8c9cbf30",
+        "createdAt": "2026-05-29T08:21:26.530Z",
+        "updatedAt": "2026-05-29T08:21:26.530Z"
+      }
+    }
+  }
+]
+ LOG  SERVING FEEDBACK FOR USER REQUEST:  Create a new task for Sleeping for today, it's highly important, add Sleep as the Category 
+
+Also create a new category Leisure, with a fun icon that visualizes having fun, color bright pink
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 58, "chatActionsExpired": 3, "chatMessagesSent": 137, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 1: ROUTING...
+ LOG  =========================================================
+ LOG  [AI] Pass 1 Complete. Selected Route: routeToTasks
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 2: THE EXECUTOR....
+ LOG  =========================================================
+ LOG  [Router] Switching domain from routeToMultiDomain to routeToTasks. Reloading tools.
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  FUNCTIONCALLS undefined
+ LOG  CHAT RESPONSE TEXT: Hello! How can I help you?
+ LOG  CHAT Candidates.content: {"parts": [{"text": "Hello! How can I help you?
+"}], "role": "model"}
+ LOG  FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "kUwZauT3L6rJjuMPze31iAU", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 08:21:38 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1251", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 8, "promptTokenCount": 2748, "promptTokensDetails": [[Object]], "serviceTier": "standard", "totalTokenCount": 2756}}
+ LOG  Final Accumulated Function Calls: []
+ LOG  AI msg: {"id": "1780042897599", "pendingActions": [], "sender": "ai", "text": "Hello! How can I help you?", "timestamp": "2026-05-29T08:21:37.598Z", "type": "text", "updatedAt": "2026-05-29T08:21:37.598Z"}
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 58, "chatActionsExpired": 3, "chatMessagesSent": 138, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 1: ROUTING...
+ LOG  =========================================================
+ LOG  [AI] Pass 1 Complete. Selected Route: routeToTaxonomy
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 2: THE EXECUTOR....
+ LOG  =========================================================
+ LOG  [Router] Switching domain from routeToTasks to routeToTaxonomy. Reloading tools.
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  FUNCTIONCALLS undefined
+ LOG  CHAT RESPONSE TEXT: I can do that for you, but I need a bit more information. What is the name of the category you would like to add?
+ LOG  CHAT Candidates.content: {"parts": [{"text": "I can do that for you, but I need a bit more information. What is the name of the category you would like to add?", "thoughtSignature": "CroCAQw51scGNYySFQo7iu5O0L2a8/4IxCADOR4coauyJbH3bduh4bdVFEGfsUO2DNpBxWymiKk3OhnhVOUfNFGQM2/h1QM68T+hbRFWs/pY+SDThEhwAOqQ8oFaFPtj4JdLjA1k4rQY9py/wdgYbCnqs8wdjxUXzMckPm6Xe9yDgv1LiwCKd3KeQzfuY43umoGXiopNS95T1XGYhIqqLDS8f6/rjP1OS2EKGPhk+2cVL6RisLnY+ThpE3vcN56spwDMCdicllZwLyv+G83lQkOq1171BOHIcoW3ktkoimVhJzidNMdq5oJJDYuah+3LbhmMNneQ4d9s7AIstoK2KuESxjUeMeUORD0LvLFSCwisfwFZ4su9ygYRSUiEzmVYTOjhFD5eHSgq53K6/uDeMcuxs9fp7bP3Vxcto/Y="}], "role": "model"}
+ LOG  FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "oEwZaoiSEd30juMP7IjjyQU", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 08:21:53 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1573", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 28, "promptTokenCount": 3146, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 64, "totalTokenCount": 3238}}
+ LOG  Final Accumulated Function Calls: []
+ LOG  AI msg: {"id": "1780042912465", "pendingActions": [], "sender": "ai", "text": "I can do that for you, but I need a bit more information. What is the name of the category you would like to add?", "timestamp": "2026-05-29T08:21:52.464Z", "type": "text", "updatedAt": "2026-05-29T08:21:52.464Z"}
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 58, "chatActionsExpired": 3, "chatMessagesSent": 139, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 1: ROUTING...
+ LOG  =========================================================
+ LOG  [AI] Pass 1 Complete. Selected Route: routeToMultiDomain
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 2: THE EXECUTOR....
+ LOG  =========================================================
+ LOG  [Router] Switching domain from routeToTaxonomy to routeToMultiDomain. Reloading tools.
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  FUNCTIONCALLS [{"args": {"query": "sleeping task", "type": "task"}, "name": "searchItems"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  CHAT RESPONSE TEXT: undefined
+ LOG  CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "CqIEAQw51sdrdfrCYqhKniPbep6gnygmqYpuHumk9VmcXUdQR+7fnQxX3RIgAbLGt7Mo3K3/Ir/sXgn2IJcaYcVhpBLw+RLgKyfi/vlr8xdTKS1MUEcSeA7NHzUmmBvV51e/Yu1cPzcBFAN0p9SDam4/1KgOV7K3boDnQ0gG03cF7iYwuil3tUJ4FCOC0bPUgEq0Nls6BuQbPIXzM3/+G4BKEEY8ba/aftGDfK7lS+BsbPWpNzBVSovrd2tzD7apifC+ci3IYzraeJt+kBByYoOmJPTZRBlTUCFeHojEsuSou5DGFfspM8cjb3z1sM2SnzlW3XbHvN9zGaLxNKHrCUj3WvVbkCPZwiCNlkLNUNSuJv0jMvPhThJOBo1jQlIhmadrQIO23MfFyaOESLWTx7D2DFrfZLqF+rQcaOY6mIzGSXa7kpTIw+Od6eJSgR4YH/ZvIuURQrSHod1gZjRLS6m2rnWO6Ev8CQSoFdMLsQB66wbyU9hlJGusP3ed1HD9kGCNkw1CibwDzcmBfHjS0q7Crux10RRbEkfB+aeCp3H0BjUXA2NdcQK/w5qMJav3iH9usKFNvG+E1SC4CLHzSW8HAG3S/E25kBR5306qi1JUkYNbWc9wjN9oR0en8RZoNcGejdoQOBZNgRwPxl1qqWDwnO0OX6yMfVXebgz8IVOWnqMrPQQ2vZ1CRwma64hQYDaOIa5SR8eADHjloPcRZSVhyGNS"}], "role": "model"}
+ LOG  FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "FE0ZaqmYBKnbjuMP3rmBgAg", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 08:23:50 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2143", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 20, "promptTokenCount": 5109, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 145, "totalTokenCount": 5274}}
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [Silent-Agent] Calling searchItems with: {"query": "sleeping task", "type": "task"}
+ LOG  🧠 AI is semantically searching for: "sleeping task"
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  FOUND ID'S: [{"id": "32cb11a6", "title": "Sleeping", "type": "task"}]
+ LOG  [Silent-Agent]  searchItems returned: {"output": [{"id": "32cb11a6", "title": "Sleeping", "type": "task"}]}
+ WARN  there are non-text parts functionCall,functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  Final Accumulated Function Calls: [{"args": {"dueDate": "2026-05-30", "id": "32cb11a6", "priority": "low"}, "name": "editTask"}, {"args": {"frequency": "daily", "goal": 7, "title": "Morning Run"}, "name": "addHabit"}]
+ LOG  AI msg: {"id": "1780043030815", "pendingActions": [{"args": [Object], "name": "editTask"}, {"args": [Object], "name": "addHabit"}], "sender": "ai", "text": "", "timestamp": "2026-05-29T08:23:50.814Z", "type": "action", "updatedAt": "2026-05-29T08:23:50.814Z"}
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 58, "chatActionsExpired": 3, "chatMessagesSent": 140, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  Editing into expiry: action undefined 1780043030815
+ LOG  Executing agentic actions: [{"args": {"dueDate": "2026-05-30", "id": "32cb11a6", "priority": "low"}, "name": "editTask"}, {"args": {"frequency": "daily", "goal": 7, "title": "Morning Run"}, "name": "addHabit"}]
+ LOG  [Agent] Calling editTask with: {"dueDate": "2026-05-30", "id": "32cb11a6", "priority": "low"}
+ LOG  [Agent] Calling addHabit with: {"frequency": "daily", "goal": 7, "title": "Morning Run"}
+ LOG  habit repo null
+ LOG  HABIT REPO: null
+ LOG  habit repo null
+ LOG  AI Action: Added Habit "Morning Run"
+ LOG  FEEDBACK LOOP, EXECUTION RESUTLS [
+  {
+    "tool": "editTask",
+    "args": {
+      "dueDate": "2026-05-30",
+      "id": "32cb11a6",
+      "priority": "low"
+    },
+    "result": {
+      "status": "success",
+      "task": {
+        "id": "32cb11a6",
+        "title": "Sleeping",
+        "dueDate": "2026-05-30",
+        "reminder": false,
+        "priority": "low",
+        "completed": false,
+        "category": "82ea8dd2-04b3-4f6e-9a46-914a8c9cbf30",
+        "tags": [],
+        "createdAt": "2026-05-29T08:21:26.530Z",
+        "updatedAt": "2026-05-29T08:23:57.287Z"
+      }
+    }
+  },
+  {
+    "tool": "addHabit",
+    "args": {
+      "frequency": "daily",
+      "title": "Morning Run",
+      "goal": 7
+    },
+    "result": {
+      "status": "success",
+      "habit": {
+        "id": "04b3edc9",
+        "title": "Morning Run",
+        "frequency": "daily",
+        "reminder": false,
+        "streak": 0,
+        "history": [],
+        "streakFreezes": 1,
+        "longestStreak": 0,
+        "goal": 7,
+        "goalCompletions": [],
+        "createdAt": "2026-05-29T08:23:57.879Z",
+        "updatedAt": "2026-05-29T08:23:57.879Z"
+      }
+    }
+  }
+]
+ LOG  SERVING FEEDBACK FOR USER REQUEST:  Edit the sleeping task to priority low and due tomorrow and add a new habit Morning Run with a daily goal of 7 days
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 59, "chatActionsExpired": 3, "chatMessagesSent": 140, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 1: ROUTING...
+ LOG  =========================================================
+ LOG  [AI] Pass 1 Complete. Selected Route: routeToTaxonomy
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 2: THE EXECUTOR....
+ LOG  =========================================================
+ LOG  [Router] Switching domain from routeToMultiDomain to routeToTaxonomy. Reloading tools.
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  FUNCTIONCALLS [{"args": {"isPrerequisite": false, "name": "Marathon", "proposedIconConcept": "running"}, "name": "addCategory"}, {"args": {"isPrerequisite": false, "names": [Array]}, "name": "addTag"}]
+ WARN  there are non-text parts functionCall,functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  CHAT RESPONSE TEXT: undefined
+ LOG  CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "Cs0EAQw51scOYQxHVYhU484J61yD7RA3pDrNBiwLBUoBaX3W7c/SysDiTByN11hEx3U6xWXPSYB8zUzjK4zExOrJfhH8oOKWs/V2UUlzciD++2tas1O0k8jF7up5It1dpfzE1BxBKG5kVNQZHwxtkOjParNJq9oJwo9JPdUCFoT+MIorwgKA4+maJuthUCxGvEtAopyeJWj2XrhmnXGsYr6dSGk+0UcdyHEW5xAI/ZaxfSDeIln3gMJrpzNjVPX802cCpb0/UKUv0R8CMBsey2OzJbVcpMljF4Lwh9T0/zH9vUeKjwAwBnqNQBtLprOeh+/98CDLY70SFaxwWHxbW7zJLVQg4r3UtMJp4+g+8nbs3vLbau3iRKR2WFXaWyRE73jjEWUzSomvMIQ8opiNUTX7WOIGJ/NKw4QLovfszTlP4nHeHCtQ9RhzeoX7FEHOhwn99Kcge6o08aLlBL9Lzno6Kybmt2e92UyPNZGkf1uVkpH6uL3EyYoCRZfpIhNZvhDHH1SFwSUgsJ1IRfhxApKDKyvh/2JWT7A+n6P/7VBAZKs0iBtCWysGvzcr5hI+UB1HnLWuaaq3RjaMEVPngjBRf8o76xULZf8x1pWQzLwhZ7d3Tq9ikjP5wnZF0YH7opcicFt5JV8+EnNvSaso97x8v6AA1gA5Uq/IJlraAE+5r41/vaXwWrb5R88+J+/BYVgqZBpL7jS82kKanN6yA0GjoCQB/Q55TTQb9bhbKJHgO/iKFvj1wNlqEchCmcYdUafQY4dsbC6lpAsAClsMmQ=="}, {"functionCall": [Object]}], "role": "model"}
+ LOG  FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "rE0ZaqDVJq2xjuMPgdeq2AM", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 08:26:22 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2078", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 51, "promptTokenCount": 3151, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 146, "totalTokenCount": 3348}}
+ WARN  there are non-text parts functionCall,functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  Final Accumulated Function Calls: [{"args": {"isPrerequisite": false, "name": "Marathon", "proposedIconConcept": "running"}, "name": "addCategory"}, {"args": {"isPrerequisite": false, "names": [Array]}, "name": "addTag"}]
+ LOG  AI msg: {"id": "1780043181347", "pendingActions": [{"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addTag"}], "sender": "ai", "text": "", "timestamp": "2026-05-29T08:26:21.346Z", "type": "action", "updatedAt": "2026-05-29T08:26:21.346Z"}
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 59, "chatActionsExpired": 3, "chatMessagesSent": 141, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------45
+ LOG  ----------------------------
+ LOG  Editing into expiry: action undefined 1780043181347
+ LOG  Executing agentic actions: [{"args": {"isPrerequisite": false, "name": "Marathon", "proposedIconConcept": "running"}, "name": "addCategory"}, {"args": {"isPrerequisite": false, "names": [Array]}, "name": "addTag"}]
+ LOG  [Agent] Calling addCategory with: {"isPrerequisite": false, "name": "Marathon", "proposedIconConcept": "running"}
+ LOG  [Agent] Calling addTag with: {"isPrerequisite": false, "names": ["Omega", "Theta"]}
+ LOG  FEEDBACK LOOP, EXECUTION RESUTLS [
+  {
+    "tool": "addCategory",
+    "args": {
+      "isPrerequisite": false,
+      "proposedIconConcept": "running",
+      "name": "Marathon"
+    },
+    "result": {
+      "status": "success",
+      "idForNewlyCreatedCategory": "dba0a00f-24fa-4c26-8c0d-88ece816df1b",
+      "assignedIcon": "trending-down"
+    }
+  },
+  {
+    "tool": "addTag",
+    "args": {
+      "names": [
+        "Omega",
+        "Theta"
+      ],
+      "isPrerequisite": false
+    },
+    "result": {
+      "status": "success",
+      "tag": [
+        {
+          "id": "c034899d-1b1f-4e50-9c2f-378b4ee974b4",
+          "name": "Omega"
+        },
+        {
+          "id": "a33af90f-dc6f-40ca-941b-5366a4faf177",
+          "name": "Theta"
+        }
+      ]
+    }
+  }
+]
+ LOG  SERVING FEEDBACK FOR USER REQUEST:  Add new category Marathon
+
+And 2 new tags Omega, Theta
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 60, "chatActionsExpired": 3, "chatMessagesSent": 141, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 1: ROUTING...
+ LOG  =========================================================
+ LOG  [AI] Pass 1 Complete. Selected Route: routeToMultiDomain
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 2: THE EXECUTOR....
+ LOG  =========================================================
+ LOG  [Router] Switching domain from routeToTaxonomy to routeToMultiDomain. Reloading tools.
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  FUNCTIONCALLS [{"args": {"isPrerequisite": true, "names": [Array]}, "name": "addTag"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  CHAT RESPONSE TEXT: undefined
+ LOG  CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "CucEAQw51sf9kEOp/O5UAcxX5BUV+o8JnjqLPWjMM3kndww6t4dvzmFCXyGgqWmkFwg1//CN6L9jP0yEQOrZYIGAhISffiNMrSJBl2DTckCXrAcQFNaF905jbuOhcY5QdV7F9ShV40frxf4wVrwaDI/Idi+sWE0OJd9XCxrCddW0hfiYNeyuqATPKXeXgwt52KIZtJpBuEIOLKdNzq1Q7OtM4EztafPOnmi4pHMWwG+WamhETT+K2aGlH0SLmsOvEhdyqqSfGae4SLOvXVrlQ3Aw03uFtkx/wMtQYH19XX1sIxhKp1nZuf3fn7mGNk2xMZVTkQcWwP/myHoIGp+zonYRVf8QrFLzZhAPbZsy7ospN5POPYmrn9w6S4b/CnJE56hWJWMv7CAk//s6HUZGOOAIBvpTTR2ahDMIfgJsQWiuzXJDmZA1Si/0Rj8NzDjATnwpSisL0vT5m9r39jrw93FM4Q8c8tKKVUFUdq1xmfNtNMVaIqYPbBOXpCJXS8aF7r5EGmtJnwSM9ZULYo49OnkPHaE5SP8wNei4seLI87f99bENK2cVkfIM4PSFPcPllPZJH2nCk9Ujdq42xoghF1phaN1l2lSitJcpwXi0t6y/BJ7bJPq/RO3tsBKbxRcrzS/gTtg+Oh6zR/x+b9OEeIZOUB3E8J5PJ8FoSR7kELpU9WukLOi/dMkkCFl826N/fYxJ/j2sbXgWBmWoPMA+b5VyYey3fzTMmo9EVeQ8FdgNyWYQirh7maSktiHDJctDzzu7m03Vdqh8JgSut3V7F0pj0Cq47SOVxpBiLl4E3zMi2TouNFs/SipY"}], "role": "model"}
+ LOG  FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "100ZarXiLcL6juMP_oXsgQs", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 08:27:05 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2028", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 20, "promptTokenCount": 5102, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 181, "totalTokenCount": 5303}}
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [Silent-Agent] Calling addTag with: {"isPrerequisite": true, "names": ["Rocky"]}
+ LOG  [Silent-Agent]  addTag returned: {"status": "success", "tag": [{"id": "381720cf-9154-4c5f-a74b-2a1aa071293a", "name": "Rocky"}]}
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  Final Accumulated Function Calls: [{"args": {"addTagIds": [Array], "frequency": "weekly", "goal": 7, "title": "Trekking"}, "name": "addHabit"}]
+ LOG  AI msg: {"id": "1780043226305", "pendingActions": [{"args": [Object], "name": "addHabit"}], "sender": "ai", "text": "", "timestamp": "2026-05-29T08:27:06.304Z", "type": "action", "updatedAt": "2026-05-29T08:27:06.304Z"}
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 60, "chatActionsExpired": 3, "chatMessagesSent": 142, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  Editing into expiry: action undefined 1780043226305
+ LOG  Executing agentic actions: [{"args": {"addTagIds": [Array], "frequency": "weekly", "goal": 7, "title": "Trekking"}, "name": "addHabit"}]
+ LOG  [Agent] Calling addHabit with: {"addTagIds": ["381720cf-9154-4c5f-a74b-2a1aa071293a"], "frequency": "weekly", "goal": 7, "title": "Trekking"}
+ LOG  habit repo null
+ LOG  HABIT REPO: null
+ LOG  habit repo null
+ LOG  AI Action: Added Habit "Trekking"
+ LOG  FEEDBACK LOOP, EXECUTION RESUTLS [
+  {
+    "tool": "addHabit",
+    "args": {
+      "frequency": "weekly",
+      "title": "Trekking",
+      "addTagIds": [
+        "381720cf-9154-4c5f-a74b-2a1aa071293a"
+      ],
+      "goal": 7
+    },
+    "result": {
+      "status": "success",
+      "habit": {
+        "id": "0152a8c3",
+        "title": "Trekking",
+        "frequency": "weekly",
+        "reminder": false,
+        "streak": 0,
+        "history": [],
+        "streakFreezes": 1,
+        "longestStreak": 0,
+        "goal": 7,
+        "goalCompletions": [],
+        "createdAt": "2026-05-29T08:27:20.215Z",
+        "updatedAt": "2026-05-29T08:27:20.215Z"
+      }
+    }
+  }
+]
+ LOG  SERVING FEEDBACK FOR USER REQUEST:  Add new habit Trekking with weekly goal of 7
+
+And add a new tag Rocky
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 61, "chatActionsExpired": 3, "chatMessagesSent": 142, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 1: ROUTING...
+ LOG  =========================================================
+ LOG  [AI] Pass 1 Complete. Selected Route: routeToMultiDomain
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 2: THE EXECUTOR....
+ LOG  =========================================================
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  FUNCTIONCALLS [{"args": {"isPrerequisite": false, "name": "Chunky"}, "name": "addCategory"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  CHAT RESPONSE TEXT: undefined
+ LOG  CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "CpEIAQw51sfjMOnY7OVU4PdQ6K94BQVe1r37N9d6NMX17PQR/p8KwFFvp30sfnLuVjTuh/rVhU2rI4MVjuMRxbw/vZHboTKTrTGI9VnGl4hoRo7VQQpqaOlVQ9YuNmWl2TRTfYzcOju/HQwWrOUzUysZRy3/OU/RvvRLjLSFH1iHNGeKMz/Y1DtM/8v6zfFGMOmuI85GYFnjwk+LOeAG+zo/mxjXBePSDqHft1qGonshcz/yrCVlacWdN/ImB9rMjsB5tXFnNzshhMkjMzmYMCFWWRsNf2nJdVSG5V7RsI1EUhYk4XmO5x17+NF6nAytVVn6gOvZXWNqJtY0yYEh6FfnQNkrcHO+0if4ZNAJCP0CHVBBJe77CTc9sHa6qhuEh0Df8I5G0MaTs83pI6vsbOEiiXJh14GjuJRyka5CgnIaVewD060IvvRgmJki0OwF3TsPZKpgtV/PXjX1GrT6/ZhKWmFd4woQBLHIWneRC++pVYTGX+xuz7C1oJnh56XT0TMpDwffr1h8e1wXHPkEqUycGJ8umJcqRF1B0/X93CiODPodaaCeqFiVRc7LLhgmUSHzowteZNWz/DkKXNu1tex9DtZxsTQOSzmEsyK7qOV5GWdvOD2lzlkFq+6MFqJWlv2d6TElt3eNHHNeogp8QmTxcHQ35DFbBRsAxKeJzm4NKLrxVa9NYF+0D/r59ZxJKWNiyT9ruTjRavcwKomethw9y/CobrG5ytfn6V/jmpIlbGxUi0d99TX/w5AehE0qFoOaDsK0Q9BpWeSH97P0dwNFeqGInni5H0PwB1ehT6LpKsxSZ8yGufWTilJS5KH8+EvwdTpI+i90ngJ7fJmfho17FnPCLyLcyzyGiQC/rHH1Pkim4FNos5GhHsw1hPob8octbhF7Tu7FvcU6niryn5dFtgDMNcPj8xupBHz+RmefF/KtuIcUk3Pwfq8N57N6zSsHo/R/X/z1kdyf1ybbsdDc8kHwTB85WJIDuqiEc6HWTv+2B7FmKQk60ZW0/Vo+8/1kGNnaVBEs9XltZPJKzfFtK6h83aFSm6HcJ+1LydRZj8rrU0swnXbV1ZEUq95l6cdsm+SEkbN58nICuXlc7Xux3C0dsH/jhncegXzVEy1vmvazNI0fNtDFL9p84k5kEbFfgGbJ6Zhu+HoAZb5G8p0Gw+YBP9Nwlz11HvNGgZiIE2c8JJsTENBRmDB5fPbOTzD5XEGpVQy/9lP3CMFK9PPZbp4ScWSwmCLz5FPR8t809qwoSPiQBZtyXD9p/HCslHJYQ9eef1KGVCi5NQ30o3FamrLWwoMvopUOg1BQlBwCkfszVHEvZ/KyeOlyntJcuWpfYcLXNPQkmjn8UchZnFJfBqTsu+MONFbV74SfSp1o4zoS"}], "role": "model"}
+ LOG  FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "Y04Zatb1EZ-EqfkPjvjC8AM", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 08:29:26 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2944", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 21, "promptTokenCount": 5286, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 298, "totalTokenCount": 5605}}
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  Final Accumulated Function Calls: [{"args": {"isPrerequisite": false, "name": "Chunky"}, "name": "addCategory"}]
+ LOG  AI msg: {"id": "1780043364854", "pendingActions": [{"args": [Object], "name": "addCategory"}], "sender": "ai", "text": "", "timestamp": "2026-05-29T08:29:24.853Z", "type": "action", "updatedAt": "2026-05-29T08:29:24.853Z"}
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 61, "chatActionsExpired": 3, "chatMessagesSent": 143, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  Editing into expiry: action undefined 1780043364854
+ LOG  Executing agentic actions: [{"args": {"isPrerequisite": false, "name": "Chunky"}, "name": "addCategory"}]
+ LOG  [Agent] Calling addCategory with: {"isPrerequisite": false, "name": "Chunky"}
+ LOG  FEEDBACK LOOP, EXECUTION RESUTLS [
+  {
+    "tool": "addCategory",
+    "args": {
+      "isPrerequisite": false,
+      "name": "Chunky"
+    },
+    "result": {
+      "status": "success",
+      "idForNewlyCreatedCategory": "e7c2d2ad-f6f7-4de2-9022-df099d63a7df",
+      "assignedIcon": "folder"
+    }
+  }
+]
+ LOG  SERVING FEEDBACK FOR USER REQUEST:  Add new task keep alive, due date today , priority high
+
+And create a new category Chunky , just create a new one no need to add it
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 62, "chatActionsExpired": 3, "chatMessagesSent": 143, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 1: ROUTING...
+ LOG  =========================================================
+ LOG  [AI] Pass 1 Complete. Selected Route: routeToMultiDomain
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 2: THE EXECUTOR....
+ LOG  =========================================================
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  FUNCTIONCALLS [{"args": {"hexColor": "#C4A484", "isPrerequisite": true, "name": "Jumping in"}, "name": "addCategory"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  CHAT RESPONSE TEXT: undefined
+ LOG  CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "CtAIAQw51sc+15xVk4mHv7zA6BygqXw3QyGR0F28ZBldduOb20716e3dFN2OP0nL+P3ykRPSd0Kp16KEWWnRxJJ7S27A6SIcRlvG431URmdMfurj+8rRAjeCLS1zRu7hXaXg5f1DaTgvchp9cG8vva4rvY7RuERGQUFNAh65Sx85wqOu1325UsyyHvDSbVsYJEmGiuj0zcBPpuhTRqRirKcexWW9CygeWERc6pjKfpm+E7Q4q5wOTUIeEd2KPXAP+pNnwmguw49qioLsOlZE59K436JDCo1OfbIlY2k3h+WzNN/L+vtQcUocutg90+OMYVu8KlSnn3u7SPFdWA34A12ALNB8qcdYpmFBUDeui23Iugf3S9Bb4vXER/7Y2pCR2BbkIRTzhJSV/jZgi27HwEVsotGDWoi7pLk8tnHbvm4rpRpBwPiRsvi0mUByRToAU/lBwe1N76nl4VAfATHb5lbAC90QSvCnCuwTGFo6yrweREnlWNmT5+owHBSHFO73uzUNeS6lADBql1u1io7MygwcGUx1KHglCGeRlf3HxZiLqd+w2+5rpPD0kUhZYicDqh+Izu6mgJ0lD/fgNeAnOLmjTBGx0I9/G4Z4iI9fI1Pu40rbGPwCcATrpgqGM2nlKnLh4VzbZFe8i9FnwUaNB6v7v5I/vXu8c5cVUFSnfJ+CEk/41/PVUPgvmRhDPHu0Nd+ugfjBXSksdcGH2YDgE+QTND3MA3fiDlXdJMHJYQdU/40wSEuwpGHqehrKQN/jGEPZKkGhsfhQpYVrkAmrEDzhU088f/3NJb3OUf5o968MLXn9/DQsIl1d4aRKB/qMCmTtyOM9BSFkdnSWtW+T/HgtN8NEXfnyMi2NWmH11Lqqoa6YudNsh3TGiq1AjnRiJm44KZR/939MOTGqgjk3esiY3ylKuSaX+S7gNpFfonJrbAjfs1MBsJyaEB28ZW8XthhB92Ro381SC4kO+/XqIIvEvMbAOqMS7zGZmACaiSIrHtAHQH3IFSOW/6KDUqUcNVZz2u0M8PRt1a6UcwOqy1F5WgdTsWVkxn9AhsoIy1qfiXpvWhhpntCB06+PoqXQ9oe+7ACfXjKiea/TGOUWAMXEahUltdoE6wuTdugisaaOfSeg7M7FrAQjrmwYpp/jjYzdTRgl/sivO5Hc8qI0GaH0ezIuJK+o09gXWMetF9dZ8dyKGu4Y0Ky5k6Ne50ymPT3J2pSkcBemCnIbKjm6hRZJLbg03zwvjt0BZL/dN95NWGG92hDaJw2KM+YxFQxNQ24Ft3B7+FYNz86SDah/gH8bRUEmqCZWBPSxB+CpgYGgd61rSN6vHeSzLLrRoxtmsL1mV+td09NjO1i+d9A7Kz1FXWRBVn9wFWzDbsi1D9E7LdvGL8G7bfTUDkRJqJI78wIxpC8XMgMuog686lv9lhVddFzAaCDDsji9S/fkndcUYZuFKc8Va8yvR85TyllUbJqF"}], "role": "model"}
+ LOG  FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "tU4ZaquRFt3F4-EPrar46AI", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 08:30:48 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=3117", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 33, "promptTokenCount": 5336, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 313, "totalTokenCount": 5682}}
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [Silent-Agent] Calling addCategory with: {"hexColor": "#C4A484", "isPrerequisite": true, "name": "Jumping in"}
+ LOG  [Silent-Agent]  addCategory returned: {"assignedIcon": "folder", "idForNewlyCreatedCategory": "95b83b47-8cea-4de2-9c8f-2c16693001db", "status": "success"}
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  Request #: 41
+ LOG  Prompt Tokens: 5336
+ LOG  Completion Tokens: 33
+ LOG  Total Tokens: 5682
+ LOG  Avg Tokens / Request: 2671.90
+ LOG  Total Tokens Used: 109548
+ LOG  ----------------------------
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  Final Accumulated Function Calls: [{"args": {"category": "95b83b47-8cea-4de2-9c8f-2c16693001db", "dueDate": "2026-05-30", "priority": "high", "title": "Tuckering"}, "name": "addTask"}]
+ LOG  AI msg: {"id": "1780043448935", "pendingActions": [{"args": [Object], "name": "addTask"}], "sender": "ai", "text": "", "timestamp": "2026-05-29T08:30:48.935Z", "type": "action", "updatedAt": "2026-05-29T08:30:48.935Z"}
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 62, "chatActionsExpired": 3, "chatMessagesSent": 144, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  Editing into expiry: action undefined 1780043448935
+ LOG  Executing agentic actions: [{"args": {"category": "95b83b47-8cea-4de2-9c8f-2c16693001db", "dueDate": "2026-05-30", "priority": "high", "title": "Tuckering"}, "name": "addTask"}]
+ LOG  [Agent] Calling addTask with: {"category": "95b83b47-8cea-4de2-9c8f-2c16693001db", "dueDate": "2026-05-30", "priority": "high", "title": "Tuckering"}
+ LOG  AI Action: Added task "Tuckering"
+ LOG  FEEDBACK LOOP, EXECUTION RESUTLS [
+  {
+    "tool": "addTask",
+    "args": {
+      "title": "Tuckering",
+      "category": "95b83b47-8cea-4de2-9c8f-2c16693001db",
+      "priority": "high",
+      "dueDate": "2026-05-30"
+    },
+    "result": {
+      "status": "success",
+      "task": {
+        "id": "b40b7818",
+        "title": "Tuckering",
+        "dueDate": "2026-05-30",
+        "reminder": false,
+        "priority": "high",
+        "completed": false,
+        "category": "95b83b47-8cea-4de2-9c8f-2c16693001db",
+        "createdAt": "2026-05-29T08:31:15.737Z",
+        "updatedAt": "2026-05-29T08:31:15.737Z"
+      }
+    }
+  }
+]
+ LOG  SERVING FEEDBACK FOR USER REQUEST:  Add new task Tuckering , with due date tomorrow and priority high, additionally also create a new category called Jumping in with color light brown
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 63, "chatActionsExpired": 3, "chatMessagesSent": 144, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  -----------------------------
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 1: ROUTING...
+ LOG  =========================================================
+ LOG  [AI] Pass 1 Complete. Selected Route: routeToMultiDomain
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 2: THE EXECUTOR....
+ LOG  =========================================================
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  FUNCTIONCALLS [{"args": {"hexColor": "#FF0000", "isPrerequisite": false, "name": "Wasties", "proposedIconConcept": "alert"}, "name": "addCategory"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  CHAT RESPONSE TEXT: undefined
+ LOG  CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "CqkIAQw51sd5a2hsU9E9tK8BWsbmS3t/G7SMwdrMgHeq6VswmQ0SkcWErzqdIKXUGh3MXk/7b4NU0n3hDormfB70bcWGuhEyUL0vPhPpAgi9kBo41hi/PtUgM31D11Di+hr1KB5HveIN8bfOvmUumoDxpMTMiCbw4quwjsUKgpBB0F65t06hRVJxFEcuzl+9kZq5fLuySdAfcy2PhQJ2/erIgT/+4wEw+uUs5dAYL9dSvbJKtZ3Z+lQ7NwMiP7XwiHHZKsAcPOgBI8im8sMnFVIBsAszFkVG+LrA77JbJibDWlVIPtxiTPndM4xC5x8mlwCsCQebQ1zyH4B6fVDvyfakBBSsvlz/hH0uatEvTU5CtKGo11Mm4eTBAOtTgPNFgTTLa2buTEFT8+xpzDVm8pipeurz+Bq/ZhznGJldXbwmOsZ/pYq0Zgh2fe/MUZkY+tM4haiZIDRW4BQC6PkyaSZnzTvk5fgptlESKkkzC4VifpMzWywx0PJm4x8wJ/g5+e+X3w5roQldUHIt1P7xqe9Ezfj01i42qC4f7qA2Y9kcS2dcgvmZTTlbBS6YU6huOCtQ9avXQ6etiTckYwZdfkszjVh0O+SSIxRjym5uJjNqBU0gosYvUjwzigPKR8SSUZ0Azx4AX4sfOLiGA7XiMrHT3Y2I18I0eN4VPAodes+uSaWp355812mWd5UdUSsKnxE/Eoe2+e+sqQ93gE62uHwhuxkpbMrUEJPw6d9RLvP0AL6F85KKOLhaHUXorHmMgv9Aql5gxTJL3q+1kCLvXNg9KLykF5NSbQGGru0iAOYxcvJfw7z4xKKAMg/fG4p+DC2m3b8lPHrtbPA5dctxyt4Yf5tW+1RaZz5xSBA4AAKuH6rKTNIORPENtkVrSv8hnoQ6NWiHdmA+pmbOsAwVrlNg1DaCLCLRO5RBDWeo2dWoyEu+/gx16Tw1gOOmnFBFltXr7Jbu4xJpVBOUyHlC1Qu/k8g37gaM2tjhDEkKjYA1c237SIxGvxeI1crAlPkfjQYqEDvNnFbTSLXqDQeSezR8d14QAYj+0blHH6z7EUJyQPMoRhGx7f6kDsdPScI4bH0/O3NhKEabrT571OOH8MMYbappWw9PPZM8N3JbhBHmkh/Bvn1Ex9vAVAjFEPb2+FgvOBEoouYRJR+9uF4nje1do/eg+A8IqIBjD96D2IhrhXVzjKG3riECWfsyt99P0Irwi78/xwtcE17h0TdFoRhabvU0EwES+BrvFyN7sSM1RSPEEk1oq9lhVcHnq3rnuHCGKIVXbnvQ64LJPtida6SAfH6dnCekFyI5hTwFlLtVsSoiOkdTSlmgSlPZvDyLRZn0YrcNJ7hJSo1ZSWWtmpNgGaOWBdx48FhncAJR2LkrNAubAOq0AX9nnEWJQ8V0IlzkCqqJSTKo1n5P"}], "role": "model"}
+ LOG  FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "Kk8ZavufGt6IqfkPx5_v0Q4", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 08:32:44 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2491", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 39, "promptTokenCount": 5539, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 272, "totalTokenCount": 5850}}
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  Final Accumulated Function Calls: [{"args": {"hexColor": "#FF0000", "isPrerequisite": false, "name": "Wasties", "proposedIconConcept": "alert"}, "name": "addCategory"}]
+ LOG  AI msg: {"id": "1780043563508", "pendingActions": [{"args": [Object], "name": "addCategory"}], "sender": "ai", "text": "", "timestamp": "2026-05-29T08:32:43.507Z", "type": "action", "updatedAt": "2026-05-29T08:32:43.508Z"}
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 63, "chatActionsExpired": 3, "chatMessagesSent": 145, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  Editing into expiry: action undefined 1780043563508
+ LOG  Executing agentic actions: [{"args": {"hexColor": "#FF0000", "isPrerequisite": false, "name": "Wasties", "proposedIconConcept": "alert"}, "name": "addCategory"}]
+ LOG  [Agent] Calling addCategory with: {"hexColor": "#FF0000", "isPrerequisite": false, "name": "Wasties", "proposedIconConcept": "alert"}
+ LOG  FEEDBACK LOOP, EXECUTION RESUTLS [
+  {
+    "tool": "addCategory",
+    "args": {
+      "name": "Wasties",
+      "proposedIconConcept": "alert",
+      "hexColor": "#FF0000",
+      "isPrerequisite": false
+    },
+    "result": {
+      "status": "success",
+      "idForNewlyCreatedCategory": "9495e8c9-5f45-4982-bb99-07957fb6707c",
+      "assignedIcon": "alert"
+    }
+  }
+]
+ LOG  SERVING FEEDBACK FOR USER REQUEST:  Create new category Wasties , color red and icon like the alert or caution 
+
+
+Then create a new task Gaming with duedate for tomorrow, priority high and with category social
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 64, "chatActionsExpired": 3, "chatMessagesSent": 145, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 1: ROUTING...
+ LOG  =========================================================
+ LOG  [AI] Pass 1 Complete. Selected Route: routeToMultiDomain
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [AI] Starting PASS 2: THE EXECUTOR....
+ LOG  =========================================================
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  FUNCTIONCALLS [{"args": {"queries": [Array], "type": "category"}, "name": "searchTaxonomy"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  CHAT RESPONSE TEXT: undefined
+ LOG  CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "Co0GAQw51sf6XL+iRTV0hMlxERgJWlKC43osLk4OlUhrEPGrqNt6iEnMQU4XBADQRz/uuxao9XV0FmpRf5xs8k9M3mu3xmkPpkCaC0xzjS6cVbFugvHvHJwHbXyby6EPSio8wsrT97HxjewnWnGhHrexJDzj/PnOPo+8fZ/UftYNxpCXsq7DK0tcBNaQCSCYppPVN/wT4VZGVQRMQKvCrfas/3DxOTXAIBB3xgdpcgv1sZ8RwXGInyaWTQwwi03qQcpniYSVr6c/YWl51YV29u5NSPVCuBNtRFOVwPOfo9VcBJoecFgFT6T2DW5DBZF76J3D4l3dU+G95j9U0L8Qb7nS9HesLsSt8M09IpRDPb898j5bVR1ZsEQfwrbFQ79Cve2ITey4yBTkHyQrX8xTOmYOeH6dr5tw2f66sd6fECy1ST4YDe61CH+pbe9dljgshGpdP45LnsQEqNjamYcXpE9yynbYYcDZwJkSTzYUU2pkaANnAIiOoyrJKUs49WU1BQtMitrq9cnvrQ+H1Gtbdg3m49YiwZsvTvE1pVDHJx9WEc29VcM+R/fvu3wNV/o4C7WGeqPCjb+ZiCY1uywtX2NQdZCnW/CCaXPU36GlaXMNeMrflatImpxiWVcvg342sTMFZNx4ePNhHGhF68rkc0PTtu2JP+Mxtq6pVVdpbE1qmW4pErNQFh1O9i+51eT/VsYxvLuT4Sk0GMohrm/Uv0dRiGZyx+qXF7Huv/wodATSxWvJOEnT5i3RTzcqn9xWWvRjZg2EdqSZ94k3fmag+b6M5wFmj8zoJmyW9Ze7qpygvN6baI3Dk1Iib/ABdLRqA/qo9xvXz2AbtKC/HL48ggCx5Ekdhh8YjjRBmMmjMvUxzy6Nk5orK9vu8kQieFLOrxDqa+47IfeoALAZLtSTC13YlKv3xxYyRgY3AVJta6LiWF33610MBLZIToRkpF7gqkSUF9e3paK4zDFJZ6lqWfWj4ya1c6jjjrygntJB3IMOcLBI4vZ5wI5jGt0vRqIbzQjA3Px3Y0niEhy8CS++oA=="}], "role": "model"}
+ LOG  FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "QE8ZavLMCP_Ag8UPi5uP4QE", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 08:33:06 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2290", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 20, "promptTokenCount": 5583, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 176, "totalTokenCount": 5779}}
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [Silent-Agent] Calling searchTaxonomy with: {"queries": ["social"], "type": "category"}
+ LOG  [Silent-Agent]  searchTaxonomy returned: {"output": {"social": [[Object]]}}
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  Final Accumulated Function Calls: [{"args": {"category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0", "dueDate": "2026-05-30", "priority": "high", "title": "Gaming"}, "name": "addTask"}]
+ LOG  AI msg: {"id": "1780043587162", "pendingActions": [{"args": [Object], "name": "addTask"}], "sender": "ai", "text": "", "timestamp": "2026-05-29T08:33:07.161Z", "type": "action", "updatedAt": "2026-05-29T08:33:07.161Z"}
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 64, "chatActionsExpired": 3, "chatMessagesSent": 146, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  ----------------------------
+ LOG  Editing into expiry: action undefined 1780043587162
+ LOG  Executing agentic actions: [{"args": {"category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0", "dueDate": "2026-05-30", "priority": "high", "title": "Gaming"}, "name": "addTask"}]
+ LOG  [Agent] Calling addTask with: {"category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0", "dueDate": "2026-05-30", "priority": "high", "title": "Gaming"}
+ LOG  AI Action: Added task "Gaming"
+ LOG  FEEDBACK LOOP, EXECUTION RESUTLS [
+  {
+    "tool": "addTask",
+    "args": {
+      "dueDate": "2026-05-30",
+      "title": "Gaming",
+      "category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0",
+      "priority": "high"
+    },
+    "result": {
+      "status": "success",
+      "task": {
+        "id": "f704ad86",
+        "title": "Gaming",
+        "dueDate": "2026-05-30",
+        "reminder": false,
+        "priority": "high",
+        "completed": false,
+        "category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0",
+        "createdAt": "2026-05-29T08:33:10.023Z",
+        "updatedAt": "2026-05-29T08:33:10.023Z"
+      }
+    }
+  }
+]
+ LOG  SERVING FEEDBACK FOR USER REQUEST:  Ok go ahead
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 65, "chatActionsExpired": 3, "chatMessagesSent": 146, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}

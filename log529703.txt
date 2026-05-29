@@ -1,0 +1,302 @@
+ LOG  =========================================================
+ LOG  [DAG] Node 1: PLANNER (Extracting Checklist)...
+ LOG  [DAG] Node 1:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 1:CHAT RESPONSE TEXT: ["Add task Paddies", "Add category BeerTime with icon mug"]
+ LOG  [DAG] Node 1:CHAT Candidates.content: {"parts": [{"text": "[\"Add task Paddies\", \"Add category BeerTime with icon mug\"]"}], "role": "model"}
+ LOG  [DAG] Node 1:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "-JIZapLgI52Eg8UPnc_doA8", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 13:22:02 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1873", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 15, "promptTokenCount": 102, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 141, "totalTokenCount": 258}}
+ LOG  [DAG] Checklist generated: ["Add task Paddies", "Add category BeerTime with icon mug"]
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [DAG] Node 2: ROUTER (Selecting Tool Bucket)...
+ LOG  [DAG] Node 2:FUNCTIONCALLS [{"args": {"extractedIntent": "Add a task with high importance and a due date of today, and also add a new category named 'BeerTime' with a mug icon."}, "name": "routeToMultiDomain"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 2:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 2:CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "Cq8DAQw51se2YO51OigonHJLDZRfFcZ0n8rCgeQgKD3GZYHH1UWwwP71YZ61ZqXPUj0r3q5vQOkW77BDVjPedaYhnA/VMyAC/Icef9Kd1Tz+tCTArrQaZw7Rej/ugHAGBpl7fG8cy0wo1Xm05CIzV0Vzq4Ae7mJL1Qjhz6kf6ib4qRu+eXmnHWryZoZqBCR2zhCnWjdfkCLETTpO3cQsTHHtGzMBKYCvCgfbHETOS6ZdTXY0d/vz5IhKM5EWuFs642kdPH5RfoYLvXyUj1e2HM0BwBG/vEGlWrbEFZmxTMXf/tdMBN1LPLob8CfhCDdwqLM/y+1IufYz2mrcwixNyFmXpYON3VKHDWrDC3Kc6AbqgV8jL4Fgz3dyW2/QjYj5CBqETuXx3Ow+2XFKwfrLo2lotFvFuMjfaBdTAn8Tsvg7ba2Yt0HQVnNdX/CpEJpTNxe8jRSnGiDkHSwo9xdF0WTUSkPCDHkv9YIknaZQpq2ohwRrJkjBGw7xqXt5bWE7tL0HiQ6vLdwwlczkcPfhoJ5zHeymz+m+mbb6NtTY2MlDPxJsvcasy31sUE86aVg55GQ="}], "role": "model"}
+ LOG  [DAG] Node 2:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "-pIZatG1JrnJjuMPzYSB0AY", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 13:22:04 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1590", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 44, "promptTokenCount": 455, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 87, "totalTokenCount": 586}}
+ LOG  [DAG] Node 2 Complete. Selected Route: routeToMultiDomain
+ LOG  =========================================================
+ LOG  _________________________________________________________
+ LOG  [DAG] Node Main: State: {"transcript":"Add task Paddies, I want to finish it of by today , it's really important. Also I want you to add a new category BeerTime, with like a icon mug, I'll probably need for a future task that I wanted to add","checklist":["Add task Paddies","Add category BeerTime with icon mug"],"selectedDomain":"routeToMultiDomain","selectedTools":"routeToMultiDomain","chatHistory":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  _________________________________________________________
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add task Paddies, I want to finish it of by today , it's really important. Also I want you to add a new category BeerTime, with like a icon mug, I'll probably need for a future task that I wanted to add","checklist":["Add task Paddies","Add category BeerTime with icon mug"],"selectedDomain":"routeToMultiDomain","selectedTools":"routeToMultiDomain","chatHistory":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  [DAG] Node 3:FUNCTIONCALLS [{"args": {"isPrerequisite": true, "name": "BeerTime", "proposedIconConcept": "mug"}, "name": "addCategory"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "CuYEAQw51sep/okm/gL6HPHDb3Z0VsMUOf+ffoqxcmMnKjZ7Y8LgiA2Hrf2YZmzfTixLvVNPA9wmfksmA4Mgrf7muSXxg3pMA7n53XnBFIiE0oh2I/XNw6Uowp685DlipFGcI8ltXicLrjUk0Q6IyWb4F7sdw7ORjsC+Qd6Ki2eAh20BQbEjVA8B9Ks0tQjmdY13QBrdV6+dc+xc6nWDMTCOPzWQ52tR4nMIxoIf9iEtWB8X2yMvFU7fVmF+Z9WjV0HMnjjb1sxnyovJlPB0tnAXJ3qO1s1jvy4YX7I7LqjUpO2OpzuA3cc6mCFkhVGrdZo4nIYcxUP1xCzLaXxnx8DLvoiOB8OWZxt2EowIz/MG1Eh/5s5Tavp/MpyBXKTvzt2qPEXFkvw7LcVbczn/Y9eWGOOsbXnUVZR+HRz2PsP9rvpjEfJPn+5pgOl9WNat1bK9srk7G7LJLeWdveclfIaN9pxt8AQZI/m8bp8wThDpnbL4nqX0O4V1hPopl/0n1Ry3K9bpqUEF2M3InVlBrwoKLCQ5BoUGmjBMXa7jr64WbmARX/u7RdfE8SOksB+oRBKOn6OfuCTqv63ZWlkKPv5ogz+nBsTxtsIQJg49vEPKNWoVHBor46+v1o8WG8cWIx/TQ5JMH0X2LqRRCaEDw8qbNVSu4CrAkXVSYKDTWaiUGOiJKsHuhDi2AeHbWBH2iO86M3q51XXv6ZOoxgi+ClrCs5RAGRuCDzAxOPziJPLmizMO9ic4CXW9ftbewwfP+vLhe1flDSStoD/6ZONFUcjoANeMhHdo0GxtAJaAlKjATCl0Yvv4txU="}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "_JIZavanGu7EjuMP9pesgAU", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 13:22:07 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=3087", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 28, "promptTokenCount": 5460, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 150, "totalTokenCount": 5638}}
+ LOG  [Silent-Agent] Executing addCategory...
+ LOG  _________________________________________________________
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [], "chatHistory": {"parts": [[Object]], "role": "user"}, "checklist": ["Add task Paddies", "Add category BeerTime with icon mug"], "finalTextResponse": undefined}
+ LOG  =========================================================
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Edge: Silent tools executed, looping back to Executor...
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add task Paddies, I want to finish it of by today , it's really important. Also I want you to add a new category BeerTime, with like a icon mug, I'll probably need for a future task that I wanted to add","checklist":["Add task Paddies","Add category BeerTime with icon mug"],"selectedDomain":"routeToMultiDomain","selectedTools":"routeToMultiDomain","chatHistory":[{"functionResponse":{"name":"addCategory","response":{"status":"success","idForNewlyCreatedCategory":"177ae0f2-872a-44e4-8854-e86c23adc496","assignedIcon":"bug"}}}],"accumulatedConfirmationCalls":[]}
+ LOG  [DAG] Node 3:FUNCTIONCALLS [{"args": {"dueDate": "2026-05-29", "priority": "high", "title": "Paddies"}, "name": "addTask"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"functionCall": [Object]}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "_5IZatXOLJT8juMPsfKn-QI", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 13:22:08 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1017", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 33, "promptTokenCount": 5551, "promptTokensDetails": [[Object]], "serviceTier": "standard", "totalTokenCount": 5584}}
+ LOG  _________________________________________________________
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [{"args": [Object], "name": "addTask"}], "chatHistory": [], "checklist": ["Add category BeerTime with icon mug"], "finalTextResponse": undefined}
+ LOG  =========================================================
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Edge: Execution complete. Exiting graph.
+ LOG  _________________________________________________________so I want you to add a new category BeerTime, with like a icon mug, I'll probably need for a future task that I wanted to add","checklist":["Add category BeerTime with icon mug"],"selectedDomain":"routeToMultiDomain",
+ LOG  [DAG] Node Main: FINAL State: {"transcript":"Add task Paddies, I want to finish it of by today , it's really important. Also I want you to add a new category BeerTime, with like a icon mug, I'll probably need for a future task that I wanted to add","checklist":["Add category BeerTime with icon mug"],"selectedDomain":"routeToMultiDomain","chatHistory":[],"accumulatedConfirmationCalls":[{"name":"addTask","args":{"dueDate":"2026-05-29","priority":"high","title":"Paddies"}}]}
+ LOG  _________________________________________________________
+ LOG  Final Accumulated Function Calls: [{"args": {"dueDate": "2026-05-29", "priority": "high", "title": "Paddies"}, "name": "addTask"}]
+ LOG  AI msg: {"id": "1780060927236", "pendingActions": [{"args": [Object], "name": "addTask"}], "sender": "ai", "text": "", "timestamp": "2026-05-29T13:22:07.235Z", "type": "action", "updatedAt": "2026-05-29T13:22:07.235Z"}
+ LOG  Executing agentic actions: [{"args": {"dueDate": "2026-05-29", "priority": "high", "title": "Paddies"}, "name": "addTask"}]
+ LOG  [Agent] Calling addTask with: {"dueDate": "2026-05-29", "priority": "high", "title": "Paddies"}
+ LOG  AI Action: Added task "Paddies"
+ LOG  FEEDBACK LOOP, EXECUTION RESUTLS [
+  {
+    "tool": "addTask",
+    "args": {
+      "dueDate": "2026-05-29",
+      "priority": "high",
+      "title": "Paddies"
+    },
+    "result": {
+      "status": "success",
+      "task": {
+        "id": "d893c513",
+        "title": "Paddies",
+        "dueDate": "2026-05-29",
+        "reminder": false,
+        "priority": "high",
+        "completed": false,
+        "createdAt": "2026-05-29T13:22:13.456Z",
+        "updatedAt": "2026-05-29T13:22:13.456Z"
+      }
+    }
+  }
+]
+ LOG  SERVING FEEDBACK FOR USER REQUEST:  Add task Paddies, I want to finish it of by today , it's really important. Also I want you to add a new category BeerTime, with like a icon mug, I'll probably need for a future task that I wanted to add
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 67, "chatActionsExpired": 3, "chatMessagesSent": 148, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  Request #: 10
+ LOG  Prompt Tokens: 494
+ LOG  Completion Tokens: 31
+ LOG  Total Tokens: 525
+ LOG  Avg Tokens / Request: 2496.30
+ LOG  Total Tokens Used: 24963
+ LOG  ----------------------------
+ LOG  =========================================================
+ LOG  [DAG] Node 2: ROUTER (Selecting Tool Bucket)...
+ LOG  [DAG] Node 2:FUNCTIONCALLS [{"args": {"extractedIntent": "The user is providing a generic confirmation, but no specific intent or domain has been identified. The model should ask for more information from the user to determine the correct routing."}, "name": "routeToMultiDomain"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 2:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 2:CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "Ct0IAQw51se24vtsFKZVpBsaz0i4N4Q1ooqDq0MAj55jqImQBjua5pKeqqAlnRIqJ+2xUB5xVtPYelk3VfuHEK5OO+yEwWmK78XKzLCY1obiLHOyXDXRCSr4ZSml3fj+PGczEfWawx/KZUNfIyREyLCVOHmQYAil9nF0+4uCw0aDkbNiQy6az3SdQesragBdTjzsx3hWRGT2I2dJUWS8ml0VU9FDJIQfFxofYHB+8H8gn/56UKbzUKPUN4xkI5T6eV1jyfpUkVHLwjcKt4U6YWBkKwsqwYLtUlOxbTLMmn8qocssqtBam0fq0GBTgxtsS6b92kAYEmxMgXK59q2aTBRBnKC1MHd+2lKCgMIDvfkBErON2SMICkFqbuG5q72uIuGYpFv+73hAqiHzA0v/9QZGfZ0MtE8/wm5Go4DGm2yr8IRMHLEKugtyYMiFl6jLNfz2WVZLymsDQQjuwyUzUk3IbLAgVj2khpfl4kfpHK3cZh1ooTle8mFFtje3WvP0uf1/BPc+unftunydPE44OedWrBidyHltzz7y3KXmZOHclAseyLAElSKbMD2ujGP1zZC9uQMbo1TK5gDBepVYnh5XXgYIwx5/UoG4AxD82hJJk7pOhUic/YuKbOvI79ONtTVCyqZZeeXOURb0P4lnEAi1rS7CXObMjGB1E5/to7sjMtUpVFXA5/AEaOU4PhNVK3tIf6ZPUESboiQ0ZJlia/3cR8HWhWdd7aFEvzpoWoJja1dREnms9c0wykagqEfgJbtziKbKKqU/kYb97+W2y3ywobkCQAKDvrayR352As3ifwec+JY3dN5QuixM4JL/PAr1jrDRYarWdF10IqJMywuZfl1i1Iij52+0PN0dK6f4FxOnVvJ6iq4ri1q3kEtJ9lIajAzeVrfmtZAGxv+23rg/EAKeCHp9vvhkcSNTa9WuVpufoyV6ahsVd4kgktmMDOZ98K4Zdvr3eCsHJwMaKY99mNfa7TVDkhzN0Eb8lW/1Tf1yHk5ynxtqKbDeu1f2sSKFswbvS34mXSmtTHRcFTp1oNFiAKgKJ4TLx8YWk0UCOJw8Ek6Mek7e5OzeAeRxpIR1fHLpkUVHQPSaQcLL18F2abF/CCWd/2TB2xBbFboK0VUlW/bXA77Yx/W9kLWQjZ7Plp1vSgmIJORg2ovIZmVtdmutqW3lr73rA0b5T5SFAfMrI99OsSfLsfPzYnmDDHmTSP/RqgTPmTPIUSppOKkWrZtC/gE5PNrYuCT3L2aaTE0SgXLmkf4E4cTOoVYeieJ1FlhaQ6P9MIKAyiayMLQMg1r9/zb4eWrDoqUrEO3/eleo8rLF7vuNYk3f5xvxyefOFYDnQCIz7nfCKPTWblmWdq2XzhAfETWMIcxQ3e9HbuilnpZeL+CURba6056BPYjKQYbZtLZHLudxVPlLD28DaHMmgIA2ibRNt2j6Efmt4Z03LxZUD14GcbZOjH7NH7NH6Jg744MKIDel4roTEA=="}], "role": "model"}
+ LOG  [DAG] Node 2:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "EJMZaq3lNI6KjuMP7M32-As", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 13:22:26 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2183", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 49, "promptTokenCount": 406, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 223, "totalTokenCount": 678}}
+ LOG  [DAG] Node 2 Complete. Selected Route: routeToMultiDomain
+ LOG  =========================================================
+ LOG  _________________________________________________________
+ LOG  [DAG] Node Main: State: {"transcript":"Ok go ahead","checklist":["Ok go ahead"],"selectedDomain":"routeToMultiDomain","selectedTools":"routeToMultiDomain","chatHistory":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  _________________________________________________________
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Ok go ahead","checklist":["Ok go ahead"],"selectedDomain":"routeToMultiDomain","selectedTools":"routeToMultiDomain","chatHistory":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  Request #: 11
+ LOG  Prompt Tokens: 406
+ LOG  Completion Tokens: 49
+ LOG  Total Tokens: 678
+ LOG  Avg Tokens / Request: 2331.00
+ LOG  Total Tokens Used: 25641
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: I've added "Paddies" to your tasks with high priority and due today.
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"text": "I've added \"Paddies\" to your tasks with high priority and due today.", "thoughtSignature": "CsEDAQw51scYFqSRp2ha3mgIdEBRgEqw50XBuH8H7UQEEPeyzdncgn2BQYtnLzvSTg3eutRkqM74eevRoFiERSJuvqAsmDRvncSx5B0uZNnzeMIXY1zyIhsFLSB7ucuYnSpVYXV4QHPRtbnGW6FFxRNG4fQXJX7xhLx8Oc9VgxjYPoIhvDXqRphDbbDMwCNIbKHJeKgnhgm8S6SYMxzf16OH9WzlzYz9rNVFjinJyjIsI2eXERcEcFxVolfGl9R1eBsC6ds2g4eWHz/q0wjNnwdb0r17nG2Raqcz0Kn/ZF7v+J04kve49T+Ol7ja+Igdv5qH8jB9c++Xwu9Y3Yt95AmYVcNiKYeSE8FjQerHV+Sxja0i3pw1VeMFYY/xg2KiGYQaeGUPL6M7srTHAaU70EVmm8eT1LrMhQ6JFMhMqrdHsT0XM3YbGNju3nX3tu3W/rPezDSAYDO23DkXiu1pArWr6X8UD2wSPRY+fub79hAuNfHzK7I1AVf137GpqmjadNl0mkDkI3iiYmLiWkBPo+hKeZvp2ZN1DFMsrzaRPjlsmitYGhzoYRMaEX8aTew0fBSJh8fem/Gotm87Qlx8ntW5NAI="}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "E5MZavXVD6XUqfkPuZeBqQY", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 13:22:29 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2527", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"cacheTokensDetails": [[Object]], "cachedContentTokenCount": 4718, "candidatesTokenCount": 18, "promptTokenCount": 5589, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 119, "totalTokenCount": 5726}}
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [], "chatHistory": [], "checklist": ["Ok go ahead"], "finalTextResponse": "I've added \"Paddies\" to your tasks with high priority and due today."}
+ LOG  =========================================================
+ LOG  [DAG] Edge: Tunnel Vision detected! Forcing AI to complete: Ok go ahead
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Ok go ahead","checklist":["Ok go ahead"],"selectedDomain":"routeToMultiDomain","selectedTools":"routeToMultiDomain","chatHistory":[{"role":"user","parts":"System Override: You stopped, but you still need to fulfill this request: \"Ok go ahead\". Call the required tools now."}],"accumulatedConfirmationCalls":[],"finalTextResponse":"I've added \"Paddies\" to your tasks with high priority and due today."}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  Request #: 12
+ LOG  Prompt Tokens: 5589
+ LOG  Completion Tokens: 18
+ LOG  Total Tokens: 5726
+ LOG  Avg Tokens / Request: 2613.92
+ LOG  Total Tokens Used: 31367
+ LOG  ----------------------------
+ ERROR  [DAG] Critical Graph Failure: [ApiError: {"error":{"code":400,"message":"* GenerateContentRequest.contents[10].parts[0].data: required oneof field 'data' must have one initialized field\n","status":"INVALID_ARGUMENT"}}] 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules\@babel\runtime\helpers\construct.js)
+  Wrapper (node_modules\@babel\runtime\helpers\wrapNativeSuper.js)
+  construct (<native>)
+  _callSuper (node_modules\@babel\runtime\helpers\callSuper.js)
+  ApiError#constructor (node_modules\@google\genai\dist\index.mjs)
+  throwErrorIfNotOK (node_modules\@google\genai\dist\index.mjs)
+  next (<native>)
+  asyncGeneratorStep (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  _next (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+
+
+ LOG  =========================================================
+ LOG  [DAG] Node 1: PLANNER (Extracting Checklist)...
+ LOG  [DAG] Node 1:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 1:CHAT RESPONSE TEXT: ["Add new task Caddies", "Add new category test77"]
+ LOG  [DAG] Node 1:CHAT Candidates.content: {"parts": [{"text": "[\"Add new task Caddies\", \"Add new category test77\"]"}], "role": "model"}
+ LOG  [DAG] Node 1:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "-JQZaqLlLb_hg8UP0Pf1gAM", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 13:30:34 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2212", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 15, "promptTokenCount": 107, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 184, "totalTokenCount": 306}}
+ LOG  [DAG] Checklist generated: ["Add new task Caddies", "Add new category test77"]
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [DAG] Node 2: ROUTER (Selecting Tool Bucket)...
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  Request #: 13
+ LOG  Prompt Tokens: 107
+ LOG  Completion Tokens: 15
+ LOG  Total Tokens: 306
+ LOG  Avg Tokens / Request: 2436.38
+ LOG  Total Tokens Used: 31673
+ LOG  ----------------------------
+ LOG  [DAG] Node 2:FUNCTIONCALLS [{"args": {"extractedIntent": "Add a new task with a due date, priority, and category, AND add a new category with a name, icon, and color."}, "name": "routeToMultiDomain"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 2:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 2:CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "CtcCAQw51scOf3mVp8kcUHx+sy3eHhlRDU1hzKnpJ6aTs2SfDWeW0AyawbzoJpH75xqrsyk9xJzbzC8Ww476KMPRoQ1HYmFSwDnKzSJwx+IIwAIx+DHaoKoImUFW2oBZB06wBQcTpS51W0zBp5WCga7FcMKDdwV75nph2hl7T+ngB3CGM8a8cuL6ZvpbINQ91iDEBDJGmYJme6F2fmJz7Xi2Q/7UzYhErlMl6YfSR1rf62R6AEN//RgA+9aquiRk6aD/twUovOdgd5eNUDCeEoFTg7K/z3ZihSAgA3Usl3Q2WfSb0m/glUqYUeGEjPcZ2oKm4Dy75iQh4btJ0LYd3s0hzXbM2e/Fg7FIAhCEJ+I8unD0Fv+d8K+tWxMuC3Ge/EzZ1Fo/eYy/+6KHd7ycZJVMLtj0yQrT+xhQIwu0mHsCMkm9dDhrR6i+Wz8VCSvFAXZhf/dgBewVgg=="}], "role": "model"}
+ LOG  [DAG] Node 2:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "-5QZapCzB7bdqfkPnvTy4QI", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 13:30:37 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2132", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 43, "promptTokenCount": 461, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 64, "totalTokenCount": 568}}
+ LOG  [DAG] Node 2 Complete. Selected Route: routeToMultiDomain
+ LOG  =========================================================
+ LOG  _________________________________________________________
+ LOG  [DAG] Node Main: State: {"transcript":"Add new task Caddies, duedate for day after tomorrow, priority high, category Social\n\nAdd a new category, this is not a prerequisite, add it to the system and the the new task. Name test77 , icon something like wave or water , color light blue.","checklist":["Add new task Caddies","Add new category test77"],"selectedDomain":"routeToMultiDomain","selectedTools":"routeToMultiDomain","chatHistory":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  _________________________________________________________
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new task Caddies, duedate for day after tomorrow, priority high, category Social\n\nAdd a new category, this is not a prerequisite, add it to the system and the the new task. Name test77 , icon something like wave or water , color light blue.","checklist":["Add new task Caddies","Add new category test77"],"selectedDomain":"routeToMultiDomain","selectedTools":"routeToMultiDomain","chatHistory":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  Request #: 14
+ LOG  Prompt Tokens: 461
+ LOG  Completion Tokens: 43
+ LOG  Total Tokens: 568
+ LOG  Avg Tokens / Request: 2302.93
+ LOG  Total Tokens Used: 32241
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS [{"args": {"queries": [Array], "type": "category"}, "name": "searchTaxonomy"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "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"}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "_ZQZauTeFeL6juMP_8q2qAg", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 13:30:47 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=10777", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 20, "promptTokenCount": 5667, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 1584, "totalTokenCount": 7271}}
+ LOG  [Silent-Agent] Executing searchTaxonomy...
+ LOG  _________________________________________________________
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [], "chatHistory": {"parts": [[Object]], "role": "user"}, "checklist": ["Add new task Caddies", "Add new category test77"], "finalTextResponse": undefined}
+ LOG  =========================================================
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Edge: Silent tools executed, looping back to Executor...
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new task Caddies, duedate for day after tomorrow, priority high, category Social\n\nAdd a new category, this is not a prerequisite, add it to the system and the the new task. Name test77 , icon something like wave or water , color light blue.","checklist":["Add new task Caddies","Add new category test77"],"selectedDomain":"routeToMultiDomain","selectedTools":"routeToMultiDomain","chatHistory":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"Social":[{"type":"category","id":"b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0","name":"Social","score":2.220446049250313e-16}]}}}}],"accumulatedConfirmationCalls":[]}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  Request #: 15
+ LOG  Prompt Tokens: 5667
+ LOG  Completion Tokens: 20
+ LOG  Total Tokens: 7271
+ LOG  Avg Tokens / Request: 2634.13
+ LOG  Total Tokens Used: 39512
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS [{"args": {"category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0", "dueDate": "2026-05-31", "priority": "high", "title": "Caddies"}, "name": "addTask"}, {"args": {"hexColor": "#ADD8E6", "isPrerequisite": false, "name": "test77", "proposedIconConcept": "wave"}, "name": "addCategory"}]
+ WARN  there are non-text parts functionCall,functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"functionCall": [Object]}, {"functionCall": [Object]}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "CJUZaozrEL_hg8UP2vf1gAM", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Fri, 29 May 2026 13:30:49 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1683", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 108, "promptTokenCount": 5781, "promptTokensDetails": [[Object]], "serviceTier": "standard", "totalTokenCount": 5889}}
+ LOG  _________________________________________________________
+ WARN  there are non-text parts functionCall,functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [{"args": [Object], "name": "addTask"}, {"args": [Object], "name": "addCategory"}], "chatHistory": [], "checklist": ["Add new category test77"], "finalTextResponse": undefined}
+ LOG  =========================================================
+ WARN  there are non-text parts functionCall,functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Edge: Execution complete. Exiting graph.
+ LOG  _________________________________________________________
+ LOG  [DAG] Node Main: FINAL State: {"transcript":"Add new task Caddies, duedate for day after tomorrow, priority high, category Social\n\nAdd a new category, this is not a prerequisite, add it to the system and the the new task. Name test77 , icon something like wave or water , color light blue.","checklist":["Add new category test77"],"selectedDomain":"routeToMultiDomain","chatHistory":[],"accumulatedConfirmationCalls":[{"name":"addTask","args":{"dueDate":"2026-05-31","title":"Caddies","priority":"high","category":"b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0"}},{"name":"addCategory","args":{"hexColor":"#ADD8E6","isPrerequisite":false,"name":"test77","proposedIconConcept":"wave"}}]}
+ LOG  _________________________________________________________
+ LOG  Final Accumulated Function Calls: [{"args": {"category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0", "dueDate": "2026-05-31", "priority": "high", "title": "Caddies"}, "name": "addTask"}, {"args": {"hexColor": "#ADD8E6", "isPrerequisite": false, "name": "test77", "proposedIconConcept": "wave"}, "name": "addCategory"}]
+ LOG  AI msg: {"id": "1780061448450", "pendingActions": [{"args": [Object], "name": "addTask"}, {"args": [Object], "name": "addCategory"}], "sender": "ai", "text": "", "timestamp": "2026-05-29T13:30:48.449Z", "type": "action", "updatedAt": "2026-05-29T13:30:48.449Z"}
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 7, "chatActionsConfirmed": 67, "chatActionsExpired": 3, "chatMessagesSent": 149, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 234}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR
+ LOG  ----------------------------
+ LOG  Request #: 16
+ LOG  Prompt Tokens: 5781
+ LOG  Completion Tokens: 108
+ LOG  Total Tokens: 5889
+ LOG  Avg Tokens / Request: 2837.56
+ LOG  Total Tokens Used: 45401
+ LOG  ----------------------------
+ LOG  Editing into expiry: action undefined 1780061448450
+ LOG  Executing agentic actions: [{"args": {"category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0", "dueDate": "2026-05-31", "priority": "high", "title": "Caddies"}, "name": "addTask"}, {"args": {"hexColor": "#ADD8E6", "isPrerequisite": false, "name": "test77", "proposedIconConcept": "wave"}, "name": "addCategory"}]
+ LOG  [Agent] Calling addTask with: {"category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0", "dueDate": "2026-05-31", "priority": "high", "title": "Caddies"}
+ LOG  AI Action: Added task "Caddies"
+ LOG  [Agent] Calling addCategory with: {"hexColor": "#ADD8E6", "isPrerequisite": false, "name": "test77", "proposedIconConcept": "wave"}
+ LOG  FEEDBACK LOOP, EXECUTION RESUTLS [
+  {
+    "tool": "addTask",
+    "args": {
+      "dueDate": "2026-05-31",
+      "title": "Caddies",
+      "priority": "high",
+      "category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0"
+    },
+    "result": {
+      "status": "success",
+      "task": {
+        "id": "546eab74",
+        "title": "Caddies",
+        "dueDate": "2026-05-31",
+        "reminder": false,
+        "priority": "high",
+        "completed": false,
+        "category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0",
+        "createdAt": "2026-05-29T13:30:56.924Z",
+        "updatedAt": "2026-05-29T13:30:56.924Z"
+      }
+    }
+  },
+  {
+    "tool": "addCategory",
+    "args": {
+      "hexColor": "#ADD8E6",
+      "isPrerequisite": false,
+      "name": "test77",
+      "proposedIconConcept": "wave"
+    },
+    "result": {
+      "status": "success",
+      "idForNewlyCreatedCategory": "c6ebeafe-d54e-4912-9431-7a4f35d16a96",
+      "assignedIcon": "save"
+    }
+  }
+]
+ LOG  SERVING FEEDBACK FOR USER REQUEST:  Add new task Caddies, duedate for day after tomorrow, priority high, category Social
+
+Add a new category, this is not a prerequisite, add it to the system and the the new task. Name test77 , icon something like wave or water , color light blue.

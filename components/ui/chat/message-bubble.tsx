@@ -2,7 +2,8 @@ import React, { useContext } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
 import { Message } from "@/types/chat";
-import { ActionChip } from "./action-chip";
+//import { ActionChip } from "./action-chip";
+import { ActionChip } from "./action-chip-router";
 import { ThemeContext } from "@/context/ThemeContext";
 
 interface Props {
@@ -11,6 +12,11 @@ interface Props {
   onActionCancel: () => void;
   onRemoveIndividualAction: (actionIndex: number) => void;
   onEnrichAction: (action: any) => any;
+  onUpdateAction: (
+    messageId: string,
+    actionIndex: number,
+    updatedArgs: any,
+  ) => Promise<void>;
 }
 
 export const MessageBubble = ({
@@ -19,6 +25,7 @@ export const MessageBubble = ({
   onActionCancel,
   onRemoveIndividualAction,
   onEnrichAction,
+  onUpdateAction,
 }: Props) => {
   const { theme } = useContext(ThemeContext);
   const isUser = message.sender === "user";
@@ -56,10 +63,21 @@ export const MessageBubble = ({
           <View style={styles.actionContainer}>
             <View style={styles.manifestContainer}>
               {message.pendingActions?.map((action, index) => (
+                /*   <ActionChip
+                  key={index}
+                  action={onEnrichAction(action)}
+                  onRemove={() => onRemoveIndividualAction(index)}
+                  isConfirmed={message.isConfirmed}
+                  isExpired={message.isExpired}
+                /> */
                 <ActionChip
                   key={index}
                   action={onEnrichAction(action)}
                   onRemove={() => onRemoveIndividualAction(index)}
+                  // Partially apply the function so the chip only needs to provide the args
+                  onUpdateAction={(updatedArgs) =>
+                    onUpdateAction(message.id, index, updatedArgs)
+                  }
                   isConfirmed={message.isConfirmed}
                   isExpired={message.isExpired}
                 />
