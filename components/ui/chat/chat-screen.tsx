@@ -33,8 +33,8 @@ import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { ChatInput } from "./chat-input";
 import { DaySeparator } from "./day-seperator";
 //import { LoadingBubble } from "./loading-bubble";
-//import { LoadingBubble } from "./loading-bubble-liquid";
-import { LoadingBubble } from "./loading-bubble-shimmer";
+import { LoadingBubble } from "./loading-bubble-liquid";
+//import { LoadingBubble } from "./loading-bubble-shimmer";
 
 import { MessageBubble } from "./message-bubble";
 import { Habit } from "@/types/habits";
