@@ -9,6 +9,7 @@ import { recordGeminiUsage } from "./dev-util-token-monitor";
 import { RouterTools } from './AI-utils/router-tools';
 import { TaskTools, HabitTools, EventTools, TimerTools, TaxonomyTools, GeneralTools, AllTools } from './AI-utils/tool-def-buckets';
 import { AgentState } from "@/types/agent-state";
+import { AgentPersona, getRandomProgressText } from "./AI-utils/agent-progess-persona";
 
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_STT_API_KEY//Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
 const HF_TOKEN = process.env.EXPO_PUBLIC_HUGGING_FACE_API_TOKEN;
@@ -435,15 +436,15 @@ const executeRouterNode = async (transcript: string): Promise<{ domain: string, 
   console.log("[DAG] Node 2: ROUTER (Selecting Tool Bucket)...");
 
   globalTranscript = transcript;
-  let selectedDomain = "routeToMultiDomain";
-  let selectedBucket = AllTools;
+  let requiredDomains: string[] = ["routeToGeneral"];
+  let selectedTools: any[] = [];
   try {
     // We use a stateless generation call for the Router, not the chat session
     const routerResponse = await gemini_ai.models.generateContent({
       model: "gemini-2.5-flash", // Fast/Cheap model for Pass 1
       contents: [{ role: "user", parts: [{ text: transcript }] }],
       config: {
-        systemInstruction: "You are an AI router. Analyze the user's prompt and call the single most appropriate routing tool. Do not answer the prompt directly.",
+        systemInstruction: "You are an AI routing assistant. Analyze the prompt and use the analyzeIntent tool to return an array of ALL domains necessary to fulfill the request.",
         tools: [{ functionDeclarations: RouterTools }],
         // In newer Gemini SDKs, this forces it to use a tool
         toolConfig: { functionCallingConfig: { mode: FunctionCallingConfigMode.ANY } }
@@ -457,44 +458,121 @@ const executeRouterNode = async (transcript: string): Promise<{ domain: string, 
     console.log("[DAG] Node 2:FULL RESPONSE", routerResponse)
 
     const routeCall = routerResponse.functionCalls?.[0];
-
-    if (routeCall) {
-      if (routeCall.name) {
-        selectedDomain = routeCall.name;
-        console.log(`[DAG] Node 2 Complete. Selected Route: ${selectedDomain}`);
-      }
-      else {
-        console.warn("[DAG] Node 2 Failed: routeCall.name was UNDEFINED, failed to select specific Domain, defaulting to MultiDomain.");
-      }
-
-      // Map the route to the specific tools
-      switch (selectedDomain) {
-        case "routeToTasks": selectedBucket = [...TaskTools, ...GeneralTools]; break;
-        case "routeToHabits": selectedBucket = [...HabitTools, ...GeneralTools]; break;
-        case "routeToEvents": selectedBucket = [...EventTools, ...GeneralTools]; break;
-        case "routeToTimers": selectedBucket = [...TimerTools, ...GeneralTools]; break;
-        case "routeToTaxonomy": selectedBucket = [...TaxonomyTools, ...GeneralTools]; break;
-        case "routeToMultiDomain":
-        default:
-          selectedBucket = AllTools;
-          break;
-      }
+    /* 
+        if (routeCall) {
+          if (routeCall.name) {
+            selectedDomain = routeCall.name;
+            console.log(`[DAG] Node 2 Complete. Selected Route: ${selectedDomain}`);
+          }
+          else {
+            console.warn("[DAG] Node 2 Failed: routeCall.name was UNDEFINED, failed to select specific Domain, defaulting to MultiDomain.");
+          }
+    
+          // Map the route to the specific tools
+          switch (selectedDomain) {
+            case "routeToTasks": selectedBucket = [...TaskTools, ...GeneralTools]; break;
+            case "routeToHabits": selectedBucket = [...HabitTools, ...GeneralTools]; break;
+            case "routeToEvents": selectedBucket = [...EventTools, ...GeneralTools]; break;
+            case "routeToTimers": selectedBucket = [...TimerTools, ...GeneralTools]; break;
+            case "routeToTaxonomy": selectedBucket = [...TaxonomyTools, ...GeneralTools]; break;
+            case "routeToMultiDomain":
+            default:
+              selectedBucket = AllTools;
+              break;
+          }
+        } else {
+    
+          console.warn("[DAG] Node 2 Failed: Router failed to select a tool, defaulting to MultiDomainTool.");
+          console.log("=========================================================");
+        }
+      } catch (routeError) {
+    
+        console.error("[DAG] Node 2 Failed: Router Pass Failed, falling back to all tools:", routeError);
+        console.log("=========================================================");
+      } */
+    if (routeCall && routeCall.name === "analyzeIntent" && Array.isArray(routeCall.args?.requiredDomains)) {
+      console.log(`[DAG] Node 2: Selected Domains: ${routeCall.args}`);
+      requiredDomains = routeCall.args.requiredDomains as string[];
+      console.log(`[DAG] Router Reasoning: ${routeCall.args.reasoning}`);
+      console.log(`[DAG] Router Selected Domains:`, requiredDomains);
     } else {
-
-      console.warn("[DAG] Node 2 Failed: Router failed to select a tool, defaulting to MultiDomainTool.");
-      console.log("=========================================================");
+      console.warn("[DAG] Router failed to parse domains, falling back to all tools.");
+      // Fallback: If it fails, load everything just to be safe
+      requiredDomains = ["routeToTasks", "routeToHabits", "routeToEvents", "routeToTimers", "routeToTaxonomy", "routeToGeneral"];
     }
-  } catch (routeError) {
-
-    console.error("[DAG] Node 2 Failed: Router Pass Failed, falling back to all tools:", routeError);
-    console.log("=========================================================");
+  } catch (error) {
+    console.error("[DAG] Router execution failed:", error);
+    requiredDomains = ["routeToTasks", "routeToHabits", "routeToEvents", "routeToTimers", "routeToTaxonomy", "routeToGeneral"];
   }
 
+  // Map the array of domain strings into actual tool objects
+  if (requiredDomains.includes("routeToTasks")) selectedTools.push(...TaskTools);
+  if (requiredDomains.includes("routeToHabits")) selectedTools.push(...HabitTools);
+  if (requiredDomains.includes("routeToEvents")) selectedTools.push(...EventTools);
+  if (requiredDomains.includes("routeToTimers")) selectedTools.push(...TimerTools);
+  if (requiredDomains.includes("routeToTaxonomy")) selectedTools.push(...TaxonomyTools);
+
+  // Always include general tools (like search, date checking, etc.)
+  selectedTools.push(...GeneralTools);
+
+  // Deduplicate tools just in case a tool accidentally exists in multiple buckets
+  // (This is a good safety net for token counting)
+  const uniqueTools = Array.from(new Map(selectedTools.map(tool => [tool.name, tool])).values());
+
   console.log("=========================================================");
-  return { domain: selectedDomain, tools: selectedBucket };
+  return { domain: requiredDomains.join(", "), tools: uniqueTools };
 };
 
-const executeActionNode = async (state: AgentState, context: any): Promise<Partial<AgentState>> => {
+const executeChecklistDeductionNode = async (
+  currentChecklist: string[],
+  executedCalls: any[]
+): Promise<string[]> => {
+  // If the checklist is empty or no tools were called, nothing to deduce.
+  if (currentChecklist.length === 0 || executedCalls.length === 0) return currentChecklist;
+
+  console.log("=========================================================");
+  console.log("[DAG] Micro-Node: DEDUCING CHECKLIST PROGRESS...");
+
+  const deductionPrompt = `
+  You are a state manager for an AI agent. 
+  The agent had this remaining checklist of tasks to complete:
+  ${JSON.stringify(currentChecklist)}
+
+  The agent just executed these tools:
+  ${JSON.stringify(executedCalls)}
+
+  Compare the executed tools against the checklist. Remove any items from the checklist that have been clearly fulfilled by the executed tools.
+  CRITICAL: If a tool execution contains a status of "error", DO NOT remove its corresponding item from the checklist.
+  Return the REMAINING checklist items as a JSON array of strings. If all items are complete, return an empty array [].
+  `;
+
+  try {
+    const response = await gemini_ai.models.generateContent({
+      model: "gemini-2.5-flash-lite", // Extremely fast/cheap micro-call
+      contents: [{ role: "user", parts: [{ text: deductionPrompt }] }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "ARRAY",
+          items: { type: "STRING" },
+          description: "The remaining, unfulfilled tasks."
+        }
+      }
+    });
+
+    const remainingChecklist = JSON.parse(response.text || "[]");
+    console.log(`[DAG] Checklist Updated:`, remainingChecklist);
+    return remainingChecklist;
+  } catch (error) {
+    console.warn("[DAG] Checklist Deduction Failed, falling back to naive pop:", error);
+    // Safe fallback just in case the API glitches
+    let fallbackChecklist = [...currentChecklist];
+    fallbackChecklist.shift();
+    return fallbackChecklist;
+  }
+};
+
+const executeActionNode = async (state: AgentState, context: any, onProgress?: (status: string) => void): Promise<Partial<AgentState>> => {
   console.log("=========================================================");
   console.log("[DAG] Node 3: EXECUTOR (Running Tools)...");
   console.log("_________________________________________________________");
@@ -518,22 +596,59 @@ const executeActionNode = async (state: AgentState, context: any): Promise<Parti
 
   // 1. Sort calls into Silent vs Confirmation
   for (const call of currentCalls) {
+    //  Announce the specific tool before we execute it!
+    if (call.name.toLowerCase().includes("task")) onProgress?.(getRandomProgressText(AgentPersona.ACTION_TASK));
+    else if (call.name.toLowerCase().includes("habit")) onProgress?.(getRandomProgressText(AgentPersona.ACTION_HABIT));
+    else if (call.name.toLowerCase().includes("category")) onProgress?.(getRandomProgressText(AgentPersona.ACTION_CATEGORY));
+    else if (call.name.toLowerCase().includes("tag")) onProgress?.(getRandomProgressText(AgentPersona.ACTION_TAG));
+    else if (call.name.toLowerCase().includes("search")) onProgress?.(getRandomProgressText(AgentPersona.ACTION_SEARCH));
+
     if (SilentHandlerList.includes(call.name) || call.args?.isPrerequisite === true) {
       console.log(`[Silent-Agent] Executing ${call.name}...`);
-      const data = await ActionRegistry[call.name].execute(call.args, context);
-      const formattedData = typeof data === 'object' && data !== null ? data : { result: data };
-      toolResponsesForNextTurn.push({ functionResponse: { name: call.name, response: formattedData } });
+      try {
+        const data = await ActionRegistry[call.name].execute(call.args, context);
+        const formattedData = typeof data === 'object' && data !== null ? data : { result: data };
+        toolResponsesForNextTurn.push({ functionResponse: { name: call.name, response: formattedData } });
+      } catch (error: any) {
+        console.error(`[DAG] Error executing ${call.name}:`, error);
+
+        // THE MAGIC: Feed the error directly back to the LLM's context window
+        toolResponsesForNextTurn.push({
+          functionResponse: {
+            name: call.name,
+            response: {
+              "error": {
+                errorMessage: error.message || "Database constraint failed.",
+                systemInstruction: "CRITICAL: The tool failed. Apologize to the user, explain this specific error briefly, and ask them how they want to proceed (e.g., pick a different name)."
+              }
+            }
+          }
+        });
+      }
     } else {
       newConfirmationCalls.push(call);
     }
   }
 
-  //! 2. VERY BASIC Checklist cross-referencing (We can make this smarter later)
-  // !For now, if we executed tools, we assume we knocked items off the list.
-  let remainingChecklist = [...state.checklist];
-  if (newConfirmationCalls.length > 0 && remainingChecklist.length > 0) {
-    remainingChecklist.shift();
-  }
+  /*   //! 2. VERY BASIC Checklist cross-referencing (We can make this smarter later)
+    // !For now, if we executed tools, we assume we knocked items off the list.
+    let remainingChecklist = [...state.checklist];
+    if (newConfirmationCalls.length > 0 && remainingChecklist.length > 0) {
+      remainingChecklist.shift();
+    } */
+
+  // ==========================================
+  // REPLACED: Smart Checklist Deduction
+  // ==========================================
+  // We feed ALL executed tools (both silent and UI confirmations) to the deduction node
+  console.log("[DAG] Node 3: Intial Checklist:", state.checklist);
+  const allExecutedToolsForDeduction = [...currentCalls];
+  const remainingChecklist = await executeChecklistDeductionNode(
+    state.checklist,
+    allExecutedToolsForDeduction
+  );
+  console.log("[DAG] Node 3:  Updated Checklist:", remainingChecklist);
+
   console.log("_________________________________________________________");
   console.log("[DAG] Node 3: Results", {
     accumulatedConfirmationCalls: [...state.accumulatedConfirmationCalls, ...newConfirmationCalls],
@@ -554,7 +669,8 @@ const executeActionNode = async (state: AgentState, context: any): Promise<Parti
   };
 };
 
-export const processCommandAgentic = async (transcript: string, context: any) => {
+
+export const processCommandAgentic = async (transcript: string, context: any, onProgress?: (status: string) => void) => {
   // 1. Initialize State
   let state: AgentState = {
     transcript,
@@ -569,12 +685,14 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
   try {
     // 2. Run Planner (Only if prompt looks complex, otherwise skip to save tokens)
     if (transcript.includes("and") || transcript.includes(",")) {
+      onProgress?.(getRandomProgressText(AgentPersona.PLANNING));
       state.checklist = await executePlannerNode(state.transcript);
     } else {
       state.checklist = [state.transcript];
     }
 
     // 3. Run Router
+    onProgress?.(getRandomProgressText(AgentPersona.ROUTING));
     const { domain, tools } = await executeRouterNode(state.transcript);
     state.selectedDomain = domain;
     state.selectedTools = tools;
@@ -584,9 +702,10 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
     console.log("[DAG] Node Main: State:", JSON.stringify({ ...state, selectedTools: state.selectedDomain }));
     console.log("_________________________________________________________");
     let safetyCounter = 0;
-    while (safetyCounter < 5) {
+    while (safetyCounter < 10) {
       // Run the Executor
-      const nodeResult = await executeActionNode(state, context);
+      onProgress?.("Executing actions ")
+      const nodeResult = await executeActionNode(state, context, onProgress);
 
       // Mutate State
       state = { ...state, ...nodeResult };
@@ -594,10 +713,12 @@ export const processCommandAgentic = async (transcript: string, context: any) =>
       // THE CONDITIONAL EDGE: Are we done?
       if (state.chatHistory.length > 0) {
         // We have silent DB results to feed back to the AI. Loop again.
+        onProgress?.(getRandomProgressText(AgentPersona.EVALUATING));
         console.log("[DAG] Edge: Silent tools executed, looping back to Executor...");
       }
       else if (state.checklist.length > 0 && state.accumulatedConfirmationCalls.length === 0) {
         // TUNNEL VISION DETECTED! The AI stopped, but the checklist isn't empty.
+        onProgress?.(getRandomProgressText(AgentPersona.EVALUATING));
         console.log(`[DAG] Edge: Tunnel Vision detected! Forcing AI to complete: ${state.checklist}`);
 
         // Jolt the AI with a strict system override

@@ -32,13 +32,19 @@ import { injectDaySeparators } from "@/utils/chat-utils";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { ChatInput } from "./chat-input";
 import { DaySeparator } from "./day-seperator";
-import { LoadingBubble } from "./loading-bubble";
+//import { LoadingBubble } from "./loading-bubble";
+//import { LoadingBubble } from "./loading-bubble-liquid";
+import { LoadingBubble } from "./loading-bubble-shimmer";
+
 import { MessageBubble } from "./message-bubble";
 import { Habit } from "@/types/habits";
 import { Task } from "@/types/task";
 import { CalendarEvent } from "@/types/calendar";
 import { Category } from "@/types/category";
-import { ta } from "date-fns/locale";
+import {
+  AgentPersona,
+  getRandomProgressText,
+} from "@/utils/AI-utils/agent-progess-persona";
 
 interface Props {
   visible: boolean;
@@ -118,6 +124,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     getTagUsageForAll,
   };
   const chatItems = useMemo(() => injectDaySeparators(messages), [messages]);
+  const [agentProgress, setAgentProgress] = useState<string | null>(null);
   //const chatItems = injectDaySeparators(messages);
   //console.log(chatItems.map((m) => m.id));
   useEffect(() => {
@@ -266,7 +273,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   // 1. Handle sending new commands
   const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
-
     // Add User Message
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -278,17 +284,21 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     };
     await addMessage(userMsg);
     //setMessages((prev) => [userMsg, ...prev]); // Inverted list
-
+    setAgentProgress(getRandomProgressText(AgentPersona.WAKING_UP));
     setIsThinking(true);
 
     try {
-      const { response, calls } = await processCommandAgentic(text, {
-        ...curatedContext,
-        setTitle,
-        start,
-        stop,
-        navigation,
-      });
+      const { response, calls } = await processCommandAgentic(
+        text,
+        {
+          ...curatedContext,
+          setTitle,
+          start,
+          stop,
+          navigation,
+        },
+        (status) => setAgentProgress(status),
+      );
 
       console.log("Final Accumulated Function Calls:", calls);
       const aiMsg: Message = {
@@ -325,6 +335,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       // Handle error UI
     } finally {
       setIsThinking(false);
+      setAgentProgress(null);
     }
   };
 
@@ -482,6 +493,31 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     </View>
   );
 
+  //! TEMP FUCNTION FOR ANIMATION TESTING
+
+  // Temporary function to test the 3D Text Transitioner
+  const runAnimationTest = async () => {
+    const dummyStates = [
+      "Waking up the agent...",
+      "Analyzing complex request...",
+      "Choosing weapons...",
+      "Scouring the database...",
+      "Spraying in Consistency...",
+      "Double-checking the math...",
+    ];
+
+    for (let i = 0; i < dummyStates.length; i++) {
+      // Set the text to trigger the 3D spring
+      setAgentProgress(dummyStates[i]);
+
+      // Wait for 2.5 seconds before triggering the next one
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+    }
+
+    // Optional: clear it at the end to simulate completion
+    setAgentProgress(null);
+  };
+
   useEffect(() => {
     messageRef.current = messages;
   }, [messages]);
@@ -519,12 +555,17 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
               />
             );
           }}
-          ListHeaderComponent={
+          /*  ListHeaderComponent={
             isThinking || isLoading ? (
-              <LoadingBubble isUser={isLoading} />
+              <LoadingBubble isUser={isLoading} agentProgress={agentProgress} />
             ) : null
-          } // "Thinking" at the very bottom
-          //ListHeaderComponentStyle={isLoading?{ alignItems: "right"}:{alignItems: "left"}}
+          }  */
+          ListHeaderComponent={
+            <LoadingBubble
+              isUser={false}
+              agentProgress={"agentic Progess is Key"}
+            />
+          }
           contentContainerStyle={{ paddingVertical: 20 }}
         />
 
@@ -540,7 +581,8 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
             styles.button,
             { transform: [{ scale: pressed ? 0.75 : 1 }] },
           ]}
-          onPress={onDismiss}
+          //onPress={onDismiss}
+          onPress={runAnimationTest}
         >
           <Ionicons size={24} name="close-outline" color="#fff"></Ionicons>
         </Pressable>

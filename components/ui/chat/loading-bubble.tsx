@@ -1,10 +1,12 @@
+import { agenticExecutor } from "@/utils/ai-utils";
 import React, { useEffect, useRef } from "react";
-import { View, Animated, StyleSheet } from "react-native";
+import { View, Animated, StyleSheet, Text } from "react-native";
 
 interface Props {
   isUser?: boolean;
+  agentProgress?: string | null;
 }
-export const LoadingBubble = ({ isUser }: Props) => {
+export const LoadingBubble = ({ isUser, agentProgress }: Props) => {
   const dot1 = useRef(new Animated.Value(0.3)).current;
   const dot2 = useRef(new Animated.Value(0.3)).current;
   const dot3 = useRef(new Animated.Value(0.3)).current;
@@ -33,7 +35,15 @@ export const LoadingBubble = ({ isUser }: Props) => {
   }, []);
 
   return (
-    <View style={[styles.bubble, isUser ? { alignSelf: "flex-end" } : { alignSelf: "flex-start" }]}>
+    <View
+      style={[
+        styles.bubble,
+        isUser ? { alignSelf: "flex-end" } : { alignSelf: "flex-start" },
+      ]}
+    >
+      {!isUser && agentProgress && (
+        <Text style={styles.agentProgress}>{agentProgress}</Text>
+      )}
       {[dot1, dot2, dot3].map((anim, i) => (
         <Animated.View key={i} style={[styles.dot, { opacity: anim }]} />
       ))}
@@ -48,6 +58,11 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     flexDirection: "row",
     marginLeft: 10,
+    alignItems: "center",
+  },
+  agentProgress: {
+    fontFamily: "serif",
+    fontWeight: "bold",
   },
   dot: {
     width: 8,
