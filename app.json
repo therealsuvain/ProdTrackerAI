@@ -67,7 +67,9 @@
           "androidCollapsedTitle": "Timer"
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-web-browser",
+      "expo-asset"
     ],
     "notification": {
       "icon": "./assets/images/notification-icon.png",
