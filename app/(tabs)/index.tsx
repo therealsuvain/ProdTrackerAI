@@ -61,6 +61,7 @@ import { useContext, useState } from "react";
  * TODOAdd 61 : Allow title change in chat action chips
  * TODOOptim 65 : Check for steps required to adapte date/time fields to different Timezones and day light saving time changes
  * TODOX : Confirmation Diagloue for data deletion/reseting in settings
+ * TODO : Home page search is broken right now
  *
  */
 function HomeScreenInner() {

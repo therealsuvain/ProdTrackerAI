@@ -1,7 +1,6 @@
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation } from "expo-router";
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
-
 import {
   BackHandler,
   FlatList,
@@ -27,14 +26,13 @@ import { useTasks } from "@/hooks/use-tasks";
 import { useTimer } from "@/hooks/use-timer";
 import { useVoiceInput } from "@/hooks/use-voice-input";
 import { Message } from "@/types/chat";
-import { agenticExecutor, processCommandAgentic } from "@/utils/ai-utils";
+//import { agenticExecutor, processCommandAgentic } from "@/utils/ai-utils";
+import { processCommandAgentic } from "@/utils/AI-utils/agentic-DAG-nodes/node-n-orchestrator";
+import { agenticExecutor } from "@/utils/AI-utils/agentic-DAG-nodes/node-4-final-executor";
 import { injectDaySeparators } from "@/utils/chat-utils";
 import Ionicons from "@expo/vector-icons/build/Ionicons";
 import { ChatInput } from "./chat-input";
 import { DaySeparator } from "./day-seperator";
-//import { LoadingBubble } from "./loading-bubble";
-import { LoadingBubble } from "./loading-bubble-liquid";
-//import { LoadingBubble } from "./loading-bubble-shimmer";
 
 import { MessageBubble } from "./message-bubble";
 import { Habit } from "@/types/habits";
@@ -45,6 +43,18 @@ import {
   AgentPersona,
   getRandomProgressText,
 } from "@/utils/AI-utils/agent-progess-persona";
+
+//import { LoadingBubble } from "./loading-bubble";
+//import { LoadingBubble } from "./loading-bubble-liquid";
+//import { LoadingBubble } from "./loading-bubble-shimmer";
+//import { LoadingBubble } from "./loading-bubble-radial";
+//import { LoadingBubble } from "./loading-bubble-oracle-claude";
+//import { LoadingBubble } from "./loading-bubble-warp";
+//import { LoadingBubble } from "./loading-bubble-slingshot";
+//import { LoadingBubble } from "./loading-bubble-evaporation";
+//import { LoadingBubble } from "./loading-bubble-cascade";
+import { LoadingBubble } from "./loading-bubble-split-flap";
+//import { LoadingBubble } from "./loading-bubble-split-flap-opt";
 
 interface Props {
   visible: boolean;
@@ -397,13 +407,17 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     ); */
     try {
       // B. Run the background logic
-      const response = await agenticExecutor(actions, {
-        ...curatedContext,
-        setTitle,
-        start,
-        stop,
-        navigation,
-      });
+      const response = await agenticExecutor(
+        actions,
+        {
+          ...curatedContext,
+          setTitle,
+          start,
+          stop,
+          navigation,
+        },
+        transcript,
+      );
       // C. Add Hardcoded Success Message
       const successMsg: Message = {
         id: Date.now().toString(),
@@ -499,11 +513,11 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const runAnimationTest = async () => {
     const dummyStates = [
       "Waking up the agent...",
-      "Analyzing complex request...",
+      "Analyzing complexity...",
       "Choosing weapons...",
-      "Scouring the database...",
-      "Spraying in Consistency...",
-      "Double-checking the math...",
+      "Scouring the DB...",
+      "Spraying Consistency...",
+      "Checking the math...",
     ];
 
     for (let i = 0; i < dummyStates.length; i++) {
@@ -511,7 +525,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       setAgentProgress(dummyStates[i]);
 
       // Wait for 2.5 seconds before triggering the next one
-      await new Promise((resolve) => setTimeout(resolve, 2500));
+      await new Promise((resolve) => setTimeout(resolve, 20000));
     }
 
     // Optional: clear it at the end to simulate completion
@@ -555,17 +569,14 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
               />
             );
           }}
-          /*  ListHeaderComponent={
+          ListHeaderComponent={
             isThinking || isLoading ? (
               <LoadingBubble isUser={isLoading} agentProgress={agentProgress} />
             ) : null
-          }  */
-          ListHeaderComponent={
-            <LoadingBubble
-              isUser={false}
-              agentProgress={"agentic Progess is Key"}
-            />
           }
+          /* ListHeaderComponent={
+            <LoadingBubble isUser={false} agentProgress={agentProgress} />
+          } */
           contentContainerStyle={{ paddingVertical: 20 }}
         />
 
@@ -581,8 +592,8 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
             styles.button,
             { transform: [{ scale: pressed ? 0.75 : 1 }] },
           ]}
-          //onPress={onDismiss}
-          onPress={runAnimationTest}
+          onPress={onDismiss}
+          //onPress={runAnimationTest}
         >
           <Ionicons size={24} name="close-outline" color="#fff"></Ionicons>
         </Pressable>

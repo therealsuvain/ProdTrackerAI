@@ -21,7 +21,6 @@ import {
   restartHabitAfterGoalForeground,
 } from "@/utils/habit-utils";
 import { useData } from "@/hooks/use-data";
-import { tag } from "@expo/ui/swift-ui/modifiers";
 
 interface HabitContextType {
   habits: Habit[];

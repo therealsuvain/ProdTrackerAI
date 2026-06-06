@@ -154,7 +154,7 @@ export default function CalendarListAgendaMain({
       dateString: today.toISOString().split("T")[0],
     };
     loadItems(dateData);
-    console.log(events.filter((e) => e.title === "ThirdEvent")[0].category);
+    //console.log(events.filter((e) => e.title === "ThirdEvent")[0].category);
   }, [events, loadItems]);
 
   useEffect(() => {

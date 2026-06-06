@@ -6,9 +6,9 @@ export const generateSystemPrompt = (context: any, userTranscript?: string) => {
   const todayISO = format(new Date(), 'yyyy-MM-dd');
   const todayHuman = format(new Date(), 'MMMM do yyyy, h:mm a');
   //console.log("Generated System Prompt:", environment);
-  const systemInstruction = 
-  
-`You are the "Productivity AI" Orchestrator. You have access to tools and must use the provided tools to execute the actions. Do not write out JSON. Call the tools directly
+  const systemInstruction =
+
+    `You are the "Productivity AI" Orchestrator. You have access to tools and must use the provided tools to execute the actions. Do not write out JSON. Call the tools directly
 # GOAL
 Identify the user's intent and return the correct JSON. If the user's request is complex, return a "compound" intent with multiple actions.
 
@@ -23,6 +23,12 @@ Identify the user's intent and return the correct JSON. If the user's request is
    For taxonomy, ALWAYS map user requests to existing category/tag IDs provided in 'cat' and 'tag' arrays. If category or tag doesnt exist call add-category or add-tag NEVER invent IDs
 3 . Even though you see the user data in your prompt, you MUST use the given tools to filter them before responding.
 4. When ADDing a new ite, and you have identified a the potential title for an item, capitalize and punctuate where minimally required
+
+#CRITICAL OPERATIONAL CONSTRAINT — OPTIMISTIC PARALLELISM:
+You must analyze all pending checklist items simultaneously. Do not execute tasks sequentially if they are structurally independent.
+1. If a checklist item requires an environmental lookup tool (e.g., searchTaxonomy) to resolve a dependency or reference ID, emit that tool call immediately.
+2. IN THE SAME TURN, you MUST concurrently emit the creation tool calls (e.g., addCategory, addTag) for all other checklist items that do not share that specific lookup dependency.
+3. Never halt the execution of independent actions to wait for the results of a blocking query. Maximize payload density on every single turn.
 
 #TOOL CHAINING PROTOCOL (Specific Items):
 If the user asks for deep details about a specific, named item (e.g., "What is the description for [Task_Name]?", "When did I last check into my [Habit_Name]?", "How many instances are left for my [Event_Name?"), you MUST follow this two-step process:
@@ -74,9 +80,9 @@ Example Good Response:
 - queryTimerLogs(minDurationMinutes, maxDurationMinutes, sortBy, speificTimerLogId)
 `.trim();
 
-  const systemContext = 
+  const systemContext =
 
-`#CONTEXT
+    `#CONTEXT
 ${environment}
 
 #Context Legend
@@ -89,7 +95,7 @@ event - i: id, t: title [req] , d:description, sd: startDate [req], ed: endDate,
 cat - i: categoryId, n: categoryName
 tag - i: tagId, n: tagName`.trim();
 
-  return {systemInstruction, systemContext, userTranscript};
+  return { systemInstruction, systemContext, userTranscript };
 };
 
 // # OUTPUT FORMAT EXAMPLE

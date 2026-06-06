@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   interpolate,
-  Extrapolate,
+  Extrapolation,
 } from "react-native-reanimated";
 
 interface Props {
@@ -14,7 +14,8 @@ interface Props {
 }
 
 // 🎛️ TOGGLE THIS TO TEST BOTH MASTERPIECES: "cylinder" | "spoke"
-const ANIMATION_STYLE: "cylinder" | "spoke" = "cylinder";
+//let ANIMATION_STYLE: "cylinder" | "spoke" = "spoke";
+const CYLINDER_STYLE = true;
 
 // ==========================================
 // ⚙️ THE 3D TEXT TRANSITION ENGINE
@@ -40,14 +41,14 @@ const TextTransitioner = ({ text }: { text: string }) => {
   }, [text]);
 
   const prevStyle = useAnimatedStyle(() => {
-    if (ANIMATION_STYLE === "cylinder") {
+    if (CYLINDER_STYLE) {
       // CYLINDER: Rolls straight up and flips backward
       return {
         opacity: interpolate(
           progress.value,
           [0, 0.8],
           [1, 0],
-          Extrapolate.CLAMP,
+          Extrapolation.CLAMP,
         ),
         transform: [
           { perspective: 800 },
@@ -60,29 +61,28 @@ const TextTransitioner = ({ text }: { text: string }) => {
       return {
         opacity: interpolate(
           progress.value,
-          [0, 0.8],
+          [0, 0.7],
           [1, 0],
-          Extrapolate.CLAMP,
+          Extrapolation.CLAMP,
         ),
         transform: [
-          { perspective: 800 },
-          { translateY: 50 }, // Move pivot down
-          { rotateX: `${interpolate(progress.value, [0, 1], [0, 60])}deg` },
-          { translateY: -50 }, // Move text back up
+          { translateX: -150 }, // Move pivot to the axle on the left
+          { rotateZ: `${interpolate(progress.value, [0, 1], [0, 35])}deg` }, // Rotate the wheel down
+          { translateX: 150 }, // Move back to the window
         ],
       };
     }
   });
 
   const currStyle = useAnimatedStyle(() => {
-    if (ANIMATION_STYLE === "cylinder") {
+    if (CYLINDER_STYLE) {
       // CYLINDER: Rolls up from the bottom, flipping forward into place
       return {
         opacity: interpolate(
           progress.value,
           [0.2, 1],
           [0, 1],
-          Extrapolate.CLAMP,
+          Extrapolation.CLAMP,
         ),
         transform: [
           { perspective: 800 },
@@ -95,15 +95,14 @@ const TextTransitioner = ({ text }: { text: string }) => {
       return {
         opacity: interpolate(
           progress.value,
-          [0.2, 1],
+          [0.3, 1],
           [0, 1],
-          Extrapolate.CLAMP,
+          Extrapolation.CLAMP,
         ),
         transform: [
-          { perspective: 800 },
-          { translateY: 50 }, // Move pivot down
-          { rotateX: `${interpolate(progress.value, [0, 1], [-60, 0])}deg` },
-          { translateY: -50 }, // Move text back up
+          { translateX: -150 }, // Move pivot to the axle
+          { rotateZ: `${interpolate(progress.value, [0, 1], [-35, 0])}deg` }, // Rotate wheel in from top
+          { translateX: 150 }, // Move back to the window
         ],
       };
     }

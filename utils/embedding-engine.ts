@@ -35,7 +35,7 @@ export const generateEmbedding = async (text: string, isQuery: boolean): Promise
       return [];
     }
   } catch (error) {
-console.log("WHAT THE", error)
+    console.log("WHAT THE", error)
     console.error("Network error generating embedding:", error);
     return [];
   }

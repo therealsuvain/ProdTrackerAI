@@ -1,0 +1,1078 @@
+ LOG  Cleared key: AI_TOKEN_MONITOR_STATS
+ LOG  =========================================================
+ LOG  [DAG] Node 1: PLANNER (Extracting Checklist)...
+ LOG  [DAG] Node 1:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 1:CHAT RESPONSE TEXT: ["Add new habit with TaskChcker with daily goal of 20 , category Magic", "Add new task HabitChcek with default values and tags alpha, beta, gamma", "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "Add 2 new tags , Chint and Mahajan"]
+ LOG  [DAG] Node 1:CHAT Candidates.content: {"parts": [{"text": "[\"Add new habit with TaskChcker with daily goal of 20 , category Magic\", \"Add new task HabitChcek with default values and tags alpha, beta, gamma\", \"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\", \"Add 2 new tags , Chint and Mahajan\"]"}], "role": "model"}
+ LOG  [DAG] Node 1:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "G7MjatLAEaLGjuMP9_SD0AI", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:41:49 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2222", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 70, "promptTokenCount": 194, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 187, "totalTokenCount": 451}}
+ LOG  [DAG] Checklist generated: ["Add new habit with TaskChcker with daily goal of 20 , category Magic", "Add new task HabitChcek with default values and tags alpha, beta, gamma", "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "Add 2 new tags , Chint and Mahajan"]
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [DAG] Node 2: ROUTER (Selecting Tool Bucket)...
+ LOG  AI TOKEN MONITOR from: PLANNER
+ LOG  ----------------------------
+ LOG  Request #: 1
+ LOG  Prompt Tokens: 194
+ LOG  Completion Tokens: 70
+ LOG  Total Tokens: 451
+ LOG  Avg Tokens / Request: 451.00
+ LOG  Total Tokens Used: 451
+ LOG  ----------------------------
+ LOG  [DAG] Node 2:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 2:CHAT RESPONSE TEXT: ["addHabit","addTask","addCategory","addTag"]
+ LOG  [DAG] Node 2:CHAT Candidates.content: {"parts": [{"text": "[\"addHabit\",\"addTask\",\"addCategory\",\"addTag\"]"}], "role": "model"}
+ LOG  [DAG] Node 2:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "HbMjaoXpKYXijuMP_cW5mQs", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:41:51 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2219", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 13, "promptTokenCount": 655, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 314, "totalTokenCount": 982}}
+ LOG  [DAG] Node 2: Resolved Tool Schemas ["addHabit", "addTask", "addCategory", "addTag"]
+ LOG  [DAG] Tool Names Requested by Router: ["addHabit", "addTask", "addCategory", "addTag"]
+ LOG  [DAG] Dependency Injector Complete. Final Schema Count: 6
+ LOG  [DAG] Node 2: Resolved Tool Schemas ["addHabit", "addTask", "addCategory", "addTag", "searchTaxonomy", "searchItems"]
+ LOG  =========================================================
+ LOG  _________________________________________________________
+ LOG  [DAG] Node Main: State: {"transcript":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan","checklist":[{"id":"chk-0","intent":"Add new habit with TaskChcker with daily goal of 20 , category Magic","status":"PENDING"},{"id":"chk-1","intent":"Add new task HabitChcek with default values and tags alpha, beta, gamma","status":"PENDING"},{"id":"chk-2","intent":"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors","status":"PENDING"},{"id":"chk-3","intent":"Add 2 new tags , Chint and Mahajan","status":"PENDING"}],"selectedDomain":"addHabit, addTask, addCategory, addTag","selectedTools":"addHabit, addTask, addCategory, addTag","chatHistory":[],"pendingTurnPayload":[],"toolResponses":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  _________________________________________________________
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan","checklist":[{"id":"chk-0","intent":"Add new habit with TaskChcker with daily goal of 20 , category Magic","status":"PENDING"},{"id":"chk-1","intent":"Add new task HabitChcek with default values and tags alpha, beta, gamma","status":"PENDING"},{"id":"chk-2","intent":"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors","status":"PENDING"},{"id":"chk-3","intent":"Add 2 new tags , Chint and Mahajan","status":"PENDING"}],"selectedDomain":"addHabit, addTask, addCategory, addTag","selectedTools":"addHabit, addTask, addCategory, addTag","chatHistory":[],"pendingTurnPayload":[],"toolResponses":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  _________________________________________________________
+ LOG  [Router] Switching domain from null to addHabit, addTask, addCategory, addTag. Reloading tools.
+ LOG  AI TOKEN MONITOR from: ROUTER
+ LOG  ----------------------------
+ LOG  Request #: 2
+ LOG  Prompt Tokens: 655
+ LOG  Completion Tokens: 13
+ LOG  Total Tokens: 982
+ LOG  Avg Tokens / Request: 716.50
+ LOG  Total Tokens Used: 1433
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "ILMjasiZBKbojuMP5OOZoQo", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:41:55 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=3976", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"promptTokenCount": 2400, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 467, "totalTokenCount": 2867}}
+ LOG  [DAG] Node 3: Received Funtion Calls: []
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: []
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "PENDING"}]
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "PENDING"}]
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [], "chatHistory": [], "finalTextResponse": undefined, "history": [{"parts": [Array], "role": "user"}, {"parts": undefined, "role": "model"}]}
+ LOG  =========================================================
+ LOG  [DAG] Edge: Tunnel Vision detected! Forcing AI to complete: [object Object],[object Object],[object Object],[object Object]
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan","checklist":[{"id":"chk-0","intent":"Add new habit with TaskChcker with daily goal of 20 , category Magic","status":"PENDING"},{"id":"chk-1","intent":"Add new task HabitChcek with default values and tags alpha, beta, gamma","status":"PENDING"},{"id":"chk-2","intent":"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors","status":"PENDING"},{"id":"chk-3","intent":"Add 2 new tags , Chint and Mahajan","status":"PENDING"}],"selectedDomain":"addHabit, addTask, addCategory, addTag","selectedTools":"addHabit, addTask, addCategory, addTag","chatHistory":[{"role":"user","parts":[{"text":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan"}]},{"role":"model"}],"pendingTurnPayload":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]. Call the required tools now."}],"toolResponses":[],"accumulatedConfirmationCalls":[]}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR from: Action EXECUTOR
+ LOG  ----------------------------
+ LOG  Request #: 3
+ LOG  Prompt Tokens: 2400
+ LOG  Completion Tokens: 0
+ LOG  Total Tokens: 2867
+ LOG  Avg Tokens / Request: 1433.33
+ LOG  Total Tokens Used: 4300
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS [{"args": {"queries": [Array], "type": "category"}, "name": "searchTaxonomy"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "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"}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "JLMjatGmDvLcjuMPoPvKcA", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:41:59 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=3235", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 20, "promptTokenCount": 2474, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 472, "totalTokenCount": 2966}}
+ LOG  [DAG] Node 3: Received Funtion Calls: [
+  {
+    "name": "searchTaxonomy",
+    "args": {
+      "queries": [
+        "Magic"
+      ],
+      "type": "category"
+    }
+  }
+]
+ LOG  [Silent-Agent] Executing searchTaxonomy...
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: []
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "PENDING"}]
+ LOG  =========================================================
+ LOG  [DAG] Micro-Node: DEDUCING CHECKLIST PROGRESS...
+ LOG  AI TOKEN MONITOR from: Action EXECUTOR
+ LOG  ----------------------------
+ LOG  Request #: 4
+ LOG  Prompt Tokens: 2474
+ LOG  Completion Tokens: 20
+ LOG  Total Tokens: 2966
+ LOG  Avg Tokens / Request: 1816.50
+ LOG  Total Tokens Used: 7266
+ LOG  ----------------------------
+ LOG  [DAG] Checklist Updated: []
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "PENDING"}]
+ LOG  _________________________________________________________
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [], "chatHistory": [{"functionResponse": [Object]}], "finalTextResponse": undefined, "history": [{"parts": [Array], "role": "user"}, {"parts": undefined, "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Edge: Feeding DB results back into the next loop...
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan","checklist":[{"id":"chk-0","intent":"Add new habit with TaskChcker with daily goal of 20 , category Magic","status":"PENDING"},{"id":"chk-1","intent":"Add new task HabitChcek with default values and tags alpha, beta, gamma","status":"PENDING"},{"id":"chk-2","intent":"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors","status":"PENDING"},{"id":"chk-3","intent":"Add 2 new tags , Chint and Mahajan","status":"PENDING"}],"selectedDomain":"addHabit, addTask, addCategory, addTag","selectedTools":"addHabit, addTask, addCategory, addTag","chatHistory":[{"role":"user","parts":[{"text":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan"}]},{"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]. Call the required tools now."}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["Magic"],"type":"category"}}}],"role":"model"}],"pendingTurnPayload":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"Magic":[{"type":"category","id":"a2210967-6795-4f96-ae27-133307b6de5a","name":"magic","score":2.220446049250313e-16}]}}}}],"toolResponses":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"Magic":[{"type":"category","id":"a2210967-6795-4f96-ae27-133307b6de5a","name":"magic","score":2.220446049250313e-16}]}}}}],"accumulatedConfirmationCalls":[]}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR from: Checklist DEDUCER
+ LOG  ----------------------------
+ LOG  Request #: 5
+ LOG  Prompt Tokens: 276
+ LOG  Completion Tokens: 1
+ LOG  Total Tokens: 619
+ LOG  Avg Tokens / Request: 1577.00
+ LOG  Total Tokens Used: 7885
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS [{"args": {"category": "a2210967-6795-4f96-ae27-133307b6de5a", "frequency": "daily", "goal": 20, "title": "TaskChcker"}, "name": "addHabit"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "CpoCAQw51sf33NWxfOkmzhWxLoRACZAV+7Vjaa3vf/fZya+Zgan+QhamrvD3Fl9YHz9wMuQBT7/1Pmy2+fLhvuvVDpr1jJXWWiZB4NXgqAalHYAUxjsoOZVARa7/Pqawm8flb8p3VMxe7A94GQl81jX6ihMvrtAGOEwH/IVwIUsoz9aE3Vu5IiclExOa1vMona7jVzeWS9cqVCj71vDWSvRnPXdxFWZBEesOZclYjzKRFntzJNyyzpsxIpIExPQz4Ge5z9yu6nW9MLiFHrWscUKIcuqJW+Ho1NS/eAmTXhnHA0vjHaAwxWSI0pfMBizD6SEw/iVGntAil/oCSCw/R2wmFZSZucUHJiYfeGkvrLz5IzC4KIAFdKQNi8fj"}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "KrMjauaOGMW9qfkP3bTN-AI", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:42:04 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1809", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"cacheTokensDetails": [[Object]], "cachedContentTokenCount": 1516, "candidatesTokenCount": 66, "promptTokenCount": 2589, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 93, "totalTokenCount": 2748}}
+ LOG  [DAG] Node 3: Received Funtion Calls: [
+  {
+    "name": "addHabit",
+    "args": {
+      "frequency": "daily",
+      "title": "TaskChcker",
+      "category": "a2210967-6795-4f96-ae27-133307b6de5a",
+      "goal": 20
+    }
+  }
+]
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: [
+  {
+    "name": "addHabit",
+    "args": {
+      "frequency": "daily",
+      "title": "TaskChcker",
+      "category": "a2210967-6795-4f96-ae27-133307b6de5a",
+      "goal": 20
+    }
+  }
+]
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "PENDING"}]
+ LOG  =========================================================
+ LOG  [DAG] Micro-Node: DEDUCING CHECKLIST PROGRESS...
+ LOG  AI TOKEN MONITOR from: Action EXECUTOR
+ LOG  ----------------------------
+ LOG  Request #: 6
+ LOG  Prompt Tokens: 2589
+ LOG  Completion Tokens: 66
+ LOG  Total Tokens: 2748
+ LOG  Avg Tokens / Request: 1772.17
+ LOG  Total Tokens Used: 10633
+ LOG  ----------------------------
+ LOG  [DAG] Checklist Updated: []
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "PENDING"}]
+ LOG  _________________________________________________________
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [{"args": [Object], "name": "addHabit"}], "chatHistory": [], "finalTextResponse": undefined, "history": [{"parts": [Array], "role": "user"}, {"parts": undefined, "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Edge: Partial completion detected. Injecting text nudge part.
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan","checklist":[{"id":"chk-0","intent":"Add new habit with TaskChcker with daily goal of 20 , category Magic","status":"PENDING"},{"id":"chk-1","intent":"Add new task HabitChcek with default values and tags alpha, beta, gamma","status":"PENDING"},{"id":"chk-2","intent":"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors","status":"PENDING"},{"id":"chk-3","intent":"Add 2 new tags , Chint and Mahajan","status":"PENDING"}],"selectedDomain":"addHabit, addTask, addCategory, addTag","selectedTools":"addHabit, addTask, addCategory, addTag","chatHistory":[{"role":"user","parts":[{"text":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan"}]},{"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]. Call the required tools now."}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["Magic"],"type":"category"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"Magic":[{"type":"category","id":"a2210967-6795-4f96-ae27-133307b6de5a","name":"magic","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}}}],"role":"model"}],"pendingTurnPayload":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]"}],"toolResponses":[],"accumulatedConfirmationCalls":[{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}}]}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR from: Checklist DEDUCER
+ LOG  ----------------------------
+ LOG  Request #: 7
+ LOG  Prompt Tokens: 319
+ LOG  Completion Tokens: 1
+ LOG  Total Tokens: 833
+ LOG  Avg Tokens / Request: 1638.00
+ LOG  Total Tokens Used: 11466
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS [{"args": {"queries": [Array], "type": "tag"}, "name": "searchTaxonomy"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "CuAIAQw51sdHINQFYRXviFT+MZVKXvJtYzJ6U3e5FUWVXIn7v5oKiyu5A/v7on8oeVNgQeK1VxobEHrDcVTd91hCb90tkyYtYMH0gd9GHNzJjJSK1CE6uji7EnPSp6c2rwVx9Z+b//e/ZI9rrkIGAgn3uhypBWBvNlD8S8yk82gIEwKA3X0XOely0dnuhxgjHD42KpBzxaC2ET/5LotbicX8zZlk9v/gt8qblsS1OPrXpeMCF3B1rPsXgkUvjtlJGhJm0af5S5ZeScdr7vGwg9Ffr5Rw7SyMUnJiDgBWCI1RjAHpvpBOUeYHBEP+6O+ez2f+XyhLjwtBqt3lKRl7znaToZJdo50DH1T5/UsIGTftY5NoG2NN06GiDpRaDT4bNjz4mS1CFmZ2QhUyBXFkGjEcrx9nrTcGCMeH9g5HBF4Dr4Y5oYUjDKSnNxWhixKMQET1wyNpwRYhkOJAyPamEA2QHbZhkBZP5QqO1mUHJ/OG17KftuJjguG7GRbypGzJrKqPCnbxs1icVz5X0cyYpAAZQZBVrwieGIk2we1ZRKjFq8OdjEjwuNbzSMlneWPIrzBNS2Jnal39rW+xnAHv2/SANULVRLf8r0BM61zN9MGpq0lkHUQREC7S2+DWwgJbEXyP87o54CJ6jfJ3P29IpOWvlFVV1H7rvVo27LAwLbefVhP04FdLVNeLQhmf/39RQTflSCSDE6GF2tFGfRXUMYjqxzzp3G4+3rzXpSp0seCbmcE4uQgiZkK9ck38RzGvHFCtDQz0hKH+jGPjP9RNC9yVg6Cwp5rJTO5//T7EwyArd/lE3cpOOKghSAKQ7De2OAI4RJ+Bwc3i37g5+L+f78MLkFwyWWQYSDfKDArNkKP/YIhS6N/tCQIMwMTmsbzdlekG5OJNlpJ0h4/lCFBUaB/4DLkmVM9PiH/dj1ypAFGpYl28vdhcEc46HwhIuDLEo8DyfyMaKlSRQRY1E+4DT0bLAAvkTgqRx2eM5dJUUBE/JAeUPPL0TZ1kZifZTeH75A2Nb6nn+40dsACE5G/JZ5Uy/vb75mScaWQSJl/dCNB7DQERBBOQOiGF+BWlwyG6o3lYYHmAg7KfZVMcQ3vjAs6LCmgC094YR2BJCkd68AN5ZcWqzGcq/rq2YHVMZK+xWe2iBbfPMG/zlQyv7wb6YP8X8LSqAhoq578HViW7VuYQcNC0r/mVIgVFWbjCICAJjuVtwl1vO1HI8nRBi9rA8oevD1TvZ79EINcQYTTRyhrbS+D0CyzxPEUYivBiBlfHRtuPKqwg9GPJBvITLyOt79gwGHQS/rCqt0c0hbrMz44mJSI4HDbSei5xF2tcpzBinyPWIH8d5MebL/BcRcMvcRg32Nrur1rnT5Ps6Kemm9CHmOME2NEc4CWfx/APOd6wBtUyKFW1ouurPlwUp0RSmkBl5SGtQ1gTdw6RBX2jVyOWgA3s8vWT/qOBvCNTLFD1Zj/8bLgxd8PlLpzITNSSBTfefg=="}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "MLMjarDSAamVjuMP0peFmAw", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:42:10 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2270", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 26, "promptTokenCount": 2801, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 322, "totalTokenCount": 3149}}
+ LOG  [DAG] Node 3: Received Funtion Calls: [
+  {
+    "name": "searchTaxonomy",
+    "args": {
+      "queries": [
+        "alpha",
+        "beta",
+        "gamma"
+      ],
+      "type": "tag"
+    }
+  }
+]
+ LOG  [Silent-Agent] Executing searchTaxonomy...
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: []
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "PENDING"}]
+ LOG  =========================================================
+ LOG  [DAG] Micro-Node: DEDUCING CHECKLIST PROGRESS...
+ LOG  AI TOKEN MONITOR from: Action EXECUTOR
+ LOG  ----------------------------
+ LOG  Request #: 8
+ LOG  Prompt Tokens: 2801
+ LOG  Completion Tokens: 26
+ LOG  Total Tokens: 3149
+ LOG  Avg Tokens / Request: 1826.88
+ LOG  Total Tokens Used: 14615
+ LOG  ----------------------------
+ LOG  [DAG] Checklist Updated: []
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "PENDING"}]
+ LOG  _________________________________________________________
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [{"args": [Object], "name": "addHabit"}], "chatHistory": [{"functionResponse": [Object]}], "finalTextResponse": undefined, "history": [{"parts": [Array], "role": "user"}, {"parts": undefined, "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addHabit'
+ LOG  [DAG] Edge: Feeding DB results back into the next loop...
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan","checklist":[{"id":"chk-0","intent":"Add new habit with TaskChcker with daily goal of 20 , category Magic","status":"PENDING"},{"id":"chk-1","intent":"Add new task HabitChcek with default values and tags alpha, beta, gamma","status":"PENDING"},{"id":"chk-2","intent":"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors","status":"PENDING"},{"id":"chk-3","intent":"Add 2 new tags , Chint and Mahajan","status":"PENDING"}],"selectedDomain":"addHabit, addTask, addCategory, addTag","selectedTools":"addHabit, addTask, addCategory, addTag","chatHistory":[{"role":"user","parts":[{"text":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan"}]},{"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]. Call the required tools now."}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["Magic"],"type":"category"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"Magic":[{"type":"category","id":"a2210967-6795-4f96-ae27-133307b6de5a","name":"magic","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}}}],"role":"model"},{"role":"user","parts":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]"}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["alpha","beta","gamma"],"type":"tag"}}}],"role":"model"}],"pendingTurnPayload":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"alpha":[{"type":"tag","id":"572f740f-da5b-437c-b6d0-7fb0a5888f2f","name":"alpha","score":2.220446049250313e-16}],"beta":[{"type":"tag","id":"bef14624-9af6-4a88-8a65-9391d7c0f869","name":"beta","score":2.220446049250313e-16},{"type":"tag","id":"a33af90f-dc6f-40ca-941b-5366a4faf177","name":"Theta","score":0.26}],"gamma":[{"type":"tag","id":"c59cf11d-13e8-4723-8e7e-60dff29cddb5","name":"gamma","score":2.220446049250313e-16}]}}}}],"toolResponses":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"alpha":[{"type":"tag","id":"572f740f-da5b-437c-b6d0-7fb0a5888f2f","name":"alpha","score":2.220446049250313e-16}],"beta":[{"type":"tag","id":"bef14624-9af6-4a88-8a65-9391d7c0f869","name":"beta","score":2.220446049250313e-16},{"type":"tag","id":"a33af90f-dc6f-40ca-941b-5366a4faf177","name":"Theta","score":0.26}],"gamma":[{"type":"tag","id":"c59cf11d-13e8-4723-8e7e-60dff29cddb5","name":"gamma","score":2.220446049250313e-16}]}}}}],"accumulatedConfirmationCalls":[{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}}]}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR from: Checklist DEDUCER
+ LOG  ----------------------------
+ LOG  Request #: 9
+ LOG  Prompt Tokens: 280
+ LOG  Completion Tokens: 1
+ LOG  Total Tokens: 722
+ LOG  Avg Tokens / Request: 1704.11
+ LOG  Total Tokens Used: 15337
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS [{"args": {"dueDate": "2026-06-06", "priority": "medium", "tags": [Array], "title": "HabitChcek"}, "name": "addTask"}, {"args": {"hexColor": "#00FF00", "isPrerequisite": false, "name": "Win", "proposedIconConcept": "trophy"}, "name": "addCategory"}, {"args": {"hexColor": "#FF0000", "isPrerequisite": false, "name": "Loss", "proposedIconConcept": "sad face"}, "name": "addCategory"}, {"args": {"hexColor": "#FFA500", "isPrerequisite": false, "name": "Defeat", "proposedIconConcept": "broken shield"}, "name": "addCategory"}, {"args": {"hexColor": "#0000FF", "isPrerequisite": false, "name": "Success", "proposedIconConcept": "star"}, "name": "addCategory"}, {"args": {"isPrerequisite": false, "names": [Array]}, "name": "addTag"}]
+ WARN  there are non-text parts functionCall,functionCall,functionCall,functionCall,functionCall,functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "CrkGAQw51sfzST7CHFB5KeR8MhuriPeKbB0VK568yggpMa3+gq32NODQh/viIKI5uoQfCborNzgPSLDnUUIcOzM92LMlczYMWyMdM1VB7UqHaj/O6dnExGqbkhHf6AD86fDeTRdbRVMRhXLF+l+RyPky7WIKcXpwQeYJWH/VP74ygPrmZTqrEK2HIXuLOve0pRxqzYlUEExiNgAn3/SJaCrEjLtXZzwlS7W3dr6wBBVcy3SMMBiPxmtN3hI5PETLdojZsnH+Pns3C5lNHYFT2oFe50m1KTRuFDwye9nEk8qmdstDC6JXIXHxxEce0dpGUHOR9x/PSggohFli/M/zXvDzfOs7Rx3J9sKRsAis4QlQ4iZ1njyzFSNVDhcpkZgJkF/7oYdtlFVsjNDGEAMta/BTUvBW1qmnc4ACF3Xe3pHDLDwPeHZqhVQwsXy0VZ7qhjrlEk6csQ2znYusuj26SgUkM/uJOQtbgLALM9VmHrnPQTmoOengiCbJ1FLn6Szrvm7TdAFEAiKrVwVSxgStMDp1XRUMHverGIMCdeXEY1ENHrriY18vn3RcC06bvhsw4nW2VFu8FNjUC8tnsjKTEfWx4/1Q7yd+ooJcC/TXtmBD/8k6d+50FkBrsEAL3rbtqJsfXrUI23xrHeNewnzV+f8G3mFYrbWP0V2aB9Fg0m7GbRWyWqGezrGinfGxV+2bhVZuPGZg+Mb15fthQAg8wrjFaRXssGOe5ALtz+Rc+ZE4MzCQdarLYjt++vqj5LCp3sEB87F7ydv0Q8m1uxbCRemjl5G7rGVLxLzvpLDhcC7Jeymv8o2+mCn2L/+y9Xjir3uWAumrAdf5Nr5EtGfB8Hb+qpOhKNvICIt1HVP76ZoeLrLZu+fUkDWyGoWzxTDJKoqvcDT7pKXjIzAfA7Mdk+K1xaYgE6zLrpJpYaCAi+muPPCbEWveQKK45mFt/MztYWZFqlfJeA88laUxPGOMKAIfwAeoZcLWLRkm3X/5g/xyG/t6UZ5tzC2+7xyGGeRfjy6AALTWubv7P1SfdlrALkYhVWZUHjuo4sHznvkOzRrVkxbkQc5P9PaCYyKpKxDw98VNtkY4vdreKr4N"}, {"functionCall": [Object]}, {"functionCall": [Object]}, {"functionCall": [Object]}, {"functionCall": [Object]}, {"functionCall": [Object]}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "NrMjap-wAc2vjuMPh9yY2QQ", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:42:17 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=3671", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 319, "promptTokenCount": 3141, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 300, "totalTokenCount": 3760}}
+ LOG  [DAG] Node 3: Received Funtion Calls: [
+  {
+    "name": "addTask",
+    "args": {
+      "dueDate": "2026-06-06",
+      "title": "HabitChcek",
+      "tags": [
+        "572f740f-da5b-437c-b6d0-7fb0a5888f2f",
+        "bef14624-9af6-4a88-8a65-9391d7c0f869",
+        "c59cf11d-13e8-4723-8e7e-60dff29cddb5"
+      ],
+      "priority": "medium"
+    }
+  },
+  {
+    "name": "addCategory",
+    "args": {
+      "proposedIconConcept": "trophy",
+      "hexColor": "#00FF00",
+      "name": "Win",
+      "isPrerequisite": false
+    }
+  },
+  {
+    "name": "addCategory",
+    "args": {
+      "isPrerequisite": false,
+      "proposedIconConcept": "sad face",
+      "hexColor": "#FF0000",
+      "name": "Loss"
+    }
+  },
+  {
+    "name": "addCategory",
+    "args": {
+      "name": "Defeat",
+      "proposedIconConcept": "broken shield",
+      "hexColor": "#FFA500",
+      "isPrerequisite": false
+    }
+  },
+  {
+    "name": "addCategory",
+    "args": {
+      "isPrerequisite": false,
+      "name": "Success",
+      "proposedIconConcept": "star",
+      "hexColor": "#0000FF"
+    }
+  },
+  {
+    "name": "addTag",
+    "args": {
+      "names": [
+        "Chint",
+        "Mahajan"
+      ],
+      "isPrerequisite": false
+    }
+  }
+]
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: [
+  {
+    "name": "addTask",
+    "args": {
+      "dueDate": "2026-06-06",
+      "title": "HabitChcek",
+      "tags": [
+        "572f740f-da5b-437c-b6d0-7fb0a5888f2f",
+        "bef14624-9af6-4a88-8a65-9391d7c0f869",
+        "c59cf11d-13e8-4723-8e7e-60dff29cddb5"
+      ],
+      "priority": "medium"
+    }
+  },
+  {
+    "name": "addCategory",
+    "args": {
+      "proposedIconConcept": "trophy",
+      "hexColor": "#00FF00",
+      "name": "Win",
+      "isPrerequisite": false
+    }
+  },
+  {
+    "name": "addCategory",
+    "args": {
+      "isPrerequisite": false,
+      "proposedIconConcept": "sad face",
+      "hexColor": "#FF0000",
+      "name": "Loss"
+    }
+  },
+  {
+    "name": "addCategory",
+    "args": {
+      "name": "Defeat",
+      "proposedIconConcept": "broken shield",
+      "hexColor": "#FFA500",
+      "isPrerequisite": false
+    }
+  },
+  {
+    "name": "addCategory",
+    "args": {
+      "isPrerequisite": false,
+      "name": "Success",
+      "proposedIconConcept": "star",
+      "hexColor": "#0000FF"
+    }
+  },
+  {
+    "name": "addTag",
+    "args": {
+      "names": [
+        "Chint",
+        "Mahajan"
+      ],
+      "isPrerequisite": false
+    }
+  }
+]
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "PENDING"}]
+ LOG  =========================================================
+ LOG  [DAG] Micro-Node: DEDUCING CHECKLIST PROGRESS...
+ LOG  AI TOKEN MONITOR from: Action EXECUTOR
+ LOG  ----------------------------
+ LOG  Request #: 10
+ LOG  Prompt Tokens: 3141
+ LOG  Completion Tokens: 319
+ LOG  Total Tokens: 3760
+ LOG  Avg Tokens / Request: 1909.70
+ LOG  Total Tokens Used: 19097
+ LOG  ----------------------------
+ LOG  [DAG] Checklist Updated: ["chk-2", "chk-3"]
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "COMPLETED"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "COMPLETED"}]
+ LOG  _________________________________________________________
+ WARN  there are non-text parts functionCall,functionCall,functionCall,functionCall,functionCall,functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [{"args": [Object], "name": "addHabit"}, {"args": [Object], "name": "addTask"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addTag"}], "chatHistory": [], "finalTextResponse": undefined, "history": [{"parts": [Array], "role": "user"}, {"parts": undefined, "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ WARN  there are non-text parts functionCall,functionCall,functionCall,functionCall,functionCall,functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addHabit'
+ LOG  [DAG] Edge: Partial completion detected. Injecting text nudge part.
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan","checklist":[{"id":"chk-0","intent":"Add new habit with TaskChcker with daily goal of 20 , category Magic","status":"PENDING"},{"id":"chk-1","intent":"Add new task HabitChcek with default values and tags alpha, beta, gamma","status":"PENDING"},{"id":"chk-2","intent":"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors","status":"COMPLETED"},{"id":"chk-3","intent":"Add 2 new tags , Chint and Mahajan","status":"COMPLETED"}],"selectedDomain":"addHabit, addTask, addCategory, addTag","selectedTools":"addHabit, addTask, addCategory, addTag","chatHistory":[{"role":"user","parts":[{"text":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan"}]},{"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]. Call the required tools now."}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["Magic"],"type":"category"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"Magic":[{"type":"category","id":"a2210967-6795-4f96-ae27-133307b6de5a","name":"magic","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}}}],"role":"model"},{"role":"user","parts":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]"}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["alpha","beta","gamma"],"type":"tag"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"alpha":[{"type":"tag","id":"572f740f-da5b-437c-b6d0-7fb0a5888f2f","name":"alpha","score":2.220446049250313e-16}],"beta":[{"type":"tag","id":"bef14624-9af6-4a88-8a65-9391d7c0f869","name":"beta","score":2.220446049250313e-16},{"type":"tag","id":"a33af90f-dc6f-40ca-941b-5366a4faf177","name":"Theta","score":0.26}],"gamma":[{"type":"tag","id":"c59cf11d-13e8-4723-8e7e-60dff29cddb5","name":"gamma","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addTask","args":{"dueDate":"2026-06-06","title":"HabitChcek","tags":["572f740f-da5b-437c-b6d0-7fb0a5888f2f","bef14624-9af6-4a88-8a65-9391d7c0f869","c59cf11d-13e8-4723-8e7e-60dff29cddb5"],"priority":"medium"}}},{"functionCall":{"name":"addCategory","args":{"proposedIconConcept":"trophy","hexColor":"#00FF00","name":"Win","isPrerequisite":false}}},{"functionCall":{"name":"addCategory","args":{"isPrerequisite":false,"proposedIconConcept":"sad face","hexColor":"#FF0000","name":"Loss"}}},{"functionCall":{"name":"addCategory","args":{"name":"Defeat","proposedIconConcept":"broken shield","hexColor":"#FFA500","isPrerequisite":false}}},{"functionCall":{"name":"addCategory","args":{"isPrerequisite":false,"name":"Success","proposedIconConcept":"star","hexColor":"#0000FF"}}},{"functionCall":{"name":"addTag","args":{"names":["Chint","Mahajan"],"isPrerequisite":false}}}],"role":"model"}],"pendingTurnPayload":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]"}],"toolResponses":[],"accumulatedConfirmationCalls":[{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}},{"name":"addTask","args":{"dueDate":"2026-06-06","title":"HabitChcek","tags":["572f740f-da5b-437c-b6d0-7fb0a5888f2f","bef14624-9af6-4a88-8a65-9391d7c0f869","c59cf11d-13e8-4723-8e7e-60dff29cddb5"],"priority":"medium"}},{"name":"addCategory","args":{"proposedIconConcept":"trophy","hexColor":"#00FF00","name":"Win","isPrerequisite":false}},{"name":"addCategory","args":{"isPrerequisite":false,"proposedIconConcept":"sad face","hexColor":"#FF0000","name":"Loss"}},{"name":"addCategory","args":{"name":"Defeat","proposedIconConcept":"broken shield","hexColor":"#FFA500","isPrerequisite":false}},{"name":"addCategory","args":{"isPrerequisite":false,"name":"Success","proposedIconConcept":"star","hexColor":"#0000FF"}},{"name":"addTag","args":{"names":["Chint","Mahajan"],"isPrerequisite":false}}]}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR from: Checklist DEDUCER
+ LOG  ----------------------------
+ LOG  Request #: 11
+ LOG  Prompt Tokens: 558
+ LOG  Completion Tokens: 9
+ LOG  Total Tokens: 1881
+ LOG  Avg Tokens / Request: 1907.09
+ LOG  Total Tokens Used: 20978
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: All pending requests have been completed.
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"text": "All pending requests have been completed.", "thoughtSignature": "CokLAQw51setqXnuuPTjlupn0Q1ev/jBSdxAp5Lk9C0G6FqBT0V07x/+IH8U7PL1TmerNCqoxW7QK1iM2o2S+UQr2RgwLRgvRfXpvpJY6NntNy85wRHpTFGVdgHqBPEkZaAJd+jh38q0WRhqiA8BBfVgprsgTbfEXeRyzawlBNoLgkCQ3uozODEI/fRyzjfji2JL1gYXAmzh2SNVWU+6b/tpdJIqsOzEDVygmwMQxetOshb2rzB+R/LnA14TPm3ZsznuIPWOzpWUNAlKQ+7dbIUBh7PeqPe8r4K6iaf28HvCjrutFBCZP+zN/n58IVcOoMMt6jH3JHCuzEYGsOdaPyrhv68oDY2iyvCJfDg3fvUBG61ZczdY9XIWQqAHGLQ4KTE3pYiccCauLmWUD8WMqZqHNWgj0C7wOMy4/0V0BiyTBtuaUZEqDkMDGWrr3wkMd629Rf0dZGch2z7ZR/OX/6ylLxIBPHUEy7T4IXhrUR4wnDg3EiAgK3NhrRmubi3aRqhRirjm9WUcEhvIXndrxIVEtgjE22qpjroDcZkaeXJFmpSrC+YvCe/grFCDGTZmQwsQwypSJu1j4UYYEqjfb5lUklfwlJpxLmbKpy47e/hvyKm1DbfVRRwnre1vnPHMZyBSNV0ZJBNYAJc4dZ5lBgr8lE3NycJfLpkQnpNQKpjG/jyb2oakljfSLCocoQfEl7u/GbLE1qxiRujfvqNt5YRjWWS9p8Q8mpAwtNHcHaPVTW7y+Vf2quOZIGZLI91w2GbEh63r6d5NaYRCcu/GXM6B1ZacRYyWxyjVNAnyeFAG3UuwQv1fDqvnbkg0CeMATcwpy+Q3+geE41x/3UL5cQ/bo7YlGPjPSMOAuR9o79OGfW6Wx5hTdsSKpqdCWvO1o1e7Ru8pCg106Jx3RwGLlxJvOwvmBIixft+w6gawSTniMuMLPdibP8Vzv9gvIcRd28JuxJpc1wWys7nQDdx7oizF8+1VFw+QMDJEdze5xdjSPulxo/l/vKGQFcaybTJZJJCNqg60CHfwogTHsKladlC7UNHYQHZeAjB0sG2g8M21qvXeIURuqG8yzUYLqMSOySeJW837wOI4x6zSP+hGDYWX/3CRMbLNQKvMZQL3Ozfyavr/3C9daNof+tndoO4otejE6OvjCGqPFhsPnSCVt26rLAXA08yMADOFSx32xV2+qpPk0YVS9NefVDBywy73mQ2iHWswJU117dJ/DjxO/9xpIAeUq6hR6/ZBs6OQWHHIMgLhdIpbRfBNDi/tOfrx6FIL9R5gFgVILGI2YpDcxuGInLy3RODFZAGbkbPP4l+p5DGyLyni6WrunOPTHjZFCq5hbXVplJRubEUisfoJ68XwpZlDMOOx3rz9XhBTZQsUfRwNBBOlj+ilzI+YZMKfEDWn1s4xaujiUK6EZrctPorV61VUWYlkf3oBjvURv9C0FTWEWwSYYlHWwGza0cg1Pk93IR3kZ/Pv33lvtGTX7NJeGWmm7Lk6FPHOIvIVFf80zgun4FTf3MfK9DeYpDHO8gY9PV99OSQxYIUID+GJV9p2HQ+WjkDzGMVGg2zHWnQ7oIlnbhaR0I6IeuJRCpVgwLNSD3phFP1J4tkZJ0oQOumcdibJ1S7k92dLipsQP8wukoEZ9RNzFr5OQoZUxg5nVFRuxXGLhfBHG64dAcbSVW+G0YvsEDzOq5lxy4TyMUIXxFMOgkzOO45hLRYfdxbmiIQgVzeiEJBIyXZj808HS05mUEXh5O1exv9Ky4NBJlifY4yIt2RjRsiId6ZzpheDjkDCLeSaJLkWS3+8TNMvwc3ien1GX65MTQ/r2YJws8+z/K+5K/wC1s5iDGA4MVEV14MJi/XHuRzyTeiCkjs9Z3C6ygQC/p8yqoISfA=="}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "QbMjav-fEaerjuMPzPrE2Qs", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:42:27 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2817", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 7, "promptTokenCount": 3606, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 363, "totalTokenCount": 3976}}
+ LOG  [DAG] Node 3: Received Funtion Calls: []
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: []
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "COMPLETED"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "COMPLETED"}]
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "COMPLETED"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "COMPLETED"}]
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [{"args": [Object], "name": "addHabit"}, {"args": [Object], "name": "addTask"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addTag"}], "chatHistory": [], "finalTextResponse": "All pending requests have been completed.", "history": [{"parts": [Array], "role": "user"}, {"parts": undefined, "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addHabit'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addTask'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addTag'
+ LOG  [DAG] Edge: Tunnel Vision detected! Forcing AI to complete: [object Object],[object Object],[object Object],[object Object]
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan","checklist":[{"id":"chk-0","intent":"Add new habit with TaskChcker with daily goal of 20 , category Magic","status":"PENDING"},{"id":"chk-1","intent":"Add new task HabitChcek with default values and tags alpha, beta, gamma","status":"PENDING"},{"id":"chk-2","intent":"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors","status":"COMPLETED"},{"id":"chk-3","intent":"Add 2 new tags , Chint and Mahajan","status":"COMPLETED"}],"selectedDomain":"addHabit, addTask, addCategory, addTag","selectedTools":"addHabit, addTask, addCategory, addTag","chatHistory":[{"role":"user","parts":[{"text":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan"}]},{"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]. Call the required tools now."}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["Magic"],"type":"category"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"Magic":[{"type":"category","id":"a2210967-6795-4f96-ae27-133307b6de5a","name":"magic","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}}}],"role":"model"},{"role":"user","parts":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]"}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["alpha","beta","gamma"],"type":"tag"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"alpha":[{"type":"tag","id":"572f740f-da5b-437c-b6d0-7fb0a5888f2f","name":"alpha","score":2.220446049250313e-16}],"beta":[{"type":"tag","id":"bef14624-9af6-4a88-8a65-9391d7c0f869","name":"beta","score":2.220446049250313e-16},{"type":"tag","id":"a33af90f-dc6f-40ca-941b-5366a4faf177","name":"Theta","score":0.26}],"gamma":[{"type":"tag","id":"c59cf11d-13e8-4723-8e7e-60dff29cddb5","name":"gamma","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addTask","args":{"dueDate":"2026-06-06","title":"HabitChcek","tags":["572f740f-da5b-437c-b6d0-7fb0a5888f2f","bef14624-9af6-4a88-8a65-9391d7c0f869","c59cf11d-13e8-4723-8e7e-60dff29cddb5"],"priority":"medium"}}},{"functionCall":{"name":"addCategory","args":{"proposedIconConcept":"trophy","hexColor":"#00FF00","name":"Win","isPrerequisite":false}}},{"functionCall":{"name":"addCategory","args":{"isPrerequisite":false,"proposedIconConcept":"sad face","hexColor":"#FF0000","name":"Loss"}}},{"functionCall":{"name":"addCategory","args":{"name":"Defeat","proposedIconConcept":"broken shield","hexColor":"#FFA500","isPrerequisite":false}}},{"functionCall":{"name":"addCategory","args":{"isPrerequisite":false,"name":"Success","proposedIconConcept":"star","hexColor":"#0000FF"}}},{"functionCall":{"name":"addTag","args":{"names":["Chint","Mahajan"],"isPrerequisite":false}}}],"role":"model"},{"role":"user","parts":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]"}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"}],"pendingTurnPayload":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}],"toolResponses":[],"accumulatedConfirmationCalls":[{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}},{"name":"addTask","args":{"dueDate":"2026-06-06","title":"HabitChcek","tags":["572f740f-da5b-437c-b6d0-7fb0a5888f2f","bef14624-9af6-4a88-8a65-9391d7c0f869","c59cf11d-13e8-4723-8e7e-60dff29cddb5"],"priority":"medium"}},{"name":"addCategory","args":{"proposedIconConcept":"trophy","hexColor":"#00FF00","name":"Win","isPrerequisite":false}},{"name":"addCategory","args":{"isPrerequisite":false,"proposedIconConcept":"sad face","hexColor":"#FF0000","name":"Loss"}},{"name":"addCategory","args":{"name":"Defeat","proposedIconConcept":"broken shield","hexColor":"#FFA500","isPrerequisite":false}},{"name":"addCategory","args":{"isPrerequisite":false,"name":"Success","proposedIconConcept":"star","hexColor":"#0000FF"}},{"name":"addTag","args":{"names":["Chint","Mahajan"],"isPrerequisite":false}}],"finalTextResponse":"All pending requests have been completed."}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR from: Action EXECUTOR
+ LOG  ----------------------------
+ LOG  Request #: 12
+ LOG  Prompt Tokens: 3606
+ LOG  Completion Tokens: 7
+ LOG  Total Tokens: 3976
+ LOG  Avg Tokens / Request: 2079.50
+ LOG  Total Tokens Used: 24954
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: All pending requests have been completed.
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"text": "All pending requests have been completed.", "thoughtSignature": "CuoIAQw51scpM6CEGBI8FYZXN/rAsoG4phy4ZB8N+zXL4sdf04sos+CFg1YxRS4SD65nS+K+07YUUvSgG4XoRsZbPfVCBXR4ieC+9IpHJHNtgHWVPFq0ZU4qfhndpR4c6lyb27/aA9BsoyZu9NL9BX6JhPatauvafty+S5DQtOa1Flvcpv4ZJku1eUA5mn+tYEFFEE8EpAsmrS23kXI3R1BUAhjiGrb74wRWr0iRqE2zsl1700wZoFNIn9BGFsLIvd0as+osg7i0JggN38L0CdwZDhvYBMs+Amz/jWVkdxbNNCdj8fH9vCt+KhSa8jnWSsUr/WbdNTX/Yd4YbHXdKPO+MQ2/IqfPoUAsCHBQSI3zM9CryQZj3rsHP7sSkspSfSYxiaH52pHeEw74utpCpdSEcSa8XMincRhpQkDTMmIWexMiaS4Rczdw2d+EVAC9gJZoQCNm2C8Pu/nty2A0/LT30FQyuDaeEPtaa9K6YdgjWcyjopAa+q0+IJsPYnpQ9e3/4rPx5xjrvMX6HIykjWpiNAOumAcpNlF1T08FTcbJBlbAnN5kmwOOR3YF2dZedpPjjNF5ehqoRkNUBbFjwwNnxrVkK2Oy21nkoh9PgKTg0MAwS03kbju8mQf7PORzQXHG29MhESgTpBSnxqUMc57uGdDERuIKpVUpJmAatisHtiAvov1ObuCfNlx9kQZZX/Zum4O5WIcZkLQyZIBTOx3V3WwwL0nxWKuolFXdCSDcJEZM7W4gOFWRGMP0IwauX3CvVhx1p4NLPd8km4iuLf601Q0UpamhsD8tcILBs94N85l3bq/derH2QeIq/vWiENaAich3zLe+i32CHgRObHuV9jb69l8soilT7zdFAtUPIelBU5RAD4wM/HdAjYhj+BlXSso3l+Q9gLR/7rZEbStThr7YSLRyxWQHuYYvhE2jUuoDchg5buLlmceExSXmt26guHmKxhUHRJbhZmvUsHnzpcoSyMq76/c11RGS7vxl4mAQPiAcBCpDF5GQ1yTmJPMfFje0p0FfPwyusQJrVGhahHCToMTjOTThiMZrmjcFTWAaJrqQoZcNiR0BhcvesN/z0Cs1r+9wbz1v+NpqD5XDZJY+Zi2Mo1/vagWg+cri6coLNhZikG0yQe9VsBTVOdxzDyFBPR2jUo4FCQLZwlISI470cyQPvjp2Jej3x+2Vs6z9eNfi8nZZMCrSoHpHV7xbdQHtbFfIXdihx1397fRvvLwNbt28qy30dpR3uzsxoq3f+GjtLEYhuUcFRodj/j4GsRKJH/f5SHfr3ZLIchXyn1k1aT9H3Gb48ma1cpVS5XkbuY1IwVktjes9OTGbOFZGjD+MRnUbiyF74FX8SaR0LOYMEK0z1w0Jv+Vjh0nu+cmfUR2KW0XKDTBpDWq0ayPi0bP+AgFOQnV0xWa1pZ36vjlunUwndI4yw+jg270AyNICJ7X8Vc3NBdqm605EEBOJGb/hTQ8fOhwmyRrpKhEOv4xcEknO7S5cJZ8="}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "RLMjar-qDb7KjuMPtrPHEA", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:42:30 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2284", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 7, "promptTokenCount": 3756, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 257, "totalTokenCount": 4020}}
+ LOG  [DAG] Node 3: Received Funtion Calls: []
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: []
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "COMPLETED"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "COMPLETED"}]
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "COMPLETED"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "COMPLETED"}]
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [{"args": [Object], "name": "addHabit"}, {"args": [Object], "name": "addTask"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addTag"}], "chatHistory": [], "finalTextResponse": "All pending requests have been completed.", "history": [{"parts": [Array], "role": "user"}, {"parts": undefined, "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addHabit'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addTask'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addTag'
+ LOG  [DAG] Edge: Tunnel Vision detected! Forcing AI to complete: [object Object],[object Object],[object Object],[object Object]
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan","checklist":[{"id":"chk-0","intent":"Add new habit with TaskChcker with daily goal of 20 , category Magic","status":"PENDING"},{"id":"chk-1","intent":"Add new task HabitChcek with default values and tags alpha, beta, gamma","status":"PENDING"},{"id":"chk-2","intent":"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors","status":"COMPLETED"},{"id":"chk-3","intent":"Add 2 new tags , Chint and Mahajan","status":"COMPLETED"}],"selectedDomain":"addHabit, addTask, addCategory, addTag","selectedTools":"addHabit, addTask, addCategory, addTag","chatHistory":[{"role":"user","parts":[{"text":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan"}]},{"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]. Call the required tools now."}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["Magic"],"type":"category"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"Magic":[{"type":"category","id":"a2210967-6795-4f96-ae27-133307b6de5a","name":"magic","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}}}],"role":"model"},{"role":"user","parts":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]"}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["alpha","beta","gamma"],"type":"tag"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"alpha":[{"type":"tag","id":"572f740f-da5b-437c-b6d0-7fb0a5888f2f","name":"alpha","score":2.220446049250313e-16}],"beta":[{"type":"tag","id":"bef14624-9af6-4a88-8a65-9391d7c0f869","name":"beta","score":2.220446049250313e-16},{"type":"tag","id":"a33af90f-dc6f-40ca-941b-5366a4faf177","name":"Theta","score":0.26}],"gamma":[{"type":"tag","id":"c59cf11d-13e8-4723-8e7e-60dff29cddb5","name":"gamma","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addTask","args":{"dueDate":"2026-06-06","title":"HabitChcek","tags":["572f740f-da5b-437c-b6d0-7fb0a5888f2f","bef14624-9af6-4a88-8a65-9391d7c0f869","c59cf11d-13e8-4723-8e7e-60dff29cddb5"],"priority":"medium"}}},{"functionCall":{"name":"addCategory","args":{"proposedIconConcept":"trophy","hexColor":"#00FF00","name":"Win","isPrerequisite":false}}},{"functionCall":{"name":"addCategory","args":{"isPrerequisite":false,"proposedIconConcept":"sad face","hexColor":"#FF0000","name":"Loss"}}},{"functionCall":{"name":"addCategory","args":{"name":"Defeat","proposedIconConcept":"broken shield","hexColor":"#FFA500","isPrerequisite":false}}},{"functionCall":{"name":"addCategory","args":{"isPrerequisite":false,"name":"Success","proposedIconConcept":"star","hexColor":"#0000FF"}}},{"functionCall":{"name":"addTag","args":{"names":["Chint","Mahajan"],"isPrerequisite":false}}}],"role":"model"},{"role":"user","parts":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]"}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"}],"pendingTurnPayload":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}],"toolResponses":[],"accumulatedConfirmationCalls":[{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}},{"name":"addTask","args":{"dueDate":"2026-06-06","title":"HabitChcek","tags":["572f740f-da5b-437c-b6d0-7fb0a5888f2f","bef14624-9af6-4a88-8a65-9391d7c0f869","c59cf11d-13e8-4723-8e7e-60dff29cddb5"],"priority":"medium"}},{"name":"addCategory","args":{"proposedIconConcept":"trophy","hexColor":"#00FF00","name":"Win","isPrerequisite":false}},{"name":"addCategory","args":{"isPrerequisite":false,"proposedIconConcept":"sad face","hexColor":"#FF0000","name":"Loss"}},{"name":"addCategory","args":{"name":"Defeat","proposedIconConcept":"broken shield","hexColor":"#FFA500","isPrerequisite":false}},{"name":"addCategory","args":{"isPrerequisite":false,"name":"Success","proposedIconConcept":"star","hexColor":"#0000FF"}},{"name":"addTag","args":{"names":["Chint","Mahajan"],"isPrerequisite":false}}],"finalTextResponse":"All pending requests have been completed."}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR from: Action EXECUTOR
+ LOG  ----------------------------
+ LOG  Request #: 13
+ LOG  Prompt Tokens: 3756
+ LOG  Completion Tokens: 7
+ LOG  Total Tokens: 4020
+ LOG  Avg Tokens / Request: 2228.77
+ LOG  Total Tokens Used: 28974
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: All pending requests have been completed.
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"text": "All pending requests have been completed."}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "RrMjav7zJ7HHjuMPy_20wAE", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:42:31 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1217", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"cacheTokensDetails": [[Object]], "cachedContentTokenCount": 3635, "candidatesTokenCount": 7, "promptTokenCount": 3906, "promptTokensDetails": [[Object]], "serviceTier": "standard", "totalTokenCount": 3913}}
+ LOG  [DAG] Node 3: Received Funtion Calls: []
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: []
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "COMPLETED"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "COMPLETED"}]
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "COMPLETED"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "COMPLETED"}]
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [{"args": [Object], "name": "addHabit"}, {"args": [Object], "name": "addTask"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addTag"}], "chatHistory": [], "finalTextResponse": "All pending requests have been completed.", "history": [{"parts": [Array], "role": "user"}, {"parts": undefined, "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addHabit'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addTask'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addTag'
+ LOG  [DAG] Edge: Tunnel Vision detected! Forcing AI to complete: [object Object],[object Object],[object Object],[object Object]
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan","checklist":[{"id":"chk-0","intent":"Add new habit with TaskChcker with daily goal of 20 , category Magic","status":"PENDING"},{"id":"chk-1","intent":"Add new task HabitChcek with default values and tags alpha, beta, gamma","status":"PENDING"},{"id":"chk-2","intent":"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors","status":"COMPLETED"},{"id":"chk-3","intent":"Add 2 new tags , Chint and Mahajan","status":"COMPLETED"}],"selectedDomain":"addHabit, addTask, addCategory, addTag","selectedTools":"addHabit, addTask, addCategory, addTag","chatHistory":[{"role":"user","parts":[{"text":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan"}]},{"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]. Call the required tools now."}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["Magic"],"type":"category"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"Magic":[{"type":"category","id":"a2210967-6795-4f96-ae27-133307b6de5a","name":"magic","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}}}],"role":"model"},{"role":"user","parts":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]"}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["alpha","beta","gamma"],"type":"tag"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"alpha":[{"type":"tag","id":"572f740f-da5b-437c-b6d0-7fb0a5888f2f","name":"alpha","score":2.220446049250313e-16}],"beta":[{"type":"tag","id":"bef14624-9af6-4a88-8a65-9391d7c0f869","name":"beta","score":2.220446049250313e-16},{"type":"tag","id":"a33af90f-dc6f-40ca-941b-5366a4faf177","name":"Theta","score":0.26}],"gamma":[{"type":"tag","id":"c59cf11d-13e8-4723-8e7e-60dff29cddb5","name":"gamma","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addTask","args":{"dueDate":"2026-06-06","title":"HabitChcek","tags":["572f740f-da5b-437c-b6d0-7fb0a5888f2f","bef14624-9af6-4a88-8a65-9391d7c0f869","c59cf11d-13e8-4723-8e7e-60dff29cddb5"],"priority":"medium"}}},{"functionCall":{"name":"addCategory","args":{"proposedIconConcept":"trophy","hexColor":"#00FF00","name":"Win","isPrerequisite":false}}},{"functionCall":{"name":"addCategory","args":{"isPrerequisite":false,"proposedIconConcept":"sad face","hexColor":"#FF0000","name":"Loss"}}},{"functionCall":{"name":"addCategory","args":{"name":"Defeat","proposedIconConcept":"broken shield","hexColor":"#FFA500","isPrerequisite":false}}},{"functionCall":{"name":"addCategory","args":{"isPrerequisite":false,"name":"Success","proposedIconConcept":"star","hexColor":"#0000FF"}}},{"functionCall":{"name":"addTag","args":{"names":["Chint","Mahajan"],"isPrerequisite":false}}}],"role":"model"},{"role":"user","parts":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]"}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"}],"pendingTurnPayload":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}],"toolResponses":[],"accumulatedConfirmationCalls":[{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}},{"name":"addTask","args":{"dueDate":"2026-06-06","title":"HabitChcek","tags":["572f740f-da5b-437c-b6d0-7fb0a5888f2f","bef14624-9af6-4a88-8a65-9391d7c0f869","c59cf11d-13e8-4723-8e7e-60dff29cddb5"],"priority":"medium"}},{"name":"addCategory","args":{"proposedIconConcept":"trophy","hexColor":"#00FF00","name":"Win","isPrerequisite":false}},{"name":"addCategory","args":{"isPrerequisite":false,"proposedIconConcept":"sad face","hexColor":"#FF0000","name":"Loss"}},{"name":"addCategory","args":{"name":"Defeat","proposedIconConcept":"broken shield","hexColor":"#FFA500","isPrerequisite":false}},{"name":"addCategory","args":{"isPrerequisite":false,"name":"Success","proposedIconConcept":"star","hexColor":"#0000FF"}},{"name":"addTag","args":{"names":["Chint","Mahajan"],"isPrerequisite":false}}],"finalTextResponse":"All pending requests have been completed."}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR from: Action EXECUTOR
+ LOG  ----------------------------
+ LOG  Request #: 14
+ LOG  Prompt Tokens: 3906
+ LOG  Completion Tokens: 7
+ LOG  Total Tokens: 3913
+ LOG  Avg Tokens / Request: 2349.07
+ LOG  Total Tokens Used: 32887
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: All pending requests have been completed.
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"text": "All pending requests have been completed.", "thoughtSignature": "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"}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "SLMjasakB6qgjuMPmPPzoQM", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:42:35 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=3334", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"cacheTokensDetails": [[Object]], "cachedContentTokenCount": 2733, "candidatesTokenCount": 7, "promptTokenCount": 4056, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 563, "totalTokenCount": 4626}}
+ LOG  [DAG] Node 3: Received Funtion Calls: []
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: []
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "COMPLETED"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "COMPLETED"}]
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "COMPLETED"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "COMPLETED"}]
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [{"args": [Object], "name": "addHabit"}, {"args": [Object], "name": "addTask"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addTag"}], "chatHistory": [], "finalTextResponse": "All pending requests have been completed.", "history": [{"parts": [Array], "role": "user"}, {"parts": undefined, "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addHabit'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addTask'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addTag'
+ LOG  [DAG] Edge: Tunnel Vision detected! Forcing AI to complete: [object Object],[object Object],[object Object],[object Object]
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan","checklist":[{"id":"chk-0","intent":"Add new habit with TaskChcker with daily goal of 20 , category Magic","status":"PENDING"},{"id":"chk-1","intent":"Add new task HabitChcek with default values and tags alpha, beta, gamma","status":"PENDING"},{"id":"chk-2","intent":"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors","status":"COMPLETED"},{"id":"chk-3","intent":"Add 2 new tags , Chint and Mahajan","status":"COMPLETED"}],"selectedDomain":"addHabit, addTask, addCategory, addTag","selectedTools":"addHabit, addTask, addCategory, addTag","chatHistory":[{"role":"user","parts":[{"text":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan"}]},{"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]. Call the required tools now."}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["Magic"],"type":"category"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"Magic":[{"type":"category","id":"a2210967-6795-4f96-ae27-133307b6de5a","name":"magic","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}}}],"role":"model"},{"role":"user","parts":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]"}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["alpha","beta","gamma"],"type":"tag"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"alpha":[{"type":"tag","id":"572f740f-da5b-437c-b6d0-7fb0a5888f2f","name":"alpha","score":2.220446049250313e-16}],"beta":[{"type":"tag","id":"bef14624-9af6-4a88-8a65-9391d7c0f869","name":"beta","score":2.220446049250313e-16},{"type":"tag","id":"a33af90f-dc6f-40ca-941b-5366a4faf177","name":"Theta","score":0.26}],"gamma":[{"type":"tag","id":"c59cf11d-13e8-4723-8e7e-60dff29cddb5","name":"gamma","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addTask","args":{"dueDate":"2026-06-06","title":"HabitChcek","tags":["572f740f-da5b-437c-b6d0-7fb0a5888f2f","bef14624-9af6-4a88-8a65-9391d7c0f869","c59cf11d-13e8-4723-8e7e-60dff29cddb5"],"priority":"medium"}}},{"functionCall":{"name":"addCategory","args":{"proposedIconConcept":"trophy","hexColor":"#00FF00","name":"Win","isPrerequisite":false}}},{"functionCall":{"name":"addCategory","args":{"isPrerequisite":false,"proposedIconConcept":"sad face","hexColor":"#FF0000","name":"Loss"}}},{"functionCall":{"name":"addCategory","args":{"name":"Defeat","proposedIconConcept":"broken shield","hexColor":"#FFA500","isPrerequisite":false}}},{"functionCall":{"name":"addCategory","args":{"isPrerequisite":false,"name":"Success","proposedIconConcept":"star","hexColor":"#0000FF"}}},{"functionCall":{"name":"addTag","args":{"names":["Chint","Mahajan"],"isPrerequisite":false}}}],"role":"model"},{"role":"user","parts":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]"}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"}],"pendingTurnPayload":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}],"toolResponses":[],"accumulatedConfirmationCalls":[{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}},{"name":"addTask","args":{"dueDate":"2026-06-06","title":"HabitChcek","tags":["572f740f-da5b-437c-b6d0-7fb0a5888f2f","bef14624-9af6-4a88-8a65-9391d7c0f869","c59cf11d-13e8-4723-8e7e-60dff29cddb5"],"priority":"medium"}},{"name":"addCategory","args":{"proposedIconConcept":"trophy","hexColor":"#00FF00","name":"Win","isPrerequisite":false}},{"name":"addCategory","args":{"isPrerequisite":false,"proposedIconConcept":"sad face","hexColor":"#FF0000","name":"Loss"}},{"name":"addCategory","args":{"name":"Defeat","proposedIconConcept":"broken shield","hexColor":"#FFA500","isPrerequisite":false}},{"name":"addCategory","args":{"isPrerequisite":false,"name":"Success","proposedIconConcept":"star","hexColor":"#0000FF"}},{"name":"addTag","args":{"names":["Chint","Mahajan"],"isPrerequisite":false}}],"finalTextResponse":"All pending requests have been completed."}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR from: Action EXECUTOR
+ LOG  ----------------------------
+ LOG  Request #: 15
+ LOG  Prompt Tokens: 4056
+ LOG  Completion Tokens: 7
+ LOG  Total Tokens: 4626
+ LOG  Avg Tokens / Request: 2500.87
+ LOG  Total Tokens Used: 37513
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: All pending requests have been completed.
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"text": "All pending requests have been completed."}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "S7MjaqHnKfDSjuMP4fbkoQI", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:42:36 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1135", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"cacheTokensDetails": [[Object]], "cachedContentTokenCount": 2739, "candidatesTokenCount": 7, "promptTokenCount": 4206, "promptTokensDetails": [[Object]], "serviceTier": "standard", "totalTokenCount": 4213}}
+ LOG  [DAG] Node 3: Received Funtion Calls: []
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: []
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "COMPLETED"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "COMPLETED"}]
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "Add new habit with TaskChcker with daily goal of 20 , category Magic", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new task HabitChcek with default values and tags alpha, beta, gamma", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors", "status": "COMPLETED"}, {"id": "chk-3", "intent": "Add 2 new tags , Chint and Mahajan", "status": "COMPLETED"}]
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [{"args": [Object], "name": "addHabit"}, {"args": [Object], "name": "addTask"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addTag"}], "chatHistory": [], "finalTextResponse": "All pending requests have been completed.", "history": [{"parts": [Array], "role": "user"}, {"parts": undefined, "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addHabit'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addTask'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addCategory'
+ WARN  [DAG] Idempotency Shield: Dropped duplicate call for 'addTag'
+ LOG  [DAG] Edge: Tunnel Vision detected! Forcing AI to complete: [object Object],[object Object],[object Object],[object Object]
+ LOG  [DAG] Edge: Execution complete. Exiting graph.
+ LOG  _________________________________________________________
+ LOG  [DAG] Node Main: FINAL State: {"transcript":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan","checklist":[{"id":"chk-0","intent":"Add new habit with TaskChcker with daily goal of 20 , category Magic","status":"PENDING"},{"id":"chk-1","intent":"Add new task HabitChcek with default values and tags alpha, beta, gamma","status":"PENDING"},{"id":"chk-2","intent":"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors","status":"COMPLETED"},{"id":"chk-3","intent":"Add 2 new tags , Chint and Mahajan","status":"COMPLETED"}],"selectedDomain":"addHabit, addTask, addCategory, addTag","selectedTools":"addHabit, addTask, addCategory, addTag","chatHistory":[{"role":"user","parts":[{"text":"Add new habit with TaskChcker with daily goal of 20 , category Magic\nAdd new task HabitChcek with default values and tags alpha, beta, gamma \n\nAdd 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors \n\nAdd 2 new tags , Chint and Mahajan"}]},{"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]. Call the required tools now."}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["Magic"],"type":"category"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"Magic":[{"type":"category","id":"a2210967-6795-4f96-ae27-133307b6de5a","name":"magic","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}}}],"role":"model"},{"role":"user","parts":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"PENDING\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"PENDING\"}]"}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["alpha","beta","gamma"],"type":"tag"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"alpha":[{"type":"tag","id":"572f740f-da5b-437c-b6d0-7fb0a5888f2f","name":"alpha","score":2.220446049250313e-16}],"beta":[{"type":"tag","id":"bef14624-9af6-4a88-8a65-9391d7c0f869","name":"beta","score":2.220446049250313e-16},{"type":"tag","id":"a33af90f-dc6f-40ca-941b-5366a4faf177","name":"Theta","score":0.26}],"gamma":[{"type":"tag","id":"c59cf11d-13e8-4723-8e7e-60dff29cddb5","name":"gamma","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addTask","args":{"dueDate":"2026-06-06","title":"HabitChcek","tags":["572f740f-da5b-437c-b6d0-7fb0a5888f2f","bef14624-9af6-4a88-8a65-9391d7c0f869","c59cf11d-13e8-4723-8e7e-60dff29cddb5"],"priority":"medium"}}},{"functionCall":{"name":"addCategory","args":{"proposedIconConcept":"trophy","hexColor":"#00FF00","name":"Win","isPrerequisite":false}}},{"functionCall":{"name":"addCategory","args":{"isPrerequisite":false,"proposedIconConcept":"sad face","hexColor":"#FF0000","name":"Loss"}}},{"functionCall":{"name":"addCategory","args":{"name":"Defeat","proposedIconConcept":"broken shield","hexColor":"#FFA500","isPrerequisite":false}}},{"functionCall":{"name":"addCategory","args":{"isPrerequisite":false,"name":"Success","proposedIconConcept":"star","hexColor":"#0000FF"}}},{"functionCall":{"name":"addTag","args":{"names":["Chint","Mahajan"],"isPrerequisite":false}}}],"role":"model"},{"role":"user","parts":[{"text":"Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]"}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"},{"role":"user","parts":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}]},{"parts":[{"text":"All pending requests have been completed."}],"role":"model"}],"pendingTurnPayload":[{"text":"System Override: You stopped abruptly, but you still MUST fulfill these requests: [{\"id\":\"chk-0\",\"intent\":\"Add new habit with TaskChcker with daily goal of 20 , category Magic\",\"status\":\"PENDING\"},{\"id\":\"chk-1\",\"intent\":\"Add new task HabitChcek with default values and tags alpha, beta, gamma\",\"status\":\"PENDING\"},{\"id\":\"chk-2\",\"intent\":\"Add 4 new categories Win, Loss , Defeat , Success with appropriate icons and colors\",\"status\":\"COMPLETED\"},{\"id\":\"chk-3\",\"intent\":\"Add 2 new tags , Chint and Mahajan\",\"status\":\"COMPLETED\"}]. Call the required tools now."}],"toolResponses":[],"accumulatedConfirmationCalls":[{"name":"addHabit","args":{"frequency":"daily","title":"TaskChcker","category":"a2210967-6795-4f96-ae27-133307b6de5a","goal":20}},{"name":"addTask","args":{"dueDate":"2026-06-06","title":"HabitChcek","tags":["572f740f-da5b-437c-b6d0-7fb0a5888f2f","bef14624-9af6-4a88-8a65-9391d7c0f869","c59cf11d-13e8-4723-8e7e-60dff29cddb5"],"priority":"medium"}},{"name":"addCategory","args":{"proposedIconConcept":"trophy","hexColor":"#00FF00","name":"Win","isPrerequisite":false}},{"name":"addCategory","args":{"isPrerequisite":false,"proposedIconConcept":"sad face","hexColor":"#FF0000","name":"Loss"}},{"name":"addCategory","args":{"name":"Defeat","proposedIconConcept":"broken shield","hexColor":"#FFA500","isPrerequisite":false}},{"name":"addCategory","args":{"isPrerequisite":false,"name":"Success","proposedIconConcept":"star","hexColor":"#0000FF"}},{"name":"addTag","args":{"names":["Chint","Mahajan"],"isPrerequisite":false}}],"finalTextResponse":"All pending requests have been completed."}
+ LOG  _________________________________________________________
+ LOG  Final Accumulated Function Calls: [{"args": {"category": "a2210967-6795-4f96-ae27-133307b6de5a", "frequency": "daily", "goal": 20, "title": "TaskChcker"}, "name": "addHabit"}, {"args": {"dueDate": "2026-06-06", "priority": "medium", "tags": [Array], "title": "HabitChcek"}, "name": "addTask"}, {"args": {"hexColor": "#00FF00", "isPrerequisite": false, "name": "Win", "proposedIconConcept": "trophy"}, "name": "addCategory"}, {"args": {"hexColor": "#FF0000", "isPrerequisite": false, "name": "Loss", "proposedIconConcept": "sad face"}, "name": "addCategory"}, {"args": {"hexColor": "#FFA500", "isPrerequisite": false, "name": "Defeat", "proposedIconConcept": "broken shield"}, "name": "addCategory"}, {"args": {"hexColor": "#0000FF", "isPrerequisite": false, "name": "Success", "proposedIconConcept": "star"}, "name": "addCategory"}, {"args": {"isPrerequisite": false, "names": [Array]}, "name": "addTag"}]
+ LOG  AI msg: {"id": "1780724556307", "pendingActions": [{"args": [Object], "name": "addHabit"}, {"args": [Object], "name": "addTask"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addTag"}], "sender": "ai", "text": "All pending requests have been completed.", "timestamp": "2026-06-06T05:42:36.306Z", "type": "action", "updatedAt": "2026-06-06T05:42:36.306Z"}
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 10, "chatActionsConfirmed": 83, "chatActionsExpired": 4, "chatMessagesSent": 169, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 239}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR from: Action EXECUTOR
+ LOG  ----------------------------
+ LOG  Request #: 16
+ LOG  Prompt Tokens: 4206
+ LOG  Completion Tokens: 7
+ LOG  Total Tokens: 4213
+ LOG  Avg Tokens / Request: 2607.88
+ LOG  Total Tokens Used: 41726
+ LOG  ----------------------------
+ LOG  Editing into expiry: action undefined 1780724556307
+ LOG  Executing agentic actions: [{"args": {"category": "a2210967-6795-4f96-ae27-133307b6de5a", "frequency": "daily", "goal": 20, "title": "TaskChcker"}, "name": "addHabit"}, {"args": {"dueDate": "2026-06-06", "priority": "medium", "tags": [Array], "title": "HabitChcek"}, "name": "addTask"}, {"args": {"hexColor": "#00FF00", "isPrerequisite": false, "name": "Win", "proposedIconConcept": "trophy"}, "name": "addCategory"}, {"args": {"hexColor": "#FF0000", "isPrerequisite": false, "name": "Loss", "proposedIconConcept": "sad face"}, "name": "addCategory"}, {"args": {"hexColor": "#FFA500", "isPrerequisite": false, "name": "Defeat", "proposedIconConcept": "broken shield"}, "name": "addCategory"}, {"args": {"hexColor": "#0000FF", "isPrerequisite": false, "name": "Success", "proposedIconConcept": "star"}, "name": "addCategory"}, {"args": {"isPrerequisite": false, "names": [Array]}, "name": "addTag"}]
+ LOG  [Agent] Calling addHabit with: {"category": "a2210967-6795-4f96-ae27-133307b6de5a", "frequency": "daily", "goal": 20, "title": "TaskChcker"}
+ LOG  habit repo null
+ LOG  HABIT REPO: null
+ LOG  habit repo null
+ LOG  AI Action: Added Habit "TaskChcker"
+ LOG  [Agent] Calling addTask with: {"dueDate": "2026-06-06", "priority": "medium", "tags": ["572f740f-da5b-437c-b6d0-7fb0a5888f2f", "bef14624-9af6-4a88-8a65-9391d7c0f869", "c59cf11d-13e8-4723-8e7e-60dff29cddb5"], "title": "HabitChcek"}
+ LOG  AI Action: Added task "HabitChcek"
+ LOG  [Agent] Calling addCategory with: {"hexColor": "#00FF00", "isPrerequisite": false, "name": "Win", "proposedIconConcept": "trophy"}
+ LOG  [Agent] Calling addCategory with: {"hexColor": "#FF0000", "isPrerequisite": false, "name": "Loss", "proposedIconConcept": "sad face"}
+ LOG  [Agent] Calling addCategory with: {"hexColor": "#FFA500", "isPrerequisite": false, "name": "Defeat", "proposedIconConcept": "broken shield"}
+ LOG  [Agent] Calling addCategory with: {"hexColor": "#0000FF", "isPrerequisite": false, "name": "Success", "proposedIconConcept": "star"}
+ LOG  [Agent] Calling addTag with: {"isPrerequisite": false, "names": ["Chint", "Mahajan"]}
+ LOG  FEEDBACK LOOP, EXECUTION RESUTLS []
+
+  LOG  AI TOKEN MONITOR from: FEEDBACK
+ LOG  ----------------------------
+ LOG  Request #: 17
+ LOG  Prompt Tokens: 1794
+ LOG  Completion Tokens: 94
+ LOG  Total Tokens: 1888
+ LOG  Avg Tokens / Request: 2565.53
+ LOG  Total Tokens Used: 43614
+ LOG  ----------------------------
+ LOG  =========================================================
+ LOG  [DAG] Node 1: PLANNER (Extracting Checklist)...
+ LOG  [DAG] Node 1:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 1:CHAT RESPONSE TEXT: [
+  "Add new task Eventless with default values and tags sigma, worst, best",
+  "Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega",
+  "Add 2 new categories Time , Money with appropriate icons and colors",
+  "Add 4 new tags , Breaking, Avatar, Fun, Leisure"
+]
+ LOG  [DAG] Node 1:CHAT Candidates.content: {"parts": [{"text": "[
+  \"Add new task Eventless with default values and tags sigma, worst, best\",
+  \"Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega\",
+  \"Add 2 new categories Time , Money with appropriate icons and colors\",
+  \"Add 4 new tags , Breaking, Avatar, Fun, Leisure\"
+]"}], "role": "model"}
+ LOG  [DAG] Node 1:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "tLQjatidB7HFjuMPtNi1uAs", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:48:38 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2243", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 81, "promptTokenCount": 193, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 209, "totalTokenCount": 483}}
+ LOG  [DAG] Checklist generated: ["Add new task Eventless with default values and tags sigma, worst, best", "Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega", "Add 2 new categories Time , Money with appropriate icons and colors", "Add 4 new tags , Breaking, Avatar, Fun, Leisure"]
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [DAG] Node 2: ROUTER (Selecting Tool Bucket)...
+ LOG  AI TOKEN MONITOR from: PLANNER
+ LOG  ----------------------------
+ LOG  Request #: 18
+ LOG  Prompt Tokens: 193
+ LOG  Completion Tokens: 81
+ LOG  Total Tokens: 483
+ LOG  Avg Tokens / Request: 2449.83
+ LOG  Total Tokens Used: 44097
+ LOG  ----------------------------
+ LOG  [DAG] Node 2:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 2:CHAT RESPONSE TEXT: ["addTask","addHabit","addCategory","addTag"]
+ LOG  [DAG] Node 2:CHAT Candidates.content: {"parts": [{"text": "[\"addTask\",\"addHabit\",\"addCategory\",\"addTag\"]"}], "role": "model"}
+ LOG  [DAG] Node 2:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "trQjaqqjIrL24-EPhLzEgQo", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:48:40 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1925", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 13, "promptTokenCount": 655, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 184, "totalTokenCount": 852}}
+ LOG  [DAG] Node 2: Resolved Tool Schemas ["addTask", "addHabit", "addCategory", "addTag"]
+ LOG  [DAG] Tool Names Requested by Router: ["addTask", "addHabit", "addCategory", "addTag"]
+ LOG  [DAG] Dependency Injector Complete. Final Schema Count: 6
+ LOG  [DAG] Node 2: Resolved Tool Schemas ["addTask", "addHabit", "addCategory", "addTag", "searchTaxonomy", "searchItems"]
+ LOG  =========================================================
+ LOG  _________________________________________________________
+ LOG  [DAG] Node Main: State: {"transcript":"Add new task Eventless with default values and tags sigma, worst, best\n\nAdd new habit with TaskChcker with daily goal of 6, category Social, tags less, omega\n\nAdd 2 new categories Time , Money with appropriate icons and colors \n\nAdd 4 new tags , Breaking, Avatar, Fun, Leisure","checklist":[{"id":"chk-0","intent":"Add new task Eventless with default values and tags sigma, worst, best","status":"PENDING"},{"id":"chk-1","intent":"Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega","status":"PENDING"},{"id":"chk-2","intent":"Add 2 new categories Time , Money with appropriate icons and colors","status":"PENDING"},{"id":"chk-3","intent":"Add 4 new tags , Breaking, Avatar, Fun, Leisure","status":"PENDING"}],"selectedDomain":"addTask, addHabit, addCategory, addTag","selectedTools":"addTask, addHabit, addCategory, addTag","chatHistory":[],"pendingTurnPayload":[],"toolResponses":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  _________________________________________________________
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new task Eventless with default values and tags sigma, worst, best\n\nAdd new habit with TaskChcker with daily goal of 6, category Social, tags less, omega\n\nAdd 2 new categories Time , Money with appropriate icons and colors \n\nAdd 4 new tags , Breaking, Avatar, Fun, Leisure","checklist":[{"id":"chk-0","intent":"Add new task Eventless with default values and tags sigma, worst, best","status":"PENDING"},{"id":"chk-1","intent":"Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega","status":"PENDING"},{"id":"chk-2","intent":"Add 2 new categories Time , Money with appropriate icons and colors","status":"PENDING"},{"id":"chk-3","intent":"Add 4 new tags , Breaking, Avatar, Fun, Leisure","status":"PENDING"}],"selectedDomain":"addTask, addHabit, addCategory, addTag","selectedTools":"addTask, addHabit, addCategory, addTag","chatHistory":[],"pendingTurnPayload":[],"toolResponses":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  _________________________________________________________
+ LOG  [Router] Switching domain from addHabit, addTask, addCategory, addTag to addTask, addHabit, addCategory, addTag. Reloading tools.
+ LOG  AI TOKEN MONITOR from: ROUTER
+ LOG  ----------------------------
+ LOG  Request #: 19
+ LOG  Prompt Tokens: 655
+ LOG  Completion Tokens: 13
+ LOG  Total Tokens: 852
+ LOG  Avg Tokens / Request: 2365.74
+ LOG  Total Tokens Used: 44949
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS [{"args": {"queries": [Array], "type": "both"}, "name": "searchTaxonomy"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "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"}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "uLQjarj0Mr79juMP6vi1oQs", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:48:43 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=3237", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 35, "promptTokenCount": 2399, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 419, "totalTokenCount": 2853}}
+ LOG  [DAG] Node 3: Received Funtion Calls: [
+  {
+    "name": "searchTaxonomy",
+    "args": {
+      "queries": [
+        "sigma",
+        "worst",
+        "best",
+        "less",
+        "omega",
+        "Social"
+      ],
+      "type": "both"
+    }
+  }
+]
+ LOG  [Silent-Agent] Executing searchTaxonomy...
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: []
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "Add new task Eventless with default values and tags sigma, worst, best", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 2 new categories Time , Money with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 4 new tags , Breaking, Avatar, Fun, Leisure", "status": "PENDING"}]
+ LOG  =========================================================
+ LOG  [DAG] Micro-Node: DEDUCING CHECKLIST PROGRESS...
+ LOG  AI TOKEN MONITOR from: Action EXECUTOR
+ LOG  ----------------------------
+ LOG  Request #: 20
+ LOG  Prompt Tokens: 2399
+ LOG  Completion Tokens: 35
+ LOG  Total Tokens: 2853
+ LOG  Avg Tokens / Request: 2390.10
+ LOG  Total Tokens Used: 47802
+ LOG  ----------------------------
+ LOG  [DAG] Checklist Updated: []
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "Add new task Eventless with default values and tags sigma, worst, best", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 2 new categories Time , Money with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 4 new tags , Breaking, Avatar, Fun, Leisure", "status": "PENDING"}]
+ LOG  _________________________________________________________
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [], "chatHistory": [{"functionResponse": [Object]}], "finalTextResponse": undefined, "history": [{"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Edge: Feeding DB results back into the next loop...
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new task Eventless with default values and tags sigma, worst, best\n\nAdd new habit with TaskChcker with daily goal of 6, category Social, tags less, omega\n\nAdd 2 new categories Time , Money with appropriate icons and colors \n\nAdd 4 new tags , Breaking, Avatar, Fun, Leisure","checklist":[{"id":"chk-0","intent":"Add new task Eventless with default values and tags sigma, worst, best","status":"PENDING"},{"id":"chk-1","intent":"Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega","status":"PENDING"},{"id":"chk-2","intent":"Add 2 new categories Time , Money with appropriate icons and colors","status":"PENDING"},{"id":"chk-3","intent":"Add 4 new tags , Breaking, Avatar, Fun, Leisure","status":"PENDING"}],"selectedDomain":"addTask, addHabit, addCategory, addTag","selectedTools":"addTask, addHabit, addCategory, addTag","chatHistory":[{"role":"user","parts":[{"text":"Add new task Eventless with default values and tags sigma, worst, best\n\nAdd new habit with TaskChcker with daily goal of 6, category Social, tags less, omega\n\nAdd 2 new categories Time , Money with appropriate icons and colors \n\nAdd 4 new tags , Breaking, Avatar, Fun, Leisure"}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["sigma","worst","best","less","omega","Social"],"type":"both"}}}],"role":"model"}],"pendingTurnPayload":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"sigma":[{"type":"tag","id":"4c448d33-bb68-414a-8f37-ced5e6a3a361","name":"sigma","score":2.220446049250313e-16}],"worst":[{"type":"tag","id":"ffa2b4bc-9da2-4246-a078-f97921b3f4d3","name":"worst","score":2.220446049250313e-16},{"type":"tag","id":"011cca9d-6741-4fa9-a283-7b1c0725f22d","name":"worstest","score":0.001},{"type":"tag","id":"26487978-9df9-448a-9e0b-64cda204953e","name":"worsf","score":0.2}],"best":[{"type":"category","id":"17d80f80-e98b-4004-b5e7-fb819157a135","name":"Testing","score":0.25},{"type":"category","id":"c6ebeafe-d54e-4912-9431-7a4f35d16a96","name":"test77","score":0.25},{"type":"category","id":"94e98a07-096d-4939-8617-c0cdf10feb10","name":"Test1","score":0.25},{"type":"tag","id":"684c50e3-03a6-48df-ad97-bd6e2eee0b12","name":"test","score":0.25},{"type":"tag","id":"77f3403f-dc56-43e2-8c77-e38e75000863","name":"testui","score":0.25},{"type":"tag","id":"bef14624-9af6-4a88-8a65-9391d7c0f869","name":"beta","score":0.25},{"type":"tag","id":"a30462ce-f7be-46af-a6db-699f4c8f1b2f","name":"test4","score":0.25},{"type":"tag","id":"09318514-d74d-4346-84bd-d5122e35711e","name":"test3","score":0.25},{"type":"tag","id":"9a6d6eda-db24-4417-b5c2-ecc763a08b3c","name":"test2","score":0.25},{"type":"tag","id":"ca493b80-1e09-4a30-8036-4a8929ff6d85","name":"Test1","score":0.25},{"type":"tag","id":"011cca9d-6741-4fa9-a283-7b1c0725f22d","name":"worstest","score":0.29},{"type":"tag","id":"cd60ab69-4f60-45d8-b78d-6d470760f4a4","name":"test 3","score":0.37526977437859277}],"less":[{"type":"tag","id":"601876b5-1f4d-45aa-a79b-843a4446ed52","name":"less","score":2.220446049250313e-16},{"type":"category","id":"d8dd7b14-26d3-4572-b48f-2c423fce4ebf","name":"Loss","score":0.25},{"type":"category","id":"d82e6e80-3cd0-4324-9fb4-74116ff78d24","name":"Success","score":0.28}],"omega":[{"type":"tag","id":"c034899d-1b1f-4e50-9c2f-378b4ee974b4","name":"Omega","score":2.220446049250313e-16}],"Social":[{"type":"category","id":"b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0","name":"Social","score":2.220446049250313e-16}]}}}}],"toolResponses":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"sigma":[{"type":"tag","id":"4c448d33-bb68-414a-8f37-ced5e6a3a361","name":"sigma","score":2.220446049250313e-16}],"worst":[{"type":"tag","id":"ffa2b4bc-9da2-4246-a078-f97921b3f4d3","name":"worst","score":2.220446049250313e-16},{"type":"tag","id":"011cca9d-6741-4fa9-a283-7b1c0725f22d","name":"worstest","score":0.001},{"type":"tag","id":"26487978-9df9-448a-9e0b-64cda204953e","name":"worsf","score":0.2}],"best":[{"type":"category","id":"17d80f80-e98b-4004-b5e7-fb819157a135","name":"Testing","score":0.25},{"type":"category","id":"c6ebeafe-d54e-4912-9431-7a4f35d16a96","name":"test77","score":0.25},{"type":"category","id":"94e98a07-096d-4939-8617-c0cdf10feb10","name":"Test1","score":0.25},{"type":"tag","id":"684c50e3-03a6-48df-ad97-bd6e2eee0b12","name":"test","score":0.25},{"type":"tag","id":"77f3403f-dc56-43e2-8c77-e38e75000863","name":"testui","score":0.25},{"type":"tag","id":"bef14624-9af6-4a88-8a65-9391d7c0f869","name":"beta","score":0.25},{"type":"tag","id":"a30462ce-f7be-46af-a6db-699f4c8f1b2f","name":"test4","score":0.25},{"type":"tag","id":"09318514-d74d-4346-84bd-d5122e35711e","name":"test3","score":0.25},{"type":"tag","id":"9a6d6eda-db24-4417-b5c2-ecc763a08b3c","name":"test2","score":0.25},{"type":"tag","id":"ca493b80-1e09-4a30-8036-4a8929ff6d85","name":"Test1","score":0.25},{"type":"tag","id":"011cca9d-6741-4fa9-a283-7b1c0725f22d","name":"worstest","score":0.29},{"type":"tag","id":"cd60ab69-4f60-45d8-b78d-6d470760f4a4","name":"test 3","score":0.37526977437859277}],"less":[{"type":"tag","id":"601876b5-1f4d-45aa-a79b-843a4446ed52","name":"less","score":2.220446049250313e-16},{"type":"category","id":"d8dd7b14-26d3-4572-b48f-2c423fce4ebf","name":"Loss","score":0.25},{"type":"category","id":"d82e6e80-3cd0-4324-9fb4-74116ff78d24","name":"Success","score":0.28}],"omega":[{"type":"tag","id":"c034899d-1b1f-4e50-9c2f-378b4ee974b4","name":"Omega","score":2.220446049250313e-16}],"Social":[{"type":"category","id":"b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0","name":"Social","score":2.220446049250313e-16}]}}}}],"accumulatedConfirmationCalls":[]}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR from: Checklist DEDUCER
+ LOG  ----------------------------
+ LOG  Request #: 21
+ LOG  Prompt Tokens: 286
+ LOG  Completion Tokens: 1
+ LOG  Total Tokens: 802
+ LOG  Avg Tokens / Request: 2314.48
+ LOG  Total Tokens Used: 48604
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS [{"args": {"isPrerequisite": true, "names": [Array]}, "name": "addTag"}]
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "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"}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "wLQjarK2L-3AqfkPvrO8qQo", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:48:53 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=4736", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 20, "promptTokenCount": 3833, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 598, "totalTokenCount": 4451}}
+ LOG  [DAG] Node 3: Received Funtion Calls: [
+  {
+    "name": "addTag",
+    "args": {
+      "isPrerequisite": true,
+      "names": [
+        "best"
+      ]
+    }
+  }
+]
+ LOG  [Silent-Agent] Executing addTag...
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: []
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "Add new task Eventless with default values and tags sigma, worst, best", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 2 new categories Time , Money with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 4 new tags , Breaking, Avatar, Fun, Leisure", "status": "PENDING"}]
+ LOG  =========================================================
+ LOG  [DAG] Micro-Node: DEDUCING CHECKLIST PROGRESS...
+ LOG  AI TOKEN MONITOR from: Action EXECUTOR
+ LOG  ----------------------------
+ LOG  Request #: 22
+ LOG  Prompt Tokens: 3833
+ LOG  Completion Tokens: 20
+ LOG  Total Tokens: 4451
+ LOG  Avg Tokens / Request: 2411.59
+ LOG  Total Tokens Used: 53055
+ LOG  ----------------------------
+ LOG  [DAG] Checklist Updated: []
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "Add new task Eventless with default values and tags sigma, worst, best", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 2 new categories Time , Money with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 4 new tags , Breaking, Avatar, Fun, Leisure", "status": "PENDING"}]
+ LOG  _________________________________________________________
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [], "chatHistory": [{"functionResponse": [Object]}], "finalTextResponse": undefined, "history": [{"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ WARN  there are non-text parts functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Edge: Feeding DB results back into the next loop...
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Add new task Eventless with default values and tags sigma, worst, best\n\nAdd new habit with TaskChcker with daily goal of 6, category Social, tags less, omega\n\nAdd 2 new categories Time , Money with appropriate icons and colors \n\nAdd 4 new tags , Breaking, Avatar, Fun, Leisure","checklist":[{"id":"chk-0","intent":"Add new task Eventless with default values and tags sigma, worst, best","status":"PENDING"},{"id":"chk-1","intent":"Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega","status":"PENDING"},{"id":"chk-2","intent":"Add 2 new categories Time , Money with appropriate icons and colors","status":"PENDING"},{"id":"chk-3","intent":"Add 4 new tags , Breaking, Avatar, Fun, Leisure","status":"PENDING"}],"selectedDomain":"addTask, addHabit, addCategory, addTag","selectedTools":"addTask, addHabit, addCategory, addTag","chatHistory":[{"role":"user","parts":[{"text":"Add new task Eventless with default values and tags sigma, worst, best\n\nAdd new habit with TaskChcker with daily goal of 6, category Social, tags less, omega\n\nAdd 2 new categories Time , Money with appropriate icons and colors \n\nAdd 4 new tags , Breaking, Avatar, Fun, Leisure"}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["sigma","worst","best","less","omega","Social"],"type":"both"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"sigma":[{"type":"tag","id":"4c448d33-bb68-414a-8f37-ced5e6a3a361","name":"sigma","score":2.220446049250313e-16}],"worst":[{"type":"tag","id":"ffa2b4bc-9da2-4246-a078-f97921b3f4d3","name":"worst","score":2.220446049250313e-16},{"type":"tag","id":"011cca9d-6741-4fa9-a283-7b1c0725f22d","name":"worstest","score":0.001},{"type":"tag","id":"26487978-9df9-448a-9e0b-64cda204953e","name":"worsf","score":0.2}],"best":[{"type":"category","id":"17d80f80-e98b-4004-b5e7-fb819157a135","name":"Testing","score":0.25},{"type":"category","id":"c6ebeafe-d54e-4912-9431-7a4f35d16a96","name":"test77","score":0.25},{"type":"category","id":"94e98a07-096d-4939-8617-c0cdf10feb10","name":"Test1","score":0.25},{"type":"tag","id":"684c50e3-03a6-48df-ad97-bd6e2eee0b12","name":"test","score":0.25},{"type":"tag","id":"77f3403f-dc56-43e2-8c77-e38e75000863","name":"testui","score":0.25},{"type":"tag","id":"bef14624-9af6-4a88-8a65-9391d7c0f869","name":"beta","score":0.25},{"type":"tag","id":"a30462ce-f7be-46af-a6db-699f4c8f1b2f","name":"test4","score":0.25},{"type":"tag","id":"09318514-d74d-4346-84bd-d5122e35711e","name":"test3","score":0.25},{"type":"tag","id":"9a6d6eda-db24-4417-b5c2-ecc763a08b3c","name":"test2","score":0.25},{"type":"tag","id":"ca493b80-1e09-4a30-8036-4a8929ff6d85","name":"Test1","score":0.25},{"type":"tag","id":"011cca9d-6741-4fa9-a283-7b1c0725f22d","name":"worstest","score":0.29},{"type":"tag","id":"cd60ab69-4f60-45d8-b78d-6d470760f4a4","name":"test 3","score":0.37526977437859277}],"less":[{"type":"tag","id":"601876b5-1f4d-45aa-a79b-843a4446ed52","name":"less","score":2.220446049250313e-16},{"type":"category","id":"d8dd7b14-26d3-4572-b48f-2c423fce4ebf","name":"Loss","score":0.25},{"type":"category","id":"d82e6e80-3cd0-4324-9fb4-74116ff78d24","name":"Success","score":0.28}],"omega":[{"type":"tag","id":"c034899d-1b1f-4e50-9c2f-378b4ee974b4","name":"Omega","score":2.220446049250313e-16}],"Social":[{"type":"category","id":"b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0","name":"Social","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addTag","args":{"isPrerequisite":true,"names":["best"]}}}],"role":"model"}],"pendingTurnPayload":[{"functionResponse":{"name":"addTag","response":{"status":"success","tag":[{"id":"cb30e6e1-44ee-4dab-a3dd-8d8c47ebd490","name":"best"}]}}}],"toolResponses":[{"functionResponse":{"name":"addTag","response":{"status":"success","tag":[{"id":"cb30e6e1-44ee-4dab-a3dd-8d8c47ebd490","name":"best"}]}}}],"accumulatedConfirmationCalls":[]}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR from: Checklist DEDUCER
+ LOG  ----------------------------
+ LOG  Request #: 23
+ LOG  Prompt Tokens: 277
+ LOG  Completion Tokens: 1
+ LOG  Total Tokens: 704
+ LOG  Avg Tokens / Request: 2337.35
+ LOG  Total Tokens Used: 53759
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS [{"args": {"dueDate": "2026-06-07", "priority": "medium", "tags": [Array], "title": "Eventless"}, "name": "addTask"}, {"args": {"category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0", "frequency": "daily", "goal": 6, "tags": [Array], "title": "TaskChcker"}, "name": "addHabit"}, {"args": {"hexColor": "#4CAF50", "isPrerequisite": false, "name": "Time", "proposedIconConcept": "clock"}, "name": "addCategory"}, {"args": {"hexColor": "#FFC107", "isPrerequisite": false, "name": "Money", "proposedIconConcept": "dollar-sign"}, "name": "addCategory"}, {"args": {"isPrerequisite": false, "names": [Array]}, "name": "addTag"}]
+ WARN  there are non-text parts functionCall,functionCall,functionCall,functionCall,functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: undefined
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"functionCall": [Object], "thoughtSignature": "CrYIAQw51sc+nwliM4Tmpisj45KrKqrjVceK05V+L8cVqMwh11VL8igiw/PPCYynJBzMOINs6UyYedgcj9RgxZT4z1qEPo/C1HTljUkK2ySuRW4etLxqfD9+ctqjYU4IG/jl92xn61wgS8NQsymFqzTF10mgHC4V7CP1tiUgUNNsSL9oATWEqroMPP2HcEULvvSOiDTHjl+EfgG1XfddqgRfnkDHnYsf/HAsIRUsm4s1pCj8dWvo+LsV8tI24QBy9yDgpYGKaF7uVqdPWI5dL5hvHpBxNA00pc7RPuqhI+/vJGQIHyoSwk0+DzJyRZ49n5BDAH/iYCxv+EjgtR1x5Qv0L3z7YN8jsT+MrvK+L8HP9L6o9dQnZstDgUzY7099vosP4hSQnumU2op/OMKXzpbn1XqK8wepu2FCv7WeI3cuBSfZgTH0eem4H51BT9av9cAJ9eexK0EUWQe+BSDsN1BR8T1mrghEFLYXQChaXn9ruk8De12Mx94cJyexkMNAZczjZuXlUfBu2J+fas23y29OQCAEVULIMkgM+hqoh6tW/rp0fERDVbkzpUsn8PC0zG8JQxCPXvkOUL1AFxXoFpoXUJQPXj4nyfLhftifhxmEeKvxDy3Z5sHLJJi2PXS+/P0wVBR6eiyS5utPOoa0RAXpk/slbabRHR6Fo/FL81I/f/SkmuSxp9tECHsmh2JwK9aaHeYIB4U34vIy5shnF7DRNgV2/NoiRa8GGWkABCg4RVrqv78fWZobFMhOmCJXY5wJ2+RqgvJUqmPaRCq9Exs6RiMmLCoeqt3TCRV1K7ZTQJmNuZ3Q4GgTBFv+b99PXnvH7DBZh5CKfhtDFOWaf1wVs3nt/fdNQukhlH0fPYP7y+CPrZUgv06Jie7wSOPywLtdU+HEZ39ADWqTg7q83GJj9W1nd8TN+OxUYN+F8vGulYbyIuRnJbeRY4AkX09N3YLI4xu3YNzBFQ9aSa91+dp3xdccaFpCNsrANpWjuvpE792jelzUk5HiWBuA0hfB5Iro4+/wHgrUPtlFtEcmOOx02spVB45/1Ox1PoPG4xiVwsY6na8jF1Lk0c03Ba9vXLZJauwn/XFY8inE7LfNKZkgl0FbIDKkVE2wcOj08nSoDA55RvdyzCqADP9svvTxcRLeTnP9qVR0yzDLMwEO45HlMPVP7ufcy6kIxTsAgOLgYJ49o3FYGxoPNMjQ6p8fKmaU/MuDC0SbDDiwVXenFUUEUQ/utksLwiJsUh5brsT9dkOWTTd3zAw7qbWX12H2bVzEvmBUYzOSmCAqHsfYyuQKO1rp3N+BxeWxdb1xkGikJBOY3wGJ5sxun5pxXGL7klXbVf6QMLwoi+xiFrWu06o/+CdmlUtU8wJapp6IS/DVz0hZaKf6rethVDBTeW2Q7aG59O2SlnTdRDgGnJzCUQhksLXjPjAJVg=="}, {"functionCall": [Object]}, {"functionCall": [Object]}, {"functionCall": [Object]}, {"functionCall": [Object]}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "yLQjaqnmHcH8juMP5dSgmQs", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Sat, 06 Jun 2026 05:49:00 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=4268", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 379, "promptTokenCount": 3912, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 497, "totalTokenCount": 4788}}
+ LOG  [DAG] Node 3: Received Funtion Calls: [
+  {
+    "name": "addTask",
+    "args": {
+      "priority": "medium",
+      "tags": [
+        "4c448d33-bb68-414a-8f37-ced5e6a3a361",
+        "ffa2b4bc-9da2-4246-a078-f97921b3f4d3",
+        "cb30e6e1-44ee-4dab-a3dd-8d8c47ebd490"
+      ],
+      "title": "Eventless",
+      "dueDate": "2026-06-07"
+    }
+  },
+  {
+    "name": "addHabit",
+    "args": {
+      "tags": [
+        "601876b5-1f4d-45aa-a79b-843a4446ed52",
+        "c034899d-1b1f-4e50-9c2f-378b4ee974b4"
+      ],
+      "frequency": "daily",
+      "title": "TaskChcker",
+      "category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0",
+      "goal": 6
+    }
+  },
+  {
+    "name": "addCategory",
+    "args": {
+      "proposedIconConcept": "clock",
+      "name": "Time",
+      "hexColor": "#4CAF50",
+      "isPrerequisite": false
+    }
+  },
+  {
+    "name": "addCategory",
+    "args": {
+      "name": "Money",
+      "hexColor": "#FFC107",
+      "isPrerequisite": false,
+      "proposedIconConcept": "dollar-sign"
+    }
+  },
+  {
+    "name": "addTag",
+    "args": {
+      "names": [
+        "Breaking",
+        "Avatar",
+        "Fun",
+        "Leisure"
+      ],
+      "isPrerequisite": false
+    }
+  }
+]
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: [
+  {
+    "name": "addTask",
+    "args": {
+      "priority": "medium",
+      "tags": [
+        "4c448d33-bb68-414a-8f37-ced5e6a3a361",
+        "ffa2b4bc-9da2-4246-a078-f97921b3f4d3",
+        "cb30e6e1-44ee-4dab-a3dd-8d8c47ebd490"
+      ],
+      "title": "Eventless",
+      "dueDate": "2026-06-07"
+    }
+  },
+  {
+    "name": "addHabit",
+    "args": {
+      "tags": [
+        "601876b5-1f4d-45aa-a79b-843a4446ed52",
+        "c034899d-1b1f-4e50-9c2f-378b4ee974b4"
+      ],
+      "frequency": "daily",
+      "title": "TaskChcker",
+      "category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0",
+      "goal": 6
+    }
+  },
+  {
+    "name": "addCategory",
+    "args": {
+      "proposedIconConcept": "clock",
+      "name": "Time",
+      "hexColor": "#4CAF50",
+      "isPrerequisite": false
+    }
+  },
+  {
+    "name": "addCategory",
+    "args": {
+      "name": "Money",
+      "hexColor": "#FFC107",
+      "isPrerequisite": false,
+      "proposedIconConcept": "dollar-sign"
+    }
+  },
+  {
+    "name": "addTag",
+    "args": {
+      "names": [
+        "Breaking",
+        "Avatar",
+        "Fun",
+        "Leisure"
+      ],
+      "isPrerequisite": false
+    }
+  }
+]
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "Add new task Eventless with default values and tags sigma, worst, best", "status": "PENDING"}, {"id": "chk-1", "intent": "Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega", "status": "PENDING"}, {"id": "chk-2", "intent": "Add 2 new categories Time , Money with appropriate icons and colors", "status": "PENDING"}, {"id": "chk-3", "intent": "Add 4 new tags , Breaking, Avatar, Fun, Leisure", "status": "PENDING"}]
+ LOG  =========================================================
+ LOG  [DAG] Micro-Node: DEDUCING CHECKLIST PROGRESS...
+ LOG  AI TOKEN MONITOR from: Action EXECUTOR
+ LOG  ----------------------------
+ LOG  Request #: 24
+ LOG  Prompt Tokens: 3912
+ LOG  Completion Tokens: 379
+ LOG  Total Tokens: 4788
+ LOG  Avg Tokens / Request: 2439.46
+ LOG  Total Tokens Used: 58547
+ LOG  ----------------------------
+ LOG  [DAG] Checklist Updated: ["chk-0", "chk-1", "chk-2", "chk-3"]
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "Add new task Eventless with default values and tags sigma, worst, best", "status": "COMPLETED"}, {"id": "chk-1", "intent": "Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega", "status": "COMPLETED"}, {"id": "chk-2", "intent": "Add 2 new categories Time , Money with appropriate icons and colors", "status": "COMPLETED"}, {"id": "chk-3", "intent": "Add 4 new tags , Breaking, Avatar, Fun, Leisure", "status": "COMPLETED"}]
+ LOG  _________________________________________________________
+ WARN  there are non-text parts functionCall,functionCall,functionCall,functionCall,functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [{"args": [Object], "name": "addTask"}, {"args": [Object], "name": "addHabit"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addTag"}], "chatHistory": [], "finalTextResponse": undefined, "history": [{"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ WARN  there are non-text parts functionCall,functionCall,functionCall,functionCall,functionCall in the response, returning concatenation of all text parts. Please refer to the non text parts for a full response from model.
+ LOG  [DAG] Edge: Execution complete. Exiting graph.
+ LOG  _________________________________________________________
+ LOG  [DAG] Node Main: FINAL State: {"transcript":"Add new task Eventless with default values and tags sigma, worst, best\n\nAdd new habit with TaskChcker with daily goal of 6, category Social, tags less, omega\n\nAdd 2 new categories Time , Money with appropriate icons and colors \n\nAdd 4 new tags , Breaking, Avatar, Fun, Leisure","checklist":[{"id":"chk-0","intent":"Add new task Eventless with default values and tags sigma, worst, best","status":"COMPLETED"},{"id":"chk-1","intent":"Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega","status":"COMPLETED"},{"id":"chk-2","intent":"Add 2 new categories Time , Money with appropriate icons and colors","status":"COMPLETED"},{"id":"chk-3","intent":"Add 4 new tags , Breaking, Avatar, Fun, Leisure","status":"COMPLETED"}],"selectedDomain":"addTask, addHabit, addCategory, addTag","selectedTools":"addTask, addHabit, addCategory, addTag","chatHistory":[{"role":"user","parts":[{"text":"Add new task Eventless with default values and tags sigma, worst, best\n\nAdd new habit with TaskChcker with daily goal of 6, category Social, tags less, omega\n\nAdd 2 new categories Time , Money with appropriate icons and colors \n\nAdd 4 new tags , Breaking, Avatar, Fun, Leisure"}]},{"parts":[{"functionCall":{"name":"searchTaxonomy","args":{"queries":["sigma","worst","best","less","omega","Social"],"type":"both"}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"searchTaxonomy","response":{"output":{"sigma":[{"type":"tag","id":"4c448d33-bb68-414a-8f37-ced5e6a3a361","name":"sigma","score":2.220446049250313e-16}],"worst":[{"type":"tag","id":"ffa2b4bc-9da2-4246-a078-f97921b3f4d3","name":"worst","score":2.220446049250313e-16},{"type":"tag","id":"011cca9d-6741-4fa9-a283-7b1c0725f22d","name":"worstest","score":0.001},{"type":"tag","id":"26487978-9df9-448a-9e0b-64cda204953e","name":"worsf","score":0.2}],"best":[{"type":"category","id":"17d80f80-e98b-4004-b5e7-fb819157a135","name":"Testing","score":0.25},{"type":"category","id":"c6ebeafe-d54e-4912-9431-7a4f35d16a96","name":"test77","score":0.25},{"type":"category","id":"94e98a07-096d-4939-8617-c0cdf10feb10","name":"Test1","score":0.25},{"type":"tag","id":"684c50e3-03a6-48df-ad97-bd6e2eee0b12","name":"test","score":0.25},{"type":"tag","id":"77f3403f-dc56-43e2-8c77-e38e75000863","name":"testui","score":0.25},{"type":"tag","id":"bef14624-9af6-4a88-8a65-9391d7c0f869","name":"beta","score":0.25},{"type":"tag","id":"a30462ce-f7be-46af-a6db-699f4c8f1b2f","name":"test4","score":0.25},{"type":"tag","id":"09318514-d74d-4346-84bd-d5122e35711e","name":"test3","score":0.25},{"type":"tag","id":"9a6d6eda-db24-4417-b5c2-ecc763a08b3c","name":"test2","score":0.25},{"type":"tag","id":"ca493b80-1e09-4a30-8036-4a8929ff6d85","name":"Test1","score":0.25},{"type":"tag","id":"011cca9d-6741-4fa9-a283-7b1c0725f22d","name":"worstest","score":0.29},{"type":"tag","id":"cd60ab69-4f60-45d8-b78d-6d470760f4a4","name":"test 3","score":0.37526977437859277}],"less":[{"type":"tag","id":"601876b5-1f4d-45aa-a79b-843a4446ed52","name":"less","score":2.220446049250313e-16},{"type":"category","id":"d8dd7b14-26d3-4572-b48f-2c423fce4ebf","name":"Loss","score":0.25},{"type":"category","id":"d82e6e80-3cd0-4324-9fb4-74116ff78d24","name":"Success","score":0.28}],"omega":[{"type":"tag","id":"c034899d-1b1f-4e50-9c2f-378b4ee974b4","name":"Omega","score":2.220446049250313e-16}],"Social":[{"type":"category","id":"b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0","name":"Social","score":2.220446049250313e-16}]}}}}]},{"parts":[{"functionCall":{"name":"addTag","args":{"isPrerequisite":true,"names":["best"]}}}],"role":"model"},{"role":"user","parts":[{"functionResponse":{"name":"addTag","response":{"status":"success","tag":[{"id":"cb30e6e1-44ee-4dab-a3dd-8d8c47ebd490","name":"best"}]}}}]},{"parts":[{"functionCall":{"name":"addTask","args":{"priority":"medium","tags":["4c448d33-bb68-414a-8f37-ced5e6a3a361","ffa2b4bc-9da2-4246-a078-f97921b3f4d3","cb30e6e1-44ee-4dab-a3dd-8d8c47ebd490"],"title":"Eventless","dueDate":"2026-06-07"}}},{"functionCall":{"name":"addHabit","args":{"tags":["601876b5-1f4d-45aa-a79b-843a4446ed52","c034899d-1b1f-4e50-9c2f-378b4ee974b4"],"frequency":"daily","title":"TaskChcker","category":"b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0","goal":6}}},{"functionCall":{"name":"addCategory","args":{"proposedIconConcept":"clock","name":"Time","hexColor":"#4CAF50","isPrerequisite":false}}},{"functionCall":{"name":"addCategory","args":{"name":"Money","hexColor":"#FFC107","isPrerequisite":false,"proposedIconConcept":"dollar-sign"}}},{"functionCall":{"name":"addTag","args":{"names":["Breaking","Avatar","Fun","Leisure"],"isPrerequisite":false}}}],"role":"model"}],"pendingTurnPayload":[{"functionResponse":{"name":"addTag","response":{"status":"success","tag":[{"id":"cb30e6e1-44ee-4dab-a3dd-8d8c47ebd490","name":"best"}]}}}],"toolResponses":[],"accumulatedConfirmationCalls":[{"name":"addTask","args":{"priority":"medium","tags":["4c448d33-bb68-414a-8f37-ced5e6a3a361","ffa2b4bc-9da2-4246-a078-f97921b3f4d3","cb30e6e1-44ee-4dab-a3dd-8d8c47ebd490"],"title":"Eventless","dueDate":"2026-06-07"}},{"name":"addHabit","args":{"tags":["601876b5-1f4d-45aa-a79b-843a4446ed52","c034899d-1b1f-4e50-9c2f-378b4ee974b4"],"frequency":"daily","title":"TaskChcker","category":"b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0","goal":6}},{"name":"addCategory","args":{"proposedIconConcept":"clock","name":"Time","hexColor":"#4CAF50","isPrerequisite":false}},{"name":"addCategory","args":{"name":"Money","hexColor":"#FFC107","isPrerequisite":false,"proposedIconConcept":"dollar-sign"}},{"name":"addTag","args":{"names":["Breaking","Avatar","Fun","Leisure"],"isPrerequisite":false}}]}
+ LOG  _________________________________________________________
+ LOG  Final Accumulated Function Calls: [{"args": {"dueDate": "2026-06-07", "priority": "medium", "tags": [Array], "title": "Eventless"}, "name": "addTask"}, {"args": {"category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0", "frequency": "daily", "goal": 6, "tags": [Array], "title": "TaskChcker"}, "name": "addHabit"}, {"args": {"hexColor": "#4CAF50", "isPrerequisite": false, "name": "Time", "proposedIconConcept": "clock"}, "name": "addCategory"}, {"args": {"hexColor": "#FFC107", "isPrerequisite": false, "name": "Money", "proposedIconConcept": "dollar-sign"}, "name": "addCategory"}, {"args": {"isPrerequisite": false, "names": [Array]}, "name": "addTag"}]
+ LOG  AI msg: {"id": "1780724944994", "pendingActions": [{"args": [Object], "name": "addTask"}, {"args": [Object], "name": "addHabit"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addCategory"}, {"args": [Object], "name": "addTag"}], "sender": "ai", "text": "", "timestamp": "2026-06-06T05:49:04.993Z", "type": "action", "updatedAt": "2026-06-06T05:49:04.993Z"}
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 10, "chatActionsConfirmed": 84, "chatActionsExpired": 4, "chatMessagesSent": 170, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 239}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR from: Checklist DEDUCER
+ LOG  ----------------------------
+ LOG  Request #: 25
+ LOG  Prompt Tokens: 614
+ LOG  Completion Tokens: 17
+ LOG  Total Tokens: 1437
+ LOG  Avg Tokens / Request: 2399.36
+ LOG  Total Tokens Used: 59984
+ LOG  ----------------------------
+ LOG  Editing into expiry: action undefined 1780724944994
+ LOG  Executing agentic actions: [{"args": {"dueDate": "2026-06-07", "priority": "medium", "tags": [Array], "title": "Eventless"}, "name": "addTask"}, {"args": {"category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0", "frequency": "daily", "goal": 6, "tags": [Array], "title": "TaskChcker"}, "name": "addHabit"}, {"args": {"hexColor": "#4CAF50", "isPrerequisite": false, "name": "Time", "proposedIconConcept": "clock"}, "name": "addCategory"}, {"args": {"hexColor": "#FFC107", "isPrerequisite": false, "name": "Money", "proposedIconConcept": "dollar-sign"}, "name": "addCategory"}, {"args": {"isPrerequisite": false, "names": [Array]}, "name": "addTag"}]
+ LOG  [Agent] Calling addTask with: {"dueDate": "2026-06-07", "priority": "medium", "tags": ["4c448d33-bb68-414a-8f37-ced5e6a3a361", "ffa2b4bc-9da2-4246-a078-f97921b3f4d3", "cb30e6e1-44ee-4dab-a3dd-8d8c47ebd490"], "title": "Eventless"}
+ LOG  AI Action: Added task "Eventless"
+ LOG  [Agent] Calling addHabit with: {"category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0", "frequency": "daily", "goal": 6, "tags": ["601876b5-1f4d-45aa-a79b-843a4446ed52", "c034899d-1b1f-4e50-9c2f-378b4ee974b4"], "title": "TaskChcker"}
+ LOG  habit repo null
+ LOG  HABIT REPO: null
+ LOG  habit repo null
+ LOG  AI Action: Added Habit "TaskChcker"
+ LOG  [Agent] Calling addCategory with: {"hexColor": "#4CAF50", "isPrerequisite": false, "name": "Time", "proposedIconConcept": "clock"}
+ LOG  [Agent] Calling addCategory with: {"hexColor": "#FFC107", "isPrerequisite": false, "name": "Money", "proposedIconConcept": "dollar-sign"}
+ LOG  [Agent] Calling addTag with: {"isPrerequisite": false, "names": ["Breaking", "Avatar", "Fun", "Leisure"]}
+ LOG  FEEDBACK LOOP, EXECUTION RESUTLS [
+  {
+    "tool": "addTask",
+    "args": {
+      "priority": "medium",
+      "tags": [
+        "4c448d33-bb68-414a-8f37-ced5e6a3a361",
+        "ffa2b4bc-9da2-4246-a078-f97921b3f4d3",
+        "cb30e6e1-44ee-4dab-a3dd-8d8c47ebd490"
+      ],
+      "title": "Eventless",
+      "dueDate": "2026-06-07"
+    },
+    "result": {
+      "status": "success",
+      "task": {
+        "id": "e6b495f3",
+        "title": "Eventless",
+        "dueDate": "2026-06-07",
+        "reminder": false,
+        "priority": "medium",
+        "completed": false,
+        "tags": [
+          "4c448d33-bb68-414a-8f37-ced5e6a3a361",
+          "ffa2b4bc-9da2-4246-a078-f97921b3f4d3",
+          "cb30e6e1-44ee-4dab-a3dd-8d8c47ebd490"
+        ],
+        "createdAt": "2026-06-06T05:49:14.904Z",
+        "updatedAt": "2026-06-06T05:49:14.904Z"
+      }
+    }
+  },
+  {
+    "tool": "addHabit",
+    "args": {
+      "tags": [
+        "601876b5-1f4d-45aa-a79b-843a4446ed52",
+        "c034899d-1b1f-4e50-9c2f-378b4ee974b4"
+      ],
+      "frequency": "daily",
+      "title": "TaskChcker",
+      "category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0",
+      "goal": 6
+    },
+    "result": {
+      "status": "success",
+      "habit": {
+        "id": "61ec1ad2",
+        "title": "TaskChcker",
+        "frequency": "daily",
+        "reminder": false,
+        "streak": 0,
+        "history": [],
+        "streakFreezes": 1,
+        "longestStreak": 0,
+        "goal": 6,
+        "goalCompletions": [],
+        "category": "b612ef6a-fd9b-40ce-b4e9-b5c9568c69e0",
+        "tags": [
+          "601876b5-1f4d-45aa-a79b-843a4446ed52",
+          "c034899d-1b1f-4e50-9c2f-378b4ee974b4"
+        ],
+        "createdAt": "2026-06-06T05:49:15.612Z",
+        "updatedAt": "2026-06-06T05:49:15.612Z"
+      }
+    }
+  },
+  {
+    "tool": "addCategory",
+    "args": {
+      "proposedIconConcept": "clock",
+      "name": "Time",
+      "hexColor": "#4CAF50",
+      "isPrerequisite": false
+    },
+    "result": {
+      "status": "success",
+      "idForNewlyCreatedCategory": "077ac6c5-c944-431a-bf21-26d822f76956",
+      "assignedIcon": "lock-closed"
+    }
+  },
+  {
+    "tool": "addCategory",
+    "args": {
+      "name": "Money",
+      "hexColor": "#FFC107",
+      "isPrerequisite": false,
+      "proposedIconConcept": "dollar-sign"
+    },
+    "result": {
+      "status": "success",
+      "idForNewlyCreatedCategory": "0ad23e25-ebd4-483d-a6ca-fe6f10b43ac3",
+      "assignedIcon": "folder"
+    }
+  },
+  {
+    "tool": "addTag",
+    "args": {
+      "names": [
+        "Breaking",
+        "Avatar",
+        "Fun",
+        "Leisure"
+      ],
+      "isPrerequisite": false
+    },
+    "result": {
+      "status": "success",
+      "tag": [
+        {
+          "id": "9b9ef129-11c0-4fd0-8900-f9b561926eed",
+          "name": "Breaking"
+        },
+        {
+          "id": "75081153-bec5-4cb1-90d1-33ae92bbc5db",
+          "name": "Avatar"
+        },
+        {
+          "id": "58da00b2-381c-4dfd-8b4b-5e5124f7e86a",
+          "name": "Fun"
+        },
+        {
+          "id": "8dcb765a-87e9-4a76-8920-02f37183bfa9",
+          "name": "Leisure"
+        }
+      ]
+    }
+  }
+]
+ LOG  SERVING FEEDBACK FOR USER REQUEST:  Add new task Eventless with default values and tags sigma, worst, best
+
+Add new habit with TaskChcker with daily goal of 6, category Social, tags less, omega
+
+Add 2 new categories Time , Money with appropriate icons and colors 
+
+Add 4 new tags , Breaking, Avatar, Fun, Leisure
+ LOG  [MetricsRepo] Global metrics: {"chatActionsCancelled": 10, "chatActionsConfirmed": 85, "chatActionsExpired": 4, "chatMessagesSent": 170, "habitCheckInsMissed": 286, "habitsAutoFrozen": 85, "habitsCheckedIn": 22, "habitsFrozen": 4, "habitsGoalsCompleted": 15, "habitsStreakMax": 0, "lastSyncedAt": undefined, "tasksCompleted": 17, "tasksMissed": 0, "timeTracked": 239}
+ LOG  TRACK
+ LOG  AI TOKEN MONITOR from: FEEDBACK
+ LOG  ----------------------------
+ LOG  Request #: 26
+ LOG  Prompt Tokens: 1787
+ LOG  Completion Tokens: 68
+ LOG  Total Tokens: 1855
+ LOG  Avg Tokens / Request: 2378.42
+ LOG  Total Tokens Used: 61839
+ LOG  ----------------------------
+ 

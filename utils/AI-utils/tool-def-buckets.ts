@@ -82,16 +82,7 @@ export const HabitTools: FunctionDeclaration[] = [
                 title: { type: Type.STRING, description: "The title of the habit" },
                 description: { type: Type.STRING },
                 category: { type: Type.STRING, description: "ID of the category" },
-                addTagIds: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                    description: "An array of Tag IDs to ADD to the item."
-                },
-                removeTagIds: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                    description: "An array of Tag IDs to REMOVE from the item."
-                },
+                tags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "IDs of the tag" },
                 frequency: { type: Type.STRING, enum: ["daily", "weekly"] },
                 goal: { type: Type.NUMBER, description: "The target goal for the habit (e.g., 10 pushups, 8 glasses of water)" },
                 reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" },

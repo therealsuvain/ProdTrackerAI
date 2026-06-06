@@ -1,0 +1,4 @@
+eas build --platform android --local --profile development
+npx expo prebuild --clean
+rm -rf node_modules
+ cd android && ./gradlew clean && cd ..
