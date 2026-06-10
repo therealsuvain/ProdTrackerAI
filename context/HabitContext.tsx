@@ -20,7 +20,7 @@ import {
   applyMissedDayLogic,
   restartHabitAfterGoalForeground,
 } from "@/utils/habit-utils";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 
 interface HabitContextType {
   habits: Habit[];

@@ -1,8 +1,8 @@
 import { Habit } from "@/types/habits";
 import { useReducer, useEffect } from "react";
 import { randomUUID } from "expo-crypto";
-import { cancelReminder, scheduleReminderHabits } from "./use-notifications";
-import {generateEmbedding} from '@/utils/embedding-engine'
+import { cancelReminder, scheduleReminderHabits } from "../use-notifications";
+import { generateEmbedding } from '@/utils/embedding-engine'
 import { stat } from "react-native-fs";
 
 type Frequency = "daily" | "weekly";
@@ -33,7 +33,7 @@ const initialState: FormState = {
   frequency: "daily",
   reminder: false,
   reminderDate: undefined,
-  streakFreezes:5,
+  streakFreezes: 5,
   goal: 0,
   goalCompletions: [],
   targetDays: [],
@@ -99,7 +99,7 @@ export const useHabitForm = ({
           tags: editingHabit.tags,
           createdAt: editingHabit.createdAt,
           updatedAt: editingHabit.updatedAt,
-          embedding : editingHabit.embedding
+          embedding: editingHabit.embedding
         },
       });
     } else {
@@ -162,7 +162,7 @@ export const useHabitForm = ({
       return;
     }
 
-    
+
 
     if (hasError) return;
     let newHabit: Habit = {
@@ -176,16 +176,16 @@ export const useHabitForm = ({
       longestStreak: editingHabit ? editingHabit.streak : 0,
       reminder: state.reminder,
       reminderDate: state.reminderDate,
-      goal:  typeof state.goal === "string"
-          ? parseInt(state.goal)
-          : state.goal,
+      goal: typeof state.goal === "string"
+        ? parseInt(state.goal)
+        : state.goal,
       goalCompletions: state.goalCompletions || [],
       category: state.category,
       tags: state.tags,
       createdAt: editingHabit ? editingHabit.createdAt : state.createdAt,
       updatedAt: state.updatedAt,
       notificationId: editingHabit ? editingHabit.notificationId : undefined,
-      embedding: state.embedding || await generateEmbedding(state.title,false)
+      embedding: state.embedding || await generateEmbedding(state.title, false)
     };
 
     console.log("HABIT FORM", newHabit.reminderDate);
@@ -200,10 +200,10 @@ export const useHabitForm = ({
       newHabit.notificationId = notifId;
     }
 
-    if(tagIds.length > 0){
+    if (tagIds.length > 0) {
       newHabit.tags = tagIds
     }
-    
+
     if (editingHabit) {
       await editHabit(newHabit);
     } else {

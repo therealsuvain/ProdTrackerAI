@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-import { useTheme } from "@/hooks/use-theme-colors";
+import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { SettingsConfig, defaultSettings } from "@/types/settings";
 import { loadSettings, saveSettings } from "@/utils/storage-utils";
 

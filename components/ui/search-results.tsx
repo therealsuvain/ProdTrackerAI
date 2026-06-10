@@ -6,25 +6,40 @@ import TimerLogItem from "./timer-logs/timer-log-item";
 import HabitItem from "./habits/habit-item";
 
 interface SearchResultsProps {
-    results: SearchResult[];
-    onItemPress : (result : SearchResult) => void
+  results: SearchResult[];
+  onItemPress: (result: SearchResult) => void;
 }
 
 export function SearchResults({ results, onItemPress }: SearchResultsProps) {
-    return (
-       <FlatList
-       data={results}
-       keyExtractor={(item, index)=> `${item.type}-${index}`}
-       renderItem = {({item})=>(
-        <TouchableOpacity onPress={()=>onItemPress(item)}>
-            {item.type === 'task' && <TaskItem task={item.item as any} onToggleComplete={()=>{}}/>}
-            {item.type === 'event' && <EventItem event={item.item as any}/>}
-            {item.type === 'habit' && <HabitItem habit={item.item as any}/>}
-            {item.type === 'log' && <TimerLogItem log={item.item as any}/>}
-            <Text> Type: {item.type}</Text>
+  return (
+    <FlatList
+      data={results}
+      keyExtractor={(item, index) => `${item.type}-${index}`}
+      renderItem={({ item }) => (
+        <TouchableOpacity onPress={() => onItemPress(item)}>
+          {item.type === "task" && (
+            <TaskItem task={item.item as any} onToggleComplete={() => {}} />
+          )}
+          {item.type === "event" && <EventItem event={item.item as any} />}
+          {item.type === "habit" && (
+            <HabitItem
+              habit={item.item as any}
+              onUpdate={() => 0}
+              onDelete={() => 0}
+              onEdit={() => 0}
+            />
+          )}
+          {item.type === "log" && (
+            <TimerLogItem
+              log={item.item as any}
+              onDelete={() => {}}
+              onEdit={() => {}}
+            />
+          )}
+          <Text> Type: {item.type}</Text>
         </TouchableOpacity>
-       )}
-       ListEmptyComponent={<Text>No results Found</Text>}
-       />
-    );
+      )}
+      ListEmptyComponent={<Text>No results Found</Text>}
+    />
+  );
 }

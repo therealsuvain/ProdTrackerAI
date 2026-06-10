@@ -1,7 +1,7 @@
 import { Task } from "@/types/task";
 import { useReducer, useEffect } from "react";
 import { randomUUID } from "expo-crypto";
-import { cancelReminder, scheduleReminderTasks } from "./use-notifications";
+import { cancelReminder, scheduleReminderTasks } from "../use-notifications";
 import { generateEmbedding } from '@/utils/embedding-engine'
 import { tagsDiff } from "@/utils/common-utils";
 

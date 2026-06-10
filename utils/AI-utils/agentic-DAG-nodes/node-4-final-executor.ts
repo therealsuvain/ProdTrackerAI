@@ -1,7 +1,7 @@
 import { AIActionContext } from "@/types/ai-handler";
 import { processExecutionFeedback } from "./node-5-execution-feedbacker";
 import { FunctionCall } from "@google/genai";
-import { ActionRegistry } from "../registry-handler";
+import { ActionRegistry } from "../agentic-handlers/registry-handler";
 
 export const agenticExecutor = async (calls: FunctionCall[] | undefined, context: AIActionContext, userTranscript: string) => {
     console.log("Executing agentic actions:", calls);

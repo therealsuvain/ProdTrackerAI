@@ -19,7 +19,7 @@ import {
 import DraggableFlatList from "react-native-draggable-flatlist";
 import Octicons from "@expo/vector-icons/Octicons";
 
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 import { Task } from "@/types/task";
 import TaskItem from "@/components/ui/tasks/task-item";
 import {
@@ -28,19 +28,23 @@ import {
   cancelAllScheduledNotifications,
 } from "@/hooks/use-notifications";
 import TaskModal from "@/components/modal/task-modal";
-import { useTaskForm } from "@/hooks/use-task-form";
+import { useTaskForm } from "@/hooks/use-forms/use-task-form";
 import { ThemeContext } from "@/context/ThemeContext";
 import { useHaptics } from "@/hooks/use-haptics";
 import { withAlpha } from "@/utils/common-utils";
 import { clearStorageByKey } from "@/utils/storage-utils";
-import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
-import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
-import { useTasks } from "@/hooks/use-tasks";
+import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
+import {
+  DbErrorToast,
+  useDbErrorToast,
+} from "@/components/shared/db-error-toast";
+import { useTasks } from "@/hooks/context-hooks/use-tasks";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { useScreenReady } from "@/hooks/use-screen-ready";
+import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 function TaskScreenInner() {
-  const { theme } = useContext(ThemeContext);
+  const { theme, isDarkMode } = useContext(ThemeContext);
   const { tasks, setTasks, addTask, editTask, removeTask, toggleTask } =
     useTasks();
   const { trackMetric, addTags } = useData();
@@ -303,6 +307,9 @@ function TaskScreenInner() {
 }
 
 export default function TaskScreen() {
+  const { isDarkMode } = useContext(ThemeContext);
+  const isReady = useScreenReady();
+  if (!isReady) return <EntitySkeleton isDark={isDarkMode} />;
   return (
     <ScreenErrorBoundary screenName="Tasks">
       <TaskScreenInner />

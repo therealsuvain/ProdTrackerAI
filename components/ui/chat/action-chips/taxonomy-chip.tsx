@@ -6,7 +6,7 @@ import { CategoryBadge } from "../../shared/categories/category-badge";
 import { TagBadge } from "../../shared/tags/tag-badge";
 import { CategoryCreator } from "../../shared/categories/category-creation-view";
 import { TagsEditModal } from "../../shared/tags/tags-edit-modal";
-import { resolveIcon } from "@/utils/AI-utils/tags-and-categories-handlers";
+import { resolveIcon } from "@/utils/AI-utils/agentic-handlers/tags-and-categories-handlers";
 import { Category } from "@/types/category";
 import { ActionChipProps } from "./chip-props";
 

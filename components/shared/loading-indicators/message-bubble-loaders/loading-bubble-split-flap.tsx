@@ -10,15 +10,15 @@ import Animated, {
   Extrapolation,
 } from "react-native-reanimated";
 
-import { LoadingIndicatorNC } from "@/components/shared/loading-indicator-neural-core";
-import { LoadingIndicatorSynth } from "@/components/shared/loading-indicator-synth";
-import { LoadingIndicatorOrbit } from "@/components/shared/loading-indicator-orbit";
-import { LoadingIndicatorAtomicOrbit } from "@/components/shared/loading-indicator-atomic-orbit";
-import { LoadingIndicatorGyro } from "@/components/shared/loading-indicator-gyro";
-import { LoadingIndicatorSonar } from "@/components/shared/loading-indicator-sonar";
-import { LoadingIndicatorInfinity } from "@/components/shared/loading-indicator-infinity";
-import { LoadingIndicatorPlanetaryOrbit } from "@/components/shared/loading-indicator-planetary-orbit";
-import { LoadingIndicatorPlanetaryOrbitSkia } from "@/components/shared/loading-indicator-planetary-orbit-skia";
+import { LoadingIndicatorNC } from "@/components/shared/loading-indicators/loading-spinners/loading-indicator-neural-core";
+import { LoadingIndicatorSynth } from "@/components/shared/loading-indicators/loading-spinners/loading-indicator-synth";
+import { LoadingIndicatorOrbit } from "@/components/shared/loading-indicators/loading-spinners/loading-indicator-orbit";
+import { LoadingIndicatorAtomicOrbit } from "@/components/shared/loading-indicators/loading-spinners/loading-indicator-atomic-orbit";
+import { LoadingIndicatorGyro } from "@/components/shared/loading-indicators/loading-spinners/loading-indicator-gyro";
+import { LoadingIndicatorSonar } from "@/components/shared/loading-indicators/loading-spinners/loading-indicator-sonar";
+import { LoadingIndicatorInfinity } from "@/components/shared/loading-indicators/loading-spinners/loading-indicator-infinity";
+import { LoadingIndicatorPlanetaryOrbit } from "@/components/shared/loading-indicators/loading-spinners/loading-indicator-planetary-orbit";
+import { LoadingIndicatorPlanetaryOrbitSkia } from "@/components/shared/loading-indicators/loading-spinners/loading-indicator-planetary-orbit-skia";
 
 interface Props {
   isUser?: boolean;

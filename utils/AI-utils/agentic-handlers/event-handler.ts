@@ -1,6 +1,6 @@
 import { AIHandler } from "@/types/ai-handler";
-import { cancelReminder, scheduleReminderEvents } from "../../hooks/use-notifications";
-import { createEvent } from "../model-factory-utils";
+import { cancelReminder, scheduleReminderEvents } from "@/hooks/use-notifications";
+import { createEvent } from "@/utils/model-factory-utils";
 import { getTimeRangeHelper } from "./additional-handlers";
 
 //! 59567 Port for qbitorent

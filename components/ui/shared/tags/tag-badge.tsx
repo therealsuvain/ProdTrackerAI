@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 
 interface TagProps {
   tagId?: string;

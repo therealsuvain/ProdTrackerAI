@@ -6,7 +6,7 @@ import { Searchbar } from "react-native-paper";
 import { SettingsGroup } from "@/components/ui/settings/settings-group";
 import { SettingsRow } from "@/components/ui/settings/settings-row";
 import { useSettings } from "@/context/SettingsContext";
-import { useTheme } from "@/hooks/use-theme-colors";
+import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { SettingsSection } from "@/types/settings-ui";
 
 // This is our Configuration map. Adding a new setting is as easy as adding a line here.

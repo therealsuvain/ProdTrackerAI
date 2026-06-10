@@ -19,7 +19,7 @@ import {
 } from "@/db/repositories/task-repository";
 
 import { initDatabase } from "@/db";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 
 interface TaskContextType {
   tasks: Task[];

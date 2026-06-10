@@ -3,9 +3,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import AchievementBadge from "@/components/ui/achievements/achievement-badge";
-import { useTheme } from "@/hooks/use-theme-colors";
+import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { ALL_ACHIEVEMENTS } from "@/types/achievements-ui";
-import { useData } from "../hooks/use-data";
+import { useData } from "../hooks/context-hooks/use-data";
 import { AchievementBadge as BadgeType } from "../types/achievements";
 
 /**

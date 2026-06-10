@@ -28,9 +28,18 @@ export const ChipContainer = ({
       {children}
 
       {!isConfirmed && !isExpired && (
+        /*     <View
+          style={{
+            //flex: 1,
+            borderWidth: 1,
+            borderColor: "black",
+            justifyContent: "flex-end",
+          }}
+        > */
         <TouchableOpacity onPress={onRemove} style={styles.removeBtn}>
-          <Ionicons name="close" size={20} color="#FF3B30" />
+          <Ionicons name="close-circle" size={25} color="#FF3B30" />
         </TouchableOpacity>
+        /* </View> */
       )}
     </View>
   );
@@ -56,5 +65,5 @@ const styles = StyleSheet.create({
     flexDirection: "row", // Force the reset back to row!
     alignItems: "center",
   },
-  removeBtn: { padding: 4, marginLeft: 10, alignItems: "flex-end" },
+  removeBtn: { marginLeft: "auto", padding: 2 },
 });

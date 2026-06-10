@@ -5,10 +5,10 @@ import { useContext } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Card } from "react-native-paper";
 import { XButton } from "../shared/x-button";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { TagList } from "../shared/tags/tag-list";
-import { useEvents } from "@/hooks/use-events";
+import { useEvents } from "@/hooks/context-hooks/use-events";
 
 interface EventItemProps {
   event: CalendarEvent;

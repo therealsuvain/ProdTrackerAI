@@ -15,7 +15,7 @@ import {
   updateCalendarEvent,
 } from "@/db/repositories/event-repository";
 
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 import { cancelReminder } from "@/hooks/use-notifications";
 import { CalendarEvent } from "@/types/calendar";
 

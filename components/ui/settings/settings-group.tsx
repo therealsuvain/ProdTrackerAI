@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
-import { Surface } from 'react-native-paper';
-import { useTheme}  from '@/hooks/use-theme-colors';
+import React from "react";
+import { View, StyleSheet, Text } from "react-native";
+import { Surface } from "react-native-paper";
+import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 
 interface SettingsGroupProps {
   title: string;
@@ -9,19 +9,22 @@ interface SettingsGroupProps {
 }
 
 export const SettingsGroup = ({ title, children }: SettingsGroupProps) => {
-  const {theme} = useTheme();
+  const { theme } = useTheme();
 
   return (
-    <View style={[styles.container, {backgroundColor:theme.background} ]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Text style={[styles.title, { color: theme.text }]}>
         {title.toUpperCase()}
       </Text>
-      <Surface style={[styles.surface, { backgroundColor: theme.background }]} elevation={4}>
+      <Surface
+        style={[styles.surface, { backgroundColor: theme.background }]}
+        elevation={4}
+      >
         {children}
       </Surface>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -32,12 +35,12 @@ const styles = StyleSheet.create({
   title: {
     marginLeft: 12,
     marginBottom: 8,
-    fontWeight: '500',
+    fontWeight: "500",
     letterSpacing: 0.6,
-    fontSize : 22
+    fontSize: 22,
   },
   surface: {
-    flex:1,
+    flex: 1,
     borderRadius: 12,
     //overflow: 'hidden',
   },

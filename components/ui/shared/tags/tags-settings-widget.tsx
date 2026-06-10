@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/use-data"; // Adjust to your context
+import { useData } from "@/hooks/context-hooks/use-data"; // Adjust to your context
 import { TagBadge } from "./tag-badge";
 
 export const TagSettingsWidget = () => {

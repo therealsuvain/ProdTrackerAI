@@ -10,7 +10,7 @@ import {
   Text,
 } from "react-native";
 
-import { useTheme } from "@/hooks/use-theme-colors";
+import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { CategoryBadge } from "./category-badge";
 import { Category } from "@/types/category";
 import { CategoryItem } from "./category-item";

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { randomUUID } from "expo-crypto";
-import { useData } from "@/hooks/use-data"; // Adjust path as needed
+import { useData } from "@/hooks/context-hooks/use-data"; // Adjust path as needed
 
 interface UseTagsAndCategoriesProps {
   visible: boolean;
@@ -60,8 +60,7 @@ export function useTagsAndCategories({ visible, initialTags, initialCategory, up
     await addCategory({ id, name, color, icon });
     setSessionCatIds((prev) => new Set(prev).add(id));
     setCategory(id);
-    if(updateField)
-    {updateField("category", id);} // Sync parent form
+    if (updateField) { updateField("category", id); } // Sync parent form
   };
 
   const handleDeleteCategory = async (draftId: string) => {
@@ -72,8 +71,7 @@ export function useTagsAndCategories({ visible, initialTags, initialCategory, up
     });
     if (category === draftId) {
       setCategory(null);
-      if(updateField)
-      {updateField("category", null)};
+      if (updateField) { updateField("category", null) };
     }
     await deleteUserCategory(draftId);
   };
@@ -97,8 +95,8 @@ export function useTagsAndCategories({ visible, initialTags, initialCategory, up
       const newIds = newNames.length > 0 ? await addTags(newNames.map(name => ({ id: randomUUID(), name }))) : [];
       finalIds = [...existingIds, ...newIds];
     } else {
-      finalIds = tagNames.length > 0 
-        ? await addTags(tagNames.map(name => ({ id: randomUUID(), name }))) 
+      finalIds = tagNames.length > 0
+        ? await addTags(tagNames.map(name => ({ id: randomUUID(), name })))
         : [];
     }
 

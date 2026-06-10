@@ -19,16 +19,21 @@ import { XButton } from "@/components/ui/shared/x-button";
 import TimerEditModal from "@/components/modal/timer-modal";
 import { ThemeContext } from "@/context/ThemeContext";
 import { formatDuration } from "@/context/TimerContext";
-import { useTimer } from "@/hooks/use-timer";
+import { useTimer } from "@/hooks/context-hooks/use-timer";
 import { TimerLog } from "@/types/timer";
 import { getTodayISO, withAlpha, getWeekStartISO } from "@/utils/common-utils";
-import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
-import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
-import { useLogs } from "@/hooks/use-logs";
+import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
+import {
+  DbErrorToast,
+  useDbErrorToast,
+} from "@/components/shared/db-error-toast";
+import { useLogs } from "@/hooks/context-hooks/use-logs";
 import { useHaptics } from "@/hooks/use-haptics";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 import { Category } from "@/types/category";
 import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
+import { useScreenReady } from "@/hooks/use-screen-ready";
+import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 // Note : Timescreen is the only component where value prop is used for the TextInput instead of defaultValue
 // Note ContinuedFromAbove: default Value only takes input once, then doesnt update, the reason its works in other places is because
 // Note ContinuedFromAbove: the modals re-render everytime, so default value gets feeded the latest state value and it looks ok,
@@ -448,6 +453,9 @@ function StatCell({
 }
 
 export default function TimerScreen() {
+  const { isDarkMode } = useContext(ThemeContext);
+  const isReady = useScreenReady();
+  if (!isReady) return <EntitySkeleton isDark={isDarkMode} />;
   return (
     <ScreenErrorBoundary screenName="Timer">
       <TimerScreenInner />

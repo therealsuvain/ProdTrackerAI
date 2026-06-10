@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 
 interface TagAnalyticsModalProps {
   tagId: string;

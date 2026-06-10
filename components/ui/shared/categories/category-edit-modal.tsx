@@ -9,7 +9,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 // import { getCategoryUsageStats } from '@/db/repositories/category-repository';
 
 interface CategoryAnalyticsModalProps {
@@ -19,7 +19,7 @@ interface CategoryAnalyticsModalProps {
   onDelete: (categoryId: string) => void;
 }
 
-export const  CategoryEditModal = ({
+export const CategoryEditModal = ({
   categoryId,
   onClose,
   onEdit,
@@ -177,7 +177,7 @@ export const  CategoryEditModal = ({
       </Pressable>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {},

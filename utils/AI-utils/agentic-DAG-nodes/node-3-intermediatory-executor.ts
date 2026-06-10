@@ -1,8 +1,8 @@
 import { AgentState, ChecklistItem } from "@/types/agent-state";
 import { recordGeminiUsage } from "@/utils/dev-util-token-monitor";
 import { AgentPersona, getRandomProgressText } from "../agent-progess-persona";
-import { ActionRegistry, SilentHandlerList } from "../registry-handler";
-import { sanitizeChatHistory, transformCallsForDeducer } from "./agent-helper-utlilites";
+import { ActionRegistry, SilentHandlerList } from "../agentic-handlers/registry-handler";
+import { sanitizeChatHistory, transformCallsForDeducer } from "./node-helpers/node-3-helpers";
 import { chatIntialize } from "./node-0-chat-initializer";
 import { executeChecklistDeductionNode } from "./node-3.5-checklist-deducer";
 

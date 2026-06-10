@@ -1,4 +1,4 @@
-import { AIActionContext, AIHandler } from "../../types/ai-handler";
+import { AIActionContext, AIHandler } from "@/types/ai-handler";
 import { SearchItemsHandler, getProductivityStats } from './additional-handlers';
 import { AddEventHandler, DeleteEventHandler, DeleteEventSingleOccurrenceHandler, EditEventHandler, QueryEventsHandler } from "./event-handler";
 import { AddHabitHandler, CheckInHabitHandler, DeleteHabitHandler, QueryHabitsHandler } from "./habit-handler";

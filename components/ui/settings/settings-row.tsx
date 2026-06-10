@@ -4,7 +4,7 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Switch, TouchableRipple } from "react-native-paper";
 
-import { useTheme } from "@/hooks/use-theme-colors";
+import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { SettingItem } from "@/types/settings-ui";
 import { CategorySettingsWidget } from "@/components/ui/shared/categories/category-settings-widget";
 import { TagSettingsWidget } from "@/components/ui/shared/tags/tags-settings-widget";

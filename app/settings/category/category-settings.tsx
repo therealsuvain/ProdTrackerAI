@@ -13,11 +13,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/use-data";
-import { useTasks } from "@/hooks/use-tasks";
-import { useHabits } from "@/hooks/use-habits";
-import { useEvents } from "@/hooks/use-events";
-import { useLogs } from "@/hooks/use-logs";
+import { useData } from "@/hooks/context-hooks/use-data";
+import { useTasks } from "@/hooks/context-hooks/use-tasks";
+import { useHabits } from "@/hooks/context-hooks/use-habits";
+import { useEvents } from "@/hooks/context-hooks/use-events";
+import { useLogs } from "@/hooks/context-hooks/use-logs";
 import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
 import { CategoryEditModal } from "@/components/ui/shared/categories/category-edit-modal";
 import { CategoryCreator } from "@/components/ui/shared/categories/category-creation-view";

@@ -15,15 +15,18 @@ import {
   KeyboardProvider,
 } from "react-native-keyboard-controller";
 
-import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
+import {
+  DbErrorToast,
+  useDbErrorToast,
+} from "@/components/shared/db-error-toast";
 import { ThemeContext } from "@/context/ThemeContext";
-import { useChat } from "@/hooks/use-chat";
-import { useData } from "@/hooks/use-data";
-import { useEvents } from "@/hooks/use-events";
-import { useHabits } from "@/hooks/use-habits";
+import { useChat } from "@/hooks/context-hooks/use-chat";
+import { useData } from "@/hooks/context-hooks/use-data";
+import { useEvents } from "@/hooks/context-hooks/use-events";
+import { useHabits } from "@/hooks/context-hooks/use-habits";
 import { usePlaySound } from "@/hooks/use-play-sound";
-import { useTasks } from "@/hooks/use-tasks";
-import { useTimer } from "@/hooks/use-timer";
+import { useTasks } from "@/hooks/context-hooks/use-tasks";
+import { useTimer } from "@/hooks/context-hooks/use-timer";
 import { useVoiceInput } from "@/hooks/use-voice-input";
 import { Message } from "@/types/chat";
 //import { agenticExecutor, processCommandAgentic } from "@/utils/ai-utils";
@@ -53,7 +56,9 @@ import {
 //import { LoadingBubble } from "./loading-bubble-slingshot";
 //import { LoadingBubble } from "./loading-bubble-evaporation";
 //import { LoadingBubble } from "./loading-bubble-cascade";
-import { LoadingBubble } from "./loading-bubble-split-flap";
+import { LoadingBubble } from "@/components/shared/loading-indicators/message-bubble-loaders/loading-bubble-split-flap";
+import { useScreenReady } from "@/hooks/use-screen-ready";
+import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 //import { LoadingBubble } from "./loading-bubble-split-flap-opt";
 
 interface Props {
@@ -325,14 +330,16 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         timestamp: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+      //console.log("AI MSG:", aiMsg);
       if (aiMsg.type === "action") {
-        const msgTime = new Date(aiMsg.timestamp).getTime();
+        //console.log("YES TYPE IS ACTION");
+        //const msgTime = new Date(aiMsg.timestamp).getTime();
         //const expiresAt = msgTime + EXPIRY_THRESHOLD_MS;
         //const expiresIn = EXPIRY_THRESHOLD_MS;
         const timer = setTimeout(() => {
           markActionExpired(aiMsg.id);
           actionExpirationTimers.current.delete(aiMsg.id);
-          console.log("Timer set for : ", EXPIRY_THRESHOLD_MS);
+          console.log(`Timer set for ${aiMsg.id}:`, EXPIRY_THRESHOLD_MS);
         }, EXPIRY_THRESHOLD_MS);
         actionExpirationTimers.current.set(aiMsg.id, timer);
       }
@@ -352,7 +359,13 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const markActionExpired = async (messageId: string) => {
     console.log("markActionExpired", messageId, new Date().getTime());
     const expiredMessage = messageRef.current.find((m) => m.id === messageId);
-    if (!expiredMessage || !expiredMessage.pendingActions) return;
+    if (
+      !expiredMessage ||
+      !expiredMessage.pendingActions ||
+      expiredMessage.isExpired ||
+      expiredMessage.isConfirmed
+    )
+      return;
     console.log("PASSED");
     await editMessage({
       ...expiredMessage,

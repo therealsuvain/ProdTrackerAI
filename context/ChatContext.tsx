@@ -15,7 +15,7 @@ import {
 } from "@/db/repositories/chat-message-repository";
 
 import { Message } from "@/types/chat";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 
 interface ChatContextType {
   messages: Message[];
@@ -78,7 +78,12 @@ export default function ChatProvider({ children }: { children: ReactNode }) {
 
   const editMessage = useCallback(
     async (message: Message): Promise<void> => {
-      console.log("Editing into expiry:", message.type, message.isExpired, message.id);
+      console.log(
+        "Editing into expiry:",
+        message.type,
+        message.isExpired,
+        message.id,
+      );
       await optimisticMessageMutation(
         (prev) => prev.map((m) => (m.id === message.id ? message : m)),
         () => updateMessage(message),

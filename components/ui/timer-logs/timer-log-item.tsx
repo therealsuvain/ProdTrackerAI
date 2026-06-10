@@ -9,7 +9,7 @@ import { formatDuration, formatRelativeTime } from "@/context/TimerContext";
 import { TimerLog } from "@/types/timer";
 import { withAlpha } from "@/utils/common-utils";
 import { TagList } from "@/components/ui/shared/tags/tag-list";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
 interface TimerLogItemProps {
   log: TimerLog;

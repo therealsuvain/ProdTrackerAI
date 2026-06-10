@@ -4,8 +4,9 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryCreator } from "@/components/ui/shared/categories/category-creation-view"; // Adjust path as needed
+import { Category } from "@/types/category";
 
 export const CategorySettingsWidget = () => {
   const { theme } = useContext(ThemeContext);
@@ -27,7 +28,7 @@ export const CategorySettingsWidget = () => {
   ) => {
     // Call your actual DAO insertion here
     if (addCategory) {
-      await addCategory(name, color, icon);
+      await addCategory({ name, color, icon } as Category);
     }
     setIsCreating(false);
   };

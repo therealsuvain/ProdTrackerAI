@@ -4,13 +4,13 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import { SettingsGroup } from "@/components/ui/settings/settings-group";
 import { SettingsRow } from "@/components/ui/settings/settings-row";
-import { useChat } from "@/hooks/use-chat";
-import { useData } from "@/hooks/use-data";
-import { useEvents } from "@/hooks/use-events";
-import { useHabits } from "@/hooks/use-habits";
-import { useLogs } from "@/hooks/use-logs";
-import { useTasks } from "@/hooks/use-tasks";
-import { useTheme } from "@/hooks/use-theme-colors";
+import { useChat } from "@/hooks/context-hooks/use-chat";
+import { useData } from "@/hooks/context-hooks/use-data";
+import { useEvents } from "@/hooks/context-hooks/use-events";
+import { useHabits } from "@/hooks/context-hooks/use-habits";
+import { useLogs } from "@/hooks/context-hooks/use-logs";
+import { useTasks } from "@/hooks/context-hooks/use-tasks";
+import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { SettingItem } from "@/types/settings-ui";
 import { clearStorage } from "@/utils/storage-utils"; // Make sure clearStorage is exported
 

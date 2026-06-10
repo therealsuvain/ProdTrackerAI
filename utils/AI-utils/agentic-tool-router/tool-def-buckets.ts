@@ -1,5 +1,7 @@
 import { FunctionDeclaration, Type } from '@google/genai';
+import { desc } from 'drizzle-orm';
 
+//TODO : remove required field fallbackCategoryId to optional
 // 1. Task Domain
 export const TaskTools: FunctionDeclaration[] = [
     {
@@ -9,6 +11,7 @@ export const TaskTools: FunctionDeclaration[] = [
             type: Type.OBJECT,
             properties: {
                 title: { type: Type.STRING, description: "The title of the task" },
+                description: { type: Type.STRING },
                 priority: { type: Type.STRING, enum: ["low", "medium", "high"] },
                 dueDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
                 category: { type: Type.STRING, description: "ID of the category" },
@@ -27,6 +30,7 @@ export const TaskTools: FunctionDeclaration[] = [
             properties: {
                 id: { type: Type.STRING, description: "The unique task ID" },
                 title: { type: Type.STRING },
+                description: { type: Type.STRING },
                 priority: { type: Type.STRING, enum: ["low", "medium", "high"] },
                 dueDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
                 category: { type: Type.STRING, description: "ID of the category" },
@@ -41,7 +45,6 @@ export const TaskTools: FunctionDeclaration[] = [
                     description: "An array of Tag IDs to REMOVE from the item."
                 },
                 reminder: { type: Type.BOOLEAN, description: "whether the user wants a notification reminder" },
-                completed: { type: Type.BOOLEAN },
                 reminderDate: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of dueDate and convert the user's local time to UTC using the offset provided in the system context." }
             },
             required: ["id"]
@@ -124,6 +127,7 @@ export const EventTools: FunctionDeclaration[] = [
             type: Type.OBJECT,
             properties: {
                 title: { type: Type.STRING, description: "The title of the event" },
+                description: { type: Type.STRING },
                 startDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
                 endDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
                 startTime: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of startDate and convert the user's local time to UTC using the offset provided in the system context." },
@@ -144,6 +148,7 @@ export const EventTools: FunctionDeclaration[] = [
             properties: {
                 id: { type: Type.STRING, description: "The unique event ID" },
                 title: { type: Type.STRING },
+                description: { type: Type.STRING },
                 startDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
                 endDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
                 startTime: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of startDate and convert the user's local time to UTC using the offset provided in the system context." },
@@ -284,7 +289,7 @@ export const TaxonomyTools: FunctionDeclaration[] = [
                 names: {
                     type: Type.ARRAY,
                     items: { type: Type.STRING },
-                    description: "An array of tag names to create (without the # symbol). E.g., ['urgent', 'health', 'finance']"
+                    description: "An array of tag names (even a single tag should be in an array) to create (without the # symbol). E.g., ['urgent', 'health', 'finance']"
                 },
                 isPrerequisite: {
                     type: Type.BOOLEAN,

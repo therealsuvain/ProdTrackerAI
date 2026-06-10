@@ -5,7 +5,7 @@ import { TouchableOpacity } from "react-native";
 import { DrawerActions, useNavigation } from "@react-navigation/native";
 import { Provider as PaperProvider } from "react-native-paper";
 
-import { useTheme } from "@/hooks/use-theme-colors";
+import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 
 export default function TabLayout() {
   const { theme } = useTheme();
@@ -63,7 +63,7 @@ export default function TabLayout() {
           headerStyle: {
             backgroundColor: theme.taskBase,
           },
-          tabBarIcon: ({ color,focused }) => (
+          tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "list" : "list-outline"}
               size={24}
@@ -81,7 +81,7 @@ export default function TabLayout() {
           headerStyle: {
             backgroundColor: theme.eventBase,
           },
-          tabBarIcon: ({color, focused }) => (
+          tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "calendar" : "calendar-outline"}
               size={24}
@@ -99,7 +99,7 @@ export default function TabLayout() {
           headerStyle: {
             backgroundColor: theme.habitBase,
           },
-          tabBarIcon: ({ color,focused }) => (
+          tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "document-text" : "document-text-outline"}
               size={24}
@@ -117,7 +117,7 @@ export default function TabLayout() {
           headerStyle: {
             backgroundColor: theme.timerBase,
           },
-          tabBarIcon: ({color, focused }) => (
+          tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "alarm" : "alarm-outline"}
               size={24}

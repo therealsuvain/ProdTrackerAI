@@ -2,8 +2,8 @@ import { View, StyleSheet, FlatList, Alert, Text } from "react-native";
 import { useContext, useState, useEffect, useCallback, useRef } from "react";
 import { FAB, Portal, Searchbar } from "react-native-paper";
 
-import { useHabits } from "@/hooks/use-habits";
-import { useData } from "@/hooks/use-data";
+import { useHabits } from "@/hooks/context-hooks/use-habits";
+import { useData } from "@/hooks/context-hooks/use-data";
 import { Habit } from "@/types/habits";
 import { GlobalMetricKey } from "@/types/metrics";
 
@@ -11,7 +11,7 @@ import HabitItem from "@/components/ui/habits/habit-item";
 import HabitModal from "@/components/modal/habit-modal";
 import { GoalCompletionModal } from "@/components/modal/goal-completion-modal";
 import HabitHeatmap from "@/components/ui/habits/habit-heatmap";
-import { useHabitForm } from "@/hooks/use-habit-form";
+import { useHabitForm } from "@/hooks/use-forms/use-habit-form";
 import { ThemeContext } from "@/context/ThemeContext";
 import { cancelReminder } from "@/hooks/use-notifications";
 import {
@@ -21,9 +21,14 @@ import {
 import { withAlpha } from "@/utils/common-utils";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { usePlaySound } from "@/hooks/use-play-sound";
-import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
-import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
+import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
+import {
+  DbErrorToast,
+  useDbErrorToast,
+} from "@/components/shared/db-error-toast";
 import { useHaptics } from "@/hooks/use-haptics";
+import { useScreenReady } from "@/hooks/use-screen-ready";
+import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 
 // TODOOptim : shifting logic from habit-screen , habit-item, habiit-stats to utils maybe
 function HabitsScreenInner() {
@@ -72,7 +77,7 @@ function HabitsScreenInner() {
       const habit = habits.find((h) => h.id === updated.id);
       if (!habit) return;
       try {
-        await editHabit(updated, updated.tags || []);
+        await editHabit(updated);
         let updateMetrics: GlobalMetricKey[] = [];
         if (habit.history.length < updated.history.length) {
           updateMetrics.push("habitsCheckedIn");
@@ -258,6 +263,9 @@ function HabitsScreenInner() {
 }
 
 export default function HabitsScreen() {
+  const { isDarkMode } = useContext(ThemeContext);
+  const isReady = useScreenReady();
+  if (!isReady) return <EntitySkeleton isDark={isDarkMode} />;
   return (
     <ScreenErrorBoundary screenName="Habits">
       <HabitsScreenInner />

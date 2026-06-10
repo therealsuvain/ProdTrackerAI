@@ -1,7 +1,7 @@
 import { recordGeminiUsage } from "@/utils/dev-util-token-monitor";
 import { gemini_ai } from "../llm-client";
-import { MasterToolIndex } from "../tool-index";
-import { resolveDependencies } from "./agent-helper-utlilites";
+import { MasterToolIndex } from "../agentic-tool-router/tool-index";
+import { resolveDependencies } from "./node-helpers/node-2-helpers";
 
 export const executeRouterNode = async (transcript: string, checklist: string[]): Promise<{ domain: string, tools: any[] }> => {
     console.log("=========================================================");

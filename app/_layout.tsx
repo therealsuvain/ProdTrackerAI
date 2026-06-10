@@ -7,8 +7,8 @@ import { ErrorBoundary } from "react-error-boundary";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 
-import SuspenseBoundary from "@/components/suspense-boundary";
-import { RootFallbackComponent } from "@/components/error-fallback-component";
+import SuspenseBoundary from "@/components/shared/suspense-boundary";
+import { RootFallbackComponent } from "@/components/shared/error-fallback-component";
 import ThemeProvider from "@/context/ThemeContext";
 import { SettingsProvider } from "@/context/SettingsContext";
 import { Sidebar } from "@/components/ui/sidebar";

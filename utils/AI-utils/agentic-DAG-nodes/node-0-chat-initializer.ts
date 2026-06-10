@@ -1,6 +1,6 @@
 import { gemini_ai } from "../llm-client";
 import { generateSystemPrompt } from "../system-prompt";
-import { AllTools } from "../tool-def-buckets";
+import { AllTools } from "../agentic-tool-router/tool-def-buckets";
 
 let activeChatSession: any = null;
 let currentActiveDomain: string | null = null; // Tracks which bucket is currently loaded

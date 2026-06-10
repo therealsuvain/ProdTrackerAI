@@ -1,11 +1,11 @@
 // components/ui/sidebar-content.tsx
 import React from "react";
-import { View, StyleSheet,Text } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
 import { useRouter } from "expo-router";
 import { Avatar } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "@/hooks/use-theme-colors";
+import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 
 export const Sidebar = (props: any) => {
   const router = useRouter();
@@ -26,14 +26,10 @@ export const Sidebar = (props: any) => {
           label="PT"
           style={{ backgroundColor: theme.taskBase }}
         />
-        <Text
-          style={[styles.nameText, { color: theme.text }]}
-        >
+        <Text style={[styles.nameText, { color: theme.text }]}>
           ProdTracker User
         </Text>
-        <Text
-          style={[styles.taglineText, { color: theme.text }]}
-        >
+        <Text style={[styles.taglineText, { color: theme.text }]}>
           Stay Productive
         </Text>
       </View>

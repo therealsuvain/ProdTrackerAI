@@ -11,7 +11,7 @@ import {
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useTheme } from "@/hooks/use-theme-colors";
+import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 
 // Extract the static array of ~2,100 valid glyph names
 const ICON_NAMES = Object.keys(Ionicons.glyphMap) as Array<

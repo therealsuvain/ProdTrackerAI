@@ -12,7 +12,7 @@ import { XButton } from "../shared/x-button";
 import { HabitStats } from "./habit-stats";
 import { TargetDaysRow } from "./habit-target-days";
 import { useHabitDeniedFeedback } from "./habit-denied-feedback-util";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { TagList } from "../shared/tags/tag-list";
 

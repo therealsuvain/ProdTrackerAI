@@ -3,7 +3,7 @@ import { useReducer } from "react";
 import { useEffect } from "react";
 import { validateEventTimes } from "@/utils/event-utils";
 import { randomUUID } from "expo-crypto";
-import { cancelReminder, scheduleReminderEvents } from "./use-notifications";
+import { cancelReminder, scheduleReminderEvents } from "../use-notifications";
 import { generateEmbedding } from '@/utils/embedding-engine'
 
 type FormState = Omit<CalendarEvent, "id"> & {
@@ -227,7 +227,7 @@ export const useEventForm = ({
       newEvent.notificationIds = notifIds;
     }
 
-    if(tagsIds.length > 0) {
+    if (tagsIds.length > 0) {
       newEvent.tags = tagsIds
     }
     if (editingEvent) {

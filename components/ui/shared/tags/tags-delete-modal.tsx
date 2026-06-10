@@ -7,7 +7,7 @@ import {
   View,
   Text,
 } from "react-native";
-import { useTheme } from "@/hooks/use-theme-colors";
+import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { TagBadge } from "./tag-badge";
 
 interface TagsDeleteModalProps {

@@ -18,7 +18,7 @@ import Animated from "react-native-reanimated";
 
 import { useHabitDeniedFeedback } from "@/components/ui/habits/habit-denied-feedback-util";
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 import { CalendarEvent } from "@/types/calendar";
 import { Habit } from "@/types/habits";
 import { GlobalMetricKey } from "@/types/metrics";

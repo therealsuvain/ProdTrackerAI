@@ -1,8 +1,8 @@
 import { AIHandler } from "@/types/ai-handler";
 import { Habit } from "@/types/habits";
-import { cancelReminder, scheduleReminderHabits } from "../../hooks/use-notifications";
-import { checkInHabit } from "../habit-utils";
-import { createHabit } from "../model-factory-utils";
+import { cancelReminder, scheduleReminderHabits } from "@/hooks/use-notifications";
+import { checkInHabit } from "../../habit-utils";
+import { createHabit } from "../../model-factory-utils";
 
 export const AddHabitHandler: AIHandler = {
   execute: async (params, context) => {
@@ -19,7 +19,7 @@ export const AddHabitHandler: AIHandler = {
     context.addHabit(newHabit);
     console.log(`AI Action: Added Habit "${newHabit.title}"`);
     const { id, embedding, ...rest } = newHabit;
-    return { status: "success", habit:{ id: id.slice(0, 8), ...rest } };
+    return { status: "success", habit: { id: id.slice(0, 8), ...rest } };
   }
 
 }
@@ -83,12 +83,12 @@ export const QueryHabitsHandler: AIHandler = {
           fh: targetHabit.freezeHistory || [], // AI can look at this to see exactly when it was frozen
           cat: targetHabit.category,
           tg: targetHabit.tags,
-          rem : targetHabit.reminder,
-          rd : targetHabit.reminderDate,
-          psrar : targetHabit.pendingStreakResetAfter||'',
-          gc: targetHabit.goalCompletions? targetHabit.goalCompletions.map((gc:any) => JSON.stringify(gc)) : [],
-          ct : targetHabit.createdAt,
-          ut : targetHabit.updatedAt,
+          rem: targetHabit.reminder,
+          rd: targetHabit.reminderDate,
+          psrar: targetHabit.pendingStreakResetAfter || '',
+          gc: targetHabit.goalCompletions ? targetHabit.goalCompletions.map((gc: any) => JSON.stringify(gc)) : [],
+          ct: targetHabit.createdAt,
+          ut: targetHabit.updatedAt,
         }
       };
     }
@@ -137,18 +137,18 @@ export const QueryHabitsHandler: AIHandler = {
         ls: h.longestStreak,
         g: h.goal,
         f: h.streakFreezes,
-        fh : h.freezeHistory,
+        fh: h.freezeHistory,
         totalCheckIns: h.history.length,
         ldc: h.history.length > 0 ? h.history[h.history.length - 1] : "Never",
         currentlyFrozen: h.freezeHistory?.length ? isToday(h.freezeHistory[h.freezeHistory.length - 1]) : false,
-        cat: h.category||'',// ? h.category.slice(0, 8) : '-',
-        tg: h.tags||[],//?.length ? h.tags.map((id:string) => id.slice(0, 8)).join('|') : '-',
-        rem : h.reminder,
-        psrar : h.pendingStreakResetAfter||'',
-        gc: h.goalCompletions? h.goalCompletions.map((gc:any) => JSON.stringify(gc)) : [],
-        rd : h.reminderDate,
-        ct : h.createdAt,
-        ut : h.updatedAt
+        cat: h.category || '',// ? h.category.slice(0, 8) : '-',
+        tg: h.tags || [],//?.length ? h.tags.map((id:string) => id.slice(0, 8)).join('|') : '-',
+        rem: h.reminder,
+        psrar: h.pendingStreakResetAfter || '',
+        gc: h.goalCompletions ? h.goalCompletions.map((gc: any) => JSON.stringify(gc)) : [],
+        rd: h.reminderDate,
+        ct: h.createdAt,
+        ut: h.updatedAt
       }))
     };
   }

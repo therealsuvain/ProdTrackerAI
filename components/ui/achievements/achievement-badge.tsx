@@ -1,4 +1,4 @@
-import { useTheme } from "@/hooks/use-theme-colors";
+import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { AchievementDefinition } from "@/types/achievements-ui";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";

@@ -7,7 +7,7 @@ import { useRoute } from "@react-navigation/native";
 import { useContext } from "react";
 import { ThemeContext } from "@/context/ThemeContext";
 import { TagList } from "../shared/tags/tag-list";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "../shared/categories/category-badge";
 
 const today = new Date().toISOString().split("T")[0];

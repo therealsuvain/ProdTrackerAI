@@ -17,19 +17,6 @@ export const executeChecklistDeductionNode = async (
     console.log("[DAG] Micro-Node: DEDUCING CHECKLIST PROGRESS...");
     console.log("[DAG] Pending Checklist Items:", JSON.stringify(pendingItems));
     console.log("[DAG] Summary:", JSON.stringify(summary));
-    /*   const deductionPrompt = `
-      You are a strict auditor verifying system state.
-      Pending Checklist Intents:
-      ${JSON.stringify(pendingItems.map(i => ({ id: i.id, intent: i.intent })))}
-    
-      System Execution Summary (What was actually successfully created):
-      ${JSON.stringify(summary)}
-    
-      Compare the executed tools against the checklist.
-      Return a JSON array containing ONLY the string "id"s of the checklist items that have been fully completed based on the summary.
-      `; */
-
-    // Proposed simplified logic for the Deducer
     const deductionPrompt = `
   You are an auditor verifying task completion based on entity names.
   

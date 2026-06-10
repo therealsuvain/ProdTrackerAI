@@ -1,4 +1,6 @@
 import { ScrollView, StyleSheet, View } from "react-native";
+import React, { useCallback, useContext, useState } from "react";
+import Animated from "react-native-reanimated";
 import {
   Button,
   Divider,
@@ -11,7 +13,7 @@ import {
   Text,
 } from "react-native-paper";
 
-import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
+import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
 import { AnalyticsSection } from "@/components/ui/analytics-section";
 import EventItem from "@/components/ui/calendar-events/event-item";
 import { ChatScreen } from "@/components/ui/chat/chat-screen";
@@ -21,15 +23,15 @@ import { SearchResults } from "@/components/ui/search-results";
 import TaskItem from "@/components/ui/tasks/task-item";
 import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
 import { ThemeContext } from "@/context/ThemeContext";
-import { useEvents } from "@/hooks/use-events";
-import { useHabits } from "@/hooks/use-habits";
-import { useLogs } from "@/hooks/use-logs";
+import { useEvents } from "@/hooks/context-hooks/use-events";
+import { useHabits } from "@/hooks/context-hooks/use-habits";
+import { useLogs } from "@/hooks/context-hooks/use-logs";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useSearch } from "@/hooks/use-search";
-import { useTasks } from "@/hooks/use-tasks";
+import { useTasks } from "@/hooks/context-hooks/use-tasks";
 import { Habit } from "@/types/habits";
 import { getTodayISO } from "@/utils/common-utils";
-import { useContext, useState } from "react";
+import { useFlapAnimation } from "@/hooks/animations/use-flap-animation";
 
 /**
  * TODOOptim 2 : Many files are very large, try and make it more modular. ALL FILES HAVE TO CHECKED FOR POSSIBLE <REFACTORS></REFACTORS>
@@ -64,6 +66,7 @@ import { useContext, useState } from "react";
  * TODO : Home page search is broken right now
  *
  */
+
 function HomeScreenInner() {
   const { theme } = useContext(ThemeContext);
   const { tasks, toggleTask } = useTasks();
@@ -83,6 +86,28 @@ function HomeScreenInner() {
   let upcomingEvents = events.slice(0, 3);
   let activeHabits = habits.slice(0, 3);
   let recentLogs = timerLogs.slice(0, 3);
+  // Launch anim values
+
+  /*   const todayFlap = useFlapAnimation({
+    launchDelay: 0,
+    intervalMs: 15000,
+    triggerOffset: 0,
+  });
+  const eventsFlap = useFlapAnimation({
+    launchDelay: 200,
+    intervalMs: 15000,
+    triggerOffset: 6000,
+  });
+  const timerLogsFlap = useFlapAnimation({
+    launchDelay: 400,
+    intervalMs: 15000,
+    triggerOffset: 12000,
+  });
+  const habitsFlap = useFlapAnimation({
+    launchDelay: 600,
+    intervalMs: 15000,
+    triggerOffset: 18000,
+  }); */
 
   const toggleTaskCompleted = async (id: string) => {
     await toggleTask(id);
@@ -149,7 +174,26 @@ function HomeScreenInner() {
             </Button>
           )}
 
-          <Text style={{ color: theme.taskBase }} variant="headlineLarge">
+          {/*    <Animated.Text
+            onLayout={todayFlap.onLayout}
+            style={[
+              styles.sectionTitle,
+              todayFlap.animatedStyle,
+              {
+                color: theme.taskBase,
+              },
+            ]}
+          >
+            Today's Task
+          </Animated.Text> */}
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: theme.taskBase,
+              },
+            ]}
+          >
             Today's Task
           </Text>
           {todaysTasks.length ? (
@@ -165,7 +209,26 @@ function HomeScreenInner() {
           )}
           <Divider style={styles.divider} />
 
-          <Text style={{ color: theme.eventBase }} variant="headlineLarge">
+          {/*           <Animated.Text
+            onLayout={eventsFlap.onLayout}
+            style={[
+              styles.sectionTitle,
+              eventsFlap.animatedStyle,
+              {
+                color: theme.eventBase,
+              },
+            ]}
+          >
+            Upcoming Events
+          </Animated.Text> */}
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: theme.eventBase,
+              },
+            ]}
+          >
             Upcoming Events
           </Text>
           {upcomingEvents.length ? (
@@ -177,7 +240,26 @@ function HomeScreenInner() {
           )}
           <Divider style={styles.divider} />
 
-          <Text style={{ color: theme.timerBase }} variant="headlineLarge">
+          {/*           <Animated.Text
+            onLayout={timerLogsFlap.onLayout}
+            style={[
+              styles.sectionTitle,
+              timerLogsFlap.animatedStyle,
+              {
+                color: theme.timerBase,
+              },
+            ]}
+          >
+            Recent Timer Logs
+          </Animated.Text> */}
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: theme.timerBase,
+              },
+            ]}
+          >
             Recent Timer Logs
           </Text>
           {recentLogs.length ? (
@@ -194,7 +276,26 @@ function HomeScreenInner() {
           )}
           <Divider style={styles.divider} />
 
-          <Text style={{ color: theme.habitBase }} variant="headlineLarge">
+          {/*           <Animated.Text
+            onLayout={habitsFlap.onLayout}
+            style={[
+              styles.sectionTitle,
+              habitsFlap.animatedStyle,
+              {
+                color: theme.habitBase,
+              },
+            ]}
+          >
+            Active Habits
+          </Animated.Text> */}
+          <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: theme.habitBase,
+              },
+            ]}
+          >
             Active Habits
           </Text>
           {activeHabits.length ? (
@@ -338,7 +439,14 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  sectionTitle: { marginVertical: 8 },
+  sectionTitle: {
+    marginLeft: 5,
+    fontSize: 32,
+    fontWeight: "500",
+    // IMPORTANT: backfaceVisibility prevents the text "disappearing"
+    // when rotateX goes past 90deg during the slap
+    backfaceVisibility: "hidden",
+  },
   divider: { marginVertical: 16 },
   toggleContainer: {
     flexDirection: "row",

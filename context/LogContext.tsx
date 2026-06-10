@@ -16,7 +16,7 @@ import {
 } from "@/db/repositories/timer-log-repository";
 
 import { TimerLog } from "@/types/timer";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 
 interface LogContextType {
   timerLogs: TimerLog[];

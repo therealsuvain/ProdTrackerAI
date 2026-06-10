@@ -11,19 +11,24 @@ import {
 import { FAB, Portal } from "react-native-paper";
 
 import ViewSwitcher from "@/components/ui/calendar-events/view-switcher-event";
-import { useCalendarState } from "@/hooks/use-calendar-state";
-import { useEventForm } from "@/hooks/use-event-form";
-import { useEvents } from "@/hooks/use-events";
+import { useCalendarState } from "@/hooks/context-hooks/use-calendar-state";
+import { useEventForm } from "@/hooks/use-forms/use-event-form";
+import { useEvents } from "@/hooks/context-hooks/use-events";
 import { CalendarEvent } from "@/types/calendar";
 
-import { DbErrorToast, useDbErrorToast } from "@/components/db-error-toast";
+import {
+  DbErrorToast,
+  useDbErrorToast,
+} from "@/components/shared/db-error-toast";
 import CalendarEventModal from "@/components/modal/calendar-event-modal";
-import { ScreenErrorBoundary } from "@/components/screen-error-boundary";
+import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
 import Timeline from "@/components/ui/calendar-events/calendar-timeline-view";
 import CalendarListAgendaV2 from "@/components/ui/calendar-events/v2-calendar-list-agenda-view-v2";
 import { ThemeContext } from "@/context/ThemeContext";
 import { useHaptics } from "@/hooks/use-haptics";
 import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-list-agenda-view-main";
+import { useScreenReady } from "@/hooks/use-screen-ready";
+import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 
 // TODOX - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {
@@ -168,6 +173,9 @@ function CalendarScreenInner() {
 }
 
 export default function CalendarScreen() {
+  const { isDarkMode } = useContext(ThemeContext);
+  const isReady = useScreenReady();
+  if (!isReady) return <EntitySkeleton isDark={isDarkMode} />;
   return (
     <ScreenErrorBoundary screenName="Calendar">
       <CalendarScreenInner />

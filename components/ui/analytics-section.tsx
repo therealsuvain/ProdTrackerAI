@@ -1,47 +1,54 @@
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/use-data";
-import { getHabitProgress, getTaskCompletion, getTotalTimeTracked } from "@/utils/analytics-utils";
+import { useData } from "@/hooks/context-hooks/use-data";
+import {
+  getHabitProgress,
+  getTaskCompletion,
+  getTotalTimeTracked,
+} from "@/utils/analytics-utils";
 import { useContext } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { PieChart } from "react-native-chart-kit";
-import { useTasks } from "@/hooks/use-tasks";
-import { useEvents } from "@/hooks/use-events";
-import { useLogs } from "@/hooks/use-logs";
-import { useHabits } from "@/hooks/use-habits";
+import { useTasks } from "@/hooks/context-hooks/use-tasks";
+import { useEvents } from "@/hooks/context-hooks/use-events";
+import { useLogs } from "@/hooks/context-hooks/use-logs";
+import { useHabits } from "@/hooks/context-hooks/use-habits";
 
-export function AnalyticsSection(){
-    const {tasks}= useTasks();
-    const {timerLogs}= useLogs();
-    const {habits}= useHabits();
-    const {theme} = useContext(ThemeContext)
-    const taskCompletion= getTaskCompletion(tasks);
-    const timeTracked= getTotalTimeTracked(timerLogs, 'week');
-    const habitProgres = getHabitProgress(habits);
+export function AnalyticsSection() {
+  const { tasks } = useTasks();
+  const { timerLogs } = useLogs();
+  const { habits } = useHabits();
+  const { theme } = useContext(ThemeContext);
+  const taskCompletion = getTaskCompletion(tasks);
+  const timeTracked = getTotalTimeTracked(timerLogs, "week");
+  const habitProgres = getHabitProgress(habits);
 
-    const chartData= habitProgres.map((h,i)=>({
-        name:h.title,
-        progress: h.progress,
-        color: `rgb(${Math.random()*256}, ${Math.random() * 255}, ${Math.random() * 255})`,
-        legendFontColor: theme.greyBasePrimary,
-    }))
+  const chartData = habitProgres.map((h, i) => ({
+    name: h.title,
+    progress: h.progress,
+    color: `rgb(${Math.random() * 256}, ${Math.random() * 255}, ${Math.random() * 255})`,
+    legendFontColor: theme.greyBasePrimary,
+  }));
 
-    return(
-        <View style={{justifyContent:"center", alignItems:"center"}}>
-            <Text style={{color:theme.text}}>Task Completion: {taskCompletion.toFixed(0)}%</Text>
-            <Text style={{color:theme.text}}>Time Tracked (Week) : {timeTracked} min</Text>
-            <Text style={{color:theme.text}}>Habits Progress</Text>
-            <PieChart
-            data={chartData}
-            width={300}
-            height={200}
-            chartConfig={{color: ()=> 'blue'}}
-            accessor="progress"
-            backgroundColor="transparent"
-            paddingLeft="15"
-            />
-        </View>
-    )
+  return (
+    <View style={{ justifyContent: "center", alignItems: "center" }}>
+      <Text style={{ color: theme.text }}>
+        Task Completion: {taskCompletion.toFixed(0)}%
+      </Text>
+      <Text style={{ color: theme.text }}>
+        Time Tracked (Week) : {timeTracked} min
+      </Text>
+      <Text style={{ color: theme.text }}>Habits Progress</Text>
+      <PieChart
+        data={chartData}
+        width={300}
+        height={200}
+        chartConfig={{ color: () => "blue" }}
+        accessor="progress"
+        backgroundColor="transparent"
+        paddingLeft="15"
+      />
+    </View>
+  );
 }
 
-const styles = StyleSheet.create({
-})
+const styles = StyleSheet.create({});

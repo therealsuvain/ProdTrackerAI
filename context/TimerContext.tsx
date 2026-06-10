@@ -10,14 +10,14 @@ import * as Notifications from "expo-notifications";
 import { randomUUID } from "expo-crypto";
 
 import { TimerLog } from "@/types/timer";
-import { useData } from "@/hooks/use-data";
+import { useData } from "@/hooks/context-hooks/use-data";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   showNotification,
   stopNativeTimer,
   addTimerActionListener,
 } from "../modules/notifications-timer";
-import { useLogs } from "@/hooks/use-logs";
+import { useLogs } from "@/hooks/context-hooks/use-logs";
 
 export type TimerMode = "stopwatch" | "countdown";
 interface TimerContextType {
