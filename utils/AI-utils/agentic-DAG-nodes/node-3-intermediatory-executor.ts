@@ -37,6 +37,7 @@ export const executeActionNode = async (state: AgentState, context: any, onProgr
         else if (call.name.toLowerCase().includes("category")) onProgress?.(getRandomProgressText(AgentPersona.ACTION_CATEGORY));
         else if (call.name.toLowerCase().includes("tag")) onProgress?.(getRandomProgressText(AgentPersona.ACTION_TAG));
         else if (call.name.toLowerCase().includes("search")) onProgress?.(getRandomProgressText(AgentPersona.ACTION_SEARCH));
+        else if (call.name.toLowerCase().includes("event")) onProgress?.(getRandomProgressText(AgentPersona.ACTION_EVENT));
 
         if (SilentHandlerList.includes(call.name) || call.args?.isPrerequisite === true) {
             console.log(`[Silent-Agent] Executing ${call.name}...`);

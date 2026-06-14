@@ -67,6 +67,11 @@ export default function EventItem({ event, onEdit, onDelete }: EventItemProps) {
               </Text>
             )}
           </View>
+          {eventLocal.description && (
+            <Text style={[styles.descriptionText]}>
+              {eventLocal.description}
+            </Text>
+          )}
           {!isNotHome && (
             <Text style={{ color: theme.whiteBase }}>
               Start:{new Date(eventLocal.startTime).toLocaleTimeString()}
@@ -113,4 +118,5 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     position: "relative",
   },
+  descriptionText: { fontSize: 12, fontStyle: "italic", color: "grey" },
 });

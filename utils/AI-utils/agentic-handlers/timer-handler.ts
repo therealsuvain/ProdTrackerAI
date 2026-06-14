@@ -1,4 +1,5 @@
 import { AIHandler } from "@/types/ai-handler";
+import { resolveIdsFromNames } from "./tags-and-categories-handlers";
 
 export const StartTimerHandler: AIHandler = {
   execute: async (params, context) => {
@@ -21,7 +22,8 @@ export const StopTimerHandler: AIHandler = {
 
 export const QueryTimerLogsHandler: AIHandler = {
   execute: async (args: any, context: any) => {
-    const { minDurationMinutes, maxDurationMinutes, sortBy = "newest_first", specificLogId } = args;
+    const { minDurationMinutes, maxDurationMinutes, sortBy = "newest_first", specificLogId, categoryName,
+      tagNames } = args;
 
     // DEEP DIVE: Specific Timer Log
     if (specificLogId) {
@@ -37,9 +39,18 @@ export const QueryTimerLogsHandler: AIHandler = {
         durationSeconds: targetLog.duration || 0
       };
     }
-
+    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, context.categories)[0] : undefined;
+    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, context.tags) : [];
     let filtered = [...(context.timerLogs || [])];
+    if (targetCategoryId) {
+      filtered = filtered.filter(t => t.category === targetCategoryId);
+    }
 
+    if (targetTagIds.length > 0) {
+      filtered = filtered.filter(t =>
+        targetTagIds.every((tagId: string) => t.tags?.includes(tagId))
+      );
+    }
     // Filter by Duration (Convert minutes from AI into seconds for DB comparison)
     if (minDurationMinutes !== undefined) {
       filtered = filtered.filter(log => (log.duration || 0) >= minDurationMinutes * 60);

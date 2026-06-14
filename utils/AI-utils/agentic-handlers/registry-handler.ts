@@ -1,7 +1,7 @@
 import { AIActionContext, AIHandler } from "@/types/ai-handler";
-import { SearchItemsHandler, getProductivityStats } from './additional-handlers';
+import { SearchItemsHandler, getProductivityStats, getImmediateContext, searchHistoricalActions } from './additional-handlers';
 import { AddEventHandler, DeleteEventHandler, DeleteEventSingleOccurrenceHandler, EditEventHandler, QueryEventsHandler } from "./event-handler";
-import { AddHabitHandler, CheckInHabitHandler, DeleteHabitHandler, QueryHabitsHandler } from "./habit-handler";
+import { AddHabitHandler, EditHabitHandler, CheckInHabitHandler, FreezeHabitHandler, DeleteHabitHandler, QueryHabitsHandler } from "./habit-handler";
 import { AddTaskHandler, CompleteTaskHandler, DeleteTaskHandler, EditTaskHandler, QueryTasksHandler } from "./task-handler";
 import { QueryTimerLogsHandler, StartTimerHandler, StopTimerHandler } from "./timer-handler";
 import { SearchTaxonomyHandler, AddCategoryHandler, EditCategoryHandler, DeleteCategoryHandler, AddTagHandler, EditTagHandler, DeleteTagHandler, GetTaxonomyStatsHandler } from "./tags-and-categories-handlers"
@@ -16,8 +16,7 @@ import { SearchTaxonomyHandler, AddCategoryHandler, EditCategoryHandler, DeleteC
  * TODOAdd 66 : - delete-event_instance(id, date[]), - freeze-habit(id) handlers
 //TODO : the current execution fails when the user asks to retry, the AI cannot comprehend how to retry for some reason, maybe resend chat history when prompted to retry
 //TODO :  Query handler should be able to query based on categories and tags
-//TODO : searchTaxonomy handler should be able to return all categories and tags, currently its not able to handle query type of all/.
-//TODO : Additional Habit Handlers
+//TODO : searchTaxonomy handler should be able to return all categories and tags, currently its not able to handle query type of all
  */
 export const SilentHandlerList: string[] = [
     "searchItems",
@@ -27,7 +26,9 @@ export const SilentHandlerList: string[] = [
     "queryHabits",
     "queryEvents",
     "queryTimerLogs",
-    "getTaxonomyStats"
+    "getTaxonomyStats",
+    "getImmediateContext",
+    "searchHistoricalActions"
 ]
 export const ActionRegistry: Record<string, AIHandler> = {
     "addTask": AddTaskHandler,
@@ -35,8 +36,10 @@ export const ActionRegistry: Record<string, AIHandler> = {
     "deleteTask": DeleteTaskHandler,
     "completeTask": CompleteTaskHandler,
     "addHabit": AddHabitHandler,
+    "editHabit": EditHabitHandler,
     "deleteHabit": DeleteHabitHandler,
     "checkinHabit": CheckInHabitHandler,
+    "freezeHabit": FreezeHabitHandler,
     "addEvent": AddEventHandler,
     "editEvent": EditEventHandler,
     "deleteEvent": DeleteEventHandler,
@@ -57,6 +60,8 @@ export const ActionRegistry: Record<string, AIHandler> = {
     "searchTaxonomy": SearchTaxonomyHandler,
     "getStats": getProductivityStats,
     "getTaxonomyStats": GetTaxonomyStatsHandler,
+    "getImmediateContext": getImmediateContext,
+    "searchHistoricalActions": searchHistoricalActions
 };
 
 export const executeActions = async (

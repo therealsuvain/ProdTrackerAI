@@ -37,6 +37,7 @@ const customComparator = (prev: HabitItemProps, next: HabitItemProps) => {
     prev.habit.freezeHistory?.length === next.habit.freezeHistory?.length &&
     prev.habit.goal === next.habit.goal &&
     prev.habit.title === next.habit.title &&
+    prev.habit.description === next.habit.description &&
     prev.habit.targetDays === next.habit.targetDays && // array ref — stable if not edited
     prev.habit.category === next.habit.category &&
     prev.habit.tags === next.habit.tags &&
@@ -121,6 +122,9 @@ function HabitItem({
                 <CategoryBadge category={habitCategory} variant="iconOnly" />
               )}
             </View>
+            {habit.description && (
+              <Text style={[styles.descriptionText]}>{habit.description}</Text>
+            )}
             {habit.pendingStreakResetAfter ? (
               <>
                 <Text
@@ -232,4 +236,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 500,
   },
+  descriptionText: { fontSize: 12, fontStyle: "italic", color: "grey" },
 });

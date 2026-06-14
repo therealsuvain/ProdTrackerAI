@@ -1,19 +1,20 @@
 import { recordGeminiUsage } from "@/utils/dev-util-token-monitor";
 import { gemini_ai } from "../llm-client";
+import { sanitizeForFeedbackNode } from "./node-helpers/node-5-helpers";
 
 export const processExecutionFeedback = async (executionResults: any[], context: any, transcript: string) => {
     // If nothing was executed, do nothing
     if (!executionResults || executionResults.length === 0) return null;
     console.log("FEEDBACK LOOP, EXECUTION RESUTLS", JSON.stringify(executionResults, null, 2));
-    // Re-initialize the chat so it has the current history
-    //const chat = await chatIntialize(context);
+    const sanitizedResults = sanitizeForFeedbackNode(executionResults);
     console.log("SERVING FEEDBACK FOR USER REQUEST: ", transcript)
+    console.log("With SANITIZED Results: ", JSON.stringify(sanitizedResults, null, 2))
     // Create a silent system prompt telling the AI what just happened
     const feedbackPrompt = `
   The user originally asked: "${transcript}"
   [SYSTEM PROTOCOL: EXECUTION RESULTS]
   The user confirmed your proposed actions. Here are the real-world results of those executions:
-  ${JSON.stringify(executionResults, null, 2)}
+  ${JSON.stringify(sanitizedResults, null, 2)}
   
   Please provide a brief, conversational summary to the user based on these rules:
   1. If 'status' is 'success', keep it short and encouraging.

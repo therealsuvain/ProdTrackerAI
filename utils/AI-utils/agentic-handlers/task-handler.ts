@@ -2,6 +2,7 @@ import { AIHandler } from "@/types/ai-handler";
 import { cancelReminder, scheduleReminderTasks } from "@/hooks/use-notifications";
 import { createTask } from "../../model-factory-utils";
 import { getTimeRangeHelper } from "./additional-handlers";
+import { resolveIdsFromNames } from "./tags-and-categories-handlers";
 
 // TODOX : If task is marked complete then notification is cancelled in the AI handler, but not in the task item logic, 
 // also if task is then marked incomplete, then a new notificaiton is not scheduled, R&D how it should be ideally
@@ -101,7 +102,8 @@ export const CompleteTaskHandler: AIHandler = {
 
 export const QueryTasksHandler: AIHandler = {
   execute: async (args: any, context: any) => {
-    const { status = "all", priority = "all", timeRange = "all", sortBy = "newest_first", specificTaskId } = args;
+    const { status = "all", priority = "all", timeRange = "all", sortBy = "newest_first", specificTaskId, categoryName,
+      tagNames } = args;
 
     if (specificTaskId) {
       const targetTask = context.tasks.find((t: any) => t.id.slice(0, 8) === specificTaskId);
@@ -125,12 +127,22 @@ export const QueryTasksHandler: AIHandler = {
         }
       };
     }
-
+    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, context.categories)[0] : undefined;
+    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, context.tags) : [];
+    console.log("FOund tags and cat ids", targetTagIds, targetCategoryId);
     let filtered = [...context.tasks];
     const now = new Date();
     const startOfToday = new Date(now.setHours(0, 0, 0, 0));
     const endOfToday = new Date(now.setHours(23, 59, 59, 999));
+    if (targetCategoryId) {
+      filtered = filtered.filter(t => t.category === targetCategoryId);
+    }
 
+    if (targetTagIds.length > 0) {
+      filtered = filtered.filter(t =>
+        targetTagIds.every((tagId: string) => t.tags?.includes(tagId))
+      );
+    }
     // 1. Filter by Status
     if (status === "pending") {
       filtered = filtered.filter(t => !t.completed);
@@ -154,7 +166,7 @@ export const QueryTasksHandler: AIHandler = {
         return taskDate >= rangeStart && taskDate <= rangeEnd;
       });
     }
-
+    console.log("QUERY TASKS: FILTERED", filtered);
     // 4. Sort Logic
     filtered.sort((a, b) => {
       if (sortBy === "oldest_first") return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
@@ -168,6 +180,8 @@ export const QueryTasksHandler: AIHandler = {
       }
       return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
     });
+
+    if (filtered.length === 0) return { output: "No relevant Tasks found" };
 
     // 5. Return Summary (ID, Title, Status, DueDate)
     return {

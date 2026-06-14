@@ -85,6 +85,20 @@ export default function HabitModal({
           {state.errors.title}
         </Text>
       )}
+      <TextInput
+        style={[styles.verticalMargin, { backgroundColor: theme.background }]}
+        textColor={theme.text}
+        label="Habit Description"
+        mode="outlined"
+        activeOutlineColor={theme.habitBase}
+        theme={{
+          colors: {
+            onSurfaceVariant: theme.greyBasePrimary, // Color when unfocused
+          },
+        }}
+        defaultValue={state.description}
+        onChangeText={(text) => updateField("description", text)}
+      />
       <TagsAndCategorySection
         editor={tagsAndCategoryEditor}
         itemType="habit"

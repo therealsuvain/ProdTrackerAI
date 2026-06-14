@@ -1,6 +1,6 @@
 import { AllToolSchemas } from "../../agentic-tool-router/tool-index";
 
-export const resolveDependencies = (requestedToolNames: string[]): any[] => {
+export const resolveDependencies = (requestedToolNames: string[], checklist: string[]): any[] => {
     console.log("[DAG] Tool Names Requested by Router:", requestedToolNames);
 
     // Use a Set to automatically prevent duplicates
@@ -41,6 +41,11 @@ export const resolveDependencies = (requestedToolNames: string[]): any[] => {
     ) {
         finalToolNames.add("searchTaxonomy");
     }
+    if (checklist.find(item => item.startsWith("[INQUIRY]"))) {
+        finalToolNames.add("searchHistoricalActions");
+    }
+
+    finalToolNames.add("getImmediateContext");
     // --- MAPPING TO SCHEMAS ---
     const finalSchemas: any[] = [];
     finalToolNames.forEach(name => {

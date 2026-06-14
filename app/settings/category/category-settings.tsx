@@ -21,6 +21,7 @@ import { useLogs } from "@/hooks/context-hooks/use-logs";
 import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
 import { CategoryEditModal } from "@/components/ui/shared/categories/category-edit-modal";
 import { CategoryCreator } from "@/components/ui/shared/categories/category-creation-view";
+import { CategoryDeleteModal } from "@/components/ui/shared/categories/category-delete-modal";
 
 // We will build this in Step 3. Importing it now as a placeholder.
 // import { CategoryAnalyticsModal } from '@/components/settings/category-analytics-modal';
@@ -210,26 +211,12 @@ export default function CategoriesSettingsScreen() {
       </ScrollView>
 
       {/* 5. The Analytics Modal Placeholder (Step 3) */}
-      <Modal
-        visible={!!selectedCategoryId}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setSelectedCategoryId(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <View
-            style={[styles.modalContent, { backgroundColor: theme.background }]}
-          >
-            <CategoryEditModal
-              categoryId={selectedCategoryId!}
-              onClose={() => setSelectedCategoryId(null)}
-              onEdit={handleEdit}
-              onDelete={handleDeleteRequest}
-            />
-          </View>
-        </View>
-      </Modal>
-      {/** Editing Modal*/}
+      <CategoryEditModal
+        categoryId={selectedCategoryId!}
+        onClose={() => setSelectedCategoryId(null)}
+        onEdit={handleEdit}
+        onDelete={handleDeleteRequest}
+      />
       {categoryToEdit && editData && (
         <CategoryCreator
           isCreating={true}
@@ -243,50 +230,12 @@ export default function CategoriesSettingsScreen() {
       )}
       {/* Reassignment Modal */}
       {categoryToDelete && (
-        <Modal visible={true} animationType="fade" transparent={true}>
-          <View style={styles.modalOverlay}>
-            <View
-              style={[
-                styles.modalContent,
-                { backgroundColor: theme.background, minHeight: "40%" },
-              ]}
-            >
-              <Text
-                style={{
-                  color: theme.whiteBase,
-                  fontSize: 18,
-                  fontWeight: "bold",
-                  marginBottom: 16,
-                }}
-              >
-                Select Fallback Category
-              </Text>
-              <Text style={{ color: theme.greyBasePrimary, marginBottom: 20 }}>
-                Choose a category to migrate existing tasks and habits to.
-              </Text>
-
-              <ScrollView contentContainerStyle={styles.wrapContainer}>
-                {categories
-                  .filter((c) => c.id !== categoryToDelete)
-                  .map((cat) => (
-                    <Pressable
-                      key={cat.id}
-                      onPress={() => executeReassignment(cat.id)}
-                    >
-                      <CategoryBadge category={cat} />
-                    </Pressable>
-                  ))}
-              </ScrollView>
-
-              <Pressable
-                onPress={() => setCategoryToDelete(null)}
-                style={{ marginTop: 20, alignItems: "center" }}
-              >
-                <Text style={{ color: theme.greyBasePrimary }}>Cancel</Text>
-              </Pressable>
-            </View>
-          </View>
-        </Modal>
+        <CategoryDeleteModal
+          categories={categories}
+          categoryToDelete={categoryToDelete}
+          onClose={() => setCategoryToDelete(null)}
+          onReassign={executeReassignment}
+        />
       )}
     </View>
   );
@@ -344,15 +293,5 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 20,
     fontStyle: "italic",
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
-    borderRadius: 20,
-    padding: 24,
-    margin: 20,
   },
 });

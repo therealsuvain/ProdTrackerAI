@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Pressable,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -13,7 +14,7 @@ import { useData } from "@/hooks/context-hooks/use-data";
 // import { getCategoryUsageStats } from '@/db/repositories/category-repository';
 
 interface CategoryAnalyticsModalProps {
-  categoryId: string;
+  categoryId: string | null;
   onClose: () => void;
   onEdit: (categoryId: string) => void;
   onDelete: (categoryId: string) => void;
@@ -43,6 +44,7 @@ export const CategoryEditModal = ({
     const fetchStats = async () => {
       setIsLoading(true);
       // Replace with your actual DAO call:
+      if (!categoryId) return;
       const data = await getCategoryUsageForAll(categoryId);
 
       // MOCK DATA FOR TESTING:
@@ -107,80 +109,119 @@ export const CategoryEditModal = ({
   if (!category) return null;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Header Row */}
-      <View style={styles.headerRow}>
-        <Text style={[styles.categoryName, { color: theme.whiteBase }]}>
-          {category.name}
-        </Text>
+    <Modal
+      visible={!!categoryId}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View
+          style={[styles.modalContent, { backgroundColor: theme.background }]}
+        >
+          <View style={[{ backgroundColor: theme.background }]}>
+            {/* Header Row */}
+            <View style={styles.headerRow}>
+              <Text style={[styles.categoryName, { color: theme.whiteBase }]}>
+                {category.name}
+              </Text>
 
-        {/* Modular Line representing total times */}
-        <View style={styles.totalBadge}>
-          <Text style={[styles.totalText, { color: theme.whiteBase }]}>
-            {stats.total}
-          </Text>
-          <Text style={[styles.totalLabel, { color: theme.greyBasePrimary }]}>
-            Allotted
-          </Text>
+              {/* Modular Line representing total times */}
+              <View style={styles.totalBadge}>
+                <Text style={[styles.totalText, { color: theme.whiteBase }]}>
+                  {stats.total}
+                </Text>
+                <Text
+                  style={[styles.totalLabel, { color: theme.greyBasePrimary }]}
+                >
+                  Allotted
+                </Text>
+              </View>
+            </View>
+
+            {/* Usage History Section */}
+            <Text
+              style={[styles.sectionTitle, { color: theme.greyBasePrimary }]}
+            >
+              Usage History
+            </Text>
+
+            {isLoading ? (
+              <ActivityIndicator
+                size="large"
+                color={category.color}
+                style={{ marginVertical: 30 }}
+              />
+            ) : (
+              <View style={styles.waffleContainer}>
+                {waffleDots.map((dotColor, index) => (
+                  <View
+                    key={index}
+                    style={[styles.dot, { backgroundColor: dotColor }]}
+                  />
+                ))}
+              </View>
+            )}
+
+            {/* Action Buttons */}
+            <View style={styles.actionRow}>
+              <Pressable
+                style={[
+                  styles.actionBtn,
+                  { borderColor: theme.greyBasePrimary },
+                ]}
+                onPress={() => onEdit(category.id)}
+              >
+                <Ionicons name="pencil" size={18} color={theme.whiteBase} />
+                <Text style={[styles.actionText, { color: theme.whiteBase }]}>
+                  Edit
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.actionBtn,
+                  { borderColor: theme.error || "#ef4444" },
+                ]}
+                onPress={() => onDelete(category.id)}
+              >
+                <Ionicons
+                  name="trash"
+                  size={18}
+                  color={theme.error || "#ef4444"}
+                />
+                <Text
+                  style={[
+                    styles.actionText,
+                    { color: theme.error || "#ef4444" },
+                  ]}
+                >
+                  Delete
+                </Text>
+              </Pressable>
+            </View>
+
+            <Pressable onPress={onClose} style={styles.closeBtn}>
+              <Ionicons name="close" size={28} color={theme.greyBasePrimary} />
+            </Pressable>
+          </View>
         </View>
       </View>
-
-      {/* Usage History Section */}
-      <Text style={[styles.sectionTitle, { color: theme.greyBasePrimary }]}>
-        Usage History
-      </Text>
-
-      {isLoading ? (
-        <ActivityIndicator
-          size="large"
-          color={category.color}
-          style={{ marginVertical: 30 }}
-        />
-      ) : (
-        <View style={styles.waffleContainer}>
-          {waffleDots.map((dotColor, index) => (
-            <View
-              key={index}
-              style={[styles.dot, { backgroundColor: dotColor }]}
-            />
-          ))}
-        </View>
-      )}
-
-      {/* Action Buttons */}
-      <View style={styles.actionRow}>
-        <Pressable
-          style={[styles.actionBtn, { borderColor: theme.greyBasePrimary }]}
-          onPress={() => onEdit(category.id)}
-        >
-          <Ionicons name="pencil" size={18} color={theme.whiteBase} />
-          <Text style={[styles.actionText, { color: theme.whiteBase }]}>
-            Edit
-          </Text>
-        </Pressable>
-
-        <Pressable
-          style={[styles.actionBtn, { borderColor: theme.error || "#ef4444" }]}
-          onPress={() => onDelete(category.id)}
-        >
-          <Ionicons name="trash" size={18} color={theme.error || "#ef4444"} />
-          <Text
-            style={[styles.actionText, { color: theme.error || "#ef4444" }]}
-          >
-            Delete
-          </Text>
-        </Pressable>
-      </View>
-
-      <Pressable onPress={onClose} style={styles.closeBtn}>
-        <Ionicons name="close" size={28} color={theme.greyBasePrimary} />
-      </Pressable>
-    </View>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {},
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    borderRadius: 20,
+    padding: 24,
+    margin: 20,
+  },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",

@@ -2,6 +2,7 @@ import { AIHandler } from "@/types/ai-handler";
 import { cancelReminder, scheduleReminderEvents } from "@/hooks/use-notifications";
 import { createEvent } from "@/utils/model-factory-utils";
 import { getTimeRangeHelper } from "./additional-handlers";
+import { resolveIdsFromNames } from "./tags-and-categories-handlers";
 
 //! 59567 Port for qbitorent
 export const AddEventHandler: AIHandler = {
@@ -85,7 +86,8 @@ export const DeleteEventHandler: AIHandler = {
 
 export const QueryEventsHandler: AIHandler = {
   execute: async (args: any, context: any) => {
-    const { timeRange = "today", timeOfDay = "all", specificEventId } = args;
+    const { timeRange = "today", timeOfDay = "all", specificEventId, categoryName,
+      tagNames } = args;
     const now = new Date();
 
     // DEEP DIVE: If AI asks about a specific event (e.g., "How many yoga classes left?")
@@ -131,11 +133,20 @@ export const QueryEventsHandler: AIHandler = {
         }
       };
     }
-
+    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, context.categories)[0] : undefined;
+    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, context.tags) : [];
     // GENERAL QUERY (Time Ranges and Time of Day)
     let filtered = [...(context.events || [])];
     const startOfToday = new Date(now.setHours(0, 0, 0, 0));
+    if (targetCategoryId) {
+      filtered = filtered.filter(e => e.category === targetCategoryId);
+    }
 
+    if (targetTagIds.length > 0) {
+      filtered = filtered.filter(e =>
+        targetTagIds.every((tagId: string) => e.tags?.includes(tagId))
+      );
+    }
     // Filter by Time Of Day (Ignoring date part, just looking at hours)
     if (timeOfDay !== "all") {
       filtered = filtered.filter(e => {

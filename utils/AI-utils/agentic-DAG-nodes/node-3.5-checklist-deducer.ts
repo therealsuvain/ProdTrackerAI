@@ -9,8 +9,9 @@ export const executeChecklistDeductionNode = async (
     // If the checklist is empty or no tools were called, nothing to deduce.
 
     const pendingItems = currentChecklist.filter(item => item.status === "PENDING");
-    if (pendingItems.length === 0 ||
-        (summary.tasksCreated.length + summary.habitsCreated.length + summary.categoriesCreated.length + summary.tagsCreated.length) === 0)
+    if (pendingItems.length === 0
+        //||(summary.tasksCreated.length + summary.habitsCreated.length + summary.categoriesCreated.length + summary.tagsCreated.length) === 0
+    )
         return [];
 
     console.log("=========================================================");
@@ -24,9 +25,10 @@ export const executeChecklistDeductionNode = async (
   Execution Summary: ${JSON.stringify(summary)}
 
   Logic: 
-  For each checklist intent, extract the core entity name (e.g., Task name, Habit name, Category name).
-  If that entity name is present in the corresponding array in the Execution Summary (tasksCreated, habitsCreated, categoriesCreated, or tagsCreated), mark the checklist item as COMPLETED.
-  
+  1. For each checklist intent, extract the core entity name (e.g., Task name, Habit name, Category name).
+  2. If that entity name is present in the corresponding array in the Execution Summary (tasksCreated, habitsCreated, categoriesCreated, or tagsCreated), mark the checklist item as COMPLETED.
+  3. If a checklist item's intent begins with the [INQUIRY] prefix, it does NOT require a tool call or database mutation to be completed. 
+     You must return ID of the [INQUIRY] item immediately if the provided summary data indicates inquiriesHandled": true.
   Return a JSON array of completed IDs.
 `;
 

@@ -1,13 +1,14 @@
 import {
     AddTaskSchema, EditTaskSchema, DeleteTaskSchema, CompleteTaskSchema,
-    AddHabitSchema, CheckInHabitSchema, DeleteHabitSchema,
+    AddHabitSchema, CheckInHabitSchema, DeleteHabitSchema, EditHabitSchema, FreezeHabitSchema,
     AddEventSchema, EditEventSchema, DeleteEventSchema, DeleteSingleEventSchema,
     StartTimerSchema, StopTimerSchema,
     AddCategorySchema, EditCategorySchema, DeleteCategorySchema,
     AddTagSchema, EditTagSchema, DeleteTagSchema,
     QueryTasksSchema, QueryHabitsSchema, QueryEventsSchema, QueryTimerLogsSchema,
     SearchItemsSchema, SearchTaxonomySchema,
-    GetStatsSchema, GetTaxonomyStatsSchema
+    GetStatsSchema, GetTaxonomyStatsSchema,
+    GetImmediateContextSchema, SearchHistoricalActionsSchema
 } from "../../agentic-tool-router/tool-schemas";
 
 export const validateCall = (name: string, args: any) => {
@@ -17,7 +18,9 @@ export const validateCall = (name: string, args: any) => {
         case 'deleteTask': return DeleteTaskSchema.parse(args);
         case 'completeTask': return CompleteTaskSchema.parse(args);
         case 'addHabit': return AddHabitSchema.parse(args);
+        case 'editHabit': return EditHabitSchema.parse(args);
         case 'checkinHabit': return CheckInHabitSchema.parse(args);
+        case 'freezeHabit': return FreezeHabitSchema.parse(args);
         case 'deleteHabit': return DeleteHabitSchema.parse(args);
         case 'addEvent': return AddEventSchema.parse(args);
         case 'editEvent': return EditEventSchema.parse(args);
@@ -39,6 +42,8 @@ export const validateCall = (name: string, args: any) => {
         case 'searchTaxonomy': return SearchTaxonomySchema.parse(args);
         case 'getStats': return GetStatsSchema.parse(args);
         case 'getTaxonomyStats': return GetTaxonomyStatsSchema.parse(args);
+        case 'getImmediateContext': return GetImmediateContextSchema.parse(args);
+        case 'searchHistoricalActions': return SearchHistoricalActionsSchema.parse(args);
         default: throw new Error(`No schema found for ${name}`);
     }
 };

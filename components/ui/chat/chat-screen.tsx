@@ -59,6 +59,7 @@ import {
 import { LoadingBubble } from "@/components/shared/loading-indicators/message-bubble-loaders/loading-bubble-split-flap";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 //import { LoadingBubble } from "./loading-bubble-split-flap-opt";
 
 interface Props {
@@ -68,9 +69,9 @@ interface Props {
 /**
  * TODOOptim 43: use ThemeContext for colors
  * TODOOptim 44: maybe make chat-screen leaner by using chat-utils
- * TODO: Action expiry not working
  * TODOX 108: handle case where an unconfirmed action is modifiying an item, but the user manually edits as well, prevent confimation of that action
  * TODO : update Ui when all pending actions are removed, so pendingActions is empty
+ * TODO : 'STATE_SYNC_RESOLVED" and text like this visible in chat, these are LLM response for interal state correction only shouldnt be output to user's chat-screen
  */
 const EXPIRY_THRESHOLD_MS = 30 * 60 * 1000; // 30 Minutes
 
@@ -81,7 +82,14 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const navigation = useNavigation();
   const { isLoading, startRecording, stopRecording, transcript, error } =
     useVoiceInput({});
-  const { messages, setMessages, addMessage, editMessage } = useChat();
+  const {
+    messages,
+    setMessages,
+    addMessage,
+    editMessage,
+    getImmediateContext,
+    getMoreContext,
+  } = useChat();
   const {
     trackMetric,
     categories,
@@ -137,6 +145,8 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     updateUserTag,
     deleteUserTag,
     getTagUsageForAll,
+    getImmediateContext,
+    getMoreContext,
   };
   const chatItems = useMemo(() => injectDaySeparators(messages), [messages]);
   const [agentProgress, setAgentProgress] = useState<string | null>(null);
@@ -223,8 +233,10 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         list: tasks,
         pick: (t) => ({
           title: t.title,
+          description: t.description,
           dueDate: t.dueDate,
           priority: t.priority,
+          category: categories.find((c: any) => c.id === t.category),
           tags: t.tags,
         }),
       },
@@ -232,21 +244,26 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         list: habits,
         pick: (h) => ({
           title: h.title,
+          description: h.description,
           streak: h.streak,
           goal: h.goal,
           streakFreezes: h.streakFreezes,
+          category: categories.find((c: any) => c.id === h.category),
           tags: h.tags,
+          targetDays: h.targetDays,
         }),
       },
       Event: {
         list: events,
         pick: (e) => ({
           title: e.title,
+          description: e.description,
           startDate: e.startDate,
           endDate: e.endDate,
           startTime: e.startTime,
           endTime: e.endTime,
           tags: e.tags,
+          category: categories.find((c: any) => c.id === e.category),
         }),
       },
       Category: {
@@ -298,7 +315,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       updatedAt: new Date().toISOString(),
     };
     await addMessage(userMsg);
-    //setMessages((prev) => [userMsg, ...prev]); // Inverted list
     setAgentProgress(getRandomProgressText(AgentPersona.WAKING_UP));
     setIsThinking(true);
 
@@ -384,40 +400,10 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       clearTimeout(t);
       actionExpirationTimers.current.delete(message.id);
     }
-
-    /*     // 1. Check for Expiry
-    const isExpired =
-      Date.now() - new Date(message.timestamp).getTime() > EXPIRY_THRESHOLD_MS;
-
-    if (isExpired) {
-      // Update the specific bubble to an 'expired' state
-      const expiredMessage = messages.find((m) => m.id === msgId);
-      if (!expiredMessage) return;
-      await editMessage({ ...expiredMessage, isExpired: true });
-      //  setMessages((prev) =>
-      //   prev.map((m) => (m.id === msgId ? { ...m, isExpired: true } : m)),
-      // ); 
-
-      // Add a helpful AI feedback message
-      const feedbackMsg: Message = {
-        id: Date.now().toString(),
-        sender: "ai",
-        type: "text",
-        text: "This action request has expired to prevent errors.⏳",
-        timestamp: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      await addMessage(feedbackMsg);
-      //setMessages((prev) => [feedbackMsg, ...prev]);
-      trackMetric(["chatActionsExpired"], 1);
-      return;
-    } */
     const confirmedMessage = messages.find((m) => m.id === msgId);
     if (!confirmedMessage) return;
     await editMessage({ ...confirmedMessage, isConfirmed: true });
-    /* setMessages((prev) =>
-      prev.map((m) => (m.id === msgId ? { ...m, isConfirmed: true } : m)),
-    ); */
+
     try {
       // B. Run the background logic
       const response = await agenticExecutor(
@@ -441,7 +427,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         updatedAt: new Date().toISOString(),
       };
       await addMessage(successMsg);
-      //setMessages((prev) => [successMsg, ...prev]);
       trackMetric(["chatActionsConfirmed"], 1);
     } catch (err) {}
   };
@@ -450,9 +435,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     const canclledMessage = messages.find((m) => m.id === msgId);
     if (!canclledMessage) return;
     await editMessage({ ...canclledMessage, isConfirmed: true });
-    /*  setMessages((prev) =>
-      prev.map((m) => (m.id === msgId ? { ...m, isConfirmed: true } : m)),
-    ); */
 
     const cancelMsg: Message = {
       id: Date.now().toString(),
@@ -463,7 +445,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       updatedAt: new Date().toISOString(),
     };
     await addMessage(cancelMsg);
-    //setMessages((prev) => [cancelMsg, ...prev]);
     trackMetric(["chatActionsCancelled"], 1);
   };
 
@@ -520,7 +501,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     </View>
   );
 
-  //! TEMP FUCNTION FOR ANIMATION TESTING
+  /*   //! TEMP FUCNTION FOR ANIMATION TESTING
 
   // Temporary function to test the 3D Text Transitioner
   const runAnimationTest = async () => {
@@ -543,7 +524,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
 
     // Optional: clear it at the end to simulate completion
     setAgentProgress(null);
-  };
+  }; */
 
   useEffect(() => {
     messageRef.current = messages;

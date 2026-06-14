@@ -57,12 +57,14 @@ export const processCommandAgentic = async (transcript: string, context: any, on
 
     try {
         // 2. Run Planner (Only if prompt looks complex, otherwise skip to save tokens)
-        if (transcript.includes("and") || transcript.includes(",")) {
+        /* if (transcript.includes("and") || transcript.includes(",")) {
             onProgress?.(getRandomProgressText(AgentPersona.PLANNING));
             state.checklist = await executePlannerNode(state.transcript);
         } else {
             state.checklist = [{ id: "fallback-1", intent: state.transcript, status: "PENDING" }];
-        }
+        } */
+        onProgress?.(getRandomProgressText(AgentPersona.PLANNING));
+        state.checklist = await executePlannerNode(state.transcript);
 
         // 3. Run Router
         onProgress?.(getRandomProgressText(AgentPersona.ROUTING));
@@ -81,7 +83,7 @@ export const processCommandAgentic = async (transcript: string, context: any, on
                 const prevCallsLength = state.accumulatedConfirmationCalls.length;
 
                 // Run the Executor
-                onProgress?.("Executing actions ")
+                onProgress?.(getRandomProgressText(AgentPersona.EXECUTING))
                 //const nodeResult = await executeActionNode(state, context, onProgress);
                 const nodeResult = await executeWithRetry(state, context, onProgress);
                 const newConfirmationCalls = nodeResult.accumulatedConfirmationCalls || [];
@@ -161,6 +163,10 @@ export const processCommandAgentic = async (transcript: string, context: any, on
 
 
                 safetyCounter++;
+                if (safetyCounter >= 10) {
+                    console.log("[DAG] Edge: UH's OH's Safety counter exceeded. Exiting graph.");
+                    break;
+                }
             }
             catch (error) {
                 const fallbackResult = await executeFallbackNode(state, error);
@@ -171,7 +177,10 @@ export const processCommandAgentic = async (transcript: string, context: any, on
         console.log("_________________________________________________________");
         console.log("[DAG] Node Main: FINAL State:", JSON.stringify({ ...state, selectedTools: state.selectedDomain }));
         console.log("_________________________________________________________");
-        // 5. Return exact same payload to the UI
+
+        if (state.finalTextResponse) {
+            state.finalTextResponse = state.finalTextResponse.replace('STATE_SYNC_RESOLVED', '').trim();
+        }
         return {
             response: state.finalTextResponse,
             calls: state.accumulatedConfirmationCalls

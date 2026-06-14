@@ -1,8 +1,9 @@
 import { AIHandler } from "@/types/ai-handler";
 import { Habit } from "@/types/habits";
 import { cancelReminder, scheduleReminderHabits } from "@/hooks/use-notifications";
-import { checkInHabit } from "../../habit-utils";
+import { checkInHabit, freezeHabit } from "../../habit-utils";
 import { createHabit } from "../../model-factory-utils";
+import { resolveIdsFromNames } from "./tags-and-categories-handlers";
 
 export const AddHabitHandler: AIHandler = {
   execute: async (params, context) => {
@@ -22,6 +23,37 @@ export const AddHabitHandler: AIHandler = {
     return { status: "success", habit: { id: id.slice(0, 8), ...rest } };
   }
 
+}
+
+export const EditHabitHandler: AIHandler = {
+  execute: async (params, context) => {
+    const oldHabit = context.habits.find((t) => t.id.slice(0, 8) === params.id);
+    if (!oldHabit) {
+      throw new Error("Habit not found");
+    }
+    let currentTags = Array.isArray(oldHabit.tags) ? [...oldHabit.tags] : [];
+
+    if (params.addTagIds && Array.isArray(params.addTagIds)) {
+      currentTags = [...new Set([...currentTags, ...params.addTagIds])];
+    }
+
+    if (params.removeTagIds && Array.isArray(params.removeTagIds)) {
+      currentTags = currentTags.filter(id => !params.removeTagIds.includes(id));
+    }
+    const newHabit = await createHabit({ ...oldHabit, ...params, tags: currentTags, id: oldHabit.id });
+    if (newHabit.reminder) {
+      try {
+        if (newHabit.notificationId) await cancelReminder(newHabit.notificationId);
+        newHabit.notificationId = await scheduleReminderHabits(newHabit);
+      } catch (error) {
+        console.warn("Failed to schedule habit notifications:", error);
+        return { status: "partial_success", reason: "Failed to schedule notification", task: newHabit };
+      }
+    }
+    await context.editHabit(newHabit);
+    const { id, embedding, ...rest } = newHabit;
+    return { status: "success", habit: { id: id.slice(0, 8), ...rest } };
+  }
 }
 
 export const DeleteHabitHandler: AIHandler = {
@@ -52,6 +84,18 @@ export const CheckInHabitHandler: AIHandler = {
   }
 };
 
+export const FreezeHabitHandler: AIHandler = {
+  execute: async (params, context) => {
+    const habit = context.habits.find((h) => h.id.slice(0, 8) === params.id);
+    if (!habit) throw new Error("Habit not found");
+    const result = freezeHabit(habit);
+    if (result.status === "denied")
+      return { status: "denied", reason: result.reason }
+    await context.editHabit(result.habit);
+    const { id, title } = result.habit;
+    return { status: "success", habit: { id: id.slice(0, 8), title } };
+  }
+}
 const isToday = (dateString?: string) => {
   if (!dateString) return false;
   const d = new Date(dateString);
@@ -62,7 +106,8 @@ const isToday = (dateString?: string) => {
 // --- 1. HABITS HANDLER ---
 export const QueryHabitsHandler: AIHandler = {
   execute: async (args: any, context: any) => {
-    const { frequency = "all", stateFilter = "all", sortBy = "none", specificHabitId } = args;
+    const { frequency = "all", stateFilter = "all", sortBy = "none", specificHabitId, categoryName,
+      tagNames } = args;
 
     // DEEP DIVE: Specific Habit
     if (specificHabitId) {
@@ -73,6 +118,7 @@ export const QueryHabitsHandler: AIHandler = {
         output: {
           id: targetHabit.id,
           t: targetHabit.title,
+          d: targetHabit.description,
           fq: targetHabit.frequency,
           cs: targetHabit.streak,
           ls: targetHabit.longestStreak,
@@ -92,9 +138,19 @@ export const QueryHabitsHandler: AIHandler = {
         }
       };
     }
-
+    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, context.categories)[0] : undefined;
+    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, context.tags) : [];
     let filtered = [...(context.habits || [])];
 
+    if (targetCategoryId) {
+      filtered = filtered.filter(h => h.category === targetCategoryId);
+    }
+
+    if (targetTagIds.length > 0) {
+      filtered = filtered.filter(h =>
+        targetTagIds.every((tagId: string) => h.tags?.includes(tagId))
+      );
+    }
     // 1. Frequency Filter
     if (frequency !== "all") {
       filtered = filtered.filter(h => h.frequency === frequency);
@@ -132,6 +188,7 @@ export const QueryHabitsHandler: AIHandler = {
       output: filtered.map(h => ({
         id: h.id.slice(0, 8),
         t: h.title,
+        d: h.description,
         fq: h.frequency,
         csk: h.streak,
         ls: h.longestStreak,

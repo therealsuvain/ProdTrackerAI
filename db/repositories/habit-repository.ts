@@ -42,6 +42,7 @@ function rowToHabit(
     return {
         id: row.id,
         title: row.title,
+        description: row.description ?? undefined,
         frequency: row.frequency,
         reminder: row.reminder,
         // FIXED: reminderDate stored as INTEGER (unix ms), convert back to Date
@@ -162,6 +163,7 @@ function habitToInsert(habit: Habit): HabitInsert {
     return {
         id: habit.id,
         title: habit.title,
+        description: habit.description,
         frequency: habit.frequency,
         reminder: habit.reminder,
         reminderDate: habit.reminderDate ?? null,
@@ -241,7 +243,7 @@ export async function insertHabit(habit: Habit): Promise<Habit> {
         if (goalCompletionRows.length > 0) {
             await tx.insert(habitGoalCompletions).values(goalCompletionRows);
         }
-       if (habit.tags && habit.tags.length > 0) {
+        if (habit.tags && habit.tags.length > 0) {
             const junctionData = habit.tags.map((tagId) => ({
                 habitId: habit.id,
                 tagId: tagId,
@@ -250,7 +252,7 @@ export async function insertHabit(habit: Habit): Promise<Habit> {
             await tx.insert(habitTags).values(junctionData);
         }
     });
- 
+
     // Return the full assembled habit
     return habit;
 }
@@ -292,7 +294,7 @@ export async function updateHabit(habit: Habit): Promise<Habit> {
             await tx.insert(habitGoalCompletions).values(goalCompletionRows);
         }
 
-         await tx
+        await tx
             .delete(habitTags)
             .where(eq(habitTags.habitId, habit.id));
 

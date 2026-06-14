@@ -1,4 +1,4 @@
-//NOTE LEADS TO APP CRASH 
+//NOTE LEADS TO APP CRASH
 
 import { useEffect, useCallback } from 'react';
 import Animated, {
@@ -7,21 +7,28 @@ import Animated, {
     withSpring,
     withTiming,
     runOnUI,
+    cancelAnimation,
+    SharedValue
 } from 'react-native-reanimated';
 
 // ✅ Standalone worklet — defined OUTSIDE component, Babel workletizes it correctly
-function flapWorklet(rotateX: any) {
+function flapWorklet(rotateX: SharedValue<number>) {
     'worklet';
+    cancelAnimation(rotateX);           // ← cancel any still-running spring first
     rotateX.value = -28;
     rotateX.value = withSpring(0, {
         damping: 0.2,
         stiffness: 25,
         mass: 0.25,
         velocity: 15,
+        energyThreshold: 0.1
     });
 }
 
-function launchWorklet(launchOpacity: any, launchTranslateY: any) {
+function launchWorklet(
+    launchOpacity: SharedValue<number>,
+    launchTranslateY: SharedValue<number>,
+) {
     'worklet';
     launchOpacity.value = withTiming(1, { duration: 480 });
     launchTranslateY.value = withSpring(0, { damping: 18, stiffness: 180 });
@@ -49,22 +56,41 @@ export function useFlapAnimation({
             runOnUI(launchWorklet)(launchOpacity, launchTranslateY);
         }, launchDelay);
         return () => clearTimeout(t);
-    }, []);
+    }, [launchDelay]);
 
     // ─── INTERVAL ────────────────────────────────────────────────
     useEffect(() => {
-        const intervalRef = { id: 0 };
+        // Use ReturnType so the handle is typed correctly on both
+        // React Native (opaque object) and Node (number) runtimes.
+        // Storing in a ref-object avoids stale-closure issues.
+        const intervalRef: {
+            offsetTimer: ReturnType<typeof setTimeout> | null;
+            ticker: ReturnType<typeof setInterval> | null
+        } = {
+            offsetTimer: null,
+            ticker: null,
+        };
 
-        const offsetTimer = setTimeout(() => {
+        intervalRef.offsetTimer = setTimeout(() => {
             runOnUI(flapWorklet)(rotateX);
-            intervalRef.id = setInterval(() => {
+
+            intervalRef.ticker = setInterval(() => {
                 runOnUI(flapWorklet)(rotateX);
             }, intervalMs);
         }, triggerOffset);
 
         return () => {
-            clearTimeout(offsetTimer);
-            if (intervalRef.id) clearInterval(intervalRef.id);
+            // Always clear both timers on unmount or dep change
+            if (intervalRef.offsetTimer !== null) {
+                clearTimeout(intervalRef.offsetTimer);
+                intervalRef.offsetTimer = null;
+            }
+            if (intervalRef.ticker !== null) {
+                clearInterval(intervalRef.ticker);
+                intervalRef.ticker = null;
+            }
+            // Cancel any in-flight animation on the worklet thread
+            runOnUI(cancelAnimation)(rotateX);
         };
     }, [intervalMs, triggerOffset]);
 

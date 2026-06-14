@@ -9,6 +9,7 @@ import { ThemeContext } from "@/context/ThemeContext";
 import { TagList } from "../shared/tags/tag-list";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "../shared/categories/category-badge";
+import { desc } from "drizzle-orm";
 
 const today = new Date().toISOString().split("T")[0];
 interface TaskItemProps {
@@ -74,6 +75,9 @@ export default function TaskItem({
               </Text>
             )}
           </View>
+          {task.description && (
+            <Text style={styles.descriptionText}>{task.description}</Text>
+          )}
           {task.dueDate && (
             <Text style={{ color: "white" }}>
               Due : {new Date(task.dueDate).toDateString()}
@@ -104,6 +108,7 @@ const styles = StyleSheet.create({
   textContainer: { flex: 1, marginLeft: 8 },
   titleContainer: { flexDirection: "row", alignItems: "center", gap: 5 },
   overDueText: { fontSize: 11 },
+  descriptionText: { fontSize: 12, fontStyle: "italic", color: "grey" },
   text: { fontSize: 16 },
   completedText: {
     fontSize: 16,

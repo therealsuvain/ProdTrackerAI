@@ -1,3 +1,4 @@
+import { act } from 'react';
 import { z } from 'zod';
 import id from 'zod/v4/locales/id.cjs';
 
@@ -41,6 +42,7 @@ export const AddHabitSchema = z.object({
     category: z.string().optional(),
     tags: z.array(z.string()).optional(),
     frequency: z.enum(['daily', 'weekly']),
+    targetDays: z.array(z.number()).optional(),
     goal: z.number(),
     reminder: z.boolean().optional(),
     reminderDate: z.string().optional(),
@@ -57,6 +59,10 @@ export const EditHabitSchema = z.object({
     reminderDate: z.string().optional(),
 })
 export const CheckInHabitSchema = z.object({
+    id: z.string(),
+})
+
+export const FreezeHabitSchema = z.object({
     id: z.string(),
 })
 
@@ -164,6 +170,8 @@ export const GetStatsSchema = z.object({})
 export const SearchItemsSchema = z.object({
     query: z.string(),
     type: z.enum(['task', 'event', 'habit', 'all']).optional(),
+    categoryName: z.string().optional(),
+    tagNames: z.array(z.string()).optional(),
 })
 
 export const QueryTasksSchema = z.object({
@@ -172,6 +180,8 @@ export const QueryTasksSchema = z.object({
     timeRange: z.enum(['last_month', 'last_week', 'yesterday', 'today', 'tomorrow', 'this_week', 'next_week', 'this_month', 'next_month', 'all']),
     sortBy: z.enum(['oldest_first', 'newest_first', 'priority_desc', 'priority_asec']).optional(),
     specificTaskId: z.string().optional(),
+    categoryName: z.string().optional(),
+    tagNames: z.array(z.string()).optional(),
 })
 
 export const QueryHabitsSchema = z.object({
@@ -179,12 +189,16 @@ export const QueryHabitsSchema = z.object({
     stateFilter: z.enum(["needs_checkin", "streak_lost", "currently_frozen", "all"]).optional(),
     sortBy: z.enum(["highest_streak", "lowest_streak", "longest_streak_ever", "highest_goal", "newest_checkin", "oldest_checkin", "none"]).optional(),
     specificHabitId: z.string().optional(),
+    categoryName: z.string().optional(),
+    tagNames: z.array(z.string()).optional(),
 })
 
 export const QueryEventsSchema = z.object({
     timeRange: z.enum(['last_month', 'last_week', 'yesterday', 'today', 'tomorrow', 'this_week', 'next_week', 'this_month', 'next_month', 'all']),
     timeOfDay: z.enum(["morning", "afternoon", "evening", "all"]).optional(),
     specificEventId: z.string().optional(),
+    categoryName: z.string().optional(),
+    tagNames: z.array(z.string()).optional(),
 })
 
 export const QueryTimerLogsSchema = z.object({
@@ -192,4 +206,15 @@ export const QueryTimerLogsSchema = z.object({
     maxDurationMinutes: z.number().optional(),
     sortBy: z.enum(["duration_desc", "duration_asc", "newest_first", "oldest_first"]).optional(),
     specificTimerLogId: z.string().optional(),
+    categoryName: z.string().optional(),
+    tagNames: z.array(z.string()).optional(),
+})
+
+
+export const GetImmediateContextSchema = z.object({})
+
+export const SearchHistoricalActionsSchema = z.object({
+    keyword: z.string(),
+    daysBack: z.number().optional,
+    actionTypeOnly: z.boolean().optional
 })

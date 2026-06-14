@@ -37,9 +37,9 @@ export const executeRouterNode = async (transcript: string, checklist: string[])
         console.log("[DAG] Node 2:CHAT Candidates.content:", routerResponse.candidates?.[0]?.content);
         console.log("[DAG] Node 2:FULL RESPONSE", routerResponse)
         const requestedToolNames: string[] = JSON.parse(routerResponse.text || "[]");
-        console.log("[DAG] Node 2: Resolved Tool Schemas", [...requestedToolNames])
+        console.log("[DAG] Node 2: Requested Tools", [...requestedToolNames])
         // 2. Pass them through our bulletproof injector
-        const resolvedToolSchemas = resolveDependencies(requestedToolNames);
+        const resolvedToolSchemas = resolveDependencies(requestedToolNames, checklist);
         console.log("[DAG] Node 2: Resolved Tool Schemas", [...resolvedToolSchemas.map(tool => tool.name)])
         console.log("=========================================================");
         return {
@@ -52,7 +52,7 @@ export const executeRouterNode = async (transcript: string, checklist: string[])
         // Fallback: If it crashes, fail gracefully by loading standard tools
         return {
             domain: "Fallback",
-            tools: resolveDependencies(["addTask", "addHabit", "addCategory"])
+            tools: resolveDependencies(["addTask", "addHabit", "addCategory"], checklist)
         };
     }
     /* return { domain: requiredDomains.join(", "), tools: uniqueTools }; */

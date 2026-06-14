@@ -1,35 +1,37 @@
-import { Tag } from "@/types/tag";
+import { Category } from "@/types/category";
 import {
   Modal,
   Pressable,
   ScrollView,
+  Text,
   StyleSheet,
   View,
-  Text,
 } from "react-native";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
-import { TagBadge } from "./tag-badge";
+import { CategoryBadge } from "./category-badge";
 
-interface TagsDeleteModalProps {
-  tags: Tag[];
-  tagToDelete: string;
+interface CategoryDeleteModalProps {
+  categories: Category[];
+  categoryToDelete: string | null;
   onClose: () => void;
-  onReassign: (tagId: string) => void;
+  onReassign: (catId: string) => void;
 }
-export const TagsDeleteModal = ({
-  tags,
-  tagToDelete,
+
+export const CategoryDeleteModal = ({
+  categories,
+  categoryToDelete,
   onClose,
   onReassign,
-}: TagsDeleteModalProps) => {
+}: CategoryDeleteModalProps) => {
   const { theme } = useTheme();
+
   return (
-    <Modal visible={!!tagToDelete} animationType="fade" transparent={true}>
+    <Modal visible={!!categoryToDelete} animationType="fade" transparent={true}>
       <View style={styles.modalOverlay}>
         <View
           style={[
             styles.modalContent,
-            { backgroundColor: theme.background, minHeight: "50%" },
+            { backgroundColor: theme.background, minHeight: "40%" },
           ]}
         >
           <Text
@@ -40,30 +42,25 @@ export const TagsDeleteModal = ({
               marginBottom: 16,
             }}
           >
-            Select Fallback Tag
+            Select Fallback Category
           </Text>
           <Text style={{ color: theme.greyBasePrimary, marginBottom: 20 }}>
-            Choose a tag to absorb the items currently using this tag.
+            Choose a category to migrate existing tasks and habits to.
           </Text>
 
           <ScrollView contentContainerStyle={styles.wrapContainer}>
-            {tags
-              .filter((t) => t.id !== tagToDelete)
-              .map((t) => (
-                <Pressable key={t.id} onPress={() => onReassign(t.id)}>
-                  <TagBadge
-                    tagId={t.id}
-                    tagName={t.name}
-                    holeColor={theme.background}
-                    mode="big"
-                  />
+            {categories
+              .filter((c) => c.id !== categoryToDelete)
+              .map((cat) => (
+                <Pressable key={cat.id} onPress={() => onReassign(cat.id)}>
+                  <CategoryBadge category={cat} />
                 </Pressable>
               ))}
           </ScrollView>
 
           <Pressable
-            onPress={() => onClose()}
-            style={{ marginTop: 20, alignItems: "center", padding: 10 }}
+            onPress={onClose}
+            style={{ marginTop: 20, alignItems: "center" }}
           >
             <Text style={{ color: theme.greyBasePrimary }}>Cancel</Text>
           </Pressable>
@@ -72,8 +69,12 @@ export const TagsDeleteModal = ({
     </Modal>
   );
 };
-
 const styles = StyleSheet.create({
+  wrapContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12, // Provides consistent grid spacing matching your mockups
+  },
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
@@ -84,6 +85,6 @@ const styles = StyleSheet.create({
     padding: 24,
     margin: 20,
     maxHeight: "75%",
+    alignItems: "center",
   },
-  wrapContainer: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
 });

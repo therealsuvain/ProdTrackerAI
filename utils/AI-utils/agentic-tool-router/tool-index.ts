@@ -1,4 +1,4 @@
-import { TaskTools, HabitTools, EventTools, TimerTools, GeneralTools, TaxonomyTools } from "./tool-def-buckets";
+import { TaskTools, HabitTools, EventTools, TimerTools, GeneralTools, TaxonomyTools, MemoryTools } from "./tool-def-buckets";
 
 // The lightweight dictionary the Router LLM will read
 export const MasterToolIndex: Record<string, string> = {
@@ -10,6 +10,7 @@ export const MasterToolIndex: Record<string, string> = {
 
   // Habits
   "addHabit": "Creates a new habit with specific frequencies and goals.",
+  "editHabit": "Modifies an existing habit's properties except for frequency, goal or targetDays",
   "deleteHabit": "Removes an existing habit.",
   "checkinHabit": "Logs progress or completes a daily/weekly check-in for a habit.",
 
@@ -41,7 +42,11 @@ export const MasterToolIndex: Record<string, string> = {
 
   // Analytics
   "getStats": "Retrieves general productivity statistics, completion rates, and active streaks.",
-  "getTaxonomyStats": "Retrieves usage statistics and time tracked for specific categories and tags."
+  "getTaxonomyStats": "Retrieves usage statistics and time tracked for specific categories and tags.",
+
+  //Memory
+  "getImmediateContext": "Retrieves the last few conversational messages and recently executed actions. Call this IMMEDIATELY if the user says 'undo that', 'edit that', or uses pronouns like 'it' or 'that' referring to a recent action.",
+  "searchHistoricalActions": "Searches deep conversational history for past projects, tasks, or workflows. Use this when the user refers to specific past events (e.g., 'the Japan trip', 'tasks from yesterday').",
 };
 
 // A mapping of the string names back to your actual JSON schema objects
@@ -52,8 +57,10 @@ export const AllToolSchemas: Record<string, any> = {
   "deleteTask": TaskTools.find(t => t.name === "deleteTask"),
   "completeTask": TaskTools.find(t => t.name === "completeTask"),
   "addHabit": HabitTools.find(t => t.name === "addHabit"),
+  "editHabit": HabitTools.find(t => t.name === "editHabit"),
   "deleteHabit": HabitTools.find(t => t.name === "deleteHabit"),
   "checkinHabit": HabitTools.find(t => t.name === "checkinHabit"),
+  "freezeHabit": HabitTools.find(t => t.name === "freezeHabit"),
   "addEvent": EventTools.find(t => t.name === "addEvent"),
   "editEvent": EventTools.find(t => t.name === "editEvent"),
   "deleteEvent": EventTools.find(t => t.name === "deleteEvent"),
@@ -74,5 +81,7 @@ export const AllToolSchemas: Record<string, any> = {
   "queryTimerLogs": GeneralTools.find(t => t.name === "queryTimerLogs"),
   "getTaxonomyStats": TaxonomyTools.find(t => t.name === "getTaxonomyStats"),
   "searchTaxonomy": TaxonomyTools.find(t => t.name === "searchTaxonomy"),
+  "getImmediateContext": MemoryTools.find(t => t.name === "getImmediateContext"),
+  "searchHistoricalActions": MemoryTools.find(t => t.name === "searchHistoricalActions"),
   // ... map the rest of your tools here
 };

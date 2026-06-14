@@ -10,7 +10,7 @@ const VALID_ICONS = Object.keys(Ionicons.glyphMap);
 // Create a Fuse instance for Icons (threshold 0.4 allows for decent fuzziness)
 const iconFuse = new Fuse(VALID_ICONS, {
   includeScore: true,
-  threshold: 0.4, 
+  threshold: 0.4,
 });
 
 /**
@@ -19,7 +19,7 @@ const iconFuse = new Fuse(VALID_ICONS, {
  */
 export const resolveIcon = (proposedConcept?: string): string => {
   if (!proposedConcept) return "folder"; // Default fallback
-  
+
   const results = iconFuse.search(proposedConcept);
   if (results.length > 0 && results[0].item) {
     return results[0].item;
@@ -75,12 +75,12 @@ export const SearchTaxonomyHandler: AIHandler = {
 
       // Sort matches for this specific query by closest score
       queryResults.sort((a, b) => (a.score || 0) - (b.score || 0));
-      
+
       // Store the top matches for this specific query keyword
       resultsMap[query] = queryResults.length > 0 ? queryResults : ["NOT_FOUND"];
     }
 
-    return {  output: resultsMap };
+    return { output: resultsMap };
   },
 };
 
@@ -91,19 +91,19 @@ export const SearchTaxonomyHandler: AIHandler = {
 export const AddCategoryHandler: AIHandler = {
   execute: async (params, context) => {
     // 1. Check the AI's proposed icons against the actual Ionicons library
-    const finalIcon  = resolveIcon(params.proposedIconConcept);
+    const finalIcon = resolveIcon(params.proposedIconConcept);
 
     // 2. Format the Color (Fallback to a default grey if AI failed)
     const finalColor = params.hexColor?.startsWith("#") ? params.hexColor : "#9156ff";
 
     // 3. Update global context/database
     // Ensure your context has this addCategory function available!
-     const id = randomUUID();
-    await context.addCategory({id, name:params.name, color:finalColor, icon:finalIcon});
+    const id = randomUUID();
+    await context.addCategory({ id, name: params.name, color: finalColor, icon: finalIcon });
 
-    
+
     // Return the newly created ID so the AI can immediately chain it to an addTask call!
-    return { status: "success",  idForNewlyCreatedCategory: id, assignedIcon: finalIcon };
+    return { status: "success", idForNewlyCreatedCategory: id, assignedIcon: finalIcon };
   },
 };
 
@@ -112,8 +112,8 @@ export const EditCategoryHandler: AIHandler = {
     const existingCategory = context.categories.find((c: any) => c.id === params.id);
     if (!existingCategory) throw new Error("Category not found");
 
-    let finalIcon = params.proposedIconConcept 
-      ? resolveIcon(params.proposedIconConcept) 
+    let finalIcon = params.proposedIconConcept
+      ? resolveIcon(params.proposedIconConcept)
       : existingCategory.icon;
 
     const updatedCategory = {
@@ -134,7 +134,7 @@ export const EditCategoryHandler: AIHandler = {
 export const DeleteCategoryHandler: AIHandler = {
   execute: async (params, context) => {
     const { id, fallbackCategoryId } = params;
-    
+
     if (context.deleteUserCategory) {
       await context.deleteUserCategory(id, fallbackCategoryId || null);
     }
@@ -148,21 +148,21 @@ export const DeleteCategoryHandler: AIHandler = {
  */
 export const AddTagHandler: AIHandler = {
   execute: async (params, context) => {
-  const { names } = params;
+    const { names } = params;
 
     if (!names || !Array.isArray(names) || names.length === 0) {
       return { status: "error", message: "No tag names provided." };
     }
-  const newlyCreatedTags = names.map(name => ({
-       id: randomUUID(), 
-      name: name.replace(/^#/, ""), 
-     }));
+    const newlyCreatedTags = names.map(name => ({
+      id: randomUUID(),
+      name: name.replace(/^#/, ""),
+    }));
 
-     await context.addTags(newlyCreatedTags);
+    await context.addTags(newlyCreatedTags);
 
 
     // Return the new ID so the AI can use it in tool chaining
-    return { status: "success", tag: newlyCreatedTags }; 
+    return { status: "success", tag: newlyCreatedTags };
   },
 };
 
@@ -199,7 +199,7 @@ export const DeleteTagHandler: AIHandler = {
 export const GetTaxonomyStatsHandler: AIHandler = {
   execute: async (params, context) => {
     const { type, scope, specificId } = params;
-    
+
     // Select the target array
     const targetData = type === "category" ? context.categories : context.tags;
 
@@ -207,11 +207,11 @@ export const GetTaxonomyStatsHandler: AIHandler = {
       if (!specificId) throw new Error("specificId is required for scope 'specific'");
       const item = targetData.find((i: any) => i.id === specificId);
       if (!item) return { status: "not_found", message: `${type} not found.` };
-      
+
       // If you have deep stats in context, return them, otherwise return the basic count
-      return { 
-        status: "success", 
-        data: { id: item.id, name: item.name, totalUsage: item.count } 
+      return {
+        status: "success",
+        data: { id: item.id, name: item.name, totalUsage: item.count }
       };
     }
 
@@ -239,4 +239,20 @@ export const GetTaxonomyStatsHandler: AIHandler = {
 
     return { status: "success", data: results };
   }
+};
+
+// Interal Helper to keep handlers clean: resolves strings to UUIDs
+export const resolveIdsFromNames = (names: string | string[], taxonomyItems: any[]): string[] => {
+  if (!names || !taxonomyItems || taxonomyItems.length === 0) return [];
+  const nameArray = Array.isArray(names) ? names : [names];
+
+  const fuse = new Fuse(taxonomyItems, {
+    keys: ["name"],
+    threshold: 0.3, // Strict enough to prevent false positives, loose enough for typos
+  });
+
+  return nameArray.map(name => {
+    const matches = fuse.search(name);
+    return matches.length > 0 ? matches[0].item.id : null;
+  }).filter(Boolean); // Strips out nulls if a tag/category was completely hallucinated
 };

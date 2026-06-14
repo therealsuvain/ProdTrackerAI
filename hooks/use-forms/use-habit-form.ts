@@ -90,6 +90,7 @@ export const useHabitForm = ({
         type: "RESET",
         payload: {
           title: editingHabit.title,
+          description: editingHabit.description,
           frequency: (editingHabit.frequency as Frequency) || "daily",
           reminder: editingHabit.reminder,
           reminderDate: editingHabit.reminderDate,
@@ -169,6 +170,7 @@ export const useHabitForm = ({
       id: editingHabit ? editingHabit.id : randomUUID(),
       title: state.title,
       frequency: state.frequency,
+      description: state.description,
       streak: editingHabit ? editingHabit.streak : 0,
       history: editingHabit ? editingHabit.history : [],
       targetDays: state.targetDays,

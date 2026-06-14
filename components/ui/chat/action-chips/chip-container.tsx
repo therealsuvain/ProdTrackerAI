@@ -1,6 +1,7 @@
 import React from "react";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import Animated, { SlideOutLeft } from "react-native-reanimated";
 
 interface ChipContainerProps {
   color: string;
@@ -20,7 +21,12 @@ export const ChipContainer = ({
   children,
 }: ChipContainerProps) => {
   return (
-    <View style={[styles.chip, { borderLeftColor: color }]}>
+    <Animated.View
+      exiting={SlideOutLeft.duration(250).withInitialValues({
+        transform: [{ translateX: 0 }],
+      })}
+      style={[styles.chip, { borderLeftColor: color }]}
+    >
       <View style={styles.iconContainer}>
         <Ionicons name={iconName} size={20} color={color} />
       </View>
@@ -41,7 +47,7 @@ export const ChipContainer = ({
         </TouchableOpacity>
         /* </View> */
       )}
-    </View>
+    </Animated.View>
   );
 };
 
@@ -65,5 +71,11 @@ const styles = StyleSheet.create({
     flexDirection: "row", // Force the reset back to row!
     alignItems: "center",
   },
-  removeBtn: { marginLeft: "auto", padding: 2 },
+  removeBtn: {
+    //marginLeft: "auto",
+    position: "absolute", // ← taken out of flow completely
+    top: 4,
+    right: 4,
+    padding: 2,
+  },
 });

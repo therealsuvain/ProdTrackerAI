@@ -35,6 +35,7 @@ import { openDatabaseSync } from "expo-sqlite";
 import { drizzle } from "drizzle-orm/expo-sqlite";
 import { migrate } from "drizzle-orm/expo-sqlite/migrator";
 import * as schema from "./schema";
+import { sql } from "drizzle-orm";
 
 // ─── connection ──────────────────────────────────────────────────────────────
 
@@ -73,6 +74,7 @@ export async function initDatabase(): Promise<void> {
     //console.log("[DB] migrations", migrations);
     await migrate(db, migrations.default);
     console.log("[DB] Migrations applied successfully");
+    initializeFTS();
   } catch (error) {
     console.error("[DB] Migration failed:", error);
     throw error; // Let DataProvider handle this
@@ -83,7 +85,36 @@ export async function initDatabase(): Promise<void> {
 
 // Re-export schema so callers only need to import from db/index
 export * from "./schema";
+export const initializeFTS = async () => {
+  // 1. Create the Virtual Table
+  await db.run(sql`
+    CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
+      text,
+      content='messages',
+      content_rowid='id'
+    );
+  `);
 
+  // 2. Create the Triggers to keep it synced
+  await db.run(sql`
+    CREATE TRIGGER IF NOT EXISTS messages_ai AFTER INSERT ON messages BEGIN
+      INSERT INTO messages_fts(rowid, text) VALUES (new.id, new.text);
+    END;
+  `);
+
+  await db.run(sql`
+    CREATE TRIGGER IF NOT EXISTS messages_au AFTER UPDATE ON messages BEGIN
+      INSERT INTO messages_fts(messages_fts, rowid, text) VALUES('delete', old.id, old.text);
+      INSERT INTO messages_fts(rowid, text) VALUES (new.id, new.text);
+    END;
+  `);
+
+  await db.run(sql`
+    CREATE TRIGGER IF NOT EXISTS messages_ad AFTER DELETE ON messages BEGIN
+      INSERT INTO messages_fts(messages_fts, rowid, text) VALUES('delete', old.id, old.text);
+    END;
+  `);
+};
 /**
  * ============================================================
  * drizzle.config.ts  — create this in your PROJECT ROOT

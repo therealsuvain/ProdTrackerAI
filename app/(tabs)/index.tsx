@@ -31,7 +31,7 @@ import { useSearch } from "@/hooks/use-search";
 import { useTasks } from "@/hooks/context-hooks/use-tasks";
 import { Habit } from "@/types/habits";
 import { getTodayISO } from "@/utils/common-utils";
-import { useFlapAnimation } from "@/hooks/animations/use-flap-animation";
+import { useFlapAnimation } from "@/hooks/animations/use-flap-animation-new";
 
 /**
  * TODOOptim 2 : Many files are very large, try and make it more modular. ALL FILES HAVE TO CHECKED FOR POSSIBLE <REFACTORS></REFACTORS>
@@ -64,6 +64,7 @@ import { useFlapAnimation } from "@/hooks/animations/use-flap-animation";
  * TODOOptim 65 : Check for steps required to adapte date/time fields to different Timezones and day light saving time changes
  * TODOX : Confirmation Diagloue for data deletion/reseting in settings
  * TODO : Home page search is broken right now
+ * TODO : Every Modal must have close button and must close on pressing back
  *
  */
 
@@ -87,8 +88,8 @@ function HomeScreenInner() {
   let activeHabits = habits.slice(0, 3);
   let recentLogs = timerLogs.slice(0, 3);
   // Launch anim values
-
-  /*   const todayFlap = useFlapAnimation({
+  /* 
+  const todayFlap = useFlapAnimation({
     launchDelay: 0,
     intervalMs: 15000,
     triggerOffset: 0,

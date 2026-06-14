@@ -1,14 +1,15 @@
 export interface Habit {
   id: string;
   title: string;
+  description?: string;
   frequency: 'daily' | 'weekly';
-  reminder : boolean;
-  reminderDate? : string;
-  targetDays?: number[]; 
+  reminder: boolean;
+  reminderDate?: string;
+  targetDays?: number[];
   streak: number;
-  history: string[]; 
+  history: string[];
   streakFreezes: number; // Number of "skips" available
-  longestStreak: number; 
+  longestStreak: number;
   freezeHistory?: string[];
   goal: number; // e.g., 7 days in a row
   goalCompletions: GoalCompletion[]; // Track when goals are completed
@@ -18,7 +19,7 @@ export interface Habit {
   updatedAt: string;                 // ISO 8601 — updated on every save 
   category?: string;
   tags?: string[];
-  embedding?:number[]; // For Semantic Search
+  embedding?: number[]; // For Semantic Search
 }
 export interface GoalCompletion {
   completedAt: string; // ISO timestamp of when goal was reached

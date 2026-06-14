@@ -21,6 +21,7 @@ export interface ExecutionSummary {
     habitsCreated: string[];
     categoriesCreated: string[];
     tagsCreated: string[];
+    inquiriesHandled: boolean;
     // Extensible for future entities:
     // eventsCreated: string[];
     // itemsDeleted: string[];

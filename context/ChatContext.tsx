@@ -12,6 +12,8 @@ import {
   updateMessage,
   countMessages,
   deleteAllMessages,
+  getRecentContext,
+  searchHistoricalActions,
 } from "@/db/repositories/chat-message-repository";
 
 import { Message } from "@/types/chat";
@@ -24,6 +26,8 @@ interface ChatContextType {
   editMessage: (task: Message) => Promise<void>;
   removeMessages: () => Promise<void>;
   messageCount: () => Promise<number>;
+  getImmediateContext: () => Promise<any>;
+  getMoreContext: (args: any) => Promise<any>;
 }
 
 export const ChatContext = createContext<ChatContextType | undefined>(
@@ -78,12 +82,6 @@ export default function ChatProvider({ children }: { children: ReactNode }) {
 
   const editMessage = useCallback(
     async (message: Message): Promise<void> => {
-      console.log(
-        "Editing into expiry:",
-        message.type,
-        message.isExpired,
-        message.id,
-      );
       await optimisticMessageMutation(
         (prev) => prev.map((m) => (m.id === message.id ? message : m)),
         () => updateMessage(message),
@@ -102,6 +100,60 @@ export default function ChatProvider({ children }: { children: ReactNode }) {
     return result ?? 0;
   }, []);
 
+  const getImmediateContext = useCallback(async () => {
+    const rawMessages = await getRecentContext();
+    return rawMessages.reverse().map((row) => ({
+      who: row.sender,
+      said: row.text,
+      time: row.timestamp,
+      // Full payload preserved for immediate "Undo" requests
+      executedActions: row.pendingActions
+        ? JSON.parse(row.pendingActions)
+        : null,
+    }));
+  }, []);
+
+  const getMoreContext = useCallback(
+    async (args: {
+      keywords: string[];
+      daysBack?: number;
+      actionTypeOnly?: boolean;
+    }) => {
+      const daysBack = args.daysBack || 7;
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysBack);
+
+      const rawMessages = await searchHistoricalActions(
+        args.keywords || [],
+        cutoffDate.toISOString(),
+        !!args.actionTypeOnly,
+      );
+
+      return rawMessages.map((row) => {
+        let truncatedActions = null;
+
+        if (row.pendingActions) {
+          const parsed = JSON.parse(row.pendingActions);
+          // TRUNCATION: Protect the LLM Context Window
+          truncatedActions = parsed.map((act: any) => ({
+            tool: act.tool,
+            id:
+              act.result?.task?.id ||
+              act.result?.habit?.id ||
+              act.result?.event?.id,
+            title: act.args?.title || act.args?.name,
+          }));
+        }
+
+        return {
+          time: row.timestamp,
+          context: row.text,
+          actions: truncatedActions,
+        };
+      });
+    },
+    [],
+  );
   const auditExpiredActions = async (messages: Message[]) => {
     const now = Date.now();
     const processedMessages = [];
@@ -156,6 +208,8 @@ export default function ChatProvider({ children }: { children: ReactNode }) {
         editMessage,
         removeMessages,
         messageCount,
+        getImmediateContext,
+        getMoreContext,
       }}
     >
       {children}

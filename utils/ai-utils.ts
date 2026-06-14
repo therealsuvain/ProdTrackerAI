@@ -1,4 +1,3 @@
-//TODO  : Execution results shared with the feedback loop should be trimmed as much as possible to save tokens
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_STT_API_KEY//Constants.expoConfig?.extra?.GOOGLE_STT_API_KEY;
 const HF_TOKEN = process.env.EXPO_PUBLIC_HUGGING_FACE_API_TOKEN;
 const HF_ENDPOINT = "https://router.huggingface.co/v1/chat/completions";

@@ -1,4 +1,4 @@
-import { eq, desc, asc } from "drizzle-orm";
+import { eq, desc, asc, and, gte, sql } from "drizzle-orm";
 import { db, messages } from "@/db";
 import type { Message } from "@/types/chat";
 import type { MessageRow, MessageInsert } from "@/db/schema";
@@ -29,7 +29,7 @@ function messageToInsert(message: Message): MessageInsert {
         type: message.type,
         text: message.text,
         timestamp: message.timestamp,
-        pendingActions: message.pendingActions? JSON.stringify(message.pendingActions): null,
+        pendingActions: message.pendingActions ? JSON.stringify(message.pendingActions) : null,
         isConfirmed: message.isConfirmed ?? null,
         isExpired: message.isExpired ?? null,
         updatedAt: now, // always stamp updatedAt to now on any write
@@ -77,12 +77,12 @@ export async function bulkInsertMessages(messageList: Message[]): Promise<void> 
 }
 
 export async function deleteAllMessages(): Promise<number> {
-  const count = await countMessages();
-  if (count === 0) return 0;
+    const count = await countMessages();
+    if (count === 0) return 0;
 
-  await db.delete(messages);
+    await db.delete(messages);
 
-  return count;
+    return count;
 }
 
 export async function countMessages(): Promise<number> {
@@ -90,7 +90,44 @@ export async function countMessages(): Promise<number> {
     return result.length;
 }
 
+export async function getRecentContext() {
+    return await db.select()
+        .from(messages)
+        .orderBy(desc(messages.timestamp))
+        .limit(8);
+}
 
+// --- Long-Term Memory Repo (FTS5) ---
+export async function searchHistoricalActions(
+    keywords: string[],
+    cutoffDate: string,
+    actionTypeOnly: boolean
+) {
+    // Transform ["Japan", "Trip"] into "Japan* OR Trip*"
+    const matchString = keywords.length > 0
+        ? keywords.map(k => `${k}*`).join(" OR ")
+        : "";
+
+    return await db.select()
+        .from(messages)
+        .where(
+            and(
+                // The Time Boundary
+                gte(messages.timestamp, cutoffDate),
+
+                // The Action State Filter
+                actionTypeOnly ? eq(messages.type, "action") : undefined,
+                actionTypeOnly ? eq(messages.isConfirmed, true) : undefined,
+
+                // The Drizzle-Native FTS5 Escape Hatch
+                matchString
+                    ? sql`${messages.id} IN (SELECT rowid FROM messages_fts WHERE text MATCH ${matchString})`
+                    : undefined
+            )
+        )
+        .orderBy(desc(messages.timestamp))
+        .limit(10);
+}
 /* export async function getMessageById(id: string): Promise<Message | null> {
     const rows = await db
         .select()

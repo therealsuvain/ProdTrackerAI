@@ -23,7 +23,8 @@ export const transformCallsForDeducer = (executedCalls: any[]): ExecutionSummary
         tasksCreated: [],
         habitsCreated: [],
         categoriesCreated: [],
-        tagsCreated: []
+        tagsCreated: [],
+        inquiriesHandled: false,
     };
 
     for (const call of executedCalls) {
@@ -46,6 +47,17 @@ export const transformCallsForDeducer = (executedCalls: any[]): ExecutionSummary
                 } else if (typeof call.args.name === 'string') {
                     summary.tagsCreated.push(call.args.name); // Fallback if single string
                 }
+                break;
+            case 'searchTaxonomy':
+            case 'queryTasks':
+            case 'queryHabits':
+            case 'queryEvents':
+            case 'queryTimerLogs':
+            case 'getTaxonomyStats':
+            case 'getImmediateContext':
+            case 'searchHistoricalActions':
+            case 'searchItems':
+                summary.inquiriesHandled = true;
                 break;
             // Note: searchTaxonomy, queryTasks, etc. are implicitly ignored!
         }

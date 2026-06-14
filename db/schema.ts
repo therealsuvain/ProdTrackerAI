@@ -82,6 +82,7 @@ export const habits = sqliteTable(
     {
         id: text("id").primaryKey(),
         title: text("title").notNull(),
+        description: text("description"),
         frequency: text("frequency", { enum: ["daily", "weekly"] })
             .notNull()
             .default("daily"),

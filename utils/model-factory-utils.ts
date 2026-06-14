@@ -199,6 +199,7 @@ export const createHabit = async (
     return {
       id,
       title: params.title,
+      ...(params.description && { description: params.description, }),
       frequency: ["daily", "weekly"].includes(params.frequency)
         ? params.frequency
         : "daily",
