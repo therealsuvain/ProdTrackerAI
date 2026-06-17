@@ -159,7 +159,7 @@ export const GetTaxonomyStatsSchema = z.object({
 })
 
 export const SearchTaxonomySchema = z.object({
-    queries: z.array(z.string()),
+    query: z.array(z.string()),
     type: z.enum(['category', 'tag', 'both']).optional(),
 })
 

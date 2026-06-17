@@ -12,13 +12,45 @@ export const sanitizeChatHistory = (history: Content[]): Content[] => {
     }));
 };
 
+// Replace or update your ExecutionSummary interface in @/types/agent-state
+
 /**
- * Takes the LLM's requested tools, enforces strict prerequisites, 
- * and returns the full JSON schemas for the Executor.
+ * Takes the LLM's requested tools and builds a flexible "Action Receipt" 
+ * for the Deducer to semantically audit.
  */
-
-
 export const transformCallsForDeducer = (executedCalls: any[]): ExecutionSummary => {
+    const summary: ExecutionSummary = {
+        mutations: [],
+        inquiriesHandled: false,
+    };
+
+    const inquiryTools = new Set([
+        'searchTaxonomy', 'queryTasks', 'queryHabits', 'queryEvents',
+        'queryTimerLogs', 'getTaxonomyStats', 'getImmediateContext',
+        'searchHistoricalActions', 'searchItems'
+    ]);
+
+    for (const call of executedCalls) {
+        if (!call || !call.args) continue;
+
+        if (inquiryTools.has(call.name)) {
+            // It's a read-only query
+            summary.inquiriesHandled = true;
+        } else {
+            // It's a mutation (add, edit, delete, checkin, etc.)
+            // We capture the exact tool and its arguments as an "Action Receipt"
+            summary.mutations.push({
+                tool: call.name,
+                args: call.args
+            });
+        }
+    }
+
+    return summary;
+};
+
+
+/* export const transformCallsForDeducerOLD = (executedCalls: any[]): ExecutionSummary => {
     const summary: ExecutionSummary = {
         tasksCreated: [],
         habitsCreated: [],
@@ -66,3 +98,4 @@ export const transformCallsForDeducer = (executedCalls: any[]): ExecutionSummary
     return summary;
 };
 
+ */

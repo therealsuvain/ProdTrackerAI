@@ -38,7 +38,9 @@ export const searchHistoricalActions: AIHandler = {
     return { output: result };
   }
 }
-
+//This just a temporary comment that I will be removing in less than 30 secs from now and 
+// This is kinda gay and bad, but I am really tired and bored of fixing shit again and again
+// Just end it my man
 export const SearchItemsHandler: AIHandler = {
   execute: async (args: { query: string, type: string, categoryName?: string, tagNames?: string[] }, context: any) => {
     console.log(`🧠 AI is semantically searching for: "${args.query}"`);

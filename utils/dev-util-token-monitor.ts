@@ -2,11 +2,27 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STORAGE_KEY = "AI_TOKEN_MONITOR_STATS";
 
+type PipelineStats = {
+  pipelineTokens: number;
+  pipelineRequests: number;
+};
+
 type TokenStats = {
   totalPromptTokens: number;
   totalCompletionTokens: number;
   totalTokens: number;
   totalRequests: number;
+  totalPipelines: number;
+  pipelines: PipelineStats[];
+}
+
+const DEFAULT_STATS: TokenStats = {
+  totalPromptTokens: 0,
+  totalCompletionTokens: 0,
+  totalTokens: 0,
+  totalRequests: 0,
+  totalPipelines: 0,
+  pipelines: [],
 };
 
 class TokenMonitor {
@@ -15,7 +31,10 @@ class TokenMonitor {
     totalCompletionTokens: 0,
     totalTokens: 0,
     totalRequests: 0,
+    totalPipelines: 0,
+    pipelines: [],
   };
+
 
   private initialized = false;
 
@@ -37,7 +56,12 @@ class TokenMonitor {
         const stored = await AsyncStorage.getItem(STORAGE_KEY);
 
         if (stored) {
-          this.stats = JSON.parse(stored);
+          const parsed = JSON.parse(stored);
+          this.stats = {
+            ...DEFAULT_STATS,
+            ...parsed,
+            pipelines: parsed.pipelines ?? [],
+          };
         }
       } catch (err) {
         console.warn("TokenMonitor load failed:", err);
@@ -77,31 +101,61 @@ class TokenMonitor {
 
       const total =
         totalTokens ?? promptTokens + completionTokens;
-
+      const isGatekeeper = source === "GATEKEEPER";
       this.stats.totalPromptTokens += promptTokens;
       this.stats.totalCompletionTokens += completionTokens;
       this.stats.totalTokens += total;
       this.stats.totalRequests++;
 
+      // --- Pipeline stats ---
+      if (isGatekeeper) {
+        // Start a new pipeline bucket
+        this.stats.totalPipelines++;
+        this.stats.pipelines.push({
+          pipelineTokens: total,
+          pipelineRequests: 1,
+        });
+      } else {
+        // Accumulate into the current (last) pipeline bucket
+        const current = this.stats.pipelines[this.stats.pipelines.length - 1];
+        if (current) {
+          current.pipelineTokens += total;
+          current.pipelineRequests++;
+        }
+      }
+
+      const currentPipeline =
+        this.stats.pipelines[this.stats.pipelines.length - 1];
+      const pipelineNumber = this.stats.totalPipelines;
+      const subRequest = currentPipeline?.pipelineRequests ?? 1;
       const avgTokens =
         this.stats.totalTokens / this.stats.totalRequests;
-
+      const avgTokensPerPipeline =
+        this.stats.totalPipelines > 0
+          ? this.stats.pipelines.reduce((s, p) => s + p.pipelineTokens, 0) /
+          this.stats.totalPipelines
+          : 0;
+      const avgRequestsPerPipeline =
+        this.stats.totalPipelines > 0
+          ? this.stats.pipelines.reduce((s, p) => s + p.pipelineRequests, 0) /
+          this.stats.totalPipelines
+          : 0;
       await this.persist();
 
-      console.log("AI TOKEN MONITOR from:", source);
+      console.log(" TOKEN MONITOR from:", source);
       console.log("----------------------------");
-      console.log("Request #:", this.stats.totalRequests);
-      console.log("Prompt Tokens:", promptTokens);
-      console.log("Completion Tokens:", completionTokens);
-      console.log("Total Tokens:", total);
-      console.log(
-        "Avg Tokens / Request:",
-        avgTokens.toFixed(2)
-      );
-      console.log(
-        "Total Tokens Used:",
-        this.stats.totalTokens
-      );
+      console.log(` Pipeline Request #: ${pipelineNumber}.${subRequest}`);
+      console.log("   Global Request #:", this.stats.totalRequests);
+      console.log("      Prompt Tokens:", promptTokens);
+      console.log("  Completion Tokens:", completionTokens);
+      console.log("Current-Req. Tokens:", total);
+      if (currentPipeline) {
+        console.log(`    Pipeline Tokens: ${currentPipeline.pipelineTokens}  (${currentPipeline.pipelineRequests} requests)`);
+      }
+      console.log(" Avg Tokens/Request:", avgTokens.toFixed(2));
+      console.log("Avg Tokens/Pipeline:", avgTokensPerPipeline.toFixed(2));
+      console.log(" Avg Reqs./Pipeline:", avgRequestsPerPipeline.toFixed(2));
+      console.log("  Total Tokens Used:", this.stats.totalTokens);
       console.log("----------------------------");
     });
 
@@ -116,12 +170,7 @@ class TokenMonitor {
   async reset() {
     await this.init();
 
-    this.stats = {
-      totalPromptTokens: 0,
-      totalCompletionTokens: 0,
-      totalTokens: 0,
-      totalRequests: 0,
-    };
+    this.stats = { ...DEFAULT_STATS, pipelines: [] };
 
     await AsyncStorage.removeItem(STORAGE_KEY);
   }

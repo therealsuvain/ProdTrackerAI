@@ -33,9 +33,15 @@ export const resolveIcon = (proposedConcept?: string): string => {
  */
 export const SearchTaxonomyHandler: AIHandler = {
   execute: async (params, context) => {
-    const { queries, type = "both" } = params;
-    if (!queries || !Array.isArray(queries) || queries.length === 0) {
-      return { status: "error", message: "No queries provided." };
+    const { type = "both" } = params;
+
+    const rawInput = params.queries || params.query;
+
+    // 2. Normalize to an array safely
+    const normalizedQueries = Array.isArray(rawInput) ? rawInput : [rawInput];
+
+    if (!normalizedQueries[0]) {
+      return { status: "error", message: "No search terms provided." };
     }
     const results: any[] = [];
 
@@ -60,7 +66,7 @@ export const SearchTaxonomyHandler: AIHandler = {
     // and the value is the array of matched IDs/names.
     const resultsMap: Record<string, any[]> = {};
 
-    for (const query of queries) {
+    for (const query of normalizedQueries) {
       const queryResults: any[] = [];
 
       if (categoryFuse) {

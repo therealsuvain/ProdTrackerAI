@@ -1,0 +1,206 @@
+LOG  =========================================================
+ LOG  [DAG] Node 1: PLANNER (Extracting Checklist)...
+ LOG  [DAG] Node 1:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 1:CHAT RESPONSE TEXT: []
+ LOG  [DAG] Node 1:CHAT Candidates.content: {"parts": [{"text": "[]"}], "role": "model"}
+ LOG  [DAG] Node 1:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "rdkwauCEHby4juMP65nayAo", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Tue, 16 Jun 2026 05:05:50 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1446", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 1, "promptTokenCount": 177, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 85, "totalTokenCount": 263}}
+ LOG  [DAG] Checklist generated: []
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [DAG] Node 2: ROUTER (Selecting Tool Bucket)...
+ LOG  [DAG] Node 2:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 2:CHAT RESPONSE TEXT: []
+ LOG  [DAG] Node 2:CHAT Candidates.content: {"parts": [{"text": "[]"}], "role": "model"}
+ LOG  [DAG] Node 2:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "rtkwavaKPIKcjuMP0pvx0Qs", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Tue, 16 Jun 2026 05:05:52 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1256", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 1, "promptTokenCount": 715, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 36, "totalTokenCount": 752}}
+ LOG  [DAG] Node 2: Requested Tools []
+ LOG  [DAG] Tool Names Requested by Router: []
+ LOG  [DAG] Dependency Injector Complete. Final Schema Count: 1
+ LOG  [DAG] Node 2: Resolved Tool Schemas ["getImmediateContext"]
+ LOG  =========================================================
+ LOG  _________________________________________________________
+ LOG  [DAG] Node Main: State: {"transcript":"Yo","checklist":[],"selectedDomain":"","selectedTools":"","chatHistory":[],"pendingTurnPayload":[],"toolResponses":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  _________________________________________________________
+ LOG  [DAG] Edge: Execution complete. Exiting graph.
+ LOG  _________________________________________________________
+ LOG  [DAG] Node Main: FINAL State: {"transcript":"Yo","checklist":[],"selectedDomain":"","selectedTools":"","chatHistory":[],"pendingTurnPayload":[],"toolResponses":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  _________________________________________________________
+ LOG  Final Accumulated Function Calls: []
+ LOG  AI msg: {"id": "1781586353829", "pendingActions": [], "sender": "ai", "text": "Sorry, something went wrong. Please try again.", "timestamp": "2026-06-16T05:05:53.828Z", "type": "text", "updatedAt": "2026-06-16T05:05:53.828Z"}
+ LOG  =========================================================
+ LOG  [DAG] Node 1: PLANNER (Extracting Checklist)...
+ LOG  [DAG] Node 1:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 1:CHAT RESPONSE TEXT: ["[INQUIRY] what can you do for me"]
+ LOG  [DAG] Node 1:CHAT Candidates.content: {"parts": [{"text": "[\"[INQUIRY] what can you do for me\"]"}], "role": "model"}
+ LOG  [DAG] Node 1:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "xdkwat6rJOe74-EPopyp2Qw", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Tue, 16 Jun 2026 05:06:14 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1410", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 13, "promptTokenCount": 183, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 64, "totalTokenCount": 260}}
+ LOG  [DAG] Checklist generated: ["[INQUIRY] what can you do for me"]
+ LOG  =========================================================
+ LOG  =========================================================
+ LOG  [DAG] Node 2: ROUTER (Selecting Tool Bucket)...
+ LOG  AI TOKEN MONITOR from: PLANNER
+ LOG  ----------------------------
+ LOG  Request #: 52
+ LOG  Prompt Tokens: 183
+ LOG  Completion Tokens: 13
+ LOG  Total Tokens: 260
+ LOG  Avg Tokens / Request: 1209.75
+ LOG  Total Tokens Used: 62907
+ LOG  ----------------------------
+ LOG  [DAG] Node 2:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 2:CHAT RESPONSE TEXT: []
+ LOG  [DAG] Node 2:CHAT Candidates.content: {"parts": [{"text": "[]"}], "role": "model"}
+ LOG  [DAG] Node 2:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "x9kwauTCA7bljuMP9f3w0Qs", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Tue, 16 Jun 2026 05:06:20 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=5986", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 1, "promptTokenCount": 726, "promptTokensDetails": [[Object]], "serviceTier": "standard", "thoughtsTokenCount": 987, "totalTokenCount": 1714}}
+ LOG  [DAG] Node 2: Requested Tools []
+ LOG  [DAG] Tool Names Requested by Router: []
+ LOG  [DAG] Dependency Injector Complete. Final Schema Count: 2
+ LOG  [DAG] Node 2: Resolved Tool Schemas ["searchHistoricalActions", "getImmediateContext"]
+ LOG  =========================================================
+ LOG  _________________________________________________________
+ LOG  [DAG] Node Main: State: {"transcript":"Hi what can you do for me","checklist":[{"id":"chk-0","intent":"[INQUIRY] what can you do for me","status":"PENDING"}],"selectedDomain":"","selectedTools":"","chatHistory":[],"pendingTurnPayload":[],"toolResponses":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  _________________________________________________________
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Hi what can you do for me","checklist":[{"id":"chk-0","intent":"[INQUIRY] what can you do for me","status":"PENDING"}],"selectedDomain":"","selectedTools":"","chatHistory":[],"pendingTurnPayload":[],"toolResponses":[],"accumulatedConfirmationCalls":[],"finalTextResponse":""}
+ LOG  [DAG] Node 3:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: I can help you manage your tasks, habits, and events. I can also help you track your time, and provide you with statistics on your productivity.
+
+Here are some specific things I can do:
+
+**Tasks:**
+* Add, edit, complete, and delete tasks.
+* Prioritize tasks and set due dates.
+* Organize tasks with categories and tags.
+* Set reminders for tasks.
+
+**Habits:**
+* Add, edit, and delete habits.
+* Track your habit streaks and goals.
+* Check in on your habits.
+* Freeze habits if you need a break.
+
+**Events:**
+* Add, edit, and delete events.
+* Set start and end times and dates for events.
+* Create recurring events.
+* Organize events with categories and tags.
+* Set reminders for events.
+
+**Other:**
+* Start and stop a focus timer.
+* Search for tasks, habits, and events.
+* Get statistics on your productivity, including completion rates, habit streaks, and category breakdowns.
+* Create and manage categories and tags.
+
+How can I help you today?
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"text": "I can help you manage your tasks, habits, and events. I can also help you track your time, and provide you with statistics on your productivity.
+
+Here are some specific things I can do:
+
+**Tasks:**
+* Add, edit, complete, and delete tasks.
+* Prioritize tasks and set due dates.
+* Organize tasks with categories and tags.
+* Set reminders for tasks.
+
+**Habits:**
+* Add, edit, and delete habits.
+* Track your habit streaks and goals.
+* Check in on your habits.
+* Freeze habits if you need a break.
+
+**Events:**
+* Add, edit, and delete events.
+* Set start and end times and dates for events.
+* Create recurring events.
+* Organize events with categories and tags.
+* Set reminders for events.
+
+**Other:**
+* Start and stop a focus timer.
+* Search for tasks, habits, and events.
+* Get statistics on your productivity, including completion rates, habit streaks, and category breakdowns.
+* Create and manage categories and tags.
+
+How can I help you today?"}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "zdkwatmEHJ7IjuMP-L3omAs", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Tue, 16 Jun 2026 05:06:23 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=2294", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 233, "promptTokenCount": 6366, "promptTokensDetails": [[Object]], "serviceTier": "standard", "totalTokenCount": 6599}}
+ LOG  [DAG] Node 3: Received Funtion Calls: []
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: []
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "[INQUIRY] what can you do for me", "status": "PENDING"}]
+ LOG  =========================================================
+ LOG  [DAG] Micro-Node: DEDUCING CHECKLIST PROGRESS...
+ LOG  [DAG] Pending Checklist Items: [{"id":"chk-0","intent":"[INQUIRY] what can you do for me","status":"PENDING"}]
+ LOG  [DAG] Summary: {"tasksCreated":[],"habitsCreated":[],"categoriesCreated":[],"tagsCreated":[],"inquiriesHandled":false}
+ LOG  [DAG] Checklist Updated: []
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "[INQUIRY] what can you do for me", "status": "PENDING"}]
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [], "chatHistory": [], "finalTextResponse": "I can help you manage your tasks, habits, and events. I can also help you track your time, and provide you with statistics on your productivity.
+
+Here are some specific things I can do:
+
+**Tasks:**
+* Add, edit, complete, and delete tasks.
+* Prioritize tasks and set due dates.
+* Organize tasks with categories and tags.
+* Set reminders for tasks.
+
+**Habits:**
+* Add, edit, and delete habits.
+* Track your habit streaks and goals.
+* Check in on your habits.
+* Freeze habits if you need a break.
+
+**Events:**
+* Add, edit, and delete events.
+* Set start and end times and dates for events.
+* Create recurring events.
+* Organize events with categories and tags.
+* Set reminders for events.
+
+**Other:**
+* Start and stop a focus timer.
+* Search for tasks, habits, and events.
+* Get statistics on your productivity, including completion rates, habit streaks, and category breakdowns.
+* Create and manage categories and tags.
+
+How can I help you today?", "history": [{"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ LOG  [DAG] Edge: Tunnel Vision detected! Forcing AI to complete: [object Object]
+ LOG  [DAG] Edge: Conflict detected! Initiating Reconciliation...
+ LOG  =========================================================
+ LOG  [DAG] Node 3: EXECUTOR (Running Tools)...
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: State Recieved: {"transcript":"Hi what can you do for me","checklist":[{"id":"chk-0","intent":"[INQUIRY] what can you do for me","status":"PENDING"}],"selectedDomain":"","selectedTools":"","chatHistory":[{"role":"user","parts":[{"text":"Hi what can you do for me"}]},{"parts":[{"text":"I can help you manage your tasks, habits, and events. I can also help you track your time, and provide you with statistics on your productivity.\n\nHere are some specific things I can do:\n\n**Tasks:**\n* Add, edit, complete, and delete tasks.\n* Prioritize tasks and set due dates.\n* Organize tasks with categories and tags.\n* Set reminders for tasks.\n\n**Habits:**\n* Add, edit, and delete habits.\n* Track your habit streaks and goals.\n* Check in on your habits.\n* Freeze habits if you need a break.\n\n**Events:**\n* Add, edit, and delete events.\n* Set start and end times and dates for events.\n* Create recurring events.\n* Organize events with categories and tags.\n* Set reminders for events.\n\n**Other:**\n* Start and stop a focus timer.\n* Search for tasks, habits, and events.\n* Get statistics on your productivity, including completion rates, habit streaks, and category breakdowns.\n* Create and manage categories and tags.\n\nHow can I help you today?"}],"role":"model"}],"pendingTurnPayload":[{"text":"RECONCILIATION_CHECK: You generated no tools, but the system shows these items are still PENDING: [{\"id\":\"chk-0\",\"intent\":\"[INQUIRY] what can you do for me\",\"status\":\"PENDING\"}]. \n                       If you already generated the tools for these in a previous turn, reply with 'STATE_SYNC_RESOLVED'. \n                       If you missed them, generate the required tools now."}],"toolResponses":[],"accumulatedConfirmationCalls":[],"finalTextResponse":"I can help you manage your tasks, habits, and events. I can also help you track your time, and provide you with statistics on your productivity.\n\nHere are some specific things I can do:\n\n**Tasks:**\n* Add, edit, complete, and delete tasks.\n* Prioritize tasks and set due dates.\n* Organize tasks with categories and tags.\n* Set reminders for tasks.\n\n**Habits:**\n* Add, edit, and delete habits.\n* Track your habit streaks and goals.\n* Check in on your habits.\n* Freeze habits if you need a break.\n\n**Events:**\n* Add, edit, and delete events.\n* Set start and end times and dates for events.\n* Create recurring events.\n* Organize events with categories and tags.\n* Set reminders for events.\n\n**Other:**\n* Start and stop a focus timer.\n* Search for tasks, habits, and events.\n* Get statistics on your productivity, including completion rates, habit streaks, and category breakdowns.\n* Create and manage categories and tags.\n\nHow can I help you today?"}
+ LOG  _________________________________________________________
+ LOG  AI TOKEN MONITOR from: Checklist DEDUCER
+ LOG  ----------------------------
+ LOG  Request #: 55
+ LOG  Prompt Tokens: 222
+ LOG  Completion Tokens: 1
+ LOG  Total Tokens: 547
+ LOG  Avg Tokens / Request: 1304.85
+ LOG  Total Tokens Used: 71767
+ LOG  ----------------------------
+ LOG  [DAG] Node 3:FUNCTIONCALLS undefined
+ LOG  [DAG] Node 3:CHAT RESPONSE TEXT: STATE_SYNC_RESOLVED
+ LOG  [DAG] Node 3:CHAT Candidates.content: {"parts": [{"text": "STATE_SYNC_RESOLVED"}], "role": "model"}
+ LOG  [DAG] Node 3:FULL RESPONSE {"candidates": [{"content": [Object], "finishReason": "STOP", "index": 0}], "modelVersion": "gemini-2.5-flash", "responseId": "0tkwatSvI-6pjuMPo5zpkA4", "sdkHttpResponse": {"headers": {"alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000", "content-type": "application/json; charset=UTF-8", "date": "Tue, 16 Jun 2026 05:06:27 GMT", "server": "scaffolding on HTTPServer2", "server-timing": "gfet4t7; dur=1186", "vary": "Origin, X-Origin, Referer", "x-content-type-options": "nosniff", "x-frame-options": "SAMEORIGIN", "x-gemini-service-tier": "standard", "x-xss-protection": "0"}}, "usageMetadata": {"candidatesTokenCount": 6, "promptTokenCount": 6692, "promptTokensDetails": [[Object]], "serviceTier": "standard", "totalTokenCount": 6698}}
+ LOG  [DAG] Node 3: Received Funtion Calls: []
+ LOG  [DAG] Node 3: Intermediate Confirmation Calls: []
+ LOG  [DAG] Node 3: Intial Checklist: [{"id": "chk-0", "intent": "[INQUIRY] what can you do for me", "status": "PENDING"}]
+ LOG  =========================================================
+ LOG  [DAG] Micro-Node: DEDUCING CHECKLIST PROGRESS...
+ LOG  [DAG] Pending Checklist Items: [{"id":"chk-0","intent":"[INQUIRY] what can you do for me","status":"PENDING"}]
+ LOG  [DAG] Summary: {"tasksCreated":[],"habitsCreated":[],"categoriesCreated":[],"tagsCreated":[],"inquiriesHandled":false}
+ LOG  [DAG] Checklist Updated: []
+ LOG  [DAG] Node 3:  Updated Checklist: [{"id": "chk-0", "intent": "[INQUIRY] what can you do for me", "status": "PENDING"}]
+ LOG  _________________________________________________________
+ LOG  [DAG] Node 3: Results {"accumulatedConfirmationCalls": [], "chatHistory": [], "finalTextResponse": "STATE_SYNC_RESOLVED", "history": [{"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}, {"parts": [Array], "role": "user"}, {"parts": [Array], "role": "model"}]}
+ LOG  =========================================================
+ LOG  [DAG] Edge: Tunnel Vision detected! Forcing AI to complete: [object Object]
+ WARN  [DAG] Reconciliation conflict resolved. Trusting Executor. Exiting graph.
+ LOG  [DAG] Edge: Execution complete. Exiting graph.
+ LOG  _________________________________________________________
+ LOG  [DAG] Node Main: FINAL State: {"transcript":"Hi what can you do for me","checklist":[{"id":"chk-0","intent":"[INQUIRY] what can you do for me","status":"PENDING"}],"selectedDomain":"","selectedTools":"","chatHistory":[{"role":"user","parts":[{"text":"Hi what can you do for me"}]},{"parts":[{"text":"I can help you manage your tasks, habits, and events. I can also help you track your time, and provide you with statistics on your productivity.\n\nHere are some specific things I can do:\n\n**Tasks:**\n* Add, edit, complete, and delete tasks.\n* Prioritize tasks and set due dates.\n* Organize tasks with categories and tags.\n* Set reminders for tasks.\n\n**Habits:**\n* Add, edit, and delete habits.\n* Track your habit streaks and goals.\n* Check in on your habits.\n* Freeze habits if you need a break.\n\n**Events:**\n* Add, edit, and delete events.\n* Set start and end times and dates for events.\n* Create recurring events.\n* Organize events with categories and tags.\n* Set reminders for events.\n\n**Other:**\n* Start and stop a focus timer.\n* Search for tasks, habits, and events.\n* Get statistics on your productivity, including completion rates, habit streaks, and category breakdowns.\n* Create and manage categories and tags.\n\nHow can I help you today?"}],"role":"model"},{"role":"user","parts":[{"text":"RECONCILIATION_CHECK: You generated no tools, but the system shows these items are still PENDING: [{\"id\":\"chk-0\",\"intent\":\"[INQUIRY] what can you do for me\",\"status\":\"PENDING\"}]. \n                       If you already generated the tools for these in a previous turn, reply with 'STATE_SYNC_RESOLVED'. \n                       If you missed them, generate the required tools now."}]},{"parts":[{"text":"STATE_SYNC_RESOLVED"}],"role":"model"}],"pendingTurnPayload":[{"text":"RECONCILIATION_CHECK: You generated no tools, but the system shows these items are still PENDING: [{\"id\":\"chk-0\",\"intent\":\"[INQUIRY] what can you do for me\",\"status\":\"PENDING\"}]. \n                       If you already generated the tools for these in a previous turn, reply with 'STATE_SYNC_RESOLVED'. \n                       If you missed them, generate the required tools now."}],"toolResponses":[],"accumulatedConfirmationCalls":[],"finalTextResponse":"STATE_SYNC_RESOLVED"}
+ LOG  _________________________________________________________
+ LOG  Final Accumulated Function Calls: []
+ LOG  AI msg: {"id": "1781586391476", "pendingActions": [], "sender": "ai", "text": "Sorry, something went wrong. Please try again.", "timestamp": "2026-06-16T05:06:31.475Z", "type": "text", "updatedAt": "2026-06-16T05:06:31.475Z"}

@@ -40,3 +40,16 @@ export const mergeIdempotentCalls = (existingCalls: any[], newCalls: any[]): any
 
     return merged;
 };
+
+export const synthesizeDatabasePayload = (memoryResponses: any[]) => {
+    let contextStr = "PREVIOUS SYSTEM CONTEXT:\n";
+    memoryResponses.forEach(res => {
+        // Assuming your DB returns an array of matched actions
+        const actions = res.response?.output || [];
+        actions.forEach((action: any, index: number) => {
+            const content = action.text || action.content || JSON.stringify(action);
+            contextStr += `[Historical Record ${index + 1}]: ${content}\n`;
+        });
+    });
+    return contextStr;
+};

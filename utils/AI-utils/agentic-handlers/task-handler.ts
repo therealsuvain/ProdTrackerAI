@@ -166,7 +166,7 @@ export const QueryTasksHandler: AIHandler = {
         return taskDate >= rangeStart && taskDate <= rangeEnd;
       });
     }
-    console.log("QUERY TASKS: FILTERED", filtered);
+    console.log("QUERY TASKS: FILTERED", filtered.map(t => t.title));
     // 4. Sort Logic
     filtered.sort((a, b) => {
       if (sortBy === "oldest_first") return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();

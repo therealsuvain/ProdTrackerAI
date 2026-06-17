@@ -8,8 +8,9 @@ export const executePlannerNode = async (transcript: string): Promise<ChecklistI
 
     const plannerPrompt = `
   Extract a strict, separate list of actions the user wants to perform. 
-  Example: "Create task Sleep due tomorrow and category Leisure" -> ["Create task Sleep due tomorrow", "Create category Leisure"]
-  CRITICAL: Preserve all specific metadata (dates, tags, priorities, goals) within the string. Do not strip them out.
+  Example: "Create task Task_X due tomorrow and add category ABC" -> ["Create task Task_X due tomorrow", "Create category ABC"]
+  Example: "Create task Task_X due tomorrow and set its category to XYZ" -> ["Create task Task_X due tomorrow, category = XYZ"]
+  CRITICAL: Preserve all specific metadata (dates, tags, priorities, goals) within the string adn within a single action. Do not strip them out.
   CRITICAL: If the user's input is just conversational filler, agreement, or a greeting (e.g., "Ok", "Go ahead", "Thanks", "Yes"), return an empty array [].
   CRITICAL:If the user explicitly asks a question, requests a summary, or wants to know their state (e.g., "What did I just add?", "Show my tasks"), prefix the intent with [INQUIRY].
   User Input: "${transcript}"

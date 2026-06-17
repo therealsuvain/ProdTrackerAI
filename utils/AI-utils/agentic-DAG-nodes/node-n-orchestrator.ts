@@ -1,47 +1,19 @@
 import { AgentState } from "@/types/agent-state";
 import { AgentPersona, getRandomProgressText } from "../agent-progess-persona";
-import { mergeIdempotentCalls } from "./node-helpers/node-n-helpers";
+import { executeGatekeeperNode, evaluateTrivialIntent } from "./node-0.5-gatekeeper";
 import { executePlannerNode } from "./node-1-planner";
 import { executeRouterNode } from "./node-2-router";
-import { executeActionNode } from "./node-3-intermediatory-executor";
+import { executeWithRetry } from "./node-3-intermediatory-executor";
 import { executeFallbackNode } from "./node-(n-1)-fallbacker";
-import { validateCall } from "./node-helpers/node-3-tool-validator";
-
-// executeActionNode With Retry when validation fails
-const executeWithRetry = async (state: AgentState, context: any, onProgress: any) => {
-    let attempts = 0;
-    let nodeResult = await executeActionNode(state, context, onProgress); // Your existing node
-    let currentCalls = nodeResult.accumulatedConfirmationCalls || [];
+import { mergeIdempotentCalls, synthesizeDatabasePayload } from "./node-helpers/node-n-helpers";
 
 
-    while (attempts < 3) {
-        try {
-            // 1. Validate All Calls
-            const validatedcurrentCalls = currentCalls.map(call => ({ ...call, args: validateCall(call.name, call.args) }));
-            // Success
-            return {
-                ...nodeResult,
-                accumulatedConfirmationCalls: validatedcurrentCalls
-            };
-        } catch (error: any) {
-            attempts++;
-            console.warn(`[DAG] Validation attempt ${attempts} failed: ${error.message}`);
-
-            // 2. Feed Error back to LLM
-            state.chatHistory.push({
-                role: "user",
-                parts: [{ text: `Correction needed: ${error.message}. Fix the arguments and retry.` }]
-            });
-
-            // 3. Re-run Executor node
-            nodeResult = await executeActionNode(state, context, onProgress);
-            currentCalls = nodeResult.accumulatedConfirmationCalls || [];
-        }
-    }
-    throw new Error("Max retries exceeded for tool validation.");
-};
-
-export const processCommandAgentic = async (transcript: string, context: any, onProgress?: (status: string) => void) => {
+export const processCommandAgentic = async (
+    transcript: string,
+    context: any,
+    persistentState: Partial<AgentState> = {}, // Pass ONLY persistent state during a rewind
+    onProgress?: (status: string) => void
+): Promise<any> => {
     // 1. Initialize State
     let state: AgentState = {
         transcript,
@@ -51,18 +23,28 @@ export const processCommandAgentic = async (transcript: string, context: any, on
         chatHistory: [],
         pendingTurnPayload: [],
         toolResponses: [],
-        accumulatedConfirmationCalls: [],
-        finalTextResponse: ""
+        finalTextResponse: "",
+        isRewind: persistentState.isRewind ?? false,
+        executedActionsLog: persistentState.executedActionsLog ?? [],
+        accumulatedConfirmationCalls: persistentState.accumulatedConfirmationCalls ?? [],
     };
 
     try {
-        // 2. Run Planner (Only if prompt looks complex, otherwise skip to save tokens)
-        /* if (transcript.includes("and") || transcript.includes(",")) {
-            onProgress?.(getRandomProgressText(AgentPersona.PLANNING));
-            state.checklist = await executePlannerNode(state.transcript);
-        } else {
-            state.checklist = [{ id: "fallback-1", intent: state.transcript, status: "PENDING" }];
-        } */
+        // ==========================================
+        // VANGUARD INTENT EVALUATION
+        // ==========================================
+        if (!state.isRewind) {
+            if (evaluateTrivialIntent(state.transcript)) {
+                return { response: "Yo! Ready to optimize your workflow. What are we building?", calls: [] };
+            }
+
+            const gatekeeper = await executeGatekeeperNode(state.transcript);
+            if (gatekeeper.route === 'chat') {
+                console.log("[DAG} Node Main: Gatekeeper Resovled to reply directly: CHAT")
+                return { response: gatekeeper.chatResponse, calls: [] };
+            }
+        }
+        console.log("[DAG} Node Main: Gatekeeper Resovled to enter the Pipeline: AGENT")
         onProgress?.(getRandomProgressText(AgentPersona.PLANNING));
         state.checklist = await executePlannerNode(state.transcript);
 
@@ -77,7 +59,7 @@ export const processCommandAgentic = async (transcript: string, context: any, on
         console.log("[DAG] Node Main: State:", JSON.stringify({ ...state, selectedTools: state.selectedDomain }));
         console.log("_________________________________________________________");
         let safetyCounter = 0;
-        while (state.checklist.some(item => item.status === "PENDING") && safetyCounter < 10) {
+        while ((state.checklist.some(item => item.status === "PENDING") || state.pendingTurnPayload.length > 0) && safetyCounter < 10) {
             try {
                 // Capture how many UI calls we had BEFORE running the executor this turn
                 const prevCallsLength = state.accumulatedConfirmationCalls.length;
@@ -86,6 +68,41 @@ export const processCommandAgentic = async (transcript: string, context: any, on
                 onProgress?.(getRandomProgressText(AgentPersona.EXECUTING))
                 //const nodeResult = await executeActionNode(state, context, onProgress);
                 const nodeResult = await executeWithRetry(state, context, onProgress);
+                const historyPayloads = nodeResult.toolResponses?.filter(response =>
+                    response.functionResponse?.name === 'searchHistoricalActions' || response.functionResponse?.name === 'getImmediateContext'
+                );
+
+                if (historyPayloads && historyPayloads.length > 0 && !state.isRewind) {
+                    console.log("[DAG] Edge: REWINDING DAG Execution");
+                    onProgress?.("Resolving contextual dependencies...");
+
+                    // Synthesize raw relational/sqlite tables into flat markdown context
+                    const structuredMemory = synthesizeDatabasePayload(historyPayloads);
+
+                    const augmentedTranscript = `[SYSTEM CONTEXT: ENRICHED HISTORICAL DATABASE MATRIX]
+                    ${structuredMemory}
+                    [ORIGINAL USER COMMAND]
+                    ${state.transcript}
+                    [Existing Item Checklist]
+                    ${JSON.stringify(nodeResult.checklist)}
+                    [DETERMINISTIC INSTRUCTION]
+                    Re-evaluate the user command using the enriched historical framework above. Resolve semantic ambiguities (e.g., replace 'that', 'it', or 'last item') with concrete entities found in the historical data matrix.`;
+
+                    // Recurse seamlessly, passing updated execution tracking logs to guarantee DRY execution
+                    return await processCommandAgentic(
+                        augmentedTranscript,
+                        context,
+                        {
+                            isRewind: true,
+                            // Pass your completed checklist items (or custom hashes) to the log
+                            executedActionsLog: nodeResult.executedActionsLog,
+                            // CRITICAL: Save the UI calls we successfully accumulated before rewinding!
+                            accumulatedConfirmationCalls: state.accumulatedConfirmationCalls
+                        },
+                        onProgress
+                    );
+                }
+
                 const newConfirmationCalls = nodeResult.accumulatedConfirmationCalls || [];
                 // Merge them deterministically with our existing calls
                 const safeAccumulatedCalls = mergeIdempotentCalls(state.accumulatedConfirmationCalls, newConfirmationCalls);
@@ -98,13 +115,16 @@ export const processCommandAgentic = async (transcript: string, context: any, on
 
                 const pendingItems = state.checklist.filter(item => item.status === "PENDING");
                 // THE CONDITIONAL EDGE: Are we done?
-                if (pendingItems.length > 0) {
-                    if (state.toolResponses && state.toolResponses.length > 0) {
-                        // Scenario A: Silent DB tool outputs need to be handled next
-                        console.log("[DAG] Edge: Feeding DB results back into the next loop...");
-                        state.pendingTurnPayload = state.toolResponses;
-                    }
-                    else if (state.accumulatedConfirmationCalls.length > prevCallsLength) {
+                if (state.toolResponses && state.toolResponses.length > 0) {
+                    // Scenario A: Silent DB tool outputs need to be handled next
+                    console.log("[DAG] Edge: Feeding DB results back into the next loop...");
+                    onProgress?.(getRandomProgressText(AgentPersona.EVALUATING));
+                    state.pendingTurnPayload = state.toolResponses;
+                    state.toolResponses = [];
+                }
+                else if (pendingItems.length > 0) {
+
+                    if (state.accumulatedConfirmationCalls.length > prevCallsLength) {
                         // Scenario B: Partial UI calls made, but list items remain. Nudge with a compliant text Part.
                         console.log("[DAG] Edge: Partial completion detected. Injecting text nudge part.");
                         state.pendingTurnPayload = [{
@@ -113,6 +133,7 @@ export const processCommandAgentic = async (transcript: string, context: any, on
                     }
                     else {
                         // Scenario C: Tunnel Vision. Force-override with a compliant text Part.
+                        onProgress?.(getRandomProgressText(AgentPersona.EVALUATING));
                         console.log(`[DAG] Edge: Tunnel Vision detected! Forcing AI to complete: ${state.checklist}`);
                         const isReconciling = state.chatHistory.some(msg =>
                             msg.parts?.[0]?.text?.includes("RECONCILIATION_CHECK")
@@ -135,30 +156,9 @@ export const processCommandAgentic = async (transcript: string, context: any, on
                            text: `System Override: You stopped abruptly, but you still MUST fulfill these requests: ${JSON.stringify(state.checklist)}. Call the required tools now.`
                          }]; */
                     }
-                    /*  if (state.chatHistory.length > 0) {
-                       // We have silent DB results to feed back to the AI. Loop again.
-                       onProgress?.(getRandomProgressText(AgentPersona.EVALUATING));
-                       console.log("[DAG] Edge: Silent tools executed, looping back to Executor...");
-                     }
-                     else if (state.accumulatedConfirmationCalls.length > prevCallsLength) {
-                       // It successfully generated UI calls, BUT the checklist isn't empty yet.
-                       // Nudge it to keep going instead of exiting.
-                       console.log("[DAG] Edge: Partial completion detected. Nudging AI to finish checklist.");
-                       state.chatHistory = [{
-                         text: `Good. You completed part of the request. Now, execute the tools for the REMAINING items on this list: ${JSON.stringify(state.checklist)}`
-                       }
-                       ];
-                     }
-                     else {
-                       // TUNNEL VISION DETECTED! The AI stopped, but the checklist isn't empty.
-                       onProgress?.(getRandomProgressText(AgentPersona.EVALUATING));
-                       console.log(`[DAG] Edge: Tunnel Vision detected! Forcing AI to complete: ${state.checklist}`);
-             
-                       // Jolt the AI with a strict system override
-                       state.chatHistory = [{
-                         text: `System Override: You stopped, but you still need to fulfill this request: "${state.checklist[0]}". Call the required tools now.`
-                       }];
-                     } */
+                } else {
+                    // Scenario D: Checklist is empty AND no tool responses. We are done!
+                    state.pendingTurnPayload = [];
                 }
 
 

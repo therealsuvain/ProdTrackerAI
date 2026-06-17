@@ -18,7 +18,7 @@ export const executeChecklistDeductionNode = async (
     console.log("[DAG] Micro-Node: DEDUCING CHECKLIST PROGRESS...");
     console.log("[DAG] Pending Checklist Items:", JSON.stringify(pendingItems));
     console.log("[DAG] Summary:", JSON.stringify(summary));
-    const deductionPrompt = `
+    const deductionPromptOLD = `
   You are an auditor verifying task completion based on entity names.
   
   Pending Checklist Items: ${JSON.stringify(pendingItems.map(i => ({ id: i.id, intent: i.intent })))}
@@ -31,7 +31,22 @@ export const executeChecklistDeductionNode = async (
      You must return ID of the [INQUIRY] item immediately if the provided summary data indicates inquiriesHandled": true.
   Return a JSON array of completed IDs.
 `;
+    const deductionPrompt = `
+  You are an elite QA Auditor for an Agentic workflow.
+  Your job is to determine which Pending Checklist Items have been logically fulfilled by the tools that were just executed.
+  
+  Pending Checklist Items: ${JSON.stringify(pendingItems.map(i => ({ id: i.id, intent: i.intent })))}
+  Execution Summary (What just happened): ${JSON.stringify(summary)}
 
+  EVALUATION RULES:
+  1. [INQUIRIES]: If an intent begins with the [INQUIRY] prefix and the summary shows "inquiriesHandled": true, mark it COMPLETED immediately.
+  2. [SEMANTIC FULFILLMENT]: Look at the "mutations" array. Do not look for exact string matches. Instead, ask: "Did the tools executed logically fulfill the user's intent?" 
+     - Example: Intent says "Edit the habit we just added and change its name to GameOfThrones". The summary shows {"tool": "editHabit", "args": {"title": "GameOfThrones"}}. This is a logical match. Mark it COMPLETED.
+  3. [CONTEXTUAL FORGIVENESS]: If the checklist intent uses vague pronouns ("it", "that", "the task") but the executed tool corresponds to the requested action (e.g., editing, deleting, checking in), assume the agent correctly resolved the underlying ID and mark it COMPLETED.
+  4. [STRICT REJECTION]: Do NOT mark an item completed if no relevant tools were fired. If the intent says "Add a task" and the mutations only show "addCategory", do NOT mark it completed.
+
+  Return a raw JSON array containing ONLY the IDs of the completed checklist items.
+`;
     //  RULES:
     // 1. ONLY remove an item from the checklist if you have absolute proof it was completed by the tools above.
     // 2. Do NOT remove an item if the tool execution contains an "error".
