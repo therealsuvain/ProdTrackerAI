@@ -50,6 +50,7 @@ import {
   seedCategoriesIfEmpty,
 } from "@/db/repositories/tags-and-category-repository";
 
+import { AIActionMemory } from "@/utils/AI-utils/agentic-handlers/ai-action-undo-handlers";
 import { sqlite } from "@/db/index";
 import { processAchievements } from "@/utils/achievements-util";
 
@@ -59,8 +60,6 @@ import { usePlaySound } from "@/hooks/use-play-sound";
 import { AchievementMetrics } from "@/types/achievement-metrics";
 import { Tag } from "@/types/tag";
 import { Category } from "@/types/category";
-import { randomUUID } from "expo-crypto";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 // TODOX if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
 interface DataContextType {
@@ -527,6 +526,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         let loadedUnlockedAchievements = await getAllUnlockedAchievements();
         let loadedTags = await getAllTags();
         let loadedCategories = await getAllCategories();
+        await AIActionMemory.init();
         setAppMetrics(loadedMetrics);
         setAchievementMetrics(loadedAchievementMetrics);
         setUnlockedAchievements(loadedUnlockedAchievements);

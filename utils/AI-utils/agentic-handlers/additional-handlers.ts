@@ -43,14 +43,14 @@ export const searchHistoricalActions: AIHandler = {
 // Just end it my man
 export const SearchItemsHandler: AIHandler = {
   execute: async (args: { query: string, type: string, categoryName?: string, tagNames?: string[] }, context: any) => {
-    console.log(`🧠 AI is semantically searching for: "${args.query}"`);
-
-    const targetCategoryId = args.categoryName ? resolveIdsFromNames(args.categoryName, context.categories)[0] : undefined;
-    const targetTagIds = args.tagNames ? resolveIdsFromNames(args.tagNames, context.tags) : [];
+    const { query, type = 'all', categoryName, tagNames } = args;
+    console.log(`🧠 AI is semantically searching for: "${query}"`);
+    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, context.categories)[0] : undefined;
+    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, context.tags) : [];
     // 1. Generate the Query Vector (Passing 'true' for RETRIEVAL_QUERY)
-    const queryVector = await generateEmbedding(args.query, true);
+    const queryVector = await generateEmbedding(query, true);
 
-    if ((!queryVector || queryVector.length === 0) && args.type !== "all") {
+    if ((!queryVector || queryVector.length === 0) && type !== "all") {
       console.warn("Failed to generate query vector. Returning empty results.");
       return { results: [], count: 0 };
     }
@@ -74,7 +74,7 @@ export const SearchItemsHandler: AIHandler = {
 
     // 3. Score and sort the items
     let scoredResults = allItems
-      .filter(item => args.type === "all" || item.type === args.type)
+      .filter(item => type === "all" || item.type === type)
       .filter(item => item.embedding && item.embedding.length > 0) // Ensure it was migrated/saved properly
       .map(item => ({
         id: item.id || item.i,
@@ -85,7 +85,7 @@ export const SearchItemsHandler: AIHandler = {
       }))
     // 4. Filter out weak matches. (0.65 is usually a safe baseline for Gemini embeddings)
     // Highest similarity first
-    if (args.type !== "all") {
+    if (type !== "all") {
       scoredResults = scoredResults.filter(result => result.score > 0.65)
         .sort((a, b) => b.score - a.score);
     }

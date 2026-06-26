@@ -1,10 +1,12 @@
 import { AIActionContext, AIHandler } from "@/types/ai-handler";
 import { SearchItemsHandler, getProductivityStats, getImmediateContext, searchHistoricalActions } from './additional-handlers';
-import { AddEventHandler, DeleteEventHandler, DeleteEventSingleOccurrenceHandler, EditEventHandler, QueryEventsHandler } from "./event-handler";
-import { AddHabitHandler, EditHabitHandler, CheckInHabitHandler, FreezeHabitHandler, DeleteHabitHandler, QueryHabitsHandler } from "./habit-handler";
-import { AddTaskHandler, CompleteTaskHandler, DeleteTaskHandler, EditTaskHandler, QueryTasksHandler } from "./task-handler";
+import { AddEventHandler, DeleteEventHandler, DeleteEventSingleOccurrenceHandler, EditEventHandler, QueryEventsHandler, BatchMutateEventsHandler } from "./event-handler";
+import { AddHabitHandler, EditHabitHandler, CheckInHabitHandler, FreezeHabitHandler, DeleteHabitHandler, QueryHabitsHandler, BatchMutateHabitsHandler } from "./habit-handler";
+import { AddTaskHandler, CompleteTaskHandler, DeleteTaskHandler, EditTaskHandler, QueryTasksHandler, BatchMutateTasksHandler } from "./task-handler";
 import { QueryTimerLogsHandler, StartTimerHandler, StopTimerHandler } from "./timer-handler";
 import { SearchTaxonomyHandler, AddCategoryHandler, EditCategoryHandler, DeleteCategoryHandler, AddTagHandler, EditTagHandler, DeleteTagHandler, GetTaxonomyStatsHandler } from "./tags-and-categories-handlers"
+import { RevertLastActionHandler } from "./ai-action-undo-handlers"
+import { TriageOverdueHandler } from "./triage-overdue-tasks-handler"
 
 /**  
  * TODOAdd 51 : Handler that allows the AI to add a additonal custom System prompt instruction curated by the user
@@ -18,6 +20,8 @@ import { SearchTaxonomyHandler, AddCategoryHandler, EditCategoryHandler, DeleteC
 //TODO :  Query handler should be able to query based on categories and tags
 //TODO : searchTaxonomy handler should be able to return all categories and tags, currently its not able to handle query type of all
  */
+
+
 export const SilentHandlerList: string[] = [
     "searchItems",
     "searchTaxonomy",
@@ -28,22 +32,27 @@ export const SilentHandlerList: string[] = [
     "queryTimerLogs",
     "getTaxonomyStats",
     "getImmediateContext",
-    "searchHistoricalActions"
+    "searchHistoricalActions",
+    "undoActions"
 ]
+
 export const ActionRegistry: Record<string, AIHandler> = {
     "addTask": AddTaskHandler,
     "editTask": EditTaskHandler,
     "deleteTask": DeleteTaskHandler,
     "completeTask": CompleteTaskHandler,
+    "batchTasksUpdate": BatchMutateTasksHandler,
     "addHabit": AddHabitHandler,
     "editHabit": EditHabitHandler,
     "deleteHabit": DeleteHabitHandler,
     "checkinHabit": CheckInHabitHandler,
     "freezeHabit": FreezeHabitHandler,
+    "batchHabitsUpdate": BatchMutateHabitsHandler,
     "addEvent": AddEventHandler,
     "editEvent": EditEventHandler,
     "deleteEvent": DeleteEventHandler,
     "deleteSingleEvent": DeleteEventSingleOccurrenceHandler,
+    "BatchEventsUpdate": BatchMutateEventsHandler,
     "addCategory": AddCategoryHandler,
     "editCategory": EditCategoryHandler,
     "deleteCategory": DeleteCategoryHandler,
@@ -61,7 +70,9 @@ export const ActionRegistry: Record<string, AIHandler> = {
     "getStats": getProductivityStats,
     "getTaxonomyStats": GetTaxonomyStatsHandler,
     "getImmediateContext": getImmediateContext,
-    "searchHistoricalActions": searchHistoricalActions
+    "searchHistoricalActions": searchHistoricalActions,
+    "undoActions": RevertLastActionHandler,
+    "triageOverdueItems": TriageOverdueHandler,
 };
 
 export const executeActions = async (

@@ -8,8 +8,12 @@ import {
     QueryTasksSchema, QueryHabitsSchema, QueryEventsSchema, QueryTimerLogsSchema,
     SearchItemsSchema, SearchTaxonomySchema,
     GetStatsSchema, GetTaxonomyStatsSchema,
-    GetImmediateContextSchema, SearchHistoricalActionsSchema
+    GetImmediateContextSchema, SearchHistoricalActionsSchema,
+    BatchEventsUpdateSchema, BatchHabitsUpdateSchema, BatchTasksUpdateSchema,
+    UndoActionsSchema, TriageOverdueHandlerSchema
 } from "../../agentic-tool-router/tool-schemas";
+
+
 
 export const validateCall = (name: string, args: any) => {
     switch (name) {
@@ -44,6 +48,11 @@ export const validateCall = (name: string, args: any) => {
         case 'getTaxonomyStats': return GetTaxonomyStatsSchema.parse(args);
         case 'getImmediateContext': return GetImmediateContextSchema.parse(args);
         case 'searchHistoricalActions': return SearchHistoricalActionsSchema.parse(args);
+        case 'undoActions': return UndoActionsSchema.parse(args);
+        case 'batchTasksUpdate': return BatchTasksUpdateSchema.parse(args);
+        case 'batchEventsUpdate': return BatchEventsUpdateSchema.parse(args);
+        case 'batchHabitsUpdate': return BatchHabitsUpdateSchema.parse(args);
+        case 'triageOverdueItems': return TriageOverdueHandlerSchema.parse(args);
         default: throw new Error(`No schema found for ${name}`);
     }
 };

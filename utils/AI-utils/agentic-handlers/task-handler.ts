@@ -3,6 +3,10 @@ import { cancelReminder, scheduleReminderTasks } from "@/hooks/use-notifications
 import { createTask } from "../../model-factory-utils";
 import { getTimeRangeHelper } from "./additional-handlers";
 import { resolveIdsFromNames } from "./tags-and-categories-handlers";
+import { AIActionMemory } from "./ai-action-undo-handlers";
+import { fastCosineSimilarity, generateEmbedding } from "@/utils/embedding-engine";
+import { Task } from "@/types/task";
+
 
 // TODOX : If task is marked complete then notification is cancelled in the AI handler, but not in the task item logic, 
 // also if task is then marked incomplete, then a new notificaiton is not scheduled, R&D how it should be ideally
@@ -26,7 +30,8 @@ export const AddTaskHandler: AIHandler = {
 
     // 3. Update the global state via the context
     //context.setTasks((prev) => [...prev, newTask]);
-    context.addTask(newTask);
+    AIActionMemory.push({ type: "DELETE_TASK", payload: { task: newTask } });
+    await context.addTask(newTask);
     console.log(`AI Action: Added task "${newTask.title}"`);
     const { id, embedding, ...rest } = newTask;
     return { status: "success", task: { id: id.slice(0, 8), ...rest } }
@@ -63,8 +68,8 @@ export const EditTaskHandler: AIHandler = {
     /* context.setTasks((prev) =>
       prev.map((t) => (t.id.slice(0, 8) === params.id ? updatedTask : t))
     ); */
-
-    context.editTask(updatedTask);
+    AIActionMemory.push({ type: 'REVERT_UPDATE_TASK', payload: { task: oldTask } });
+    await context.editTask(updatedTask);
     const { id, embedding, ...rest } = updatedTask;
     return { status: "success", task: { id: id.slice(0, 8), ...rest } }
   }
@@ -79,6 +84,7 @@ export const DeleteTaskHandler: AIHandler = {
     if (oldTask.notificationId) {
       await cancelReminder(oldTask.notificationId);
     }
+    AIActionMemory.push({ type: 'ADD_DELETED_TASK', payload: { task: oldTask } });
     context.removeTask(oldTask.id);
     const { id, title } = oldTask;
     return { status: "success", task: { id: id.slice(0, 8), title } }
@@ -94,9 +100,57 @@ export const CompleteTaskHandler: AIHandler = {
     if (oldTask.notificationId) {
       await cancelReminder(oldTask.notificationId);
     }
-    context.toggleTask(oldTask.id);
+    AIActionMemory.push({ type: 'REVERT_UPDATE_TASK', payload: { task: oldTask } });
+    await context.toggleTask(oldTask.id);
     const { id, title } = oldTask;
     return { status: "success", task: { id: id.slice(0, 8), title } }
+  }
+};
+
+export const BatchMutateTasksHandler: AIHandler = {
+  execute: async (params, context) => {
+    const { searchFilters, mutationPayload } = params;
+    const cateogryId = searchFilters.categoryName ? resolveIdsFromNames(searchFilters.categoryName, context.categories)[0] : undefined;
+    // 1. O(N) Hard Filtering
+    let targets = (context.tasks || []).filter((task: Task) => {
+      const currentStatus = task.completed ? "completed" : new Date(task.dueDate) < new Date() ? "overdue" : "pending";
+      if (searchFilters.status && searchFilters.status !== "all" && currentStatus !== searchFilters.status) return false;
+      if (searchFilters.priority && searchFilters.priority !== "all" && task.priority !== searchFilters.priority) return false;
+      if (searchFilters.categoryName && task.category !== cateogryId) return false; // Assumes category UUID resolution happened upstream
+      return true;
+    });
+
+    // 2. High-Compute Semantic Filtering
+    if (searchFilters.semanticQuery && targets.length > 0) {
+      const queryVector = await generateEmbedding(searchFilters.semanticQuery, true);
+      targets = targets.filter((t: any) => {
+        if (!t.embedding) return false;
+        // Strict threshold (0.75+) to prevent accidental mutations of loosely related tasks
+        return fastCosineSimilarity(queryVector, t.embedding) > 0.75;
+      });
+    }
+
+    if (targets.length === 0) {
+      return { output: "No tasks matched the criteria for batch mutation. No changes were made." };
+    }
+
+    // 3. Push to Undo Memory Stack PRIOR to mutation
+    AIActionMemory.push({
+      type: 'BATCH_REVERT_TASKS',
+      payload: { originalTasks: targets }
+    });
+
+    // 4. Execute Atomic Update
+    const newCateogryId = mutationPayload.category ? resolveIdsFromNames(mutationPayload.category, context.categories)[0] : undefined;
+    if (newCateogryId) {
+      mutationPayload.category = newCateogryId;
+    }
+    try {
+      await context.batchMutateTasks(targets, mutationPayload);
+      return { output: `Successfully batch updated ${targets.length} tasks.` };
+    } catch (error) {
+      return { error: "Database transaction failed. All partial updates were automatically rolled back." };
+    }
   }
 };
 

@@ -13,6 +13,8 @@ import {
   deleteHabit,
   deleteAllHabits,
   countHabits,
+  batchUpdateHabits,
+  batchRestore,
 } from "@/db/repositories/habit-repository";
 
 import { Habit } from "@/types/habits";
@@ -32,6 +34,8 @@ interface HabitContextType {
   reassignHabitCategoryLocal: (oldId: string, newId: string) => void;
   reassignHabitTagLocal: (oldId: string, newId: string) => void;
   habitCount: () => Promise<number>;
+  batchMutateHabits: (habitsToMutate: Habit[], newValues: any) => Promise<void>;
+  batchRestoreHabits: (originalHabits: Habit[]) => Promise<void>;
 }
 
 export const HabitContext = createContext<HabitContextType | undefined>(
@@ -128,7 +132,7 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
     (oldTagId: string, newTagId: string | null): void => {
       setHabits((prev) =>
         prev.map((h) => {
-          // If the task doesn't have the old tag, return it untouched
+          // If the habit doesn't have the old tag, return it untouched
           if (!h.tags?.includes(oldTagId)) return h;
 
           // Remove the old tag
@@ -145,6 +149,36 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
+
+  const batchMutateHabits = useCallback(
+    async (habitsToMutate: Habit[], newValues: any) => {
+      // 1. Optimistic UI Update (0ms latency for the user)
+      // usehabitStore.getState().updateMany(habitIds, newValues);
+      const habitIds = habitsToMutate.map((t) => t.id);
+      await optimisticHabitMutation(
+        (prev) =>
+          prev.map((e) => {
+            if (!habitIds.includes(e.id)) return e;
+            return {
+              ...e,
+              ...newValues,
+              updatedAt: new Date().toISOString(),
+            };
+          }),
+        () => batchUpdateHabits(habitsToMutate, newValues),
+      );
+    },
+    [],
+  );
+
+  const batchRestoreHabits = useCallback(async (originalHabits: Habit[]) => {
+    optimisticHabitMutation(
+      (prev) =>
+        prev.map((t) => ({ ...t, updatedAt: new Date().toISOString() })),
+      () => batchRestore(originalHabits),
+    );
+  }, []);
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -230,6 +264,8 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
         reassignHabitCategoryLocal,
         reassignHabitTagLocal,
         habitCount,
+        batchMutateHabits,
+        batchRestoreHabits,
       }}
     >
       {children}

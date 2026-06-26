@@ -266,6 +266,7 @@ export const TaxonomyTools: FunctionDeclaration[] = [
                 queries: {
                     type: Type.ARRAY,
                     items: { type: Type.STRING },
+                    minItems: '1',
                     description: "A list of category/tag names or concepts to search for (e.g., ['fitness', 'urgent', 'groceries'])."
                 },
                 type: { type: Type.STRING, enum: ["category", "tag", "both"] }
@@ -513,7 +514,131 @@ export const MemoryTools: FunctionDeclaration[] = [
             },
             required: ["keywords"]
         }
+    },
+    {
+        name: "undoActions",
+        description: "Instantly undoes the most recent actions taken by the AI. Call this immediately when the user says 'undo', 'revert that', or 'go back'.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                steps: {
+                    type: Type.NUMBER,
+                    description: "The number of previous actions to undo. Maximum is 10. Default is 1 if unspecified."
+                }
+            },
+            // steps is optional; handler will default to 1
+        }
     }
 ];
+
+
+export const BatchTools: FunctionDeclaration[] = [
+    {
+        name: "batchTasksUpdate",
+        description: "Bulk update multiple tasks simultaneously. Use semanticQuery to find tasks by meaning, or exact filters like status and priority.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                searchFilters: {
+                    type: Type.OBJECT,
+                    description: "Filters to determine WHICH tasks to modify.",
+                    properties: {
+                        semanticQuery: { type: Type.STRING, description: "A semantic concept to find tasks (e.g., 'things related to cars' or 'urgent emails')." },
+                        status: { type: Type.STRING, enum: ["pending", "completed", "overdue", "all"] },
+                        priority: { type: Type.STRING, enum: ["high", "medium", "low", "all"] },
+                        categoryName: { type: Type.STRING, description: "Category Name to filter by" }
+                    },
+                    required: ["semanticQuery", "status"]
+                },
+                mutationPayload: {
+                    type: Type.OBJECT,
+                    description: "The new values to apply to all matched tasks.",
+                    properties: {
+                        description: { type: Type.STRING },
+                        priority: { type: Type.STRING, enum: ["low", "medium", "high"] },
+                        dueDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
+                        category: { type: Type.STRING, description: "Assign a new category to these tasks" },
+                        completed: { type: Type.BOOLEAN, description: "Whether task is completed or not" }
+                    }
+                }
+            },
+            required: ["searchFilters", "mutationPayload"]
+        }
+    },
+    {
+        name: "batchEventsUpdate",
+        description: "Bulk update multiple calendar events simultaneously.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                searchFilters: {
+                    type: Type.OBJECT,
+                    properties: {
+                        semanticQuery: { type: Type.STRING },
+                        timeRange: { type: Type.STRING, enum: ["last_month", "last_week", "yesterday", "today", "tomorrow", "this_week", "next_week", "this_month", "next_month", "all"] },
+                        recurrence: { type: Type.STRING, enum: ["none", "daily", "weekly", "all"] },
+                        categoryName: { type: Type.STRING }
+                    }
+                },
+                mutationPayload: {
+                    type: Type.OBJECT,
+                    properties: {
+                        description: { type: Type.STRING },
+                        startDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
+                        endDate: { type: Type.STRING, description: "ISO date string (YYYY-MM-DD)" },
+                        startTime: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of startDate and convert the user's local time to UTC using the offset provided in the system context." },
+                        endTime: { type: Type.STRING, description: "ISO 8601 string in UTC timezone (e.g., '2026-03-24T14:30:00Z'). Use ISO date string (YYYY-MM-DD) value of startDate and convert the user's local time to UTC using the offset provided in the system context." },
+                        recurrence: { type: Type.STRING, enum: ["none", "daily", "weekly"] },
+                        category: { type: Type.STRING, description: "Assign a new category to these events." },
+                    }
+                }
+            },
+            required: ["searchFilters", "mutationPayload"]
+        }
+    },
+    {
+        name: "batchHabitsUpdate",
+        description: "Bulk update multiple habits simultaneously.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                searchFilters: {
+                    type: Type.OBJECT,
+                    properties: {
+                        semanticQuery: { type: Type.STRING },
+                        status: { type: Type.STRING, enum: ["needs_checkin", "streak_lost", "currently_frozen", "all"] },
+                        frequency: { type: Type.STRING, enum: ["daily", "weekly", "all"] },
+                        categoryName: { type: Type.STRING }
+                    }
+                },
+                mutationPayload: {
+                    type: Type.OBJECT,
+                    properties: {
+                        description: { type: Type.STRING },
+                        category: { type: Type.STRING, description: "Assign a new category to these habits" },
+                    }
+                }
+            },
+            required: ["searchFilters", "mutationPayload"]
+        }
+    },
+];
+
+export const OtherTools: FunctionDeclaration[] = [
+    {
+        name: "triageOverdueItems",
+        description: "Automatically rescues the user's day by gathering all overdue pending tasks, calculating the available free time in their calendar over the next few days, and semantically rescheduling the tasks into those free gaps. Call this when the user says they are overwhelmed, behind schedule, or ask you to 'fix my schedule'.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                daysToSpread: {
+                    type: Type.NUMBER,
+                    description: "The number of days into the future to spread the overdue tasks. Default is 3. Max is 7."
+                }
+            }
+            // No required parameters; it is highly autonomous.
+        }
+    },
+]
 // The "Fallback" array (just in case)
-export const AllTools = [...TaskTools, ...HabitTools, ...EventTools, ...TimerTools, ...TaxonomyTools, ...GeneralTools, ...MemoryTools];
+export const AllTools = [...TaskTools, ...HabitTools, ...EventTools, ...TimerTools, ...TaxonomyTools, ...GeneralTools, ...MemoryTools, ...BatchTools, ...OtherTools];

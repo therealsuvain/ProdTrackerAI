@@ -105,10 +105,32 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     deleteUserTag,
     getTagUsageForAll,
   } = useData();
-  const { tasks, addTask, editTask, removeTask, toggleTask } = useTasks();
-  const { habits, addHabit, editHabit, removeHabit } = useHabits();
-  const { events, addEvent, editEvent, removeEvent, deleteEventOccurrence } =
-    useEvents();
+  const {
+    tasks,
+    addTask,
+    editTask,
+    removeTask,
+    toggleTask,
+    batchMutateTasks,
+    batchRestoreTasks,
+  } = useTasks();
+  const {
+    habits,
+    addHabit,
+    editHabit,
+    removeHabit,
+    batchMutateHabits,
+    batchRestoreHabits,
+  } = useHabits();
+  const {
+    events,
+    addEvent,
+    editEvent,
+    removeEvent,
+    deleteEventOccurrence,
+    batchMutateEvents,
+    batchRestoreEvents,
+  } = useEvents();
   const { toastError, showToast, dismissToast } = useDbErrorToast();
   const [isThinking, setIsThinking] = useState(false);
   const flatListRef = useRef<FlatList>(null);
@@ -124,15 +146,21 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     editTask,
     removeTask,
     toggleTask,
+    batchMutateTasks,
+    batchRestoreTasks,
     habits,
     addHabit,
     editHabit,
     removeHabit,
+    batchMutateHabits,
+    batchRestoreHabits,
     events,
     addEvent,
     editEvent,
     removeEvent,
     deleteEventOccurrence,
+    batchMutateEvents,
+    batchRestoreEvents,
     categories,
     addCategory,
     updateUserCategory,
@@ -147,6 +175,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     getTagUsageForAll,
     getImmediateContext,
     getMoreContext,
+    trackMetric,
   };
   const chatItems = useMemo(() => injectDaySeparators(messages), [messages]);
   const [agentProgress, setAgentProgress] = useState<string | null>(null);
@@ -328,6 +357,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
           stop,
           navigation,
         },
+        {},
         (status) => setAgentProgress(status),
       );
 

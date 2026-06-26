@@ -43,3 +43,7 @@ export interface GatekeeperOutput {
     chatResponse?: string;
 }
 
+export interface DailyCapacity {
+    date: string;
+    freeMinutes: number;
+}

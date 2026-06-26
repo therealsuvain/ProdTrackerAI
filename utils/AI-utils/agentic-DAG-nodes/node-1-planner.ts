@@ -15,7 +15,29 @@ export const executePlannerNode = async (transcript: string): Promise<ChecklistI
   CRITICAL:If the user explicitly asks a question, requests a summary, or wants to know their state (e.g., "What did I just add?", "Show my tasks"), prefix the intent with [INQUIRY].
   User Input: "${transcript}"
   `;
+    const plannerPromptNEW = `
+  [TASK]
+  You are a deterministic query expansion module. Your job is to extract a strict, separate list of actions the user wants to perform.
+  If the input contains a historical database matrix, you MUST resolve all semantic ambiguities (pronouns, temporal references like 'last habit') into concrete entities using that history.
+  
+  CRITICAL RULES:
+  1. Preserve all specific metadata (dates, tags, priorities, goals) within the string.
+  2. If the user's input is conversational filler, agreement, or a greeting (e.g., "Ok", "Go ahead", "Thanks", "Yes"), return an empty checklist array [].
 
+  [EXAMPLE WORKFLOW]
+  User: "Edit the habit we just added and change its name to GameOfThrones"
+  History: [{"name": "editHabit", "args": {"title": "Poker"}}]
+  Output:
+  {
+    "entity_resolution_reasoning": "The user refers to 'the habit we just added'. History shows 'Poker' was just added.",
+    "resolved_transcript": "Edit the habit Poker and change its name to GameOfThrones",
+    "checklist": ["Edit habit Poker to GameOfThrones"]
+  }
+
+  [CURRENT EXECUTION]
+  Input Data (Transcript & Potential History Matrix): 
+  "${transcript}"
+  `;
 
     //   If the user asks a question, requests a summary, or inquires about their recent history or current state, you MUST prefix the intent string with [INQUIRY].
     //     Example Inquiry: "[INQUIRY] What habit did I just add?"
@@ -49,14 +71,50 @@ export const executePlannerNode = async (transcript: string): Promise<ChecklistI
             }
         });
 
-        recordGeminiUsage(result, "PLANNER"); // Hook up your metrics
-        console.log("[DAG] Node 1:FUNCTIONCALLS", result.functionCalls);
+
+        /*  try {
+             const result = await gemini_ai.models.generateContent({
+                 model: "gemini-2.5-flash",
+                 contents: [{ role: "user", parts: [{ text: plannerPrompt }] }],
+                 config: {
+                     responseMimeType: "application/json",
+                     responseSchema: {
+                         type: "OBJECT",
+                         properties: {
+                             entity_resolution_reasoning: {
+                                 type: "STRING",
+                                 description: "Briefly identify vague terms (e.g., 'last habit') and map them to specific entities in the history matrix. If no history exists, explicitly state 'No entity resolution required'."
+                             },
+                             resolved_transcript: {
+                                 type: "STRING",
+                                 description: "The user's command completely rewritten using the concrete entity names found in step 1."
+                             },
+                             checklist: {
+                                 type: "ARRAY",
+                                 items: { type: "STRING" },
+                                 description: "Actionable intents using ONLY the nouns from the resolved_transcript. Return empty [] if just conversational filler."
+                             }
+                         },
+                         required: ["entity_resolution_reasoning", "resolved_transcript", "checklist"]
+                     }
+                 }
+             }); */
+
+        recordGeminiUsage(result, "PLANNER");
         console.log("[DAG] Node 1:CHAT RESPONSE TEXT:", result.text);
         console.log("[DAG] Node 1:CHAT Candidates.content:", result.candidates?.[0]?.content);
         console.log("[DAG] Node 1:FULL RESPONSE", result)
-        const checklist = JSON.parse(result.text || "[]");
-        console.log("[DAG] Checklist generated:", checklist);
+        const parsedResponse = JSON.parse(result.text || "[]");
+        console.log("[DAG] Node 1: CoT Reasoning:", parsedResponse.entity_resolution_reasoning);
+        console.log("[DAG] Node 1: Resolved Transcript:", parsedResponse.resolved_transcript);
+        console.log("[DAG] Node 1: Generated Checklist:", parsedResponse.checklist);
         console.log("=========================================================");
+        const checklist = parsedResponse;
+        //const checklist = parsedResponse.checklist || [];
+        // Early Exit: Conversational filler bypassed
+        if (checklist.length === 0) {
+            return [];
+        }
         const objectifiedChecklist: ChecklistItem[] = checklist.map((intent: string, index: any) => ({
             id: `chk-${index}`, // Bulletproof unique IDs
             intent: intent,

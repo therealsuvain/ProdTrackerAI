@@ -1,4 +1,4 @@
-import { TaskTools, HabitTools, EventTools, TimerTools, GeneralTools, TaxonomyTools, MemoryTools } from "./tool-def-buckets";
+import { TaskTools, HabitTools, EventTools, TimerTools, GeneralTools, TaxonomyTools, MemoryTools, BatchTools, OtherTools } from "./tool-def-buckets";
 
 // The lightweight dictionary the Router LLM will read
 export const MasterToolIndex: Record<string, string> = {
@@ -13,6 +13,7 @@ export const MasterToolIndex: Record<string, string> = {
   "editHabit": "Modifies an existing habit's properties except for frequency, goal or targetDays",
   "deleteHabit": "Removes an existing habit.",
   "checkinHabit": "Logs progress or completes a daily/weekly check-in for a habit.",
+  "freezeHabit": "Freezes a habit's current streak.",
 
   // Events
   "addEvent": "Schedules a new calendar event with start and end times.",
@@ -40,6 +41,10 @@ export const MasterToolIndex: Record<string, string> = {
   "searchItems": "Searches across tasks, habits, and events by text keyword.",
   "searchTaxonomy": "Looks up database UUIDs for categories and tags based on text names.",
 
+  //Batch Mutations
+  "batchTasksUpdate": "Bulk update multiple tasks simultaneously. Use semanticQuery to find tasks by meaning, or exact filters like status and priority.",
+  "batchEventsUpdate": "Bulk update multiple calendar events simultaneously.",
+  "batchHabitsUpdate": "Bulk update multiple habits simultaneously.",
   // Analytics
   "getStats": "Retrieves general productivity statistics, completion rates, and active streaks.",
   "getTaxonomyStats": "Retrieves usage statistics and time tracked for specific categories and tags.",
@@ -47,6 +52,7 @@ export const MasterToolIndex: Record<string, string> = {
   //Memory
   "getImmediateContext": "Retrieves the last few conversational messages and recently executed actions. Call this IMMEDIATELY if the user says 'undo that', 'edit that', or uses pronouns like 'it' or 'that' referring to a recent action.",
   "searchHistoricalActions": "Searches deep conversational history for past projects, tasks, or workflows. Use this when the user refers to specific past events (e.g., 'the Japan trip', 'tasks from yesterday').",
+  "undoActions": "Instantly undoes the most recent actions taken by the AI. Call this immediately when the user says 'undo', 'revert that', or 'go back'.",
 };
 
 // A mapping of the string names back to your actual JSON schema objects
@@ -83,5 +89,10 @@ export const AllToolSchemas: Record<string, any> = {
   "searchTaxonomy": TaxonomyTools.find(t => t.name === "searchTaxonomy"),
   "getImmediateContext": MemoryTools.find(t => t.name === "getImmediateContext"),
   "searchHistoricalActions": MemoryTools.find(t => t.name === "searchHistoricalActions"),
+  "undoActions": MemoryTools.find(t => t.name === "undoActions"),
+  "batchTasksUpdate": BatchTools.find(t => t.name === "batchTasksUpdate"),
+  "batchEventsUpdate": BatchTools.find(t => t.name === "batchEventsUpdate"),
+  "batchHabitsUpdate": BatchTools.find(t => t.name === "batchHabitsUpdate"),
+  "triageOverdueItems": OtherTools.find(t => t.name === "triageOverdueItems"),
   // ... map the rest of your tools here
 };

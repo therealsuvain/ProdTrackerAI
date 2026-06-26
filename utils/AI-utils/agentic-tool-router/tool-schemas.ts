@@ -159,7 +159,7 @@ export const GetTaxonomyStatsSchema = z.object({
 })
 
 export const SearchTaxonomySchema = z.object({
-    query: z.array(z.string()),
+    query: z.array(z.string()).min(1),
     type: z.enum(['category', 'tag', 'both']).optional(),
 })
 
@@ -210,11 +210,69 @@ export const QueryTimerLogsSchema = z.object({
     tagNames: z.array(z.string()).optional(),
 })
 
-
+//Note Chat History getter's Schema
 export const GetImmediateContextSchema = z.object({})
 
 export const SearchHistoricalActionsSchema = z.object({
     keyword: z.string(),
     daysBack: z.number().optional,
     actionTypeOnly: z.boolean().optional
+})
+
+//Note Undo Actions Schema
+export const UndoActionsSchema = z.object({
+    steps: z.number().optional,
+})
+
+export const BatchTasksUpdateSchema = z.object({
+    searchFilters: z.object({
+        semanticQuery: z.string(),
+        status: z.enum(['pending', 'completed', 'overdue', 'all']),
+        priority: z.enum(['low', 'medium', 'high', 'all']).optional(),
+        categoryName: z.string().optional(),
+    }),
+    mutationPayload: z.object({
+        description: z.string().optional(),
+        priority: z.enum(['low', 'medium', 'high']).optional(),
+        dueDate: z.string().optional(),
+        category: z.string().optional(),
+        completed: z.boolean().optional(),
+    })
+})
+
+//Note Batch Updaters Schemas
+export const BatchEventsUpdateSchema = z.object({
+    searchFilters: z.object({
+        semanticQuery: z.string(),
+        timeRange: z.enum(['last_month', 'last_week', 'yesterday', 'today', 'tomorrow', 'this_week', 'next_week', 'this_month', 'next_month', 'all']).optional(),
+        recurrence: z.enum(['none', 'daily', 'weekly', 'all']).optional(),
+        categoryName: z.string().optional(),
+    }),
+    mutationPayload: z.object({
+        description: z.string().optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        startTime: z.string().optional(),
+        endTime: z.string().optional(),
+        recurrence: z.enum(["none", "daily", "weekly"]).optional(),
+        category: z.string().optional(),
+    })
+})
+
+export const BatchHabitsUpdateSchema = z.object({
+    searchFilters: z.object({
+        semanticQuery: z.string(),
+        status: z.enum(['needs_checkin', 'streak_lost', 'currently_frozen', 'all']),
+        frequency: z.enum(['daily', 'weekly', 'all']).optional(),
+        categoryName: z.string().optional(),
+    }),
+    mutationPayload: z.object({
+        description: z.string().optional(),
+        category: z.string().optional(),
+    })
+})
+
+//Note Others
+export const TriageOverdueHandlerSchema = z.object({
+    daysToSpread: z.number().optional(),
 })

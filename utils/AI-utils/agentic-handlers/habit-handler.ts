@@ -4,6 +4,8 @@ import { cancelReminder, scheduleReminderHabits } from "@/hooks/use-notification
 import { checkInHabit, freezeHabit } from "../../habit-utils";
 import { createHabit } from "../../model-factory-utils";
 import { resolveIdsFromNames } from "./tags-and-categories-handlers";
+import { AIActionMemory } from "./ai-action-undo-handlers";
+import { fastCosineSimilarity, generateEmbedding } from "@/utils/embedding-engine";
 
 export const AddHabitHandler: AIHandler = {
   execute: async (params, context) => {
@@ -16,7 +18,8 @@ export const AddHabitHandler: AIHandler = {
         return { status: "partial_success", reason: "Failed to schedule notification", task: newHabit };
       }
     }
-
+    //!  Undo Stack Push
+    AIActionMemory.push({ type: 'DELETE_HABIT', payload: { habit: newHabit } })
     context.addHabit(newHabit);
     console.log(`AI Action: Added Habit "${newHabit.title}"`);
     const { id, embedding, ...rest } = newHabit;
@@ -50,6 +53,8 @@ export const EditHabitHandler: AIHandler = {
         return { status: "partial_success", reason: "Failed to schedule notification", task: newHabit };
       }
     }
+    //!  Undo Stack Push
+    AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit } });
     await context.editHabit(newHabit);
     const { id, embedding, ...rest } = newHabit;
     return { status: "success", habit: { id: id.slice(0, 8), ...rest } };
@@ -58,13 +63,15 @@ export const EditHabitHandler: AIHandler = {
 
 export const DeleteHabitHandler: AIHandler = {
   execute: async (params, context) => {
-    const oldHabit = context.tasks.find((t) => t.id.slice(0, 8) === params.id);
+    const oldHabit = context.habits.find((t) => t.id.slice(0, 8) === params.id);
     if (!oldHabit) {
       throw new Error("Task not found");
     }
     if (oldHabit.notificationId) {
       await cancelReminder(oldHabit.notificationId);
     }
+    //!  Undo Stack Push
+    AIActionMemory.push({ type: 'ADD_DELETED_HABIT', payload: { habit: oldHabit } });
     await context.removeHabit(oldHabit.id);
     const { id, title } = oldHabit;
     return { status: "success", habit: { id: id.slice(0, 8), title } };
@@ -73,11 +80,13 @@ export const DeleteHabitHandler: AIHandler = {
 
 export const CheckInHabitHandler: AIHandler = {
   execute: async (params, context) => {
-    const habit = context.habits.find((h) => h.id.slice(0, 8) === params.id);
-    if (!habit) throw new Error("Habit not found");
-    const result = checkInHabit(habit);
+    const oldHabit = context.habits.find((h) => h.id.slice(0, 8) === params.id);
+    if (!oldHabit) throw new Error("Habit not found");
+    const result = checkInHabit(oldHabit);
     if (result.status === "denied")
       return { status: "denied", reason: result.reason }
+    //!  Undo Stack Push
+    AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit } });
     await context.editHabit(result.habit);
     const { id, title } = result.habit;
     return { status: "success", habit: { id: id.slice(0, 8), title } };
@@ -86,16 +95,82 @@ export const CheckInHabitHandler: AIHandler = {
 
 export const FreezeHabitHandler: AIHandler = {
   execute: async (params, context) => {
-    const habit = context.habits.find((h) => h.id.slice(0, 8) === params.id);
-    if (!habit) throw new Error("Habit not found");
-    const result = freezeHabit(habit);
+    const oldHabit = context.habits.find((h) => h.id.slice(0, 8) === params.id);
+    if (!oldHabit) throw new Error("Habit not found");
+    const result = freezeHabit(oldHabit);
     if (result.status === "denied")
       return { status: "denied", reason: result.reason }
+    //!  Undo Stack Push
+    AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit } });
     await context.editHabit(result.habit);
     const { id, title } = result.habit;
     return { status: "success", habit: { id: id.slice(0, 8), title } };
   }
 }
+
+const getHabitStatus = (habit: Habit) => {
+  // 1. No history at all, or last check-in wasn't today
+  if (habit.history.length === 0 || !isToday(habit.history[habit.history.length - 1])) {
+    return "needs_checkin";
+  }
+  // 2. Checked in today but streak is broken
+  if (habit.streak === 0 && habit.history.length > 0) {
+    return "streak_lost";
+  }
+  // 3. Currently frozen
+  const lastFreeze = habit.freezeHistory?.at(-1);
+  if (lastFreeze && isToday(lastFreeze)) {
+    return "currently_frozen";
+  }
+  return "all";
+}
+
+export const BatchMutateHabitsHandler: AIHandler = {
+  execute: async (params, context) => {
+    const { searchFilters, mutationPayload } = params;
+    const cateogryId = searchFilters.categoryName ? resolveIdsFromNames(searchFilters.categoryName, context.categories)[0] : undefined;
+    // 1. O(N) Hard Filtering
+    let targets = (context.habits || []).filter((habit: any) => {
+      const currentStatus = getHabitStatus(habit);
+      if (searchFilters.status && searchFilters.status !== "all" && currentStatus !== searchFilters.status) return false;
+      if (searchFilters.frequency && searchFilters.frequency !== "all" && habit.frequency !== searchFilters.frequency) return false;
+      if (searchFilters.categoryName && habit.category !== cateogryId) return false; // Assumes category UUID resolution happened upstream
+      return true;
+    });
+
+    // 2. High-Compute Semantic Filtering
+    if (searchFilters.semanticQuery && targets.length > 0) {
+      const queryVector = await generateEmbedding(searchFilters.semanticQuery, true);
+      targets = targets.filter((t: any) => {
+        if (!t.embedding) return false;
+        // Strict threshold (0.75+) to prevent accidental mutations of loosely related habits
+        return fastCosineSimilarity(queryVector, t.embedding) > 0.75;
+      });
+    }
+
+    if (targets.length === 0) {
+      return { output: "No Habits matched the criteria for batch mutation. No changes were made." };
+    }
+
+    // 3. Push to Undo Memory Stack PRIOR to mutation
+    AIActionMemory.push({
+      type: 'BATCH_REVERT_HABITS',
+      payload: { originalHabits: targets }
+    });
+    const newCateogryId = mutationPayload.category ? resolveIdsFromNames(mutationPayload.category, context.categories)[0] : undefined;
+    if (newCateogryId) {
+      mutationPayload.category = newCateogryId;
+    }
+    // 4. Execute Atomic Update
+    try {
+      await context.batchMutateHabits(targets, mutationPayload);
+      return { output: `Successfully batch updated ${targets.length} habits.` };
+    } catch (error) {
+      return { error: "Database transaction failed. All partial updates were automatically rolled back." };
+    }
+  }
+};
+
 const isToday = (dateString?: string) => {
   if (!dateString) return false;
   const d = new Date(dateString);

@@ -220,3 +220,27 @@ export async function countTasks(): Promise<number> {
     const result = await db.select({ id: tasks.id }).from(tasks);
     return result.length;
 }
+
+export async function batchUpdateTasks(tasksToMutate: Task[], newValues: any): Promise<void> {
+    await db.transaction(async (tx) => {
+        const taskIds = tasksToMutate.map(t => t.id);
+        // Map to promises for parallel execution inside the locked connection
+        const updatePromises = taskIds.map(id =>
+            tx.update(tasks)
+                .set({ ...newValues, updatedAt: new Date().toISOString() })
+                .where(eq(tasks.id, id))
+        );
+        await Promise.all(updatePromises);
+    });
+}
+
+export async function batchRestore(originalTasks: Task[]): Promise<void> {
+    await db.transaction(async (tx) => {
+        const restorePromises = originalTasks.map(task =>
+            tx.update(tasks)
+                .set(taskToInsert(task)) // Push the exact old object back into the row
+                .where(eq(tasks.id, task.id))
+        );
+        await Promise.all(restorePromises);
+    });
+}

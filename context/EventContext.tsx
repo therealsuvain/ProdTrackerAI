@@ -7,6 +7,8 @@ import React, {
 } from "react";
 
 import {
+  batchRestore,
+  batchUpdateEvents,
   countCalendarEvents,
   deleteAllCalendarEvents,
   deleteCalendarEvent,
@@ -34,6 +36,11 @@ interface EventContextType {
   reassignEventCategoryLocal: (oldId: string, newId: string) => void;
   reassignEventTagLocal: (oldId: string, newId: string) => void;
   eventCount: () => Promise<number>;
+  batchMutateEvents: (
+    eventsToMutate: CalendarEvent[],
+    newValues: any,
+  ) => Promise<void>;
+  batchRestoreEvents: (originalEvents: CalendarEvent[]) => Promise<void>;
 }
 
 export const EventContext = createContext<EventContextType | undefined>(
@@ -183,6 +190,38 @@ export default function EventProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
+
+  const batchMutateEvents = useCallback(
+    async (eventsToMutate: CalendarEvent[], newValues: any) => {
+      // 1. Optimistic UI Update (0ms latency for the user)
+      // useeventStore.getState().updateMany(eventIds, newValues);
+      const eventIds = eventsToMutate.map((t) => t.id);
+      await optimisticCalendarEventMutation(
+        (prev) =>
+          prev.map((e) => {
+            if (!eventIds.includes(e.id)) return e;
+            return {
+              ...e,
+              ...newValues,
+              updatedAt: new Date().toISOString(),
+            };
+          }),
+        () => batchUpdateEvents(eventsToMutate, newValues),
+      );
+    },
+    [],
+  );
+
+  const batchRestoreEvents = useCallback(
+    async (originalEvents: CalendarEvent[]) => {
+      optimisticCalendarEventMutation(
+        (prev) =>
+          prev.map((t) => ({ ...t, updatedAt: new Date().toISOString() })),
+        () => batchRestore(originalEvents),
+      );
+    },
+    [],
+  );
   //Loader
   useEffect(() => {
     const loadEvents = async () => {
@@ -215,6 +254,8 @@ export default function EventProvider({ children }: { children: ReactNode }) {
         reassignEventCategoryLocal,
         reassignEventTagLocal,
         eventCount,
+        batchMutateEvents,
+        batchRestoreEvents,
       }}
     >
       {children}

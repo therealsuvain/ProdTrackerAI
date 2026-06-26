@@ -16,6 +16,8 @@ import {
   deleteAllTasks,
   toggleTaskCompleted,
   countTasks,
+  batchUpdateTasks,
+  batchRestore,
 } from "@/db/repositories/task-repository";
 
 import { initDatabase } from "@/db";
@@ -32,6 +34,8 @@ interface TaskContextType {
   reassignTaskCategoryLocal: (oldId: string, newId: string) => void;
   reassignTaskTagLocal: (oldId: string, newId: string) => void;
   taskCount: () => Promise<number>;
+  batchMutateTasks: (tasksToMutate: Task[], newValues: any) => Promise<void>;
+  batchRestoreTasks: (originalTasks: Task[]) => Promise<void>;
 }
 
 export const TaskContext = createContext<TaskContextType | undefined>(
@@ -169,6 +173,36 @@ export default function TaskProvider({ children }: { children: ReactNode }) {
     const result = await countTasks();
     return result ?? 0;
   }, []);
+
+  const batchMutateTasks = useCallback(
+    async (tasksToMutate: Task[], newValues: any) => {
+      // 1. Optimistic UI Update (0ms latency for the user)
+      // useTaskStore.getState().updateMany(taskIds, newValues);
+      const taskIds = tasksToMutate.map((t) => t.id);
+      await optimisticTaskMutation(
+        (prev) =>
+          prev.map((t) => {
+            if (!taskIds.includes(t.id)) return t;
+            return {
+              ...t,
+              ...newValues,
+              updatedAt: new Date().toISOString(),
+            };
+          }),
+        () => batchUpdateTasks(tasksToMutate, newValues),
+      );
+    },
+    [],
+  );
+
+  const batchRestoreTasks = useCallback(async (originalTasks: Task[]) => {
+    optimisticTaskMutation(
+      (prev) =>
+        prev.map((t) => ({ ...t, updatedAt: new Date().toISOString() })),
+      () => batchRestore(originalTasks),
+    );
+  }, []);
+
   useEffect(() => {
     const loadTasks = async () => {
       try {
@@ -201,6 +235,8 @@ export default function TaskProvider({ children }: { children: ReactNode }) {
         reassignTaskCategoryLocal,
         reassignTaskTagLocal,
         taskCount,
+        batchMutateTasks,
+        batchRestoreTasks,
       }}
     >
       {children}

@@ -181,7 +181,7 @@ export async function insertCalendarEvent(event: CalendarEvent): Promise<Calenda
         if (notificationIdRows.length > 0) {
             await tx.insert(eventNotificationIds).values(notificationIdRows);
         }
-        if(event.tags && event.tags.length > 0) {
+        if (event.tags && event.tags.length > 0) {
             const junctionData = event.tags.map((tagId) => ({
                 eventId: event.id,
                 tagId: tagId,
@@ -224,12 +224,12 @@ export async function updateCalendarEvent(event: CalendarEvent): Promise<Calenda
         if (notificationIdRows.length > 0) {
             await tx.insert(eventNotificationIds).values(notificationIdRows);
         }
-        if(event.tags && event.tags.length > 0) {
+        if (event.tags && event.tags.length > 0) {
             const junctionData = event.tags.map((tagId) => ({
                 eventId: event.id,
                 tagId: tagId,
             }));
-             await tx.delete(eventTags).where(eq(eventTags.eventId, event.id));
+            await tx.delete(eventTags).where(eq(eventTags.eventId, event.id));
             await tx.insert(eventTags).values(junctionData);
         }
     });
@@ -274,6 +274,76 @@ export async function bulkInsertCalendarEvents(eventList: CalendarEvent[]): Prom
             }
         }
     });
+}
+
+export async function batchUpdateEvents(eventsToMutate: CalendarEvent[], newValues: any): Promise<void> {
+    const updatePromises = eventsToMutate.map(async (event) => {
+        const deletedOccurrencesRows = buildEventDeletedOccurrenceRows(event);
+        const notificationIdRows = buildEventNotificationIdRows(event);
+
+        await db.transaction(async (tx) => {
+            // Update parent
+            await tx
+                .update(calendarEvents)
+                .set({ ...newValues, updatedAt: new Date().toISOString() })
+                .where(eq(calendarEvents.id, event.id));
+
+            // Replace children — delete all then reinsert
+            await tx.delete(eventDeletedOccurrences).where(eq(eventDeletedOccurrences.eventId, event.id));
+            await tx.delete(eventNotificationIds).where(eq(eventNotificationIds.eventId, event.id));
+
+            if (deletedOccurrencesRows.length > 0) {
+                await tx.insert(eventDeletedOccurrences).values(deletedOccurrencesRows);
+            }
+            if (notificationIdRows.length > 0) {
+                await tx.insert(eventNotificationIds).values(notificationIdRows);
+            }
+            if (event.tags && event.tags.length > 0) {
+                const junctionData = event.tags.map((tagId) => ({
+                    eventId: event.id,
+                    tagId: tagId,
+                }));
+                await tx.delete(eventTags).where(eq(eventTags.eventId, event.id));
+                await tx.insert(eventTags).values(junctionData);
+            }
+        });
+    })
+    await Promise.all(updatePromises);
+}
+
+export async function batchRestore(originalEvents: CalendarEvent[]): Promise<void> {
+    const restorePromises = originalEvents.map(async (event) => {
+        const deletedOccurrencesRows = buildEventDeletedOccurrenceRows(event);
+        const notificationIdRows = buildEventNotificationIdRows(event);
+
+        await db.transaction(async (tx) => {
+            // Update parent
+            await tx
+                .update(calendarEvents)
+                .set(eventToInsert(event))
+                .where(eq(calendarEvents.id, event.id));
+
+            // Replace children — delete all then reinsert
+            await tx.delete(eventDeletedOccurrences).where(eq(eventDeletedOccurrences.eventId, event.id));
+            await tx.delete(eventNotificationIds).where(eq(eventNotificationIds.eventId, event.id));
+
+            if (deletedOccurrencesRows.length > 0) {
+                await tx.insert(eventDeletedOccurrences).values(deletedOccurrencesRows);
+            }
+            if (notificationIdRows.length > 0) {
+                await tx.insert(eventNotificationIds).values(notificationIdRows);
+            }
+            if (event.tags && event.tags.length > 0) {
+                const junctionData = event.tags.map((tagId) => ({
+                    eventId: event.id,
+                    tagId: tagId,
+                }));
+                await tx.delete(eventTags).where(eq(eventTags.eventId, event.id));
+                await tx.insert(eventTags).values(junctionData);
+            }
+        });
+    })
+    await Promise.all(restorePromises);
 }
 
 export async function deleteAllCalendarEvents(): Promise<number> {

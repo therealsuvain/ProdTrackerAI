@@ -354,6 +354,100 @@ export async function bulkInsertHabits(habitList: Habit[]): Promise<void> {
     });
 }
 
+export async function batchUpdateHabits(habitsToMutate: Habit[], newValues: any): Promise<void> {
+    // Map to promises for parallel execution inside the locked connection
+    const updatePromises = habitsToMutate.map(async (habit) => {
+        const checkInRows = buildCheckInRows(habit);
+        const freezeRows = buildFreezeRows(habit);
+        const goalCompletionRows = buildGoalCompletionRows(habit);
+        await db.transaction(async (tx) => {
+            // Update parent
+            await tx
+                .update(habits)
+                .set({ ...newValues, updatedAt: new Date().toISOString() })
+                .where(eq(habits.id, habit.id));
+
+            // Replace children — delete all then reinsert
+            await tx.delete(habitCheckIns).where(eq(habitCheckIns.habitId, habit.id));
+            await tx.delete(habitFreezeHistory).where(eq(habitFreezeHistory.habitId, habit.id));
+            await tx.delete(habitGoalCompletions).where(eq(habitGoalCompletions.habitId, habit.id));
+
+            if (checkInRows.length > 0) {
+                await tx.insert(habitCheckIns).values(checkInRows);
+            }
+            if (freezeRows.length > 0) {
+                await tx.insert(habitFreezeHistory).values(freezeRows);
+            }
+            if (goalCompletionRows.length > 0) {
+                await tx.insert(habitGoalCompletions).values(goalCompletionRows);
+            }
+
+            await tx
+                .delete(habitTags)
+                .where(eq(habitTags.habitId, habit.id));
+
+            if (habit.tags && habit.tags.length > 0) {
+                const junctionData = habit.tags.map((tagId) => ({
+                    habitId: habit.id,
+                    tagId: tagId,
+                }));
+
+                await tx.insert(habitTags).values(junctionData);
+            }
+        });
+
+    })
+    await Promise.all(updatePromises);
+
+}
+
+export async function batchRestore(originalHabits: Habit[]): Promise<void> {
+
+    const restorePromises = originalHabits.map(async (habit) => {
+        const checkInRows = buildCheckInRows(habit);
+        const freezeRows = buildFreezeRows(habit);
+        const goalCompletionRows = buildGoalCompletionRows(habit);
+        await db.transaction(async (tx) => {
+            // Update parent
+            await tx
+                .update(habits)
+                .set(habitToInsert(habit))
+                .where(eq(habits.id, habit.id));
+
+            // Replace children — delete all then reinsert
+            await tx.delete(habitCheckIns).where(eq(habitCheckIns.habitId, habit.id));
+            await tx.delete(habitFreezeHistory).where(eq(habitFreezeHistory.habitId, habit.id));
+            await tx.delete(habitGoalCompletions).where(eq(habitGoalCompletions.habitId, habit.id));
+
+            if (checkInRows.length > 0) {
+                await tx.insert(habitCheckIns).values(checkInRows);
+            }
+            if (freezeRows.length > 0) {
+                await tx.insert(habitFreezeHistory).values(freezeRows);
+            }
+            if (goalCompletionRows.length > 0) {
+                await tx.insert(habitGoalCompletions).values(goalCompletionRows);
+            }
+
+            await tx
+                .delete(habitTags)
+                .where(eq(habitTags.habitId, habit.id));
+
+            if (habit.tags && habit.tags.length > 0) {
+                const junctionData = habit.tags.map((tagId) => ({
+                    habitId: habit.id,
+                    tagId: tagId,
+                }));
+
+                await tx.insert(habitTags).values(junctionData);
+            }
+        });
+
+    })
+    await Promise.all(restorePromises);
+
+}
+
 export async function deleteAllHabits(): Promise<number> {
     const count = await countHabits();
     if (count === 0) return 0;
