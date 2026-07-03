@@ -153,10 +153,10 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   } | null>(null);
   const toastQueueRef = useRef<AchievementBadge[]>([]);
   const isToastingRef = useRef(false);
-  const { refreshTasks } = useTasks();
+  /*   const { refreshTasks } = useTasks();
   const { refreshEvents } = useEvents();
   const { refreshHabits } = useHabits();
-  const { refreshLogs } = useLogs();
+  const { refreshLogs } = useLogs(); */
   useDrizzleStudio(sqlite);
 
   const dispatchError = useCallback(
@@ -724,10 +724,10 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       try {
         await dbWrite();
         await Promise.all([
-          refreshTasks(),
+          /* refreshTasks(),
           refreshHabits(),
           refreshEvents(),
-          refreshLogs(),
+          refreshLogs(), */
           refreshTagsCatsAchievements(),
         ]);
       } catch (err) {
@@ -737,10 +737,10 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       }
     },
     [
-      refreshTasks,
+      /* refreshTasks,
       refreshHabits,
       refreshEvents,
-      refreshLogs,
+      refreshLogs, */
       refreshTagsCatsAchievements,
     ],
   );
