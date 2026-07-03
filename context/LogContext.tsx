@@ -28,6 +28,7 @@ interface LogContextType {
   reassignLogCategoryLocal: (oldId: string, newId: string) => void;
   reassignLogTagLocal: (oldId: string, newId: string) => void;
   logCount: () => Promise<number>;
+  refreshLogs: () => void;
 }
 
 export const LogContext = createContext<LogContextType | undefined>(undefined);
@@ -36,6 +37,7 @@ export default function LogProvider({ children }: { children: ReactNode }) {
   const { dispatchError } = useData();
   const [timerLogs, setTimerLogs] = useState<TimerLog[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const optimisticTimerLogMutation = useCallback(
     async (
@@ -144,22 +146,22 @@ export default function LogProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
+  const refreshLogs = useCallback(async () => {
+    try {
+      let loadedLogs = await getAllTimerLogs();
+      setTimerLogs(loadedLogs);
+    } catch (err) {
+      console.error("[LogContext] Failed to initialise database:", err);
+      dispatchError(
+        `Failed to initialise database: ${err instanceof Error ? err.message : String(err)}`,
+        "fatal",
+      );
+    } finally {
+      setLoaded(true);
+    }
+  }, [dispatchError]);
   useEffect(() => {
-    const loadLogs = async () => {
-      try {
-        let loadedLogs = await getAllTimerLogs();
-        setTimerLogs(loadedLogs);
-      } catch (err) {
-        console.error("[LogContext] Failed to initialise database:", err);
-        dispatchError(
-          `Failed to initialise database: ${err instanceof Error ? err.message : String(err)}`,
-          "fatal",
-        );
-      } finally {
-        setLoaded(true);
-      }
-    };
-    loadLogs();
+    refreshLogs();
   }, []);
 
   return (
@@ -174,6 +176,7 @@ export default function LogProvider({ children }: { children: ReactNode }) {
         reassignLogCategoryLocal,
         reassignLogTagLocal,
         logCount,
+        refreshLogs,
       }}
     >
       {children}

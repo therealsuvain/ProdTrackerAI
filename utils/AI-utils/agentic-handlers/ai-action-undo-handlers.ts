@@ -179,19 +179,26 @@ export const RevertLastActionHandler: AIHandler = {
                         else {
                             metricsArr.push("eventsInfinite")
                         }
-                        const startTime = lastAction.payload.event.startTime.split("T")[1];
-                        const endTime = lastAction.payload.event.endTime.split("T")[1];
-                        if (startTime >= "06:00:00" &&
-                            endTime <= "09:00:00") {
-                            metricsArr.push("eventsEarlymorning")
-                        }
-                        else if (startTime >= "21:00:00" &&
-                            endTime <= "23:59:59") {
-                            metricsArr.push("eventsLatenight")
-                        }
-                        else if (startTime >= "21:00:00" ||
-                            endTime <= "06:00:00") {
-                            metricsArr.push("eventsOvernight")
+                        const start = new Date(lastAction.payload.event.startTime);
+                        const end = new Date(lastAction.payload.event.endTime);
+
+                        const startSeconds =
+                        start.getHours() * 3600 + start.getMinutes() * 60 + start.getSeconds();
+
+                        const endSeconds =
+                        end.getHours() * 3600 + end.getMinutes() * 60 + end.getSeconds();
+
+                        const SIX_AM = 6 * 3600;
+                        const NINE_AM = 9 * 3600;
+                        const NINE_PM = 21 * 3600;
+                        const END_OF_DAY = 23 * 3600 + 59 * 60 + 59;
+
+                        if (startSeconds >= SIX_AM && endSeconds <= NINE_AM) {
+                        metricsArr.push("eventsEarlymorning");
+                        } else if (startSeconds >= NINE_PM && endSeconds <= END_OF_DAY) {
+                        metricsArr.push("eventsLatenight");
+                        } else if (startSeconds >= NINE_PM || endSeconds <= SIX_AM) {
+                        metricsArr.push("eventsOvernight");
                         }
                         metricsArr.push("eventsAdded")
                         context.trackMetric(metricsArr, -1);

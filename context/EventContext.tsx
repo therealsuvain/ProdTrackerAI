@@ -41,6 +41,7 @@ interface EventContextType {
     newValues: any,
   ) => Promise<void>;
   batchRestoreEvents: (originalEvents: CalendarEvent[]) => Promise<void>;
+  refreshEvents: () => void;
 }
 
 export const EventContext = createContext<EventContextType | undefined>(
@@ -51,6 +52,7 @@ export default function EventProvider({ children }: { children: ReactNode }) {
   const { dispatchError } = useData();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const optimisticCalendarEventMutation = useCallback(
     async (
@@ -223,22 +225,25 @@ export default function EventProvider({ children }: { children: ReactNode }) {
     [],
   );
   //Loader
+  const refreshEvents = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      let loadedEvents = await getAllCalendarEvents();
+      setEvents(loadedEvents);
+    } catch (err) {
+      console.error("[EventContext] Failed to initialise database:", err);
+      dispatchError(
+        `Failed to initialise database: ${err instanceof Error ? err.message : String(err)}`,
+        "fatal",
+      );
+    } finally {
+      setLoaded(true);
+      setRefreshing(false);
+    }
+  }, [dispatchError]);
+
   useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        let loadedEvents = await getAllCalendarEvents();
-        setEvents(loadedEvents);
-      } catch (err) {
-        console.error("[EventContext] Failed to initialise database:", err);
-        dispatchError(
-          `Failed to initialise database: ${err instanceof Error ? err.message : String(err)}`,
-          "fatal",
-        );
-      } finally {
-        setLoaded(true);
-      }
-    };
-    loadEvents();
+    refreshEvents();
   }, []);
 
   return (
@@ -256,6 +261,7 @@ export default function EventProvider({ children }: { children: ReactNode }) {
         eventCount,
         batchMutateEvents,
         batchRestoreEvents,
+        refreshEvents,
       }}
     >
       {children}

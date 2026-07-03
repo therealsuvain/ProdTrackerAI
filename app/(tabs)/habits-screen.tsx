@@ -92,6 +92,25 @@ function HabitsScreenInner() {
         ) {
           updateMetrics.push("habitsFrozen");
         }
+        if (habit.streak < updated.streak) {
+          if (updated.frequency === "daily") {
+            trackMetric(["habitsStreakMaxDaily"], updated.streak);
+          } else {
+            trackMetric(["habitsStreakMaxWeekly"], updated.streak);
+          }
+        }
+        if (habit.streak !== updated.streak) {
+          const now = new Date();
+          const nowSecs =
+            now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+          const EIGHT_AM = 8 * 3600;
+          const TEN_PM = 10 * 3600;
+          if (nowSecs <= EIGHT_AM) {
+            updateMetrics.push("habitsCheckedInBefore8am");
+          } else if (nowSecs >= TEN_PM) {
+            updateMetrics.push("habitsCheckedInAfter10pm");
+          }
+        }
         if (updateMetrics.length > 0) {
           trackMetric(updateMetrics, 1);
         }

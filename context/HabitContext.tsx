@@ -36,6 +36,7 @@ interface HabitContextType {
   habitCount: () => Promise<number>;
   batchMutateHabits: (habitsToMutate: Habit[], newValues: any) => Promise<void>;
   batchRestoreHabits: (originalHabits: Habit[]) => Promise<void>;
+  refreshHabits: () => void;
 }
 
 export const HabitContext = createContext<HabitContextType | undefined>(
@@ -46,6 +47,7 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
   const { dispatchError, trackMetric } = useData();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const optimisticHabitMutation = useCallback(
     async (
@@ -179,48 +181,47 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        let loadedHabits = await getAllHabits();
-        let missedCount = 0;
-        let autoFrozenCount = 0;
-        const processedHabits = [];
-        for (const habit of loadedHabits) {
-          const { status, habit: updatedHabit } = applyMissedDayLogic(habit);
-          let finalHabit = updatedHabit;
+  const refreshHabits = useCallback(async () => {
+    try {
+      let loadedHabits = await getAllHabits();
+      let missedCount = 0;
+      let autoFrozenCount = 0;
+      const processedHabits = [];
+      for (const habit of loadedHabits) {
+        const { status, habit: updatedHabit } = applyMissedDayLogic(habit);
+        let finalHabit = updatedHabit;
 
-          if (status === "missed_check_in") {
-            // Accumulate instead of writing to DB immediately
-            missedCount++;
-          } else if (status === "auto_frozen") {
-            // Safely wait for the DB to update this specific habit
-            await editHabit(updatedHabit);
-            autoFrozenCount++;
+        if (status === "missed_check_in") {
+          // Accumulate instead of writing to DB immediately
+          missedCount++;
+        } else if (status === "auto_frozen") {
+          // Safely wait for the DB to update this specific habit
+          await editHabit(updatedHabit);
+          autoFrozenCount++;
+        }
+
+        if (habit.pendingStreakResetAfter) {
+          const resettedHabit = restartHabitAfterGoalForeground(updatedHabit);
+          if (!resettedHabit.pendingStreakResetAfter) {
+            await editHabit(resettedHabit);
           }
-
-          if (habit.pendingStreakResetAfter) {
-            const resettedHabit = restartHabitAfterGoalForeground(updatedHabit);
-            if (!resettedHabit.pendingStreakResetAfter) {
-              await editHabit(resettedHabit);
-            }
-            finalHabit = resettedHabit;
-          }
-
-          processedHabits.push(finalHabit);
+          finalHabit = resettedHabit;
         }
 
-        // 3. Batch execute the metrics safely.
-        // Now, the DB is only read/written ONCE per metric type.
-        if (missedCount > 0) {
-          await trackMetric(["habitCheckInsMissed"], missedCount);
-        }
-        if (autoFrozenCount > 0) {
-          await trackMetric(["habitsAutoFrozen"], autoFrozenCount);
-        }
+        processedHabits.push(finalHabit);
+      }
 
-        loadedHabits = processedHabits;
-        /* loadedHabits = loadedHabits.map((habit) => {
+      // 3. Batch execute the metrics safely.
+      // Now, the DB is only read/written ONCE per metric type.
+      if (missedCount > 0) {
+        await trackMetric(["habitCheckInsMissed"], missedCount);
+      }
+      if (autoFrozenCount > 0) {
+        await trackMetric(["habitsAutoFrozen"], autoFrozenCount);
+      }
+
+      loadedHabits = processedHabits;
+      /* loadedHabits = loadedHabits.map((habit) => {
           const { status, habit: updatedHabit } = applyMissedDayLogic(habit);
           if (status === "missed_check_in") {
             trackMetric(["habitCheckInsMissed"], 1);
@@ -238,19 +239,27 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
           return updatedHabit;
         }); */
 
-        setHabits(loadedHabits);
-      } catch (err) {
-        console.error("[DataContext] Failed to initialise database:", err);
-        dispatchError(
-          `Failed to initialise database: ${err instanceof Error ? err.message : String(err)}`,
-          "fatal",
-        );
-      } finally {
-        // mark that initial load finished so save effects don't overwrite storage during startup
-        setLoaded(true);
-      }
-    };
-    loadData();
+      setHabits(loadedHabits);
+    } catch (err) {
+      console.error("[DataContext] Failed to initialise database:", err);
+      dispatchError(
+        `Failed to initialise database: ${err instanceof Error ? err.message : String(err)}`,
+        "fatal",
+      );
+    } finally {
+      // mark that initial load finished so save effects don't overwrite storage during startup
+      setLoaded(true);
+    }
+  }, [
+    trackMetric,
+    editHabit,
+    dispatchError,
+    restartHabitAfterGoalForeground,
+    applyMissedDayLogic,
+  ]);
+
+  useEffect(() => {
+    refreshHabits();
   }, []);
   return (
     <HabitContext.Provider
@@ -266,6 +275,7 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
         habitCount,
         batchMutateHabits,
         batchRestoreHabits,
+        refreshHabits,
       }}
     >
       {children}

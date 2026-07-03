@@ -10,10 +10,13 @@ export interface DailyMetrics {
   habitsWithDailyGoals: number;
   habitsAbandoned: number;
   habitsCheckedIn: number;
+  habitsCheckedInBefore8am: number;
+  habitsCheckedInAfter10pm : number;
   habitsGoalsCompleted: number;
   habitGoalsRestarted: number; //Habits restarted after completion
   habitCheckInsMissed: number;
-  habitsStreakMax: number; // Current longest streak for checking in  in any habit a day //!!! How to do if all habits are weekly
+  habitsStreakMaxDaily: number; // Current longest streak for checking in  in any habit a day 
+  habitsStreakMaxWeekly: number; // Current longest streak for checking in  in any habit a week
   habitsFrozen: number;
   habitsAutoFrozen: number;
   habitsDeleted: number;
@@ -64,10 +67,13 @@ export interface AppMetrics {
     habitsWithDailyGoals: number;
     habitsAbandoned: number;
     habitsCheckedIn: number;
+    habitsCheckedInBefore8am: number;
+    habitsCheckedInAfter10pm : number;
     habitsGoalsCompleted: number;
     habitGoalsRestarted: number;
     habitCheckInsMissed: number;
-    habitsStreakMax: number;  // Longest Streak ever for checking in  in any habit //TODOX 48
+    habitsStreakMaxDaily: number;  // Longest Streak ever for checking in  in any habit //TODOX 48
+    habitsStreakMaxWeekly: number;
     habitsFrozen: number;
     habitsAutoFrozen: number;
     habitsDeleted: number;
@@ -110,8 +116,9 @@ export interface AppMetrics {
 export const DefaultMetrics: AppMetrics = {
   global: {
     tasksAdded: 0, tasksCompleted: 0, tasksAbandoned: 0, tasksMissed: 0, tasksDeleted: 0,
-    habitsAdded: 0, habitsWithWeeklyGoals: 0, habitsWithDailyGoals: 0, habitsAbandoned: 0, habitsCheckedIn: 0, habitsGoalsCompleted: 0,
-    habitGoalsRestarted: 0, habitCheckInsMissed: 0, habitsStreakMax: 0, habitsFrozen: 0, habitsAutoFrozen: 0, habitsDeleted: 0,
+    habitsAdded: 0, habitsWithWeeklyGoals: 0, habitsWithDailyGoals: 0, habitsAbandoned: 0, 
+    habitsCheckedIn: 0, habitsCheckedInBefore8am: 0, habitsCheckedInAfter10pm : 0, habitsGoalsCompleted: 0,
+    habitGoalsRestarted: 0, habitCheckInsMissed: 0, habitsStreakMaxDaily: 0, habitsStreakMaxWeekly: 0, habitsFrozen: 0, habitsAutoFrozen: 0, habitsDeleted: 0,
     eventsAdded: 0, eventsDeleted: 0, eventsEarlymorning: 0, eventsLatenight: 0, eventsOvernight: 0,
     eventsDaily: 0, eventsWeekly: 0, eventsSingleton: 0, eventsInfinite: 0,
     timeTracked: 0,
@@ -126,8 +133,8 @@ export const DefaultMetrics: AppMetrics = {
 export const DefaultDailyMetrics: DailyMetrics = {
   tasksAdded: 0, tasksCompleted: 0, tasksAbandoned: 0, tasksMissed: 0, tasksDeleted: 0,
   habitsAdded: 0, habitsWithWeeklyGoals: 0, habitsWithDailyGoals: 0, habitsAbandoned: 0,
-  habitsCheckedIn: 0, habitsGoalsCompleted: 0, habitGoalsRestarted: 0, habitCheckInsMissed: 0,
-  habitsStreakMax: 0, habitsFrozen: 0, habitsAutoFrozen: 0, habitsDeleted: 0,
+  habitsCheckedIn: 0, habitsCheckedInAfter10pm : 0, habitsCheckedInBefore8am: 0, habitsGoalsCompleted: 0, habitGoalsRestarted: 0, habitCheckInsMissed: 0,
+  habitsStreakMaxDaily: 0, habitsStreakMaxWeekly: 0, habitsFrozen: 0, habitsAutoFrozen: 0, habitsDeleted: 0,
   eventsAdded: 0, eventsDeleted: 0, eventsEarlymorning: 0, eventsLatenight: 0,
   eventsOvernight: 0, eventsDaily: 0, eventsWeekly: 0, eventsSingleton: 0, eventsInfinite: 0,
   timeTracked: 0,

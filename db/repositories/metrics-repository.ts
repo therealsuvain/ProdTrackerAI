@@ -62,10 +62,13 @@ const globalColumnMap: Record<GlobalMetricKey, keyof GlobalMetricsRow> = {
     habitsWithDailyGoals: "habitsWithDailyGoals",
     habitsAbandoned: "habitsAbandoned",
     habitsCheckedIn: "habitsCheckedIn",
+    habitsCheckedInBefore8am: "habitsCheckedInBefore8am",
+    habitsCheckedInAfter10pm: "habitsCheckedInAfter10pm",
     habitsGoalsCompleted: "habitsGoalsCompleted",
     habitGoalsRestarted: "habitGoalsRestarted",
     habitCheckInsMissed: "habitCheckInsMissed",
-    habitsStreakMax: "habitsStreakMax",
+    habitsStreakMaxDaily: "habitsStreakMaxDaily",
+    habitsStreakMaxWeekly: "habitsStreakMaxWeekly",
     habitsFrozen: "habitsFrozen",
     habitsAutoFrozen: "habitsAutoFrozen",
     habitsDeleted: "habitsDeleted",
@@ -112,10 +115,13 @@ const dailyColumnMap: Record<DailyMetricKey, keyof DailyMetricsRow> = {
     habitsWithDailyGoals: "habitsWithDailyGoals",
     habitsAbandoned: "habitsAbandoned",
     habitsCheckedIn: "habitsCheckedIn",
+    habitsCheckedInBefore8am: "habitsCheckedInBefore8am",
+    habitsCheckedInAfter10pm: "habitsCheckedInAfter10pm",
     habitsGoalsCompleted: "habitsGoalsCompleted",
     habitGoalsRestarted: "habitGoalsRestarted",
     habitCheckInsMissed: "habitCheckInsMissed",
-    habitsStreakMax: "habitsStreakMax",
+    habitsStreakMaxDaily: "habitsStreakMaxDaily",
+    habitsStreakMaxWeekly: "habitsStreakMaxWeekly",
     habitsFrozen: "habitsFrozen",
     habitsAutoFrozen: "habitsAutoFrozen",
     habitsDeleted: "habitsDeleted",
@@ -163,10 +169,13 @@ export function globalRowToObject(row: GlobalMetricsRow): AppMetrics["global"] {
         habitsWithDailyGoals: row.habitsWithDailyGoals,
         habitsAbandoned: row.habitsAbandoned,
         habitsCheckedIn: row.habitsCheckedIn,
+        habitsCheckedInBefore8am: row.habitsCheckedInBefore8am,
+        habitsCheckedInAfter10pm: row.habitsCheckedInAfter10pm,
         habitsGoalsCompleted: row.habitsGoalsCompleted,
         habitGoalsRestarted: row.habitGoalsRestarted,
         habitCheckInsMissed: row.habitCheckInsMissed,
-        habitsStreakMax: row.habitsStreakMax,
+        habitsStreakMaxDaily: row.habitsStreakMaxDaily,
+        habitsStreakMaxWeekly: row.habitsStreakMaxWeekly,
         habitsFrozen: row.habitsFrozen,
         habitsAutoFrozen: row.habitsAutoFrozen,
         habitsDeleted: row.habitsDeleted,
@@ -213,10 +222,13 @@ export const defaultGlobal: AppMetrics["global"] = {
     habitsWithDailyGoals: 0,
     habitsAbandoned: 0,
     habitsCheckedIn: 0,
+    habitsCheckedInBefore8am: 0,
+    habitsCheckedInAfter10pm: 0,
     habitsGoalsCompleted: 0,
     habitGoalsRestarted: 0,
     habitCheckInsMissed: 0,
-    habitsStreakMax: 0,
+    habitsStreakMaxDaily: 0,
+    habitsStreakMaxWeekly: 0,
     habitsFrozen: 0,
     habitsAutoFrozen: 0,
     habitsDeleted: 0,
@@ -279,10 +291,13 @@ export async function loadAppMetricsFromDb(): Promise<AppMetrics> {
             habitsWithDailyGoals: row.habitsWithDailyGoals,
             habitsAbandoned: row.habitsAbandoned,
             habitsCheckedIn: row.habitsCheckedIn,
+            habitsCheckedInBefore8am: row.habitsCheckedInBefore8am,
+            habitsCheckedInAfter10pm: row.habitsCheckedInAfter10pm,
             habitsGoalsCompleted: row.habitsGoalsCompleted,
             habitGoalsRestarted: row.habitGoalsRestarted,
             habitCheckInsMissed: row.habitCheckInsMissed,
-            habitsStreakMax: row.habitsStreakMax,
+            habitsStreakMaxDaily: row.habitsStreakMaxDaily,
+            habitsStreakMaxWeekly: row.habitsStreakMaxWeekly,
             habitsFrozen: row.habitsFrozen,
             habitsAutoFrozen: row.habitsAutoFrozen,
             habitsDeleted: row.habitsDeleted,
@@ -345,10 +360,13 @@ export async function loadDailyMetricsRange(
             habitsWithDailyGoals: row.habitsWithDailyGoals,
             habitsAbandoned: row.habitsAbandoned,
             habitsCheckedIn: row.habitsCheckedIn,
+            habitsCheckedInBefore8am: row.habitsCheckedInBefore8am,
+            habitsCheckedInAfter10pm: row.habitsCheckedInAfter10pm,
             habitsGoalsCompleted: row.habitsGoalsCompleted,
             habitGoalsRestarted: row.habitGoalsRestarted,
             habitCheckInsMissed: row.habitCheckInsMissed,
-            habitsStreakMax: row.habitsStreakMax,
+            habitsStreakMaxDaily: row.habitsStreakMaxDaily,
+            habitsStreakMaxWeekly: row.habitsStreakMaxWeekly,
             habitsFrozen: row.habitsFrozen,
             habitsAutoFrozen: row.habitsAutoFrozen,
             habitsDeleted: row.habitsDeleted,
@@ -515,7 +533,12 @@ export async function mutateMetricInDb(
                 const now = new Date().toISOString();
                 globalInsert[globalKey] = now;
                 globalUpdate[globalKey] = now;
-            } else {
+            } else if(globalKey === 'habitsStreakMaxDaily' || globalKey === 'habitsStreakMaxWeekly')
+            {
+                globalInsert[globalKey] = Math.max(0, amount);
+                globalUpdate[globalKey] = sql`MAX(COALESCE(${globalMetrics[globalKey]}, 0) ,${amount})`;
+            }
+            else {
                 globalInsert[globalKey] = Math.max(0, amount);
                 globalUpdate[globalKey] = sql`MAX(0, COALESCE(${globalMetrics[globalKey]}, 0) + ${amount})`;
             }

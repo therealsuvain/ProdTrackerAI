@@ -22,6 +22,7 @@ import {
 
 import { initDatabase } from "@/db";
 import { useData } from "@/hooks/context-hooks/use-data";
+import { runTasksMissedMaintenanceOnActive } from "@/utils/analytics-utils";
 
 interface TaskContextType {
   tasks: Task[];
@@ -36,6 +37,7 @@ interface TaskContextType {
   taskCount: () => Promise<number>;
   batchMutateTasks: (tasksToMutate: Task[], newValues: any) => Promise<void>;
   batchRestoreTasks: (originalTasks: Task[]) => Promise<void>;
+  refreshTasks: () => void;
 }
 
 export const TaskContext = createContext<TaskContextType | undefined>(
@@ -43,9 +45,10 @@ export const TaskContext = createContext<TaskContextType | undefined>(
 );
 
 export default function TaskProvider({ children }: { children: ReactNode }) {
-  const { dispatchError } = useData();
+  const { dispatchError, trackMetric } = useData();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const optimisticTaskMutation = useCallback(
     async (
@@ -203,24 +206,28 @@ export default function TaskProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const refreshTasks = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      await initDatabase();
+      let loadedTasks = await getAllTasks();
+      setTasks(loadedTasks);
+      await runTasksMissedMaintenanceOnActive(tasks, trackMetric);
+    } catch (err) {
+      console.error("[TaskContext] Failed to initialise database:", err);
+      dispatchError(
+        `Failed to initialise database: ${err instanceof Error ? err.message : String(err)}`,
+        "fatal",
+      );
+    } finally {
+      setLoaded(true);
+      setRefreshing(false);
+    }
+  }, [dispatchError]);
+
   useEffect(() => {
-    const loadTasks = async () => {
-      try {
-        await initDatabase();
-        let loadedTasks = await getAllTasks();
-        setTasks(loadedTasks);
-      } catch (err) {
-        console.error("[TaskContext] Failed to initialise database:", err);
-        dispatchError(
-          `Failed to initialise database: ${err instanceof Error ? err.message : String(err)}`,
-          "fatal",
-        );
-      } finally {
-        setLoaded(true);
-      }
-    };
-    loadTasks();
-  }, []);
+    refreshTasks();
+  }, [refreshTasks]);
 
   return (
     <TaskContext.Provider
@@ -237,6 +244,7 @@ export default function TaskProvider({ children }: { children: ReactNode }) {
         taskCount,
         batchMutateTasks,
         batchRestoreTasks,
+        refreshTasks,
       }}
     >
       {children}

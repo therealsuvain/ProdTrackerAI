@@ -87,7 +87,7 @@ interface HabitCardProps {
   habit: Habit;
   completed: boolean;
   onHabitCheckIn: (habit: Habit) => void;
-  trackMetric: (key: GlobalMetricKey[], amount: number) => Promise<void>;
+  trackMetric: (key: GlobalMetricKey[], amount: number) => void;
   theme: any;
 }
 
@@ -108,7 +108,22 @@ const HabitCard = memo(
         playDeniedFeedback();
         return;
       }
-      trackMetric(["habitsCheckedIn"], 1);
+      const updatedMetrics: GlobalMetricKey[] = ["habitsCheckedIn"];
+      const now = new Date();
+      const nowSecs =
+        now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      const EIGHT_AM = 8 * 3600;
+      const TEN_PM = 10 * 3600;
+      if (nowSecs <= EIGHT_AM) {
+        updatedMetrics.push("habitsCheckedInBefore8am");
+      } else if (nowSecs >= TEN_PM) {
+        updatedMetrics.push("habitsCheckedInAfter10pm");
+      }
+      if (result.habit.frequency === "daily")
+        trackMetric(["habitsStreakMaxDaily"], result.habit.streak);
+      else trackMetric(["habitsStreakMaxWeekly"], result.habit.streak);
+
+      trackMetric(updatedMetrics, 1);
       onHabitCheckIn(result.habit);
     }, [habit, onHabitCheckIn, trackMetric, playDeniedFeedback]);
 

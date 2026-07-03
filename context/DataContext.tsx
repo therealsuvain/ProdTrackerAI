@@ -73,6 +73,10 @@ import { Tag } from "@/types/tag";
 import { Category } from "@/types/category";
 import { analyticsEngine } from "@/utils/Analytics/analytics-engine";
 import { metricsEventBus } from "@/utils/Analytics/metrics-event-bus";
+import { useEvents } from "@/hooks/context-hooks/use-events";
+import { useHabits } from "@/hooks/context-hooks/use-habits";
+import { useLogs } from "@/hooks/context-hooks/use-logs";
+import { useTasks } from "@/hooks/context-hooks/use-tasks";
 
 // TODOX if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
 interface DataContextType {
@@ -149,6 +153,10 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   } | null>(null);
   const toastQueueRef = useRef<AchievementBadge[]>([]);
   const isToastingRef = useRef(false);
+  const { refreshTasks } = useTasks();
+  const { refreshEvents } = useEvents();
+  const { refreshHabits } = useHabits();
+  const { refreshLogs } = useLogs();
   useDrizzleStudio(sqlite);
 
   const dispatchError = useCallback(
@@ -411,23 +419,6 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const reassignDeletedTag = useCallback(
-    async (
-      tag: Tag,
-      fallbackId: string | null,
-      originalItems: Record<string, string[]>,
-    ): Promise<void> => {
-      await optimisticTagMutation(
-        //TODO
-        //! Temp logic holdeer
-        (prev) => {
-          return prev;
-        },
-        () => reassignAndAddBackTag(tag, fallbackId, originalItems),
-      );
-    },
-    [optimisticTagMutation],
-  );
   const addCategory = useCallback(
     async (categoryPayload: {
       id: string;
@@ -523,24 +514,6 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       );
     },
     [],
-  );
-
-  const reassignDeletedCategory = useCallback(
-    async (
-      category: Category,
-      fallbackId: string | null,
-      originalItems: Record<string, string[]>,
-    ): Promise<void> => {
-      await optimisticCategoryMutation(
-        //TODO
-        //! Temp logic holdeer
-        (prev) => {
-          return prev;
-        },
-        () => reassignAndAddBackCategory(category, fallbackId, originalItems),
-      );
-    },
-    [optimisticTagMutation],
   );
 
   /*  const trackMetric = useCallback(
@@ -719,37 +692,90 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Initialize and load data
-  useEffect(() => {
-    const loadData = async () => {
+  const refreshTagsCatsAchievements = useCallback(async () => {
+    try {
+      await initDatabase();
+      await seedCategoriesIfEmpty();
+      let loadedMetrics = await loadAppMetricsFromDb();
+      let loadedAchievementMetrics = await loadAchievementMetrics();
+      let loadedUnlockedAchievements = await getAllUnlockedAchievements();
+      let loadedTags = await getAllTags();
+      let loadedCategories = await getAllCategories();
+      await AIActionMemory.init();
+      setAppMetrics(loadedMetrics);
+      setAchievementMetrics(loadedAchievementMetrics);
+      setUnlockedAchievements(loadedUnlockedAchievements);
+      setTags(loadedTags);
+      setCategories(loadedCategories);
+    } catch (err) {
+      console.error("[DataContext] Failed to initialise database:", err);
+      dispatchError(
+        `Failed to initialise database: ${err instanceof Error ? err.message : String(err)}`,
+        "fatal",
+      );
+    } finally {
+      // mark that initial load finished so save effects don't overwrite storage during startup
+      setLoaded(true);
+    }
+  }, [dispatchError]);
+
+  const transactionalAppMutation = useCallback(
+    async (dbWrite: () => Promise<void>): Promise<void> => {
       try {
-        await initDatabase();
-        await seedCategoriesIfEmpty();
-        let loadedMetrics = await loadAppMetricsFromDb();
-        let loadedAchievementMetrics = await loadAchievementMetrics();
-        let loadedUnlockedAchievements = await getAllUnlockedAchievements();
-        let loadedTags = await getAllTags();
-        let loadedCategories = await getAllCategories();
-        await AIActionMemory.init();
-        setAppMetrics(loadedMetrics);
-        setAchievementMetrics(loadedAchievementMetrics);
-        setUnlockedAchievements(loadedUnlockedAchievements);
-        setTags(loadedTags);
-        setCategories(loadedCategories);
+        await dbWrite();
+        await Promise.all([
+          refreshTasks(),
+          refreshHabits(),
+          refreshEvents(),
+          refreshLogs(),
+          refreshTagsCatsAchievements(),
+        ]);
       } catch (err) {
-        console.error("[DataContext] Failed to initialise database:", err);
-        dispatchError(
-          `Failed to initialise database: ${err instanceof Error ? err.message : String(err)}`,
-          "fatal",
-        );
-      } finally {
-        // mark that initial load finished so save effects don't overwrite storage during startup
-        setLoaded(true);
+        // 4. Rollback
+        console.error("[DataContext] Tag DB write failed, rolling back:", err);
+        throw err; // caller catches this and shows DbErrorToast
       }
-    };
-    loadData();
-  }, []);
+    },
+    [
+      refreshTasks,
+      refreshHabits,
+      refreshEvents,
+      refreshLogs,
+      refreshTagsCatsAchievements,
+    ],
+  );
+
+  const reassignDeletedCategory = useCallback(
+    async (
+      category: Category,
+      fallbackId: string | null,
+      originalItems: Record<string, string[]>,
+    ): Promise<void> => {
+      await transactionalAppMutation(() =>
+        reassignAndAddBackCategory(category, fallbackId, originalItems),
+      );
+    },
+    [transactionalAppMutation],
+  );
+
+  const reassignDeletedTag = useCallback(
+    async (
+      tag: Tag,
+      fallbackId: string | null,
+      originalItems: Record<string, string[]>,
+    ): Promise<void> => {
+      await transactionalAppMutation(() =>
+        reassignAndAddBackTag(tag, fallbackId, originalItems),
+      );
+    },
+    [transactionalAppMutation],
+  );
 
   // useEffect for maintaining optimistic updates for appMetrics
+  useEffect(() => {
+    refreshTagsCatsAchievements();
+  }, []);
+
   useEffect(() => {
     appMetricsRef.current = appMetrics;
   }, [appMetrics]);
