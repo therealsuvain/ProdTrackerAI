@@ -21,6 +21,7 @@ export function useTagsAndCategories({ visible, initialTags, initialCategory, up
 
   // Local State
   const [category, setCategory] = useState<string | null>(null);
+  const {trackMetric} = useData();
   const [sessionCatIds, setSessionCatIds] = useState<Set<string>>(new Set<string>());
   const [tagNames, setTagNames] = useState<string[]>([]);
 
@@ -73,6 +74,7 @@ export function useTagsAndCategories({ visible, initialTags, initialCategory, up
       setCategory(null);
       if (updateField) { updateField("category", null) };
     }
+    trackMetric(["categoriesAdded"], -1);
     await deleteUserCategory(draftId);
   };
 

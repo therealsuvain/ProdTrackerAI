@@ -19,7 +19,7 @@ export const AddHabitHandler: AIHandler = {
       }
     }
     //!  Undo Stack Push
-    AIActionMemory.push({ type: 'DELETE_HABIT', payload: { habit: newHabit } })
+    AIActionMemory.push({ type: 'DELETE_HABIT', payload: { habit: newHabit }, timestamp: Date.now() })
     context.addHabit(newHabit);
     console.log(`AI Action: Added Habit "${newHabit.title}"`);
     const { id, embedding, ...rest } = newHabit;
@@ -54,7 +54,7 @@ export const EditHabitHandler: AIHandler = {
       }
     }
     //!  Undo Stack Push
-    AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit } });
+    AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit }, timestamp: Date.now() });
     await context.editHabit(newHabit);
     const { id, embedding, ...rest } = newHabit;
     return { status: "success", habit: { id: id.slice(0, 8), ...rest } };
@@ -71,7 +71,7 @@ export const DeleteHabitHandler: AIHandler = {
       await cancelReminder(oldHabit.notificationId);
     }
     //!  Undo Stack Push
-    AIActionMemory.push({ type: 'ADD_DELETED_HABIT', payload: { habit: oldHabit } });
+    AIActionMemory.push({ type: 'ADD_DELETED_HABIT', payload: { habit: oldHabit }, timestamp: Date.now() });
     await context.removeHabit(oldHabit.id);
     const { id, title } = oldHabit;
     return { status: "success", habit: { id: id.slice(0, 8), title } };
@@ -86,7 +86,7 @@ export const CheckInHabitHandler: AIHandler = {
     if (result.status === "denied")
       return { status: "denied", reason: result.reason }
     //!  Undo Stack Push
-    AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit } });
+    AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit }, timestamp: Date.now() });
     await context.editHabit(result.habit);
     const { id, title } = result.habit;
     return { status: "success", habit: { id: id.slice(0, 8), title } };
@@ -101,7 +101,7 @@ export const FreezeHabitHandler: AIHandler = {
     if (result.status === "denied")
       return { status: "denied", reason: result.reason }
     //!  Undo Stack Push
-    AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit } });
+    AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit }, timestamp: Date.now() });
     await context.editHabit(result.habit);
     const { id, title } = result.habit;
     return { status: "success", habit: { id: id.slice(0, 8), title } };
@@ -155,7 +155,7 @@ export const BatchMutateHabitsHandler: AIHandler = {
     // 3. Push to Undo Memory Stack PRIOR to mutation
     AIActionMemory.push({
       type: 'BATCH_REVERT_HABITS',
-      payload: { originalHabits: targets }
+      payload: { originalHabits: targets }, timestamp: Date.now()
     });
     const newCateogryId = mutationPayload.category ? resolveIdsFromNames(mutationPayload.category, context.categories)[0] : undefined;
     if (newCateogryId) {

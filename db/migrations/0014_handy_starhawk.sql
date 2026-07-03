@@ -1,0 +1,21 @@
+ALTER TABLE `achievement_global_metrics` ADD `tags_assigned` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `achievement_global_metrics` ADD `tags_deleted` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `achievement_global_metrics` ADD `categories_added` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `achievement_global_metrics` ADD `categories_assigned` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `achievement_global_metrics` ADD `categories_deleted` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `achievement_global_metrics` ADD `logs_added` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `achievement_global_metrics` ADD `logs_deleted` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `daily_metrics` ADD `tags_assigned` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `daily_metrics` ADD `tags_deleted` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `daily_metrics` ADD `categories_added` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `daily_metrics` ADD `categories_assigned` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `daily_metrics` ADD `categories_deleted` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `daily_metrics` ADD `logs_added` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `daily_metrics` ADD `logs_deleted` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `global_metrics` ADD `tags_assigned` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `global_metrics` ADD `tags_deleted` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `global_metrics` ADD `categories_added` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `global_metrics` ADD `categories_assigned` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `global_metrics` ADD `categories_deleted` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `global_metrics` ADD `logs_added` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `global_metrics` ADD `logs_deleted` integer DEFAULT 0 NOT NULL;

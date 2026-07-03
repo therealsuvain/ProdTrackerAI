@@ -49,6 +49,7 @@ function TaskScreenInner() {
     useTasks();
   const { trackMetric, addTags } = useData();
   const [visible, setVisible] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"priority" | "duedate" | "manual">(
@@ -84,11 +85,18 @@ function TaskScreenInner() {
     });
 
   const showModal = (task?: Task) => {
-    setEditingTask(task || null);
+    if (task) {
+      setEditingTask(task);
+      setIsEditing(true);
+      setVisible(true);
+      return;
+    }
+    setEditingTask(null);
     setVisible(true);
   };
 
   const hideModal = () => {
+    setIsEditing(false);
     setVisible(false);
   };
 
@@ -105,6 +113,8 @@ function TaskScreenInner() {
           try {
             await removeTask(id);
             triggerHaptic();
+            if (task?.completed) trackMetric(["tasksDeleted"], 1);
+            else trackMetric(["tasksDeleted", "tasksAbandoned"], 1);
           } catch {
             showToast("Couldn't delete the task. It has been restored.");
           }
@@ -170,7 +180,6 @@ function TaskScreenInner() {
       </View>
     </View>
   );
-  const paperTheme = useTheme();
   return (
     <>
       <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -283,7 +292,7 @@ function TaskScreenInner() {
             clearStorageByKey("messages"); 
           }}
         /> */}
-        <FAB
+        {/*  <FAB
           style={styles.fab}
           icon="plus"
           onPress={async () => {
@@ -291,7 +300,7 @@ function TaskScreenInner() {
             const stored = await AsyncStorage.getItem("AI_TOKEN_MONITOR_STATS");
             if (stored) console.log(JSON.parse(stored));
           }}
-        />
+        /> */}
       </View>
       <Portal>
         <TaskModal
@@ -300,6 +309,7 @@ function TaskScreenInner() {
           state={state}
           updateField={updateField}
           onSubmit={onSubmit}
+          isNew={!isEditing}
         />
       </Portal>
     </>

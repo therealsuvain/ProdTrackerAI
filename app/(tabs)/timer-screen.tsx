@@ -41,6 +41,7 @@ import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-lo
 
 function TimerScreenInner() {
   const { theme, isDarkMode } = useContext(ThemeContext);
+  const { trackMetric } = useData();
   const { timerLogs, setTimerLogs, addLog, removeLog, editLog } = useLogs();
   const { categories } = useData();
   //const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
@@ -121,6 +122,7 @@ function TimerScreenInner() {
         text: "Delete",
         onPress: async () => {
           try {
+            trackMetric(["logsDeleted"], 1);
             await removeLog(id);
             triggerHaptic();
           } catch {
@@ -132,6 +134,7 @@ function TimerScreenInner() {
   };
 
   const handleEdit = async (updated: TimerLog) => {
+    trackMetric(["logsEdited"], 1);
     await editLog(updated);
   };
 

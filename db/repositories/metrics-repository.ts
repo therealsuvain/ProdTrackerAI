@@ -33,13 +33,15 @@ import type {
     GlobalMetricsInsert,
     GlobalMetricsRow,
 } from "@/db/schema";
-import type {
-    AppMetrics,
-    DailyMetricKey,
-    GlobalMetricKey,
-    MetricKey,
+import {
+    DefaultDailyMetrics,
+    type AppMetrics,
+    type DailyMetricKey,
+    type GlobalMetricKey,
+    type MetricKey,
+
 } from "@/types/metrics";
-import { eq, gte } from "drizzle-orm";
+import { eq, gte, sql } from "drizzle-orm";
 
 // ─── column name mapping ──────────────────────────────────────────────────────
 //
@@ -50,71 +52,202 @@ import { eq, gte } from "drizzle-orm";
 
 /** Maps GlobalMetricKey → the Drizzle column object on globalMetrics table */
 const globalColumnMap: Record<GlobalMetricKey, keyof GlobalMetricsRow> = {
+    tasksAdded: "tasksAdded",
     tasksCompleted: "tasksCompleted",
+    tasksAbandoned: "tasksAbandoned",
     tasksMissed: "tasksMissed",
+    tasksDeleted: "tasksDeleted",
+    habitsAdded: "habitsAdded",
+    habitsWithWeeklyGoals: "habitsWithWeeklyGoals",
+    habitsWithDailyGoals: "habitsWithDailyGoals",
+    habitsAbandoned: "habitsAbandoned",
     habitsCheckedIn: "habitsCheckedIn",
     habitsGoalsCompleted: "habitsGoalsCompleted",
+    habitGoalsRestarted: "habitGoalsRestarted",
     habitCheckInsMissed: "habitCheckInsMissed",
     habitsStreakMax: "habitsStreakMax",
     habitsFrozen: "habitsFrozen",
     habitsAutoFrozen: "habitsAutoFrozen",
+    habitsDeleted: "habitsDeleted",
+    eventsAdded: "eventsAdded",
+    eventsDeleted: "eventsDeleted",
+    eventsEarlymorning: "eventsEarlymorning",
+    eventsLatenight: "eventsLatenight",
+    eventsOvernight: "eventsOvernight",
+    eventsDaily: "eventsDaily",
+    eventsWeekly: "eventsWeekly",
+    eventsSingleton: "eventsSingleton",
+    eventsInfinite: "eventsInfinite",
     timeTracked: "timeTracked",
     chatMessagesSent: "chatMessagesSent",
     chatActionsConfirmed: "chatActionsConfirmed",
     chatActionsExpired: "chatActionsExpired",
     chatActionsCancelled: "chatActionsCancelled",
+    tagsAdded: "tagsAdded",
+    tagsAssigned: "tagsAssigned",
+    tagsDeleted: "tagsDeleted",
+    categoriesAdded: "categoriesAdded",
+    categoriesAssigned: "categoriesAssigned",
+    categoriesDeleted: "categoriesDeleted",
+    logsAdded: "logsAdded",
+    logsDeleted: "logsDeleted",
+    tasksEdited: "tasksEdited",
+    habitsEdited: "habitsEdited",
+    eventsEdited: "eventsEdited",
+    logsEdited: "logsEdited",
+    tagsEdited: "tagsEdited",
+    categoriesEdited: "categoriesEdited",
     lastSyncedAt: "lastSyncedAt",
 };
 
 /** Maps DailyMetricKey → the Drizzle column object on dailyMetrics table */
 const dailyColumnMap: Record<DailyMetricKey, keyof DailyMetricsRow> = {
+    tasksAdded: "tasksAdded",
     tasksCompleted: "tasksCompleted",
+    tasksAbandoned: "tasksAbandoned",
+    tasksMissed: "tasksMissed",
+    tasksDeleted: "tasksDeleted",
+    habitsAdded: "habitsAdded",
+    habitsWithWeeklyGoals: "habitsWithWeeklyGoals",
+    habitsWithDailyGoals: "habitsWithDailyGoals",
+    habitsAbandoned: "habitsAbandoned",
     habitsCheckedIn: "habitsCheckedIn",
     habitsGoalsCompleted: "habitsGoalsCompleted",
+    habitGoalsRestarted: "habitGoalsRestarted",
+    habitCheckInsMissed: "habitCheckInsMissed",
     habitsStreakMax: "habitsStreakMax",
     habitsFrozen: "habitsFrozen",
+    habitsAutoFrozen: "habitsAutoFrozen",
+    habitsDeleted: "habitsDeleted",
+    eventsAdded: "eventsAdded",
+    eventsDeleted: "eventsDeleted",
+    eventsEarlymorning: "eventsEarlymorning",
+    eventsLatenight: "eventsLatenight",
+    eventsOvernight: "eventsOvernight",
+    eventsDaily: "eventsDaily",
+    eventsWeekly: "eventsWeekly",
+    eventsSingleton: "eventsSingleton",
+    eventsInfinite: "eventsInfinite",
     timeTracked: "timeTracked",
     chatMessagesSent: "chatMessagesSent",
     chatActionsConfirmed: "chatActionsConfirmed",
     chatActionsExpired: "chatActionsExpired",
     chatActionsCancelled: "chatActionsCancelled",
+    tagsAdded: "tagsAdded",
+    tagsAssigned: "tagsAssigned",
+    tagsDeleted: "tagsDeleted",
+    categoriesAdded: "categoriesAdded",
+    categoriesAssigned: "categoriesAssigned",
+    categoriesDeleted: "categoriesDeleted",
+    logsAdded: "logsAdded",
+    logsDeleted: "logsDeleted",
+    tasksEdited: "tasksEdited",
+    habitsEdited: "habitsEdited",
+    eventsEdited: "eventsEdited",
+    logsEdited: "logsEdited",
+    tagsEdited: "tagsEdited",
+    categoriesEdited: "categoriesEdited",
 };
 
 // ─── converters ───────────────────────────────────────────────────────────────
 
 export function globalRowToObject(row: GlobalMetricsRow): AppMetrics["global"] {
     return {
+        tasksAdded: row.tasksAdded,
         tasksCompleted: row.tasksCompleted,
+        tasksAbandoned: row.tasksAbandoned,
         tasksMissed: row.tasksMissed,
+        tasksDeleted: row.tasksDeleted,
+        habitsAdded: row.habitsAdded,
+        habitsWithWeeklyGoals: row.habitsWithWeeklyGoals,
+        habitsWithDailyGoals: row.habitsWithDailyGoals,
+        habitsAbandoned: row.habitsAbandoned,
         habitsCheckedIn: row.habitsCheckedIn,
         habitsGoalsCompleted: row.habitsGoalsCompleted,
+        habitGoalsRestarted: row.habitGoalsRestarted,
         habitCheckInsMissed: row.habitCheckInsMissed,
         habitsStreakMax: row.habitsStreakMax,
         habitsFrozen: row.habitsFrozen,
         habitsAutoFrozen: row.habitsAutoFrozen,
+        habitsDeleted: row.habitsDeleted,
+        eventsAdded: row.eventsAdded,
+        eventsDeleted: row.eventsDeleted,
+        eventsEarlymorning: row.eventsEarlymorning,
+        eventsLatenight: row.eventsLatenight,
+        eventsOvernight: row.eventsOvernight,
+        eventsDaily: row.eventsDaily,
+        eventsWeekly: row.eventsWeekly,
+        eventsSingleton: row.eventsSingleton,
+        eventsInfinite: row.eventsInfinite,
         timeTracked: row.timeTracked,
         chatMessagesSent: row.chatMessagesSent,
         chatActionsConfirmed: row.chatActionsConfirmed,
         chatActionsExpired: row.chatActionsExpired,
         chatActionsCancelled: row.chatActionsCancelled,
+        tagsAdded: row.tagsAdded,
+        tagsAssigned : row.tagsAssigned,
+        tagsDeleted : row.tagsDeleted,
+        categoriesAdded : row.categoriesAdded,
+        categoriesAssigned : row.categoriesAssigned,
+        categoriesDeleted : row.categoriesDeleted,
+        logsAdded : row.logsAdded,
+        logsDeleted : row.logsDeleted,
+        tasksEdited: row.tasksEdited,
+        habitsEdited: row.habitsEdited,
+        eventsEdited: row.eventsEdited,
+        logsEdited: row.logsEdited,
+        tagsEdited: row.tagsEdited,
+        categoriesEdited: row.categoriesEdited,
         lastSyncedAt: row.lastSyncedAt ?? undefined,
     };
 }
 
 export const defaultGlobal: AppMetrics["global"] = {
+    tasksAdded: 0,
     tasksCompleted: 0,
+    tasksAbandoned: 0,
     tasksMissed: 0,
+    tasksDeleted: 0,
+    habitsAdded: 0,
+    habitsWithWeeklyGoals: 0,
+    habitsWithDailyGoals: 0,
+    habitsAbandoned: 0,
     habitsCheckedIn: 0,
     habitsGoalsCompleted: 0,
+    habitGoalsRestarted: 0,
     habitCheckInsMissed: 0,
     habitsStreakMax: 0,
     habitsFrozen: 0,
     habitsAutoFrozen: 0,
+    habitsDeleted: 0,
+    eventsAdded: 0,
+    eventsDeleted: 0,
+    eventsEarlymorning: 0,
+    eventsLatenight: 0,
+    eventsOvernight: 0,
+    eventsDaily: 0,
+    eventsWeekly: 0,
+    eventsSingleton: 0,
+    eventsInfinite: 0,
     timeTracked: 0,
     chatMessagesSent: 0,
     chatActionsConfirmed: 0,
     chatActionsExpired: 0,
     chatActionsCancelled: 0,
+    tagsAssigned :0,
+    tagsDeleted : 0,
+    categoriesAdded : 0,
+    categoriesAssigned :0,
+    categoriesDeleted : 0,
+    logsAdded : 0,
+    logsDeleted : 0,
+    tagsAdded:0,
+    tasksEdited: 0,
+    habitsEdited: 0,
+    eventsEdited: 0,
+    logsEdited: 0,
+    tagsEdited: 0,
+    categoriesEdited: 0,
 };
 
 // ─── read operations ──────────────────────────────────────────────────────────
@@ -136,16 +269,51 @@ export async function loadAppMetricsFromDb(): Promise<AppMetrics> {
     const daily: AppMetrics["daily"] = {};
     for (const row of dailyRows) {
         daily[row.date] = {
+            tasksAdded: row.tasksAdded,
             tasksCompleted: row.tasksCompleted,
+            tasksAbandoned: row.tasksAbandoned,
+            tasksMissed: row.tasksMissed,
+            tasksDeleted: row.tasksDeleted,
+            habitsAdded: row.habitsAdded,
+            habitsWithWeeklyGoals: row.habitsWithWeeklyGoals,
+            habitsWithDailyGoals: row.habitsWithDailyGoals,
+            habitsAbandoned: row.habitsAbandoned,
             habitsCheckedIn: row.habitsCheckedIn,
             habitsGoalsCompleted: row.habitsGoalsCompleted,
+            habitGoalsRestarted: row.habitGoalsRestarted,
+            habitCheckInsMissed: row.habitCheckInsMissed,
             habitsStreakMax: row.habitsStreakMax,
             habitsFrozen: row.habitsFrozen,
+            habitsAutoFrozen: row.habitsAutoFrozen,
+            habitsDeleted: row.habitsDeleted,
+            eventsAdded: row.eventsAdded,
+            eventsDeleted: row.eventsDeleted,
+            eventsEarlymorning: row.eventsEarlymorning,
+            eventsLatenight: row.eventsLatenight,
+            eventsOvernight: row.eventsOvernight,
+            eventsDaily: row.eventsDaily,
+            eventsWeekly: row.eventsWeekly,
+            eventsSingleton: row.eventsSingleton,
+            eventsInfinite: row.eventsInfinite,
             timeTracked: row.timeTracked,
             chatMessagesSent: row.chatMessagesSent,
             chatActionsConfirmed: row.chatActionsConfirmed,
             chatActionsExpired: row.chatActionsExpired,
             chatActionsCancelled: row.chatActionsCancelled,
+            tagsAdded: row.tagsAdded,
+            tagsAssigned : row.tagsAssigned,
+            tagsDeleted : row.tagsDeleted,
+            categoriesAdded : row.categoriesAdded,
+            categoriesAssigned : row.categoriesAssigned,
+            categoriesDeleted : row.categoriesDeleted,
+            logsAdded : row.logsAdded,
+            logsDeleted : row.logsDeleted,
+            tasksEdited: row.tasksEdited,
+            habitsEdited: row.habitsEdited,
+            eventsEdited: row.eventsEdited,
+            logsEdited: row.logsEdited,
+            tagsEdited: row.tagsEdited,
+            categoriesEdited: row.categoriesEdited,
         };
     }
 
@@ -167,16 +335,51 @@ export async function loadDailyMetricsRange(
     const daily: AppMetrics["daily"] = {};
     for (const row of rows) {
         daily[row.date] = {
+            tasksAdded: row.tasksAdded,
             tasksCompleted: row.tasksCompleted,
+            tasksAbandoned: row.tasksAbandoned,
+            tasksMissed: row.tasksMissed,
+            tasksDeleted: row.tasksDeleted,
+            habitsAdded: row.habitsAdded,
+            habitsWithWeeklyGoals: row.habitsWithWeeklyGoals,
+            habitsWithDailyGoals: row.habitsWithDailyGoals,
+            habitsAbandoned: row.habitsAbandoned,
             habitsCheckedIn: row.habitsCheckedIn,
             habitsGoalsCompleted: row.habitsGoalsCompleted,
+            habitGoalsRestarted: row.habitGoalsRestarted,
+            habitCheckInsMissed: row.habitCheckInsMissed,
             habitsStreakMax: row.habitsStreakMax,
             habitsFrozen: row.habitsFrozen,
+            habitsAutoFrozen: row.habitsAutoFrozen,
+            habitsDeleted: row.habitsDeleted,
+            eventsAdded: row.eventsAdded,
+            eventsDeleted: row.eventsDeleted,
+            eventsEarlymorning: row.eventsEarlymorning,
+            eventsLatenight: row.eventsLatenight,
+            eventsOvernight: row.eventsOvernight,
+            eventsDaily: row.eventsDaily,
+            eventsWeekly: row.eventsWeekly,
+            eventsSingleton: row.eventsSingleton,
+            eventsInfinite: row.eventsInfinite,
             timeTracked: row.timeTracked,
             chatMessagesSent: row.chatMessagesSent,
             chatActionsConfirmed: row.chatActionsConfirmed,
             chatActionsExpired: row.chatActionsExpired,
             chatActionsCancelled: row.chatActionsCancelled,
+            tagsAdded:row.tagsAdded,
+            tagsAssigned : row.tagsAssigned,
+            tagsDeleted : row.tagsDeleted,
+            categoriesAdded : row.categoriesAdded,
+            categoriesAssigned : row.categoriesAssigned,
+            categoriesDeleted : row.categoriesDeleted,
+            logsAdded : row.logsAdded,
+            logsDeleted : row.logsDeleted,
+                    tasksEdited: row.tasksEdited,
+        habitsEdited: row.habitsEdited,
+        eventsEdited: row.eventsEdited,
+        logsEdited: row.logsEdited,
+        tagsEdited: row.tagsEdited,
+        categoriesEdited: row.categoriesEdited,
         };
     }
     return daily;
@@ -191,7 +394,7 @@ export async function loadDailyMetricsRange(
  * Returns full AppMetrics so DataContext can update React state immediately.
  * Floor of 0 preserved — counters never go negative.
  */
-export async function mutateMetricInDb(
+/* export async function mutateMetricInDb(
     keys: MetricKey[],
     amount: number,
     dateOverride?: string,
@@ -288,6 +491,72 @@ export async function mutateMetricInDb(
         console.log("[MetricsRepo] Global metrics:", updatedGlobal);
         return { global: updatedGlobal, daily };
     });
+} */
+export async function mutateMetricInDb(
+    batchedQueue: Record<string, number>,
+    dateOverride?: string,
+): Promise<void> {
+    const dateString = dateOverride ?? new Date().toISOString().split("T")[0];
+
+    // 1. Separate the batched queue into Global and Daily updates
+    const globalInsert = { id: 1, ...defaultGlobal };
+    const globalUpdate: Record<string, any> = {};
+
+    const dailyInsert = { date: dateString, ...DefaultDailyMetrics };
+    const dailyUpdate: Record<string, any> = {};
+
+    let hasGlobalUpdates = false;
+    let hasDailyUpdates = false;
+
+    for (const [key, amount] of Object.entries(batchedQueue)) {
+        if (key in globalColumnMap) {
+            const globalKey = key as GlobalMetricKey;
+            if (globalKey === 'lastSyncedAt') {
+                const now = new Date().toISOString();
+                globalInsert[globalKey] = now;
+                globalUpdate[globalKey] = now;
+            } else {
+                globalInsert[globalKey] = Math.max(0, amount);
+                globalUpdate[globalKey] = sql`MAX(0, COALESCE(${globalMetrics[globalKey]}, 0) + ${amount})`;
+            }
+            hasGlobalUpdates = true;
+        }
+
+        if (key in dailyColumnMap) {
+            const dailyKey = key as DailyMetricKey;
+            dailyInsert[dailyKey] = Math.max(0, amount);
+            dailyUpdate[dailyKey] = sql`MAX(0, COALESCE(${dailyMetrics[dailyKey]}, 0) + ${amount})`;
+            hasDailyUpdates = true;
+        }
+    }
+
+    // 2. Execute true O(1) upserts within a single transaction
+    await db.transaction(async (tx) => {
+        if (hasGlobalUpdates) {
+            await tx
+                .insert(globalMetrics)
+                .values(globalInsert) // Uses the safe, static numbers
+                .onConflictDoUpdate({
+                    target: globalMetrics.id,
+                    set: globalUpdate, // Uses the SQL increment
+                });
+        }
+
+        if (hasDailyUpdates) {
+            await tx
+                .insert(dailyMetrics)
+                .values(dailyInsert)
+                .onConflictDoUpdate({
+                    target: dailyMetrics.date,
+                    set: dailyUpdate,
+                });
+        }
+    });
+
+
+    // Note: We no longer return the full AppMetrics object here. 
+    // The UI is already optimistically updated by the AnalyticsEngine via Mitt!
+    console.log(`[MetricsRepo] Successfully wrote batched metrics to disk for ${dateString}.`);
 }
 
 export async function deleteAllMetrics() {

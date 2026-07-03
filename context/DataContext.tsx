@@ -9,7 +9,15 @@ import React, {
 } from "react";
 
 import { AchievementBadge } from "@/types/achievements";
-import { AppMetrics, DefaultMetrics, GlobalMetricKey } from "@/types/metrics";
+import {
+  AppMetrics,
+  DailyMetricKey,
+  DailyMetrics,
+  DefaultDailyMetrics,
+  DefaultMetrics,
+  GlobalMetricKey,
+  GlobalMetricNums,
+} from "@/types/metrics";
 
 import {
   deleteAllMetrics,
@@ -48,6 +56,9 @@ import {
   countCategories,
   getCategoryUsage,
   seedCategoriesIfEmpty,
+  reassignAndAddBackCategory,
+  reassignAndAddBackTag,
+  getItemIdsForTag,
 } from "@/db/repositories/tags-and-category-repository";
 
 import { AIActionMemory } from "@/utils/AI-utils/agentic-handlers/ai-action-undo-handlers";
@@ -60,6 +71,8 @@ import { usePlaySound } from "@/hooks/use-play-sound";
 import { AchievementMetrics } from "@/types/achievement-metrics";
 import { Tag } from "@/types/tag";
 import { Category } from "@/types/category";
+import { analyticsEngine } from "@/utils/Analytics/analytics-engine";
+import { metricsEventBus } from "@/utils/Analytics/metrics-event-bus";
 
 // TODOX if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
 interface DataContextType {
@@ -76,7 +89,7 @@ interface DataContextType {
   clearError: () => void;
   appMetrics: AppMetrics;
   achievementMetrics: AchievementMetrics;
-  trackMetric: (key: GlobalMetricKey[], amount: number) => Promise<void>;
+  trackMetric: (key: GlobalMetricKey[], amount: number) => void;
   resetMetrics: () => Promise<void>;
   resetAchievements: () => Promise<void>;
   tags: Tag[];
@@ -96,6 +109,17 @@ interface DataContextType {
   updateUserCategory: (category: Category) => Promise<void>;
   deleteUserCategory: (id: string, fallbackId?: string | null) => Promise<void>;
   getCategoryUsageForAll: (id: string) => Promise<any>;
+  reassignDeletedTag: (
+    tag: Tag,
+    fallbackId: string | null,
+    originalItems: Record<string, string[]>,
+  ) => Promise<void>;
+  reassignDeletedCategory: (
+    category: Category,
+    fallbackId: string | null,
+    originalItems: Record<string, string[]>,
+  ) => Promise<void>;
+  getItemIdsForTagLocal: (id: string) => Promise<Record<string, string[]>>;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(
@@ -123,7 +147,8 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     message: string;
     type?: "warning" | "fatal";
   } | null>(null);
-
+  const toastQueueRef = useRef<AchievementBadge[]>([]);
+  const isToastingRef = useRef(false);
   useDrizzleStudio(sqlite);
 
   const dispatchError = useCallback(
@@ -281,6 +306,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       await optimisticTagMutation(
         (prevTags) => {
           const nextState = [...prevTags];
+          const updateMetrics: GlobalMetricKey[] = [];
           for (const newTag of newTagsPayload) {
             // Check if the tag name already exists in our local state
             const existingIndex = nextState.findIndex(
@@ -289,6 +315,8 @@ export default function DataProvider({ children }: { children: ReactNode }) {
 
             if (existingIndex >= 0) {
               // It exists: Increment the local count
+              updateMetrics.push("tagsAssigned");
+
               tagIds.push(nextState[existingIndex].id);
               nextState[existingIndex] = {
                 ...nextState[existingIndex],
@@ -296,11 +324,13 @@ export default function DataProvider({ children }: { children: ReactNode }) {
                 updatedAt: now,
               };
             } else {
+              updateMetrics.push("tagsAdded");
               // It's new: Append it
               tagIds.push(newTag.id);
               nextState.push(newTag);
             }
           }
+          trackMetric(updateMetrics, 1);
           return nextState;
         },
         () => insertTags(newTagsPayload),
@@ -335,6 +365,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
 
   const deleteUserTag = useCallback(
     async (id: string, fallbackId?: string | null): Promise<void> => {
+      trackMetric(["tagsDeleted"], 1);
       await optimisticTagMutation(
         (prev) => {
           const deletedTag = prev.find((t) => t.id === id);
@@ -365,6 +396,38 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const getItemIdsForTagLocal = useCallback(
+    async (tagId: string): Promise<Record<string, string[]>> => {
+      const result = await getItemIdsForTag(tagId);
+      return (
+        result ?? {
+          tasks: [],
+          habits: [],
+          events: [],
+          logs: [],
+        }
+      );
+    },
+    [],
+  );
+
+  const reassignDeletedTag = useCallback(
+    async (
+      tag: Tag,
+      fallbackId: string | null,
+      originalItems: Record<string, string[]>,
+    ): Promise<void> => {
+      await optimisticTagMutation(
+        //TODO
+        //! Temp logic holdeer
+        (prev) => {
+          return prev;
+        },
+        () => reassignAndAddBackTag(tag, fallbackId, originalItems),
+      );
+    },
+    [optimisticTagMutation],
+  );
   const addCategory = useCallback(
     async (categoryPayload: {
       id: string;
@@ -383,6 +446,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         createdAt: now,
         updatedAt: now,
       };
+      trackMetric(["categoriesAdded"], 1);
       await optimisticCategoryMutation(
         (prev) => [...prev, category],
         () => insertCategory(category),
@@ -461,7 +525,25 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const trackMetric = useCallback(
+  const reassignDeletedCategory = useCallback(
+    async (
+      category: Category,
+      fallbackId: string | null,
+      originalItems: Record<string, string[]>,
+    ): Promise<void> => {
+      await optimisticCategoryMutation(
+        //TODO
+        //! Temp logic holdeer
+        (prev) => {
+          return prev;
+        },
+        () => reassignAndAddBackCategory(category, fallbackId, originalItems),
+      );
+    },
+    [optimisticTagMutation],
+  );
+
+  /*  const trackMetric = useCallback(
     async (keys: GlobalMetricKey[], amount: number) => {
       // 1. Mutate storage atomically
       // note: For now if lastSyncedAt is passed in it works like trackMetric(["lastSyncedAt"], 0)
@@ -513,7 +595,128 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       }
     },
     [],
-  );
+  ); */
+  const processToastQueue = useCallback(() => {
+    // If already playing a badge, or queue is empty, do nothing.
+    if (isToastingRef.current || toastQueueRef.current.length === 0) return;
+
+    isToastingRef.current = true;
+    const badge = toastQueueRef.current.shift(); // Dequeue
+
+    if (badge) {
+      setActiveBadge(badge);
+      audioPlayer.seekTo(0);
+      audioPlayer.play();
+
+      setTimeout(() => {
+        setActiveBadge(null);
+        setTimeout(() => {
+          isToastingRef.current = false; // Release the lock
+          processToastQueue(); // Recursively check for next badge in queue
+        }, 500); // 500ms gap between consecutive badges
+      }, 6000); // 6s display duration
+    }
+  }, []);
+  useEffect(() => {
+    const handleMetricTrack = async ({
+      keys,
+      amount,
+    }: {
+      keys: GlobalMetricKey[];
+      amount: number;
+    }) => {
+      console.log(
+        `[EventBus] Caught metric:track -> Keys: ${keys}, Amount: ${amount}`,
+      );
+      // ── 1. Optimistic UI Update (Using your robust deep-copy logic) ──
+      setAppMetrics((prevMetrics) => {
+        const today = new Date().toISOString().split("T")[0];
+
+        const nextGlobal = { ...prevMetrics.global };
+        const nextTodayEntry: DailyMetrics = prevMetrics.daily[today]
+          ? { ...prevMetrics.daily[today] }
+          : { ...DefaultDailyMetrics };
+
+        for (const key of keys) {
+          // Global
+          const globalKey = key as GlobalMetricKey;
+          if (globalKey in nextGlobal && globalKey !== "lastSyncedAt") {
+            nextGlobal[globalKey] = Math.max(
+              0,
+              (nextGlobal[globalKey] as number) + amount,
+            );
+          }
+
+          // Daily
+          const dailyKey = key as DailyMetricKey;
+          if (dailyKey in nextTodayEntry) {
+            nextTodayEntry[dailyKey] = Math.max(
+              0,
+              (nextTodayEntry[dailyKey] as number) + amount,
+            );
+          }
+        }
+
+        return {
+          ...prevMetrics,
+          global: nextGlobal,
+          daily: {
+            ...prevMetrics.daily,
+            [today]: nextTodayEntry,
+          },
+        };
+      });
+
+      // ── 2. Achievement Evaluation ──
+      // If it's a negative amount (undo action), we don't grant achievements
+      if (amount <= 0) return;
+
+      let localUnlocked = [...unlockedAchievementsRef.current];
+      let newlyUnlocked: AchievementBadge[] = [];
+      const currentGlobal = appMetricsRef.current.global;
+
+      try {
+        for (const key of keys) {
+          if (key === "lastSyncedAt") {
+            continue;
+          }
+          const optimisticNewValue = currentGlobal[key] + amount;
+          const newlyUnlockedForKey = await processAchievements(
+            localUnlocked,
+            optimisticNewValue - achievementMetrics[key],
+            key,
+          );
+
+          for (const badge of newlyUnlockedForKey) {
+            await addUnlockedAchievement(badge);
+            localUnlocked.push(badge);
+          }
+          newlyUnlocked = newlyUnlocked.concat(newlyUnlockedForKey);
+        }
+
+        // ── 3. Queue the Toasts safely ──
+        if (newlyUnlocked.length > 0) {
+          unlockedAchievementsRef.current = localUnlocked;
+          toastQueueRef.current.push(...newlyUnlocked);
+          processToastQueue(); // Kickstart the queue
+        }
+      } catch (err) {
+        console.error("Error evaluating achievements:", err);
+      }
+    };
+
+    // Subscribe directly to the precise UI actions
+    metricsEventBus.on("metric:track", handleMetricTrack);
+
+    return () => {
+      metricsEventBus.off("metric:track", handleMetricTrack);
+    };
+  }, [processToastQueue]);
+
+  // Your trackMetric function becomes just a mitt emit!
+  const trackMetric = useCallback((keys: GlobalMetricKey[], amount: number) => {
+    metricsEventBus.emit("metric:track", { keys, amount });
+  }, []);
 
   // Initialize and load data
   useEffect(() => {
@@ -581,6 +784,9 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         updateUserCategory,
         deleteUserCategory,
         getCategoryUsageForAll,
+        reassignDeletedTag,
+        reassignDeletedCategory,
+        getItemIdsForTagLocal,
       }}
     >
       {children}

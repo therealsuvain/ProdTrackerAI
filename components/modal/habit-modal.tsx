@@ -12,6 +12,8 @@ import {
 import DaySelector from "../ui/habits/day-selector";
 import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
 import { TagsAndCategorySection } from "../ui/shared/tags-and-categories-addon";
+import { GlobalMetricKey } from "@/types/metrics";
+import { useData } from "@/hooks/context-hooks/use-data";
 
 interface Props {
   visible: boolean;
@@ -32,6 +34,7 @@ export default function HabitModal({
 }: Props) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const { theme } = useContext(ThemeContext);
+  const { trackMetric } = useData();
 
   const tagsAndCategoryEditor = useTagsAndCategories({
     visible,
@@ -51,6 +54,15 @@ export default function HabitModal({
     const finalTagIds = await tagsAndCategoryEditor.processMetadataOnSave(
       state.category,
     );
+    const updateMetrics: GlobalMetricKey[] = [];
+    if (state.frequency === "daily") {
+      updateMetrics.push("habitsWithDailyGoals");
+    } else {
+      updateMetrics.push("habitsWithWeeklyGoals");
+    }
+    updateMetrics.push("habitsAdded");
+    if (visibleInEditMode) trackMetric(updateMetrics, 1);
+    else trackMetric(["habitsEdited"], 1);
     await onSubmit(finalTagIds);
   };
   //visibleInEditMode && console.log("visibleInEditMode", state.goal);

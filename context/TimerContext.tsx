@@ -396,6 +396,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
             };
             await addLog(log);
             trackMetric(["timeTracked"], finalTime);
+            trackMetric(["logsAdded"], 1);
             stopNativeTimer();
             resetState();
           },
@@ -516,6 +517,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
       };
       await addLog(log);
       trackMetric(["timeTracked"], workedTime);
+      trackMetric(["logsAdded"], 1);
       stopNativeTimer();
     }
 
@@ -560,6 +562,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
               };
               await addLog(log);
               trackMetric(["timeTracked"], finalTime);
+              trackMetric(["logsAdded"], 1);
             }
             stopNativeTimer();
             resetState();

@@ -25,7 +25,8 @@ import { TagsEditModal } from "@/components/ui/shared/tags/tags-edit-modal";
 
 export default function TagsSettingsScreen() {
   const { theme } = useContext(ThemeContext);
-  const { tags, updateUserTag, deleteUserTag, getTagUsageForAll } = useData();
+  const { tags, updateUserTag, deleteUserTag, getTagUsageForAll, trackMetric } =
+    useData();
   const { reassignTaskTagLocal } = useTasks();
   const { reassignHabitTagLocal } = useHabits();
   const { reassignEventTagLocal } = useEvents();
@@ -53,6 +54,7 @@ export default function TagsSettingsScreen() {
     const existingTag = tags.find((t) => t.id === tagToEdit);
 
     if (existingTag) {
+      trackMetric(["tagsEdited"], 1);
       await updateUserTag({ ...existingTag, name: editNameValue.trim() });
     }
     setTagToEdit(null);

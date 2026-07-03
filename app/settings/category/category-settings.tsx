@@ -33,6 +33,7 @@ export default function CategoriesSettingsScreen() {
     updateUserCategory,
     deleteUserCategory,
     getCategoryUsageForAll,
+    trackMetric,
   } = useData();
   const { reassignTaskCategoryLocal } = useTasks();
   const { reassignHabitCategoryLocal } = useHabits();
@@ -120,6 +121,7 @@ export default function CategoriesSettingsScreen() {
     id: string,
     fallbackId?: string | null,
   ) => {
+    trackMetric(["categoriesDeleted"], 1);
     if (fallbackId === undefined) {
       await deleteUserCategory(id);
       return;
@@ -128,6 +130,7 @@ export default function CategoriesSettingsScreen() {
   };
   const executeReassignment = async (fallbackId: string) => {
     if (!categoryToDelete) return;
+    trackMetric(["categoriesDeleted"], 1);
     await deleteUserCategory(categoryToDelete, fallbackId);
     reassignTaskCategoryLocal(categoryToDelete, fallbackId);
     reassignEventCategoryLocal(categoryToDelete, fallbackId);
@@ -222,6 +225,7 @@ export default function CategoriesSettingsScreen() {
           isCreating={true}
           onClose={() => setCategoryToEdit(null)}
           onCreateCategory={async (name, color, icon) => {
+            trackMetric(["categoriesEdited"], 1);
             await updateUserCategory({ ...editData, name, color, icon });
             setCategoryToEdit(null);
           }}

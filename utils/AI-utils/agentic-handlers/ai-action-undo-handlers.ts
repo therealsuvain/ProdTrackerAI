@@ -1,12 +1,19 @@
 import { cancelReminder, scheduleReminderEvents, scheduleReminderHabits, scheduleReminderTasks } from '@/hooks/use-notifications';
 import { AIActionContext, AIHandler } from '@/types/ai-handler';
 import { InverseAction } from '@/types/ai-undo-stack';
+import { GlobalMetricKey } from '@/types/metrics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Module-scoped state for encapsulated O(1) LIFO queue access
 const MEMORY_STORAGE_KEY = '@prodtracker_ai_undo_stack';
 const MAX_UNDO_DEPTH = 10;
 let undoStack: Array<InverseAction> = [];
+const UNDO_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+const pruneUndoStack = (stack: InverseAction[]): InverseAction[] => {
+    const cutoff = Date.now() - UNDO_TTL_MS;
+    return stack.filter(action => action.timestamp > cutoff);
+};
 
 const persistStackToDisk = async () => {
     try {
@@ -55,6 +62,11 @@ export const AIActionMemory = {
 
     getDepth: () => undoStack.length,
 
+    prune: () => {
+        undoStack = pruneUndoStack(undoStack);
+        persistStackToDisk();
+    },
+
     clear: () => {
         undoStack = [];
         persistStackToDisk();
@@ -64,7 +76,7 @@ export const AIActionMemory = {
 export const RevertLastActionHandler: AIHandler = {
     execute: async (params, context: AIActionContext) => {
         let stepsToUndo = Math.max(1, Math.min(params.steps || 1, 10));
-
+        AIActionMemory.prune();
         const availableDepth = AIActionMemory.getDepth();
         if (availableDepth === 0) {
             return { output: "There is nothing in the recent memory to undo." };
@@ -89,12 +101,17 @@ export const RevertLastActionHandler: AIHandler = {
                             await cancelReminder(lastAction.payload.task.notificationId);
                         }
                         await context.removeTask(lastAction.payload.task.id);
+                        context.trackMetric(["tasksAdded"], -1);
                         break;
                     case 'ADD_DELETED_TASK':
                         if (lastAction.payload.task.notificationId) {
                             lastAction.payload.task.notificationId = await scheduleReminderTasks(lastAction.payload.task);
                         }
                         await context.addTask(lastAction.payload.task);
+                        if (lastAction.payload.task.completed)
+                            context.trackMetric(["tasksDeleted"], -1);
+                        else
+                            context.trackMetric(["tasksDeleted", "tasksAbandoned"], -1);
                         break;
                     case 'REVERT_UPDATE_TASK':
                         if (lastAction.payload.task.notificationId) {
@@ -111,6 +128,13 @@ export const RevertLastActionHandler: AIHandler = {
                             await cancelReminder(lastAction.payload.habit.notificationId);
                         }
                         await context.removeHabit(lastAction.payload.habit.id);
+                        if (lastAction.payload.habit.frequency === 'daily') {
+                            context.trackMetric(["habitsAdded", "habitsWithDailyGoals"], -1);
+                        }
+                        else {
+                            context.trackMetric(["habitsAdded", "habitsWithWeeklyGoals"], -1);
+                        }
+
                         break;
                     case 'ADD_DELETED_HABIT':
                         if (lastAction.payload.habit.notificationId) {
@@ -118,6 +142,12 @@ export const RevertLastActionHandler: AIHandler = {
                             lastAction.payload.habit.notificationId = await scheduleReminderHabits(lastAction.payload.habit);
                         }
                         await context.addHabit(lastAction.payload.habit);
+                        if (lastAction.payload.habit.streak < lastAction.payload.habit.goal && lastAction.payload.habit.history.length === 0) {
+                            context.trackMetric(["habitsDeleted", "habitsAbandoned"], -1);
+                        }
+                        else {
+                            context.trackMetric(["habitsDeleted"], -1);
+                        }
                         break;
                     case 'REVERT_UPDATE_HABIT':
                         if (lastAction.payload.habit.notificationId) {
@@ -136,6 +166,35 @@ export const RevertLastActionHandler: AIHandler = {
                             await Promise.all(cancelPromises);
                         }
                         await context.removeEvent(lastAction.payload.event.id);
+                        const metricsArr: GlobalMetricKey[] = []
+                        if (lastAction.payload.event.recurrence === 'daily' && lastAction.payload.event.endDate) {
+                            metricsArr.push("eventsDaily")
+                        }
+                        else if (lastAction.payload.event.recurrence === 'weekly' && lastAction.payload.event.endDate) {
+                            metricsArr.push("eventsWeekly")
+                        }
+                        else if (lastAction.payload.event.recurrence === 'none') {
+                            metricsArr.push("eventsSingleton")
+                        }
+                        else {
+                            metricsArr.push("eventsInfinite")
+                        }
+                        const startTime = lastAction.payload.event.startTime.split("T")[1];
+                        const endTime = lastAction.payload.event.endTime.split("T")[1];
+                        if (startTime >= "06:00:00" &&
+                            endTime <= "09:00:00") {
+                            metricsArr.push("eventsEarlymorning")
+                        }
+                        else if (startTime >= "21:00:00" &&
+                            endTime <= "23:59:59") {
+                            metricsArr.push("eventsLatenight")
+                        }
+                        else if (startTime >= "21:00:00" ||
+                            endTime <= "06:00:00") {
+                            metricsArr.push("eventsOvernight")
+                        }
+                        metricsArr.push("eventsAdded")
+                        context.trackMetric(metricsArr, -1);
                         break;
                     case 'ADD_DELETED_EVENT':
                         if (lastAction.payload.event.reminder) {
@@ -147,6 +206,7 @@ export const RevertLastActionHandler: AIHandler = {
                             }
                         }
                         await context.addEvent(lastAction.payload.event);
+                        context.trackMetric(["eventsDeleted"], -1);
                         break;
                     case 'REVERT_UPDATE_EVENT':
                         if (lastAction.payload.event.notificationIds?.length) {
@@ -160,6 +220,28 @@ export const RevertLastActionHandler: AIHandler = {
                         break;
                     case 'BATCH_REVERT_EVENTS':
                         await context.batchRestoreEvents(lastAction.payload.originalEvents);
+                        break;
+                    case 'DELETE_TAG':
+                        for (const tag of lastAction.payload.tags) {
+                            await context.deleteUserTag(tag.id);
+                        }
+                        break;
+                    case 'ADD_DELETED_TAG':
+                        await context.reassignDeletedTag(lastAction.payload.tag, lastAction.payload.oldFallbackID, lastAction.payload.originalItems);
+                        break;
+                    case 'REVERT_UPDATE_TAG':
+                        context.trackMetric(["tagsEdited"], -1);
+                        await context.updateUserTag(lastAction.payload.tag);
+                        break;
+                    case 'DELETE_CATEGORY':
+                        await context.deleteUserCategory(lastAction.payload.category.id);
+                        break;
+                    case 'ADD_DELETED_CATEGORY':
+                        await context.reassignDeletedCategory(lastAction.payload.category, lastAction.payload.oldFallbackID, lastAction.payload.originalItems);
+                        break;
+                    case 'REVERT_UPDATE_CATEGORY':
+                        context.trackMetric(["categoriesEdited"], -1);
+                        await context.updateUserCategory(lastAction.payload.category);
                         break;
                     default:
                         console.warn("Unhandled inverse action type:", (lastAction as any).type);

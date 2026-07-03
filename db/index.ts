@@ -74,7 +74,7 @@ export async function initDatabase(): Promise<void> {
     //console.log("[DB] migrations", migrations);
     await migrate(db, migrations.default);
     console.log("[DB] Migrations applied successfully");
-    initializeFTS();
+    await initializeFTS();
   } catch (error) {
     console.error("[DB] Migration failed:", error);
     throw error; // Let DataProvider handle this

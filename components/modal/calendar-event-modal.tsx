@@ -11,6 +11,8 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { ThemeContext } from "@/context/ThemeContext";
 import { TagsAndCategorySection } from "@/components/ui/shared/tags-and-categories-addon";
 import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
+import { useData } from "@/hooks/context-hooks/use-data";
+import { GlobalMetricKey } from "@/types/metrics";
 
 //TODOX What in case when a user wants to schedule an overnight event, when the start time is later than the end time but of previous date, current logic breaks in case
 interface Props {
@@ -19,6 +21,7 @@ interface Props {
   state: any;
   updateField: (field: any, value: any) => void;
   onSubmit: (tagsIds: string[]) => Promise<void> | void;
+  isNew?: boolean;
 }
 
 export default function CalendarEventModal({
@@ -27,10 +30,12 @@ export default function CalendarEventModal({
   state,
   updateField,
   onSubmit,
+  isNew,
 }: Props) {
   //console.log("sS", state.startTime);
   //console.log("sE", state.endTime);
   const { theme } = useContext(ThemeContext);
+  const { trackMetric } = useData();
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [showAndroidStartTimePicker, setShowAndroidStartTimerPicker] =
@@ -92,6 +97,28 @@ export default function CalendarEventModal({
     const finalTagIds = await tagsAndCategoryEditor.processMetadataOnSave(
       state.category,
     );
+    const metricsArr: GlobalMetricKey[] = [];
+    if (state.recurrence === "daily" && state.endDate) {
+      metricsArr.push("eventsDaily");
+    } else if (state.recurrence === "weekly" && state.endDate) {
+      metricsArr.push("eventsWeekly");
+    } else if (state.recurrence === "none") {
+      metricsArr.push("eventsSingleton");
+    } else {
+      metricsArr.push("eventsInfinite");
+    }
+    const startTime = state.startTime.split("T")[1];
+    const endTime = state.endTime.split("T")[1];
+    if (startTime >= "06:00:00" && endTime <= "09:00:00") {
+      metricsArr.push("eventsEarlymorning");
+    } else if (startTime >= "21:00:00" && endTime <= "23:59:59") {
+      metricsArr.push("eventsLatenight");
+    } else if (startTime >= "21:00:00" || endTime <= "06:00:00") {
+      metricsArr.push("eventsOvernight");
+    }
+    metricsArr.push("eventsAdded");
+    isNew && trackMetric(metricsArr, 1);
+    !isNew && trackMetric(["eventsEdited"], 1);
     await onSubmit(finalTagIds);
   };
 

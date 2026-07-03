@@ -32,6 +32,10 @@ import { useTasks } from "@/hooks/context-hooks/use-tasks";
 import { Habit } from "@/types/habits";
 import { getTodayISO } from "@/utils/common-utils";
 import { useFlapAnimation } from "@/hooks/animations/use-flap-animation-new";
+import { useData } from "@/hooks/context-hooks/use-data";
+import { useHaptics } from "@/hooks/use-haptics";
+import { GlobalMetricKey } from "@/types/metrics";
+import { useDbErrorToast } from "@/components/shared/db-error-toast";
 
 /**
  * TODOOptim 2 : Many files are very large, try and make it more modular. ALL FILES HAVE TO CHECKED FOR POSSIBLE <REFACTORS></REFACTORS>
@@ -69,7 +73,10 @@ import { useFlapAnimation } from "@/hooks/animations/use-flap-animation-new";
  */
 
 function HomeScreenInner() {
+  const { triggerHaptic } = useHaptics();
+  const { trackMetric } = useData();
   const { theme } = useContext(ThemeContext);
+  const { showToast } = useDbErrorToast();
   const { tasks, toggleTask } = useTasks();
   const { events } = useEvents();
   const { timerLogs } = useLogs();
@@ -111,11 +118,46 @@ function HomeScreenInner() {
   }); */
 
   const toggleTaskCompleted = async (id: string) => {
+    const task = tasks.find((t) => t.id === id);
     await toggleTask(id);
+    triggerHaptic();
+    if (task?.completed) trackMetric(["tasksCompleted"], -1);
+    else trackMetric(["tasksCompleted"], 1);
   };
-  const handleHabitUpdate = async (updated: Habit) => {
-    await editHabit(updated);
-  };
+  const handleHabitUpdate = useCallback(
+    async (updated: Habit) => {
+      const habit = habits.find((h) => h.id === updated.id);
+      await editHabit(updated);
+      if (!habit) return;
+      try {
+        await editHabit(updated);
+        let updateMetrics: GlobalMetricKey[] = [];
+        if (habit.history.length < updated.history.length) {
+          updateMetrics.push("habitsCheckedIn");
+        }
+        if (
+          !updated.pendingStreakResetAfter &&
+          updated.streak === updated.goal
+        ) {
+          updateMetrics.push("habitsGoalsCompleted");
+        }
+        if (
+          (!habit.freezeHistory && updated.freezeHistory) ||
+          (habit.freezeHistory &&
+            updated.freezeHistory &&
+            habit.freezeHistory.length < updated.freezeHistory.length)
+        ) {
+          updateMetrics.push("habitsFrozen");
+        }
+        if (updateMetrics.length > 0) {
+          trackMetric(updateMetrics, 1);
+        }
+      } catch (e) {
+        showToast("Couldn't save habit. Changes have been undone.");
+      }
+    },
+    [trackMetric, habits],
+  );
 
   return (
     <Provider>

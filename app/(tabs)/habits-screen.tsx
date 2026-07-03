@@ -14,10 +14,6 @@ import HabitHeatmap from "@/components/ui/habits/habit-heatmap";
 import { useHabitForm } from "@/hooks/use-forms/use-habit-form";
 import { ThemeContext } from "@/context/ThemeContext";
 import { cancelReminder } from "@/hooks/use-notifications";
-import {
-  wasHabitCheckInMissed,
-  restartHabitAfterGoal,
-} from "@/utils/habit-utils";
 import { withAlpha } from "@/utils/common-utils";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { usePlaySound } from "@/hooks/use-play-sound";
@@ -118,7 +114,13 @@ function HabitsScreenInner() {
             cancelReminder(habit.notificationId);
           }
           try {
+            if (!habit) return;
             await removeHabit(id);
+            if (habit.streak < habit.goal && history.length === 0) {
+              trackMetric(["habitsDeleted", "habitsAbandoned"], 1);
+            } else {
+              trackMetric(["habitsDeleted"], 1);
+            }
             triggerHaptic();
           } catch {
             showToast("Couldn't delete the habit. It has been restored.");
@@ -132,21 +134,21 @@ function HabitsScreenInner() {
     (updated: Habit) => {
       handleUpdate(updated);
       setGoalModalVisible(false);
+      trackMetric(["habitGoalsRestarted"], 1);
     },
-    [handleUpdate],
+    [handleUpdate, trackMetric],
   );
 
-  const handleGoalReached = useCallback((habit: Habit) => {
-    setCompletedHabit(habit);
-    setGoalModalVisible(true);
-    audioPlayer.seekTo(0);
-    audioPlayer.play();
-  }, []);
-
-  const chartData = {
-    labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-    datasets: [{ data: [1, 2, 3, 4, 5] }],
-  };
+  const handleGoalReached = useCallback(
+    (habit: Habit) => {
+      setCompletedHabit(habit);
+      setGoalModalVisible(true);
+      audioPlayer.seekTo(0);
+      audioPlayer.play();
+      trackMetric(["habitsGoalsCompleted"], 1);
+    },
+    [trackMetric],
+  );
 
   useEffect(() => {
     setFilteredHabits(

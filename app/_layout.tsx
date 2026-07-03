@@ -23,10 +23,21 @@ import {
   Provider as PaperProvider,
   useTheme as usePaperTheme,
 } from "react-native-paper";
+import { useEffect } from "react";
+import { analyticsEngine } from "@/utils/Analytics/analytics-engine";
 
 export default function RootLayout() {
   //Note :  static color values from ThemeContext are usable, dont do not work when theme changes
   const paperTheme = usePaperTheme();
+  useEffect(() => {
+    // 1. Boot up the background sync engine when the app starts
+    analyticsEngine.initBackgroundSync(20000); // Flushes every 20s
+
+    return () => {
+      // Cleanup if the root layout ever unmounts (rare, but good practice)
+      analyticsEngine.destroy();
+    };
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

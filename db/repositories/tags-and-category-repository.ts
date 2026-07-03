@@ -1,4 +1,4 @@
-import { eq, desc, sql, like, and } from "drizzle-orm";
+import { eq, desc, sql, like, and, inArray } from "drizzle-orm";
 import { db, tags, categories, tasks, habits, calendarEvents, timerLogs, timerTags , taskTags, habitTags, eventTags} from "@/db";
 import type { Tag } from "@/types/tag";
 import type { Category } from "@/types/category";
@@ -211,6 +211,163 @@ export const deleteTagSafely = async (tagIdToDelete: string, fallbackTagId: stri
   });
 };
 
+function addTagId(jsonText: string | null, tagId: string): string {
+  const arr = jsonText ? JSON.parse(jsonText) as string[] : [];
+  if (!arr.includes(tagId)) arr.push(tagId);
+  return JSON.stringify(arr);
+}
+
+function removeTagId(jsonText: string | null, tagId: string): string {
+  const arr = jsonText ? JSON.parse(jsonText) as string[] : [];
+  return JSON.stringify(arr.filter((id) => id !== tagId));
+}
+
+export  async function reassignAndAddBackTag(tagOriginal: Tag, tagToReassignFrom: string | null ,  originalItems : Record<string, string[]>) {
+  await db.transaction(async (tx) => {
+    const insert = tagToInsert(tagOriginal);
+    await tx.insert(tags).values(insert);
+
+    if (tagToReassignFrom) {
+      const movedCount =
+        (originalItems.tasks?.length ?? 0) +
+        (originalItems.habits?.length ?? 0) +
+        (originalItems.events?.length ?? 0) +
+        (originalItems.logs?.length ?? 0);
+
+      await tx.update(tags)
+        .set({
+          count: sql`max(0, ${tags.count} - ${movedCount})`,
+        })
+        .where(eq(tags.id, tagToReassignFrom));
+
+      if (originalItems.tasks?.length) {
+        const rows = await tx.select({ id: tasks.id, tags: tasks.tags })
+          .from(tasks)
+          .where(inArray(tasks.id, originalItems.tasks));
+
+        for (const row of rows) {
+          const withoutFallback = removeTagId(row.tags, tagToReassignFrom);
+          const withOriginal = addTagId(withoutFallback, tagOriginal.id);
+
+          await tx.update(tasks)
+            .set({ tags: withOriginal })
+            .where(eq(tasks.id, row.id));
+        }
+
+        await tx.delete(taskTags)
+          .where(and(
+            eq(taskTags.tagId, tagToReassignFrom),
+            inArray(taskTags.taskId, originalItems.tasks),
+          ));
+
+        await tx.insert(taskTags).values(
+          originalItems.tasks.map((taskId) => ({
+            taskId,
+            tagId: tagOriginal.id,
+          }))
+        );
+      }
+
+      if (originalItems.habits?.length) {
+        const rows = await tx.select({ id: habits.id, tags: habits.tags })
+          .from(habits)
+          .where(inArray(habits.id, originalItems.habits));
+
+        for (const row of rows) {
+          const withoutFallback = removeTagId(row.tags, tagToReassignFrom);
+          const withOriginal = addTagId(withoutFallback, tagOriginal.id);
+
+          await tx.update(habits)
+            .set({ tags: withOriginal })
+            .where(eq(habits.id, row.id));
+        }
+
+        await tx.delete(habitTags)
+          .where(and(
+            eq(habitTags.tagId, tagToReassignFrom),
+            inArray(habitTags.habitId, originalItems.habits),
+          ));
+
+        await tx.insert(habitTags).values(
+          originalItems.habits.map((habitId) => ({
+            habitId,
+            tagId: tagOriginal.id,
+          }))
+        );
+      }
+
+      if (originalItems.events?.length) {
+        const rows = await tx.select({ id: calendarEvents.id, tags: calendarEvents.tags })
+          .from(calendarEvents)
+          .where(inArray(calendarEvents.id, originalItems.events));
+
+        for (const row of rows) {
+          const withoutFallback = removeTagId(row.tags, tagToReassignFrom);
+          const withOriginal = addTagId(withoutFallback, tagOriginal.id);
+
+          await tx.update(calendarEvents)
+            .set({ tags: withOriginal })
+            .where(eq(calendarEvents.id, row.id));
+        }
+
+        await tx.delete(eventTags)
+          .where(and(
+            eq(eventTags.tagId, tagToReassignFrom),
+            inArray(eventTags.eventId, originalItems.events),
+          ));
+
+        await tx.insert(eventTags).values(
+          originalItems.events.map((eventId) => ({
+            eventId,
+            tagId: tagOriginal.id,
+          }))
+        );
+      }
+
+      if (originalItems.logs?.length) {
+        const rows = await tx.select({ id: timerLogs.id, tags: timerLogs.tags })
+          .from(timerLogs)
+          .where(inArray(timerLogs.id, originalItems.logs));
+
+        for (const row of rows) {
+          const withoutFallback = removeTagId(row.tags, tagToReassignFrom);
+          const withOriginal = addTagId(withoutFallback, tagOriginal.id);
+
+          await tx.update(timerLogs)
+            .set({ tags: withOriginal })
+            .where(eq(timerLogs.id, row.id));
+        }
+
+        await tx.delete(timerTags)
+          .where(and(
+            eq(timerTags.tagId, tagToReassignFrom),
+            inArray(timerTags.logId, originalItems.logs),
+          ));
+
+        await tx.insert(timerTags).values(
+          originalItems.logs.map((logId) => ({
+            logId,
+            tagId: tagOriginal.id,
+          }))
+        );
+      }
+    }
+  })
+}
+
+export async function getItemIdsForTag(tagId: string) {
+  const tasks = await db.select({ id:taskTags.taskId }).from(taskTags).where(eq(taskTags.tagId, tagId));
+  const habits = await db.select({ id:habitTags.habitId }).from(habitTags).where(eq(habitTags.tagId, tagId));
+  const events = await db.select({ id:eventTags.eventId }).from(eventTags).where(eq(eventTags.tagId, tagId));
+  const logs = await db.select({ id:timerTags.logId }).from(timerTags).where(eq(timerTags.tagId, tagId));
+
+  return {
+    tasks: tasks.map(t => t.id),
+    habits: habits.map(h => h.id),
+    events: events.map(e => e.id),
+    logs: logs.map(l => l.id),
+  }
+}
 /* export const deleteTagSafely = async (tagIdToDelete: string, fallbackTagId: string | null = null) => {
   await db.transaction(async (tx) => {
     
@@ -470,6 +627,30 @@ export const deleteCategorySafely = async (categoryIdToDelete: string, fallbackC
   });
 };
 
+export async function reassignAndAddBackCategory(categoryOriginal: Category, categoryToReassignFrom: string|null, itemsToReassign: Record<string,string[]>): Promise<void> {
+  await db.transaction(async (tx) => {
+     const insert = categoryToInsert(categoryOriginal);
+     const ogCount = insert.count;
+     await tx.insert(categories).values(insert)
+     if (categoryToReassignFrom){
+      await tx.update(categories)
+        .set({
+            count: sql`${categories.count} - ${ogCount}`,
+        })
+        .where(eq(categories.id, categoryToReassignFrom));
+
+      if(itemsToReassign['tasks'] && itemsToReassign['tasks'].length > 0 )
+      await tx.update(tasks).set({ category: categoryOriginal.id }).where(and(eq(tasks.category, categoryToReassignFrom),inArray(tasks.id, itemsToReassign['tasks'])));
+       if(itemsToReassign['habits'] && itemsToReassign['habits'].length > 0 )
+      await tx.update(habits).set({ category: categoryOriginal.id }).where(and(eq(habits.category, categoryToReassignFrom),inArray(habits.id, itemsToReassign['habits'])));
+     if(itemsToReassign['events'] && itemsToReassign['events'].length > 0 )
+      await tx.update(calendarEvents).set({ category: categoryOriginal.id }).where(and(eq(calendarEvents.category, categoryToReassignFrom),inArray(calendarEvents.id, itemsToReassign['events'])));
+     if(itemsToReassign['logs'] && itemsToReassign['logs'].length > 0 )
+      await tx.update(timerLogs).set({ category: categoryOriginal.id }).where(and(eq(timerLogs.category, categoryToReassignFrom),inArray(timerLogs.id, itemsToReassign['logs'])));
+    
+      }
+  })
+}
 /**
  * Permanently delete every row in the categories table.
  * Returns the number of categories deleted.

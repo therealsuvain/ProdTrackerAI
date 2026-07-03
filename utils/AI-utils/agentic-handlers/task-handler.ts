@@ -30,8 +30,9 @@ export const AddTaskHandler: AIHandler = {
 
     // 3. Update the global state via the context
     //context.setTasks((prev) => [...prev, newTask]);
-    AIActionMemory.push({ type: "DELETE_TASK", payload: { task: newTask } });
+    AIActionMemory.push({ type: "DELETE_TASK", payload: { task: newTask }, timestamp: Date.now() });
     await context.addTask(newTask);
+    context.trackMetric(["tasksAdded"], 1);
     console.log(`AI Action: Added task "${newTask.title}"`);
     const { id, embedding, ...rest } = newTask;
     return { status: "success", task: { id: id.slice(0, 8), ...rest } }
@@ -68,7 +69,7 @@ export const EditTaskHandler: AIHandler = {
     /* context.setTasks((prev) =>
       prev.map((t) => (t.id.slice(0, 8) === params.id ? updatedTask : t))
     ); */
-    AIActionMemory.push({ type: 'REVERT_UPDATE_TASK', payload: { task: oldTask } });
+    AIActionMemory.push({ type: 'REVERT_UPDATE_TASK', payload: { task: oldTask }, timestamp: Date.now() });
     await context.editTask(updatedTask);
     const { id, embedding, ...rest } = updatedTask;
     return { status: "success", task: { id: id.slice(0, 8), ...rest } }
@@ -84,8 +85,13 @@ export const DeleteTaskHandler: AIHandler = {
     if (oldTask.notificationId) {
       await cancelReminder(oldTask.notificationId);
     }
-    AIActionMemory.push({ type: 'ADD_DELETED_TASK', payload: { task: oldTask } });
-    context.removeTask(oldTask.id);
+    AIActionMemory.push({ type: 'ADD_DELETED_TASK', payload: { task: oldTask }, timestamp: Date.now() });
+    await context.removeTask(oldTask.id);
+    if (oldTask.completed) {
+      context.trackMetric(["tasksDeleted"], 1);
+    } else {
+      context.trackMetric(["tasksDeleted", "tasksAbandoned"], 1);
+    }
     const { id, title } = oldTask;
     return { status: "success", task: { id: id.slice(0, 8), title } }
   }
@@ -100,8 +106,9 @@ export const CompleteTaskHandler: AIHandler = {
     if (oldTask.notificationId) {
       await cancelReminder(oldTask.notificationId);
     }
-    AIActionMemory.push({ type: 'REVERT_UPDATE_TASK', payload: { task: oldTask } });
+    AIActionMemory.push({ type: 'REVERT_UPDATE_TASK', payload: { task: oldTask }, timestamp: Date.now() });
     await context.toggleTask(oldTask.id);
+    context.trackMetric(["tasksCompleted"], 1);
     const { id, title } = oldTask;
     return { status: "success", task: { id: id.slice(0, 8), title } }
   }
@@ -137,7 +144,7 @@ export const BatchMutateTasksHandler: AIHandler = {
     // 3. Push to Undo Memory Stack PRIOR to mutation
     AIActionMemory.push({
       type: 'BATCH_REVERT_TASKS',
-      payload: { originalTasks: targets }
+      payload: { originalTasks: targets }, timestamp: Date.now()
     });
 
     // 4. Execute Atomic Update

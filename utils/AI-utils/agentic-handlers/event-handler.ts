@@ -5,6 +5,7 @@ import { getTimeRangeHelper } from "./additional-handlers";
 import { resolveIdsFromNames } from "./tags-and-categories-handlers";
 import { AIActionMemory } from "./ai-action-undo-handlers";
 import { fastCosineSimilarity, generateEmbedding } from "@/utils/embedding-engine";
+import { GlobalMetricKey } from "@/types/metrics";
 
 //! 59567 Port for qbitorent
 export const AddEventHandler: AIHandler = {
@@ -19,7 +20,36 @@ export const AddEventHandler: AIHandler = {
       }
     }
     //!  Undo Stack Push
-    AIActionMemory.push({ type: 'DELETE_EVENT', payload: { event: newEvent } })
+    AIActionMemory.push({ type: 'DELETE_EVENT', payload: { event: newEvent }, timestamp: Date.now() })
+    const metricsArr: GlobalMetricKey[] = []
+    if (newEvent.recurrence === 'daily' && newEvent.endDate) {
+      metricsArr.push("eventsDaily")
+    }
+    else if (newEvent.recurrence === 'weekly' && newEvent.endDate) {
+      metricsArr.push("eventsWeekly")
+    }
+    else if (newEvent.recurrence === 'none') {
+      metricsArr.push("eventsSingleton")
+    }
+    else {
+      metricsArr.push("eventsInfinite")
+    }
+    const startTime = newEvent.startTime.split("T")[1];
+    const endTime = newEvent.endTime.split("T")[1];
+    if (startTime >= "06:00:00" &&
+      endTime <= "09:00:00") {
+      metricsArr.push("eventsEarlymorning")
+    }
+    else if (startTime >= "21:00:00" &&
+      endTime <= "23:59:59") {
+      metricsArr.push("eventsLatenight")
+    }
+    else if (startTime >= "21:00:00" ||
+      endTime <= "06:00:00") {
+      metricsArr.push("eventsOvernight")
+    }
+    metricsArr.push("eventsAdded")
+    context.trackMetric(metricsArr, -1);
     await context.addEvent(newEvent);
     console.log(`AI Action: Added event "${newEvent.title}"`);
     const { id, embedding, ...rest } = newEvent;
@@ -57,7 +87,7 @@ export const EditEventHandler: AIHandler = {
       }
     }
     //!  Undo Stack Push
-    AIActionMemory.push({ type: "REVERT_UPDATE_EVENT", payload: { event: oldEvent } })
+    AIActionMemory.push({ type: "REVERT_UPDATE_EVENT", payload: { event: oldEvent }, timestamp: Date.now() })
     await context.editEvent(updatedEvent);
     const { id, embedding, ...rest } = updatedEvent;
     return { status: "success", event: { id: id.slice(0, 8), ...rest } };
@@ -68,7 +98,7 @@ export const DeleteEventSingleOccurrenceHandler: AIHandler = {
     const oldEvent = context.events.find((e) => e.id.slice(0, 8) === params.id)
     if (!oldEvent) throw new Error("Event not found");
     //!  Undo Stack Push
-    AIActionMemory.push({ type: "REVERT_UPDATE_EVENT", payload: { event: oldEvent } })
+    AIActionMemory.push({ type: "REVERT_UPDATE_EVENT", payload: { event: oldEvent }, timestamp: Date.now() })
     await context.deleteEventOccurrence(oldEvent.id, params.date, false);
     const { id, title } = oldEvent;
     return { status: "success", event: { id: id.slice(0, 8), title } };
@@ -86,7 +116,8 @@ export const DeleteEventHandler: AIHandler = {
       await Promise.all(cancelPromises);
     }
     //!  Undo Stack Push
-    AIActionMemory.push({ type: "ADD_DELETED_EVENT", payload: { event: oldEvent } })
+    AIActionMemory.push({ type: "ADD_DELETED_EVENT", payload: { event: oldEvent }, timestamp: Date.now() })
+    context.trackMetric(["eventsDeleted"], 1);
     await context.removeEvent(oldEvent.id);
     const { id, title } = oldEvent;
     return { status: "success", event: { id: id.slice(0, 8), title } };
@@ -130,7 +161,7 @@ export const BatchMutateEventsHandler: AIHandler = {
     // 3. Push to Undo Memory Stack PRIOR to mutation
     AIActionMemory.push({
       type: 'BATCH_REVERT_EVENTS',
-      payload: { originalEvents: targets }
+      payload: { originalEvents: targets }, timestamp: Date.now()
     });
     const newCateogryId = mutationPayload.category ? resolveIdsFromNames(mutationPayload.category, context.categories)[0] : undefined;
     if (newCateogryId) {

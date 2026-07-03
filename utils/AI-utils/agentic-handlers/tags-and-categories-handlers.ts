@@ -2,6 +2,9 @@ import { AIHandler } from "@/types/ai-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { randomUUID } from "expo-crypto";
 import Fuse from "fuse.js";
+import { AIActionMemory } from "./ai-action-undo-handlers";
+import { Category } from "@/types/category";
+import { Tag } from "@/types/tag";
 
 // 1. Pre-compute the Icon Dictionary for Fuse
 // Extracting all valid icon names from the glyphMap
@@ -105,6 +108,11 @@ export const AddCategoryHandler: AIHandler = {
     // 3. Update global context/database
     // Ensure your context has this addCategory function available!
     const id = randomUUID();
+    AIActionMemory.push({
+      type: 'DELETE_CATEGORY',
+      payload: { category: { id, name: params.name, color: finalColor, icon: finalIcon } as Category },
+      timestamp: Date.now()
+    });
     await context.addCategory({ id, name: params.name, color: finalColor, icon: finalIcon });
 
 
@@ -129,7 +137,14 @@ export const EditCategoryHandler: AIHandler = {
       icon: finalIcon,
     };
 
+    AIActionMemory.push({
+      type: 'REVERT_UPDATE_CATEGORY',
+      payload: { category: existingCategory },
+      timestamp: Date.now()
+    });
+
     if (context.updateUserCategory) {
+      context.trackMetric(["categoriesEdited"], 1);
       await context.updateUserCategory(updatedCategory);
     }
 
@@ -140,8 +155,24 @@ export const EditCategoryHandler: AIHandler = {
 export const DeleteCategoryHandler: AIHandler = {
   execute: async (params, context) => {
     const { id, fallbackCategoryId } = params;
+    const existingCategory = context.categories.find((c: any) => c.id !== id);
+    if (!existingCategory) {
+      throw new Error(`Invariant violated: Category ${id} not found.`);
+    }
+    const itemsWithCategory : Record<string, string[]> = {};
+    itemsWithCategory["tasks"] = context.tasks.filter((t: any) => t.category === id).map((t: any) => t.id);
+    itemsWithCategory["events"] = context.events.filter((e: any) => e.category === id).map((e: any) => e.id);
+    itemsWithCategory["habits"] = context.habits.filter((h: any) => h.category === id).map((h: any) => h.id);
+    itemsWithCategory["logs"] = context.timerLogs.filter((l: any) => l.categoryId === id).map((l: any) => l.id);
+
+    AIActionMemory.push({
+      type: 'ADD_DELETED_CATEGORY',
+      payload: { category: existingCategory, oldFallbackID: fallbackCategoryId, originalItems: itemsWithCategory },
+      timestamp: Date.now()
+    });
 
     if (context.deleteUserCategory) {
+      context.trackMetric(["categoriesDeleted"], 1);
       await context.deleteUserCategory(id, fallbackCategoryId || null);
     }
 
@@ -164,9 +195,14 @@ export const AddTagHandler: AIHandler = {
       name: name.replace(/^#/, ""),
     }));
 
+    AIActionMemory.push({
+      type: 'DELETE_TAG',
+      payload: { tags: newlyCreatedTags as Tag[] },
+      timestamp: Date.now()
+    })
     await context.addTags(newlyCreatedTags);
 
-
+  
     // Return the new ID so the AI can use it in tool chaining
     return { status: "success", tag: newlyCreatedTags };
   },
@@ -181,8 +217,13 @@ export const EditTagHandler: AIHandler = {
       ...existingTag,
       name: params.name,
     };
-
+   AIActionMemory.push({
+     type: 'REVERT_UPDATE_TAG',
+     payload: { tag: existingTag },
+     timestamp: Date.now()
+   })
     if (context.updateUserTag) {
+      context.trackMetric(["tagsEdited"], 1);
       await context.updateUserTag(updatedTag);
     }
 
@@ -197,7 +238,7 @@ export const DeleteTagHandler: AIHandler = {
     if (context.deleteUserTag) {
       await context.deleteUserTag(id, fallbackTagId || null);
     }
-
+   
     return { status: "success", message: `Tag ${id} deleted safely.` };
   },
 };

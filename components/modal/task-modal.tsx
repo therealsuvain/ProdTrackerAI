@@ -18,6 +18,7 @@ import { useData } from "@/hooks/use-data";
  */
 import { TagsAndCategorySection } from "@/components/ui/shared/tags-and-categories-addon";
 import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
+import { useData } from "@/hooks/context-hooks/use-data";
 
 interface Props {
   visible: boolean;
@@ -25,6 +26,7 @@ interface Props {
   state: any;
   updateField: (field: any, value: any) => void;
   onSubmit: (tagIDs: string[]) => Promise<void> | void;
+  isNew?: boolean;
 }
 
 export default function TaskModal({
@@ -33,8 +35,10 @@ export default function TaskModal({
   state,
   updateField,
   onSubmit,
+  isNew,
 }: Props) {
   const { theme } = useContext(ThemeContext);
+  const { trackMetric } = useData();
   /*   const {
     tags,
     addTags,
@@ -116,11 +120,14 @@ export default function TaskModal({
     if (state.category !== originalCategoryRef.current) {
       await incrementCategoryUsage(state.category);
     } */
-
+    console.log("orig Tags", state.tags);
     const finalTagIds = await tagsAndCategoryEditor.processMetadataOnSave(
       state.category,
     );
+    console.log("final Tags", finalTagIds);
     await onSubmit(finalTagIds);
+    if (isNew) trackMetric(["tasksAdded"], 1);
+    else trackMetric(["tasksEdited"], 1);
   };
 
   /*   const addTagToTask = (tag: string) => {

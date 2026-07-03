@@ -12,6 +12,11 @@ import m0007 from './0007_odd_ultimo.sql';
 import m0008 from './0008_unknown_arachne.sql';
 import m0009 from './0009_complex_zarda.sql';
 import m0010 from './0010_bored_sleepwalker.sql';
+import m0011 from './0011_wet_colleen_wing.sql';
+import m0012 from './0012_puzzling_kylun.sql';
+import m0013 from './0013_huge_maggott.sql';
+import m0014 from './0014_handy_starhawk.sql';
+import m0015 from './0015_tranquil_sumo.sql';
 
   export default {
     journal,
@@ -26,7 +31,12 @@ m0006,
 m0007,
 m0008,
 m0009,
-m0010
+m0010,
+m0011,
+m0012,
+m0013,
+m0014,
+m0015
     }
   }
   

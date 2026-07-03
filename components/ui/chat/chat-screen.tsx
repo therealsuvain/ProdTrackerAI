@@ -60,6 +60,7 @@ import { LoadingBubble } from "@/components/shared/loading-indicators/message-bu
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
+import { useLogs } from "@/hooks/context-hooks/use-logs";
 //import { LoadingBubble } from "./loading-bubble-split-flap-opt";
 
 interface Props {
@@ -79,6 +80,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const headerHeight = useHeaderHeight();
   const { theme } = useContext(ThemeContext);
   const { setTitle, start, stop } = useTimer();
+  const { timerLogs } = useLogs();
   const navigation = useNavigation();
   const { isLoading, startRecording, stopRecording, transcript, error } =
     useVoiceInput({});
@@ -104,6 +106,9 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     updateUserTag,
     deleteUserTag,
     getTagUsageForAll,
+    getItemIdsForTagLocal,
+    reassignDeletedCategory,
+    reassignDeletedTag,
   } = useData();
   const {
     tasks,
@@ -176,6 +181,10 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     getImmediateContext,
     getMoreContext,
     trackMetric,
+    timerLogs,
+    reassignDeletedCategory,
+    reassignDeletedTag,
+    getItemIdsForTagLocal,
   };
   const chatItems = useMemo(() => injectDaySeparators(messages), [messages]);
   const [agentProgress, setAgentProgress] = useState<string | null>(null);

@@ -4,6 +4,7 @@ import { Task } from '@/types/task';
 import { Category } from './category';
 import { Tag } from './tag';
 import { GlobalMetricKey } from './metrics';
+import { TimerLog } from './timer';
 
 // This interface defines what every "Action" in your app needs to work.
 // By passing the 'context', we allow the handler to modify the app's state.
@@ -34,19 +35,23 @@ export interface AIActionContext {
   updateUserCategory: (category: Category) => Promise<void>;
   deleteUserCategory: (id: string, fallbackId?: string | null) => Promise<void>;
   getCategoryUsageForAll: (id: string) => Promise<any>;
+  reassignDeletedCategory : (category: Category, fallbackId:string|null, originalItems:Record<string,string[]>)=>Promise<void>;
   tags: Tag[];
   addTags: (tagsPayload: { id: string; name: string }[]) => Promise<string[]>;
   incrementTagUsage: (id: string) => Promise<void>;
   updateUserTag: (tag: Tag) => Promise<void>;
   deleteUserTag: (id: string, fallbackId?: string | null) => Promise<void>;
   getTagUsageForAll: (id: string) => Promise<any>;
+  reassignDeletedTag : (tag:Tag, fallbackId:string|null, originalItems:Record<string,string[]>)=>Promise<void>;
+  getItemIdsForTagLocal:(tagId:string)=>Promise<Record<string,string[]>>;
   getImmediateContext: () => Promise<any>;
   getMoreContext: (args: any) => Promise<any>;
+  timerLogs: TimerLog[];
   setTitle: (title: string) => void;
   start: () => void;
   stop: () => void;
   navigation: any;
-  trackMetric: (key: GlobalMetricKey[], amount: number) => Promise<void>;
+  trackMetric: (key: GlobalMetricKey[], amount: number) => void;
   // Add other state setters as needed (Timer, Navigation, etc.)
 }
 

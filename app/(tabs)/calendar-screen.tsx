@@ -29,10 +29,13 @@ import { useHaptics } from "@/hooks/use-haptics";
 import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-list-agenda-view-main";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
+import { useData } from "@/hooks/context-hooks/use-data";
+import { tr } from "zod/v4/locales/index.js";
 
 // TODOX - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {
   const { theme } = useContext(ThemeContext);
+  const { trackMetric } = useData();
   const { events, addEvent, editEvent, deleteEventOccurrence } = useEvents();
   const {
     currentView,
@@ -42,6 +45,7 @@ function CalendarScreenInner() {
     filteredEvents,
   } = useCalendarState(events);
   const [visible, setVisible] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const { toastError, showToast, dismissToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
@@ -54,11 +58,20 @@ function CalendarScreenInner() {
   });
 
   const showModal = (event?: CalendarEvent) => {
-    setEditingEvent(event || null);
+    if (event) {
+      setIsEditing(true);
+      setEditingEvent(event);
+      setVisible(true);
+      return;
+    }
+    setEditingEvent(null);
     setVisible(true);
   };
 
-  const hideModal = () => setVisible(false);
+  const hideModal = () => {
+    setIsEditing(false);
+    setVisible(false);
+  };
 
   const isSingleOccurrenceHelper = (event: CalendarEvent) => {
     if (event.recurrence === "none") return true;
@@ -93,6 +106,7 @@ function CalendarScreenInner() {
           try {
             await deleteEventOccurrence(id, date, true);
             triggerHaptic();
+            trackMetric(["eventsDeleted"], 1);
           } catch {
             showToast("Couldn't delete the event. It has been restored.");
           }
@@ -166,6 +180,7 @@ function CalendarScreenInner() {
           updateField={updateField}
           state={state}
           onSubmit={onSubmit}
+          isNew={!isEditing}
         ></CalendarEventModal>
       </Portal>
     </>
