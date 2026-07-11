@@ -70,6 +70,7 @@ export const EditTaskHandler: AIHandler = {
       prev.map((t) => (t.id.slice(0, 8) === params.id ? updatedTask : t))
     ); */
     AIActionMemory.push({ type: 'REVERT_UPDATE_TASK', payload: { task: oldTask }, timestamp: Date.now() });
+    context.trackMetric(["tasksEdited"], 1);
     await context.editTask(updatedTask);
     const { id, embedding, ...rest } = updatedTask;
     return { status: "success", task: { id: id.slice(0, 8), ...rest } }

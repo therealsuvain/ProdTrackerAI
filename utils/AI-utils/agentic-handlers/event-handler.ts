@@ -88,6 +88,7 @@ export const EditEventHandler: AIHandler = {
     }
     //!  Undo Stack Push
     AIActionMemory.push({ type: "REVERT_UPDATE_EVENT", payload: { event: oldEvent }, timestamp: Date.now() })
+    context.trackMetric(["eventsEdited"], 1);
     await context.editEvent(updatedEvent);
     const { id, embedding, ...rest } = updatedEvent;
     return { status: "success", event: { id: id.slice(0, 8), ...rest } };

@@ -118,6 +118,7 @@ export const RevertLastActionHandler: AIHandler = {
                             await cancelReminder(lastAction.payload.task.notificationId);
                             lastAction.payload.task.notificationId = await scheduleReminderTasks(lastAction.payload.task);
                         }
+                        context.trackMetric(["tasksEdited"], -1);
                         await context.editTask(lastAction.payload.task);
                         break;
                     case 'BATCH_REVERT_TASKS':
@@ -153,6 +154,7 @@ export const RevertLastActionHandler: AIHandler = {
                         if (lastAction.payload.habit.notificationId) {
                             lastAction.payload.habit.notificationId = await scheduleReminderHabits(lastAction.payload.habit);
                         }
+                        context.trackMetric(["habitsEdited"], -1);
                         await context.editHabit(lastAction.payload.habit);
                         break;
                     case 'BATCH_REVERT_HABITS':
@@ -223,6 +225,7 @@ export const RevertLastActionHandler: AIHandler = {
                             await Promise.all(cancelPromises);
                             lastAction.payload.event.notificationIds = await scheduleReminderEvents(lastAction.payload.event);
                         }
+                        context.trackMetric(["eventsEdited"], -1);
                         await context.editEvent(lastAction.payload.event);
                         break;
                     case 'BATCH_REVERT_EVENTS':

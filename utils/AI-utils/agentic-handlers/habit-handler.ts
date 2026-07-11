@@ -55,6 +55,7 @@ export const EditHabitHandler: AIHandler = {
     }
     //!  Undo Stack Push
     AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit }, timestamp: Date.now() });
+    context.trackMetric(["habitsEdited"], 1);
     await context.editHabit(newHabit);
     const { id, embedding, ...rest } = newHabit;
     return { status: "success", habit: { id: id.slice(0, 8), ...rest } };

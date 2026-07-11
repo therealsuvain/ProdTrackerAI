@@ -392,12 +392,12 @@ export async function loadDailyMetricsRange(
             categoriesDeleted : row.categoriesDeleted,
             logsAdded : row.logsAdded,
             logsDeleted : row.logsDeleted,
-                    tasksEdited: row.tasksEdited,
-        habitsEdited: row.habitsEdited,
-        eventsEdited: row.eventsEdited,
-        logsEdited: row.logsEdited,
-        tagsEdited: row.tagsEdited,
-        categoriesEdited: row.categoriesEdited,
+            tasksEdited: row.tasksEdited,
+            habitsEdited: row.habitsEdited,
+            eventsEdited: row.eventsEdited,
+            logsEdited: row.logsEdited,
+            tagsEdited: row.tagsEdited,
+            categoriesEdited: row.categoriesEdited,
         };
     }
     return daily;

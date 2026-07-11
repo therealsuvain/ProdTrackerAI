@@ -103,11 +103,13 @@ function HabitsScreenInner() {
           const now = new Date();
           const nowSecs =
             now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+          const TWO_AM = 2 * 3600;
+          const FOUR_AM = 4 * 3600;
           const EIGHT_AM = 8 * 3600;
-          const TEN_PM = 10 * 3600;
-          if (nowSecs <= EIGHT_AM) {
+          const TEN_PM = 22 * 3600;
+          if (nowSecs <= EIGHT_AM && nowSecs >= FOUR_AM) {
             updateMetrics.push("habitsCheckedInBefore8am");
-          } else if (nowSecs >= TEN_PM) {
+          } else if (nowSecs >= TEN_PM || nowSecs <= TWO_AM) {
             updateMetrics.push("habitsCheckedInAfter10pm");
           }
         }

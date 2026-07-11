@@ -323,7 +323,6 @@ export default function DataProvider({ children }: { children: ReactNode }) {
 
             if (existingIndex >= 0) {
               // It exists: Increment the local count
-              updateMetrics.push("tagsAssigned");
 
               tagIds.push(nextState[existingIndex].id);
               nextState[existingIndex] = {
@@ -337,6 +336,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
               tagIds.push(newTag.id);
               nextState.push(newTag);
             }
+            updateMetrics.push("tagsAssigned");
           }
           trackMetric(updateMetrics, 1);
           return nextState;

@@ -123,6 +123,34 @@ export default function RootLayout() {
                                   ),
                                 })}
                               />
+                              <Drawer.Screen
+                                name="analytics"
+                                options={({ navigation }) => ({
+                                  title: "Analytics",
+                                  headerStyle: {
+                                    backgroundColor: "#333333ff",
+                                  },
+                                  headerTitleStyle: {
+                                    marginLeft: 5,
+                                    fontSize: 35,
+                                    fontWeight: "bold",
+                                    color: "white",
+                                  },
+                                  headerLeft: () => (
+                                    <TouchableOpacity
+                                      // 2. You can now just call toggleDrawer() directly on this scoped object!
+                                      onPress={() => navigation.toggleDrawer()}
+                                      style={{ marginLeft: 10 }}
+                                    >
+                                      <Ionicons
+                                        name="stats-chart-outline"
+                                        size={28}
+                                        color="white"
+                                      />
+                                    </TouchableOpacity>
+                                  ),
+                                })}
+                              />
                             </Drawer>
                             <StatusBar style="auto" />
                           </PaperProvider>

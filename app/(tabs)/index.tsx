@@ -69,6 +69,7 @@ import { useDbErrorToast } from "@/components/shared/db-error-toast";
  * TODOX : Confirmation Diagloue for data deletion/reseting in settings
  * TODO : Home page search is broken right now
  * TODO : Every Modal must have close button and must close on pressing back
+ *  TODO : Habit auto freeze should be optional and toggleable
  *
  */
 

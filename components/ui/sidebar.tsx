@@ -72,9 +72,13 @@ export const Sidebar = (props: any) => {
           label="Analytics"
           labelStyle={{ color: theme.text }}
           icon={({ size }) => (
-            <Ionicons name="analytics-outline" size={size} color={theme.text} />
+            <Ionicons
+              name="stats-chart-outline"
+              size={size}
+              color={theme.text}
+            />
           )}
-          onPress={() => {} /* router.push('/analytics') */}
+          onPress={() => router.push("/analytics/analytics-screen")}
         />
       </View>
     </DrawerContentScrollView>

@@ -61,8 +61,8 @@ export default function HabitModal({
       updateMetrics.push("habitsWithWeeklyGoals");
     }
     updateMetrics.push("habitsAdded");
-    if (visibleInEditMode) trackMetric(updateMetrics, 1);
-    else trackMetric(["habitsEdited"], 1);
+    if (visibleInEditMode) trackMetric(["habitsEdited"], 1);
+    else trackMetric(updateMetrics, 1);
     await onSubmit(finalTagIds);
   };
   //visibleInEditMode && console.log("visibleInEditMode", state.goal);

@@ -101,9 +101,9 @@ const HabitCard = memo(
   }: HabitCardProps) => {
     const { playDeniedFeedback, animatedStyle } = useHabitDeniedFeedback();
     const progress = habit.goal ? habit.streak / habit.goal : 0;
-
     const handlePress = useCallback(() => {
       const result = checkInHabit(habit);
+
       if (result.status === "denied") {
         playDeniedFeedback();
         return;
@@ -112,11 +112,13 @@ const HabitCard = memo(
       const now = new Date();
       const nowSecs =
         now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      const FOUR_AM = 4 * 3600;
       const EIGHT_AM = 8 * 3600;
-      const TEN_PM = 10 * 3600;
-      if (nowSecs <= EIGHT_AM) {
+      const TEN_PM = 22 * 3600;
+      const TWO_AM = 2 * 3600;
+      if (nowSecs <= EIGHT_AM && nowSecs >= FOUR_AM) {
         updatedMetrics.push("habitsCheckedInBefore8am");
-      } else if (nowSecs >= TEN_PM) {
+      } else if (nowSecs >= TEN_PM || nowSecs <= TWO_AM) {
         updatedMetrics.push("habitsCheckedInAfter10pm");
       }
       if (result.habit.frequency === "daily")
