@@ -29,6 +29,7 @@ export const CHART_TILE_CONFIG: Record<string, TileConfigEntry> = {
   task_velocity: { size: 'standard' },
   habit_consistency: { size: 'standard' },
   task_throughput: { size: 'standard' },
+  task_procrastination: { size: 'standard' },
 };
 
 const DEFAULT_TILE_CONFIG: TileConfigEntry = { size: 'standard' };

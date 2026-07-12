@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet, Text } from "react-native";
-import { CartesianChart, Line, Area } from "victory-native";
+import { CartesianChart, Line, Area, useChartPressState } from "victory-native";
 import { LinearGradient, matchFont, vec } from "@shopify/react-native-skia";
 import { ChartProps } from "../charts-registry";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
@@ -18,9 +18,26 @@ export const TaskVelocityChart = ({
   const isDetail = variant === "detail";
   const { heightScale } = getDetailScale("task_velocity");
   const { theme } = useTheme();
-  const font = matchFont({
+  const fontX = matchFont({
+    fontFamily: "sans-serif",
+    fontSize: 6,
+  });
+  const fontY = matchFont({
     fontFamily: "sans-serif",
     fontSize: 12,
+  });
+  const tooltipFont = matchFont({
+    fontFamily: "sans-serif",
+    fontSize: 13,
+    fontWeight: "600",
+  });
+  const tooltipLabelFont = matchFont({
+    fontFamily: "sans-serif",
+    fontSize: 10,
+  });
+  const { state, isActive } = useChartPressState({
+    x: "",
+    y: { completions: 0 },
   });
   const data = MetricsTransformer.getTaskVelocity(tasks);
   return (
@@ -32,23 +49,24 @@ export const TaskVelocityChart = ({
       ]}
     >
       <Text style={[styles.chartTitle, { color: theme.text }]}>
-        Task Velocity
+        When You Get Tasks Done
       </Text>
       <CartesianChart
+        chartPressState={state}
         data={data}
-        xKey="hour"
+        xKey="label"
         yKeys={["completions"]}
         xAxis={{
-          font,
-          title: { text: "Hour", font, color: theme.text },
+          font: fontX,
           lineWidth: 1,
           lineColor: theme.text,
           labelColor: theme.text,
+          labelRotate: -45,
         }}
         yAxis={[
           {
-            font,
-            title: { text: "Task Completions", font, color: theme.text },
+            font: fontY,
+            title: { text: "Task Completions", font: fontY, color: theme.text },
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,
@@ -73,7 +91,7 @@ export const TaskVelocityChart = ({
               points={points.completions}
               color="#ffffff"
               strokeWidth={2.5}
-              curveType="natural"
+              curveType="cardinal50"
               animate={{ type: "timing", duration: 250 }}
             />
           </>
@@ -85,7 +103,7 @@ export const TaskVelocityChart = ({
 
 const styles = StyleSheet.create({
   chartTitle: {
-    fontSize: 16,
+    fontSize: 12,
     marginBottom: 2,
     fontWeight: "bold",
     textAlign: "center",

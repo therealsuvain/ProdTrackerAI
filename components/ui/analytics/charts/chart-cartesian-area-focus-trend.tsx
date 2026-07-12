@@ -19,7 +19,7 @@ export const FocusTrendChart = ({
 }: ChartProps) => {
   const isDetail = variant === "detail";
   const { heightScale } = getDetailScale("focus_trend");
-  const data = MetricsTransformer.getFocusTrend(logs);
+  const data = MetricsTransformer.getTimerDurations(logs);
   const font = matchFont({
     fontFamily: "sans-serif",
     fontSize: 12,
@@ -48,7 +48,7 @@ export const FocusTrendChart = ({
       ]}
     >
       <Text style={[styles.chartTitle, { color: theme.text }]}>
-        Focus Trend
+        Time Logged
       </Text>
       <CartesianChart
         chartPressState={state}

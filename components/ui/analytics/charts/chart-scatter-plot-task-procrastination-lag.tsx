@@ -1,50 +1,60 @@
 import React from "react";
 import { View, StyleSheet, Text } from "react-native";
-import { CartesianChart, Bar, BarGroup, StackedBar } from "victory-native";
-import { matchFont } from "@shopify/react-native-skia";
+import { CartesianChart, Scatter, useChartPressState } from "victory-native";
+import { matchFont, Text as SkiaText } from "@shopify/react-native-skia";
+import { MetricsTransformer } from "@/utils/Analytics/metrics-transformer";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { ChartProps } from "../charts-registry";
-import { MetricsTransformer } from "@/utils/Analytics/metrics-transformer";
 import {
   getDetailScale,
   BASE_CHART_HEIGHT,
 } from "../charts-layout/chart-detail-config";
 
-export const TaskThroughputChart = ({
+export const TaskProcrastinationLagChart = ({
   tasks,
   variant = "grid",
   transformState = undefined,
 }: ChartProps) => {
   const isDetail = variant === "detail";
-  const { heightScale } = getDetailScale("task_throughput");
+  const { heightScale, widthScale } = getDetailScale("circadian_friction");
   const font = matchFont({
     fontFamily: "sans-serif",
     fontSize: 12,
   });
   const { theme } = useTheme();
-  const data = MetricsTransformer.getTaskThroughput(tasks);
-  const yDomainMax = Math.max(...data.map((d) => d.onTime + d.late));
+  const data = MetricsTransformer.getProcrastinationLag(tasks);
+  const tooltipLabelFont = matchFont({
+    fontFamily: "sans-serif",
+    fontSize: 10,
+  });
+  const { state, isActive } = useChartPressState({
+    x: "",
+    y: { lagDays: 0 },
+  });
   return (
     <View
       style={[
         styles.chartContainer,
         ,
-        isDetail && { height: BASE_CHART_HEIGHT * heightScale },
+        isDetail && {
+          height: BASE_CHART_HEIGHT * heightScale,
+        },
       ]}
     >
       <Text style={[styles.chartTitle, { color: theme.text }]}>
-        Task Throughput
+        Task Procrastination
       </Text>
       <CartesianChart
+        chartPressState={state}
         data={data}
         xKey="date"
-        yKeys={["onTime", "late"]}
+        yKeys={["lagDays"]}
         xAxis={{
           font,
+          title: { text: "Date", font, color: theme.text },
           lineWidth: 1,
           lineColor: theme.text,
           labelColor: theme.text,
-          labelRotate: -45,
           formatXLabel: (label) => {
             const date = new Date(label);
             return date.toLocaleDateString("en-US", {
@@ -52,42 +62,37 @@ export const TaskThroughputChart = ({
               day: "numeric",
             });
           },
-          enableRescaling: true,
         }}
         yAxis={[
           {
             font,
-            title: { text: "Created - Completed", font, color: theme.text },
+            title: { text: "Completions", font, color: theme.text },
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,
-            enableRescaling: true,
           },
         ]}
-        domain={{ y: [0, yDomainMax] }}
-        domainPadding={{ left: 10, right: 10 }}
-        //viewport={{ x: [0, 10] }}
         transformState={transformState}
       >
-        {({ points, chartBounds }) => (
-          <StackedBar
-            animate={{ type: "spring" }}
-            //innerPadding={innerPadding}
-            chartBounds={chartBounds}
-            points={[points.onTime, points.late]} // 👈 the order here must match the order above
-            colors={["#11e21b", "sienna"]}
-            barWidth={10}
-            barOptions={({ isBottom, isTop }) => {
-              return {
-                roundedCorners: isTop
-                  ? {
-                      topLeft: 10,
-                      topRight: 10,
-                    }
-                  : undefined,
-              };
-            }}
-          />
+        {({ points }) => (
+          <>
+            <Scatter
+              points={points.lagDays}
+              shape={"square"}
+              color={"#ff9100"}
+              animate={{ type: "spring" }}
+            />
+            {points.lagDays.map((p, i) => (
+              <SkiaText
+                key={i}
+                x={p.x - 10}
+                y={p.y ? p.y - 12 : 0}
+                text={String(data[i].lagDays.toFixed(1))}
+                font={tooltipLabelFont}
+                color={theme.text}
+              />
+            ))}
+          </>
         )}
       </CartesianChart>
     </View>
@@ -102,6 +107,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   chartContainer: {
+    flex: 1,
     height: "99%",
     width: "90%",
   },

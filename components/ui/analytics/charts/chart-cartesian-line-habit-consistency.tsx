@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet, Text } from "react-native";
-import { CartesianChart, Line } from "victory-native";
+import { CartesianChart, Line, useChartPressState } from "victory-native";
 import { matchFont } from "@shopify/react-native-skia";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { ChartProps } from "../charts-registry";
@@ -9,6 +9,8 @@ import {
   getDetailScale,
   BASE_CHART_HEIGHT,
 } from "../charts-layout/chart-detail-config";
+import { SingleSeriesTooltipContent } from "./tool-tips/tooltip-content-single";
+import { TooltipShell } from "./tool-tips/tooltip-shell";
 
 export const HabitConsistencyChart = ({
   metrics,
@@ -22,6 +24,19 @@ export const HabitConsistencyChart = ({
   const font = matchFont({
     fontFamily: "sans-serif",
     fontSize: 12,
+  });
+  const tooltipFont = matchFont({
+    fontFamily: "sans-serif",
+    fontSize: 13,
+    fontWeight: "600",
+  });
+  const tooltipLabelFont = matchFont({
+    fontFamily: "sans-serif",
+    fontSize: 10,
+  });
+  const { state, isActive } = useChartPressState({
+    x: "",
+    y: { adherence: 0 },
   });
   const { theme } = useTheme();
 
@@ -37,6 +52,7 @@ export const HabitConsistencyChart = ({
         Habit Consistency
       </Text>
       <CartesianChart
+        chartPressState={state}
         data={data}
         xKey="date"
         yKeys={["adherence"]}
@@ -66,14 +82,35 @@ export const HabitConsistencyChart = ({
         ]}
         transformState={transformState}
       >
-        {({ points }) => (
-          <Line
-            points={points.adherence}
-            color="#4CAF50"
-            strokeWidth={3}
-            curveType="step"
-            animate={{ type: "timing", duration: 250 }}
-          />
+        {({ points, chartBounds }) => (
+          <>
+            <Line
+              points={points.adherence}
+              color="#4CAF50"
+              strokeWidth={3}
+              curveType="step"
+              animate={{ type: "timing", duration: 250 }}
+            />
+            {isActive && (
+              <TooltipShell
+                x={state.x.position}
+                y={state.y.adherence.position}
+                chartBounds={chartBounds}
+                theme={theme}
+                renderContent={(cardX, cardY) => (
+                  <SingleSeriesTooltipContent
+                    cardX={cardX}
+                    cardY={cardY}
+                    value={state.y.adherence.value}
+                    dateLabel={state.x.value}
+                    theme={theme}
+                    valueFont={tooltipFont}
+                    labelFont={tooltipLabelFont}
+                  />
+                )}
+              ></TooltipShell>
+            )}
+          </>
         )}
       </CartesianChart>
     </View>

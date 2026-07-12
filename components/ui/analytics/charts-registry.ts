@@ -14,6 +14,7 @@ import { TaskVelocityChart } from './charts/chart-cartesian-line-task-velocity';
 import { HabitConsistencyChart } from './charts/chart-cartesian-line-habit-consistency';
 import { FocusTrendChart } from './charts/chart-cartesian-area-focus-trend';
 import { TaskThroughputChart } from './charts/chart-cartesian-bar-task-throughput';
+import { TaskProcrastinationLagChart } from './charts/chart-scatter-plot-task-procrastination-lag';
 
 export interface ChartProps{
   metrics: AppMetrics;
@@ -24,7 +25,7 @@ export interface ChartProps{
   tags? : Tag[];
   categories? : Category[];
   variant?: 'grid' | 'detail';
-  transformState : any
+  transformState? : any
 }
 export const CHART_REGISTRY: Record<string, React.FC<ChartProps>> = {
   execution_funnel: ExecutionFunnelChart,
@@ -35,7 +36,8 @@ export const CHART_REGISTRY: Record<string, React.FC<ChartProps>> = {
   task_velocity : TaskVelocityChart,
   habit_consistency : HabitConsistencyChart,
   focus_trend : FocusTrendChart,
-  task_throughput : TaskThroughputChart
+  task_throughput : TaskThroughputChart,
+  task_procrastination: TaskProcrastinationLagChart
 };
 
 export const DEFAULT_LAYOUT = [

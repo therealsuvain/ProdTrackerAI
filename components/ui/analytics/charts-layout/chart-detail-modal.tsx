@@ -53,11 +53,13 @@ export const ChartDetailModal = ({
     scaleY: 1.0,
   });
   const panLeft = () => {
-    const { translateX } = getTransformComponents(transformState.matrix.value);
+    const { translateX, translateY } = getTransformComponents(
+      transformState.matrix.value,
+    );
     transformState.matrix.value = setTranslate(
       transformState.matrix.value,
       translateX + 50,
-      0,
+      translateY,
     );
   };
 
@@ -67,28 +69,34 @@ export const ChartDetailModal = ({
   };
 
   const panRight = () => {
-    const { translateX } = getTransformComponents(transformState.matrix.value);
+    const { translateX, translateY } = getTransformComponents(
+      transformState.matrix.value,
+    );
     transformState.matrix.value = setTranslate(
       transformState.matrix.value,
       translateX - 50,
-      0,
+      translateY,
     );
   };
 
   const panUp = () => {
-    const { translateY } = getTransformComponents(transformState.matrix.value);
+    const { translateX, translateY } = getTransformComponents(
+      transformState.matrix.value,
+    );
     transformState.matrix.value = setTranslate(
       transformState.matrix.value,
-      0,
+      translateX,
       translateY + 50,
     );
   };
 
   const panDown = () => {
-    const { translateY } = getTransformComponents(transformState.matrix.value);
+    const { translateX, translateY } = getTransformComponents(
+      transformState.matrix.value,
+    );
     transformState.matrix.value = setTranslate(
       transformState.matrix.value,
-      0,
+      translateX,
       translateY - 50,
     );
   };

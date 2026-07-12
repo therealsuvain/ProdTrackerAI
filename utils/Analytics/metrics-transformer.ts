@@ -115,47 +115,89 @@ export const MetricsTransformer = {
    * Maps task completions to their respective hours for the current day.
    * Time Complexity: O(T) where T is today's tasks.
    */
-  getTaskVelocity(tasks: Task[] = []): { hour: number; completions: number }[] {
-    const today = new Date().toDateString();
-    
-    // Initialize a 24-hour array with 0 completions
-    const velocityMap = Array.from({ length: 24 }, (_, i) => ({ hour: i, completions: 0 }));
+  getTaskVelocity(tasks: Task[] = [],windowDays = 30): { label: string; completions: number }[] {
+   /* const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - windowDays);
 
-    tasks.forEach(task => {
-      if (task.completedAt && new Date(task.completedAt).toDateString() === today) {
-        const hour = new Date(task.completedAt).getHours();
-        velocityMap[hour].completions += 1;
-      }
-    });
+  const hourMap = Array.from({ length: 24 }, (_, i) => ({ hour: i, completions: 0 }));
 
-    return velocityMap;
+  tasks.forEach(task => {
+    if (!task.completedAt) return;
+    const completedDate = new Date(task.completedAt);
+    if (completedDate < cutoff) return;
+    hourMap[completedDate.getHours()].completions += 1;
+  });
+
+  return hourMap; */
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - windowDays);
+
+  const buckets = {
+    "Early Morning": 0,
+    "Morning": 0,
+    "Afternoon": 0,
+    "Evening": 0,
+    "Night": 0,
+  };
+
+  tasks.forEach(task => {
+    if (!task.completedAt) return;
+    const completedDate = new Date(task.completedAt);
+    if (completedDate < cutoff) return;
+    const hour = completedDate.getHours();
+
+    if (hour >= 5 && hour < 8) buckets["Early Morning"]++;
+    else if (hour >= 8 && hour < 12) buckets["Morning"]++;
+    else if (hour >= 12 && hour < 17) buckets["Afternoon"]++;
+    else if (hour >= 17 && hour < 21) buckets["Evening"]++;
+    else buckets["Night"]++;
+  });
+
+  return Object.entries(buckets).map(([label, completions]) => ({ label, completions }));
   },
+
+  getProcrastinationLag(tasks: Task[] = []) {
+  return tasks
+    .filter(t => t.completed && t.completedAt && t.dueDate)
+    .map(t => {
+      const due = new Date(t.dueDate);
+      const completed = new Date(t.completedAt!);
+      const lagDays = Math.round((completed.getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
+      return { date: t.completedAt!.split('T')[0], lagDays, title: t.title, priority: t.priority };
+    })
+    .sort((a, b) => a.date.localeCompare(b.date));
+},
+
   getTaskThroughput(tasks: Task[] = []) {
-    const throughputMap = tasks.reduce((acc, task) => {
-      // Aggregate Creation
-      if (task.dueDate) {
-        const due = new Date(task.dueDate).toISOString().split('T')[0];
-        if (!acc[due]) acc[due] = { date: due, due: 0, completed: 0 };
-        acc[due].due += 1;
+   const map = tasks.reduce((acc, task) => {
+    if (!task.completed || !task.completedAt) return acc;
+
+    const completedDate = new Date(task.completedAt).toISOString().split('T')[0];
+    if (!acc[completedDate]) {
+      acc[completedDate] = { date: completedDate, onTime: 0, late: 0};
+    }
+
+    
+      const due = new Date(task.dueDate);
+      const completed = new Date(task.completedAt);
+      if (completed.getTime() <= due.getTime() + 24 * 60 * 60 * 1000) {
+        // grace of same-day completion
+        acc[completedDate].onTime += 1;
+      } else {
+        acc[completedDate].late += 1;
       }
-      
-      // Aggregate Completion
-      if (task.completedAt) {
-        const completedDate = new Date(task.completedAt).toISOString().split('T')[0];
-        if (!acc[completedDate]) acc[completedDate] = { date: completedDate, due: 0, completed: 0 };
-        acc[completedDate].completed += 1;
-      }
-      return acc;
-    }, {} as Record<string, { date: string; due: number; completed: number }>);
-  //console.log(Object.values(throughputMap).sort((a, b) => a.date.localeCompare(b.date)));
-    return Object.values(throughputMap).sort((a, b) => a.date.localeCompare(b.date));
+    
+    return acc;
+  }, {}as Record<string,{ date: string, onTime: number, late: number}>);
+
+  return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
   },
 
   /**
-   * Aggregates total focus duration per day from raw logs.
-   * Provides a macro-view of deep work consistency.
+   * Aggregates total timer duration per day from raw logs.
+   * 
    */
-  getFocusTrend(logs: TimerLog[] = []) {
+  getTimerDurations(logs: TimerLog[] = []) {
     const trendMap = logs.reduce((acc, log) => {
       if (!log.startTime || !log.duration) return acc;
       
@@ -171,7 +213,7 @@ export const MetricsTransformer = {
 
   /**
    * Calculates the rolling habit adherence percentage.
-   * Utilizes the raw AppMetrics daily dictionary.
+   * checked-in/ (checked-in + missed).
    */
   getHabitConsistency(dailyData: Record<string, any> = {}) {
     return Object.keys(dailyData)
