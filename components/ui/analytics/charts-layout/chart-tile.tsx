@@ -53,7 +53,7 @@ export const ChartTile = ({
   onRemove,
   children,
 }: Props) => {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const { triggerHaptic } = useHaptics();
   const x = useSharedValue(rect.x);
   const y = useSharedValue(rect.y);
@@ -86,9 +86,9 @@ export const ChartTile = ({
         delay,
         withRepeat(
           withSequence(
-            withTiming(-1, { duration: 45 }),
-            withTiming(1, { duration: 90 }),
-            withTiming(0, { duration: 45 }),
+            withTiming(-0.75, { duration: 30 }),
+            withTiming(0.75, { duration: 60 }),
+            withTiming(0, { duration: 30 }),
           ),
           -1,
           false,
@@ -173,7 +173,9 @@ export const ChartTile = ({
         style={[
           styles.tile,
           {
-            backgroundColor: theme.taskDarkPrimary ?? "#1C1C1E",
+            backgroundColor: isDarkMode
+              ? theme.taskDarkPrimary
+              : theme.greyTimeline,
             borderColor: theme.taskDarkSecondary ?? "rgba(255,255,255,0.08)",
             shadowOpacity: isDragged ? 0.35 : 0.15,
           },

@@ -33,6 +33,7 @@ export const AddTaskHandler: AIHandler = {
     AIActionMemory.push({ type: "DELETE_TASK", payload: { task: newTask }, timestamp: Date.now() });
     await context.addTask(newTask);
     context.trackMetric(["tasksAdded"], 1);
+    context.trackMetric(["tasksAdded"], 1,'ai');
     console.log(`AI Action: Added task "${newTask.title}"`);
     const { id, embedding, ...rest } = newTask;
     return { status: "success", task: { id: id.slice(0, 8), ...rest } }
@@ -71,6 +72,7 @@ export const EditTaskHandler: AIHandler = {
     ); */
     AIActionMemory.push({ type: 'REVERT_UPDATE_TASK', payload: { task: oldTask }, timestamp: Date.now() });
     context.trackMetric(["tasksEdited"], 1);
+    context.trackMetric(["tasksEdited"], 1,'ai');
     await context.editTask(updatedTask);
     const { id, embedding, ...rest } = updatedTask;
     return { status: "success", task: { id: id.slice(0, 8), ...rest } }
@@ -90,8 +92,10 @@ export const DeleteTaskHandler: AIHandler = {
     await context.removeTask(oldTask.id);
     if (oldTask.completed) {
       context.trackMetric(["tasksDeleted"], 1);
+      context.trackMetric(["tasksDeleted"], 1, 'ai');
     } else {
       context.trackMetric(["tasksDeleted", "tasksAbandoned"], 1);
+      context.trackMetric(["tasksDeleted", "tasksAbandoned"], 1 , 'ai');
     }
     const { id, title } = oldTask;
     return { status: "success", task: { id: id.slice(0, 8), title } }
@@ -110,6 +114,7 @@ export const CompleteTaskHandler: AIHandler = {
     AIActionMemory.push({ type: 'REVERT_UPDATE_TASK', payload: { task: oldTask }, timestamp: Date.now() });
     await context.toggleTask(oldTask.id);
     context.trackMetric(["tasksCompleted"], 1);
+    context.trackMetric(["tasksCompleted"], 1, 'ai');
     const { id, title } = oldTask;
     return { status: "success", task: { id: id.slice(0, 8), title } }
   }

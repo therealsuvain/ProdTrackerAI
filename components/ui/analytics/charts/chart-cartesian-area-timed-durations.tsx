@@ -12,7 +12,7 @@ import {
 import { SingleSeriesTooltipContent } from "./tool-tips/tooltip-content-single";
 import { TooltipShell } from "./tool-tips/tooltip-shell";
 
-export const FocusTrendChart = ({
+export const TimedDurationsChart = ({
   logs,
   variant = "grid",
   transformState = undefined,
@@ -67,14 +67,28 @@ export const FocusTrendChart = ({
               day: "numeric",
             });
           },
+          labelRotate: -45,
         }}
         yAxis={[
           {
             font,
-            title: { text: "Created - Completed", font, color: theme.text },
+            title: { text: "Seconds Logged", font, color: theme.text },
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,
+            formatYLabel: (label) => {
+              const value = Number(label);
+
+              if (value >= 1_000_000) {
+                return `${(value / 1_000_000).toFixed(value % 1_000_000 === 0 ? 0 : 1)}M`;
+              }
+
+              if (value >= 1_000) {
+                return `${(value / 1_000).toFixed(value % 1_000 === 0 ? 0 : 1)}k`;
+              }
+
+              return value.toString();
+            },
           },
         ]}
         transformState={transformState}

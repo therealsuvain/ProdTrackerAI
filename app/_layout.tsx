@@ -143,7 +143,7 @@ export default function RootLayout() {
                                       style={{ marginLeft: 10 }}
                                     >
                                       <Ionicons
-                                        name="stats-chart-outline"
+                                        name="menu"
                                         size={28}
                                         color="white"
                                       />

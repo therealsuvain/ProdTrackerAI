@@ -13,6 +13,7 @@ import {
   AppMetrics,
   DailyMetricKey,
   DailyMetrics,
+  DailyMetricsWithAI,
   DefaultDailyMetrics,
   DefaultMetrics,
   GlobalMetricKey,
@@ -301,7 +302,10 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addTags = useCallback(
-    async (tagsPayload: { id: string; name: string }[]): Promise<string[]> => {
+    async (
+      tagsPayload: { id: string; name: string }[],
+      isFromAI?: boolean,
+    ): Promise<string[]> => {
       const now = new Date().toISOString();
       const tagIds: string[] = [];
       const newTagsPayload: Tag[] = tagsPayload.map(({ id, name }) => ({
@@ -339,6 +343,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
             updateMetrics.push("tagsAssigned");
           }
           trackMetric(updateMetrics, 1);
+          if (isFromAI) trackMetric(updateMetrics, 1, "ai");
           return nextState;
         },
         () => insertTags(newTagsPayload),
@@ -372,8 +377,13 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   );
 
   const deleteUserTag = useCallback(
-    async (id: string, fallbackId?: string | null): Promise<void> => {
+    async (
+      id: string,
+      fallbackId?: string | null,
+      isFromAI?: boolean,
+    ): Promise<void> => {
       trackMetric(["tagsDeleted"], 1);
+      if (isFromAI) trackMetric(["tagsDeleted"], 1, "ai");
       await optimisticTagMutation(
         (prev) => {
           const deletedTag = prev.find((t) => t.id === id);
@@ -420,12 +430,15 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   );
 
   const addCategory = useCallback(
-    async (categoryPayload: {
-      id: string;
-      name: string;
-      color: string;
-      icon: string;
-    }): Promise<string> => {
+    async (
+      categoryPayload: {
+        id: string;
+        name: string;
+        color: string;
+        icon: string;
+      },
+      isFromAI?: boolean,
+    ): Promise<string> => {
       const now = new Date().toISOString();
       const { id, name, color, icon } = categoryPayload;
       const category: Category = {
@@ -438,6 +451,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         updatedAt: now,
       };
       trackMetric(["categoriesAdded"], 1);
+      if (isFromAI) trackMetric(["categoriesAdded"], 1, "ai");
       await optimisticCategoryMutation(
         (prev) => [...prev, category],
         () => insertCategory(category),
@@ -590,13 +604,16 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       }, 6000); // 6s display duration
     }
   }, []);
+
   useEffect(() => {
     const handleMetricTrack = async ({
       keys,
       amount,
+      actor = "user",
     }: {
       keys: GlobalMetricKey[];
       amount: number;
+      actor?: "user" | "ai";
     }) => {
       console.log(
         `[EventBus] Caught metric:track -> Keys: ${keys}, Amount: ${amount}`,
@@ -606,27 +623,53 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         const today = new Date().toISOString().split("T")[0];
 
         const nextGlobal = { ...prevMetrics.global };
-        const nextTodayEntry: DailyMetrics = prevMetrics.daily[today]
+        const nextTodayEntry: DailyMetricsWithAI = prevMetrics.daily[today]
           ? { ...prevMetrics.daily[today] }
           : { ...DefaultDailyMetrics };
 
         for (const key of keys) {
           // Global
           const globalKey = key as GlobalMetricKey;
-          if (globalKey in nextGlobal && globalKey !== "lastSyncedAt") {
-            nextGlobal[globalKey] = Math.max(
-              0,
-              (nextGlobal[globalKey] as number) + amount,
-            );
+          if (actor === "ai") {
+            if (
+              globalKey in nextGlobal.aiMetrics &&
+              globalKey !== "lastSyncedAt" &&
+              globalKey !== "aiMetrics"
+            ) {
+              nextGlobal.aiMetrics[globalKey] = Math.max(
+                0,
+                (nextGlobal.aiMetrics[globalKey] as number) + amount,
+              );
+            }
+          } else {
+            if (
+              globalKey in nextGlobal &&
+              globalKey !== "lastSyncedAt" &&
+              globalKey !== "aiMetrics"
+            ) {
+              nextGlobal[globalKey] = Math.max(
+                0,
+                (nextGlobal[globalKey] as number) + amount,
+              );
+            }
           }
 
           // Daily
           const dailyKey = key as DailyMetricKey;
-          if (dailyKey in nextTodayEntry) {
-            nextTodayEntry[dailyKey] = Math.max(
-              0,
-              (nextTodayEntry[dailyKey] as number) + amount,
-            );
+          if (actor === "ai") {
+            if (dailyKey in nextTodayEntry.aiMetrics) {
+              nextTodayEntry[dailyKey] = Math.max(
+                0,
+                (nextTodayEntry[dailyKey] as number) + amount,
+              );
+            }
+          } else {
+            if (dailyKey in nextTodayEntry) {
+              nextTodayEntry[dailyKey] = Math.max(
+                0,
+                (nextTodayEntry[dailyKey] as number) + amount,
+              );
+            }
           }
         }
 
@@ -650,7 +693,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
 
       try {
         for (const key of keys) {
-          if (key === "lastSyncedAt") {
+          if (key === "lastSyncedAt" || key === "aiMetrics") {
             continue;
           }
           const optimisticNewValue = currentGlobal[key] + amount;
@@ -687,9 +730,12 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   }, [processToastQueue]);
 
   // Your trackMetric function becomes just a mitt emit!
-  const trackMetric = useCallback((keys: GlobalMetricKey[], amount: number) => {
-    metricsEventBus.emit("metric:track", { keys, amount });
-  }, []);
+  const trackMetric = useCallback(
+    (keys: GlobalMetricKey[], amount: number, actor?: "user" | "ai") => {
+      metricsEventBus.emit("metric:track", { keys, amount, actor });
+    },
+    [],
+  );
 
   // Initialize and load data
   const refreshTagsCatsAchievements = useCallback(async () => {

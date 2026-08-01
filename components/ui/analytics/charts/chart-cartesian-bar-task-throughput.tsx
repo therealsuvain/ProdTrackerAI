@@ -35,6 +35,17 @@ export const TaskThroughputChart = ({
       <Text style={[styles.chartTitle, { color: theme.text }]}>
         Task Throughput
       </Text>
+      <View style={styles.legend}>
+        <View style={styles.legendItem}>
+          <View style={[styles.colorBox, { backgroundColor: "#11e21b" }]} />
+          <Text style={{ color: theme.text }}>Created</Text>
+        </View>
+
+        <View style={styles.legendItem}>
+          <View style={[styles.colorBox, { backgroundColor: "#ff5100" }]} />
+          <Text style={{ color: theme.text }}>Completed</Text>
+        </View>
+      </View>
       <CartesianChart
         data={data}
         xKey="date"
@@ -57,7 +68,6 @@ export const TaskThroughputChart = ({
         yAxis={[
           {
             font,
-            title: { text: "Created - Completed", font, color: theme.text },
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,
@@ -75,7 +85,7 @@ export const TaskThroughputChart = ({
             //innerPadding={innerPadding}
             chartBounds={chartBounds}
             points={[points.onTime, points.late]} // 👈 the order here must match the order above
-            colors={["#11e21b", "sienna"]}
+            colors={["#11e21b", "#ff5100"]}
             barWidth={10}
             barOptions={({ isBottom, isTop }) => {
               return {
@@ -104,5 +114,21 @@ const styles = StyleSheet.create({
   chartContainer: {
     height: "99%",
     width: "90%",
+  },
+  legend: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 16,
+    marginBottom: 8,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  colorBox: {
+    width: 10,
+    height: 10,
+    marginRight: 6,
+    borderRadius: 2,
   },
 });

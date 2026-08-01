@@ -73,7 +73,7 @@ export const HabitConsistencyChart = ({
         yAxis={[
           {
             font,
-            title: { text: "Created - Completed", font, color: theme.text },
+            title: { text: "Planned Checkins", font, color: theme.text },
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,

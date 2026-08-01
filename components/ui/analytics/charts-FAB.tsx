@@ -16,8 +16,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 interface Props {
   activeWidgets: string[];
   toggleWidget: (widgetId: string) => void;
+  resetLayout: () => void;
 }
-export const LayoutManagerFAB = ({ activeWidgets, toggleWidget }: Props) => {
+export const LayoutManagerFAB = ({
+  activeWidgets,
+  toggleWidget,
+  resetLayout,
+}: Props) => {
   const [modalVisible, setModalVisible] = useState(false);
   const insets = useSafeAreaInsets();
 

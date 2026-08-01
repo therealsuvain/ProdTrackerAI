@@ -36,7 +36,7 @@ const getCellOpacity = (count: number, max: number): number => {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const AnalyticsHeatmap = ({ metrics }: AnalyticsHeatmapProps) => {
-  const { theme } = useContext(ThemeContext);
+  const { theme, isDarkMode } = useContext(ThemeContext);
   const [tooltip, setTooltip] = useState<{
     checkins: number;
     completed: number;
@@ -131,7 +131,9 @@ export const AnalyticsHeatmap = ({ metrics }: AnalyticsHeatmapProps) => {
             style={[
               styles.subtitle,
               {
-                color: theme.blueLightPrimary,
+                color: isDarkMode
+                  ? theme.blueLightPrimary
+                  : theme.blueDarkPrimary,
                 flexWrap: "wrap",
                 flexDirection: "row",
               },
@@ -143,7 +145,9 @@ export const AnalyticsHeatmap = ({ metrics }: AnalyticsHeatmapProps) => {
             style={[
               styles.subtitle,
               {
-                color: theme.blueLightPrimary,
+                color: isDarkMode
+                  ? theme.blueLightPrimary
+                  : theme.blueDarkPrimary,
                 flexWrap: "wrap",
                 flexDirection: "row",
               },
@@ -234,13 +238,17 @@ export const AnalyticsHeatmap = ({ metrics }: AnalyticsHeatmapProps) => {
                     {
                       backgroundColor:
                         opacity > 0
-                          ? theme.blueLightPrimary
+                          ? isDarkMode
+                            ? theme.blueLightPrimary
+                            : theme.blueDarkPrimary
                           : `${theme.greyBaseTertiary}`, // ~6% white for empty cells
                       opacity: opacity > 0 ? opacity : 1, // empty cells use bg opacity trick
                       // Today gets a distinct ring instead of just colour fill
                       borderWidth: isToday ? 1.5 : 0,
                       borderColor: isToday
-                        ? theme.blueLightPrimary
+                        ? isDarkMode
+                          ? theme.blueLightPrimary
+                          : theme.blueDarkPrimary
                         : "transparent",
                       // Empty today cell still needs to be visible
                       ...(isToday && opacity === 0
@@ -267,13 +275,26 @@ export const AnalyticsHeatmap = ({ metrics }: AnalyticsHeatmapProps) => {
               styles.legendCell,
               {
                 backgroundColor:
-                  i === 0 ? theme.greyBaseTertiary : theme.blueLightPrimary,
+                  i === 0
+                    ? theme.greyBaseTertiary
+                    : isDarkMode
+                      ? theme.blueLightPrimary
+                      : theme.blueDarkPrimary,
                 opacity: i === 0 ? 1 : op,
               },
             ]}
           />
         ))}
-        <Text style={[styles.legendLabel, { color: theme.blueLightPrimary }]}>
+        <Text
+          style={[
+            styles.legendLabel,
+            {
+              color: isDarkMode
+                ? theme.blueLightPrimary
+                : theme.blueDarkPrimary,
+            },
+          ]}
+        >
           More
         </Text>
       </View>

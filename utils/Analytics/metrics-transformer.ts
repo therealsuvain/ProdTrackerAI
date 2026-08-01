@@ -1,5 +1,5 @@
 import { Category } from '@/types/category';
-import { AppMetrics, DailyMetrics } from '@/types/metrics'; // Adjust path as needed
+import { AppMetrics, DailyMetrics, DailyMetricsWithAI } from '@/types/metrics'; // Adjust path as needed
 import { Task } from '@/types/task';
 import { TimerLog } from '@/types/timer';
 
@@ -23,13 +23,39 @@ export const MetricsTransformer = {
   /**
    * Maps AI actions against total time tracked to prove ROI.
    */
-  getAILeverageData(dailyData: Record<string, DailyMetrics>) {
+  getAILeverageData(dailyData: Record<string, DailyMetricsWithAI>) {
     return Object.keys(dailyData)
       .sort()
       .map(date => ({
         date,
-        timeTracked: dailyData[date].timeTracked ?? 0,
-        aiActions: dailyData[date].chatActionsConfirmed ?? 0,
+        manualActions: dailyData[date].tasksAdded  -  dailyData[date].aiMetrics.tasksAdded  + 
+        dailyData[date].tasksCompleted - dailyData[date].aiMetrics.tasksCompleted + 
+        dailyData[date].tasksDeleted - dailyData[date].aiMetrics.tasksDeleted +
+        dailyData[date].tasksEdited - dailyData[date].aiMetrics.tasksEdited +
+        dailyData[date].habitsAdded - dailyData[date].aiMetrics.habitsAdded +
+        dailyData[date].habitsCheckedIn  - dailyData[date].aiMetrics.habitsCheckedIn +  
+        dailyData[date].habitsFrozen - dailyData[date].aiMetrics.habitsFrozen + 
+        dailyData[date].habitsDeleted - dailyData[date].aiMetrics.habitsDeleted +
+        dailyData[date].habitsEdited - dailyData[date].aiMetrics.habitsEdited +
+        dailyData[date].eventsAdded  -  dailyData[date].aiMetrics.eventsAdded  + 
+        dailyData[date].eventsDeleted - dailyData[date].aiMetrics.eventsDeleted +
+        dailyData[date].eventsEdited - dailyData[date].aiMetrics.eventsEdited +
+        dailyData[date].tagsAdded  -  dailyData[date].aiMetrics.tagsAdded  + 
+        dailyData[date].tagsDeleted - dailyData[date].aiMetrics.tagsDeleted +
+        dailyData[date].tagsEdited - dailyData[date].aiMetrics.tagsEdited +
+        dailyData[date].categoriesAdded  -  dailyData[date].aiMetrics.categoriesAdded  + 
+        dailyData[date].categoriesDeleted - dailyData[date].aiMetrics.categoriesDeleted +
+        dailyData[date].categoriesEdited - dailyData[date].aiMetrics.categoriesEdited +
+        dailyData[date].logsAdded  -  dailyData[date].aiMetrics.logsAdded  + 
+        dailyData[date].logsDeleted - dailyData[date].aiMetrics.logsDeleted +
+        dailyData[date].logsEdited - dailyData[date].aiMetrics.logsEdited ,
+
+        aiActions: dailyData[date].aiMetrics.tasksAdded  + dailyData[date].aiMetrics.tasksCompleted +  dailyData[date].aiMetrics.tasksDeleted + dailyData[date].aiMetrics.tasksEdited + 
+        dailyData[date].aiMetrics.habitsAdded + dailyData[date].aiMetrics.habitsCheckedIn + dailyData[date].aiMetrics.habitsFrozen + dailyData[date].aiMetrics.habitsEdited +
+        dailyData[date].aiMetrics.habitsDeleted + dailyData[date].aiMetrics.eventsAdded + dailyData[date].aiMetrics.eventsDeleted + dailyData[date].aiMetrics.eventsEdited +
+        dailyData[date].aiMetrics.tagsAdded + dailyData[date].aiMetrics.tagsDeleted + dailyData[date].aiMetrics.tagsEdited +
+        dailyData[date].aiMetrics.categoriesAdded + dailyData[date].aiMetrics.categoriesDeleted + dailyData[date].aiMetrics.categoriesEdited +
+        dailyData[date].aiMetrics.logsAdded + dailyData[date].aiMetrics.logsDeleted + dailyData[date].aiMetrics.logsEdited,
       }));
   },
 
@@ -47,7 +73,7 @@ export const MetricsTransformer = {
       // Look back up to 7 days
       for (let i = Math.max(0, index - windowSize + 1); i <= index; i++) {
         const targetDay = dailyData[dates[i]];
-        sum += (targetDay.tasksCompleted ?? 0) + (targetDay.habitsCheckedIn ?? 0);
+        sum += (targetDay.tasksCompleted ?? 0) + (targetDay.habitsCheckedIn ?? 0) + (targetDay.logsAdded ?? 0);
         count++;
       }
 

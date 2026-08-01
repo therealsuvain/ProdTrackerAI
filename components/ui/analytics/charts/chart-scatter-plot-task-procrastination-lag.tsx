@@ -51,7 +51,6 @@ export const TaskProcrastinationLagChart = ({
         yKeys={["lagDays"]}
         xAxis={{
           font,
-          title: { text: "Date", font, color: theme.text },
           lineWidth: 1,
           lineColor: theme.text,
           labelColor: theme.text,
@@ -62,6 +61,7 @@ export const TaskProcrastinationLagChart = ({
               day: "numeric",
             });
           },
+          labelRotate: -45,
         }}
         yAxis={[
           {

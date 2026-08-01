@@ -43,7 +43,7 @@ export const TASK_ACHIEVEMENTS: AchievementDefinition[] = [
     {
         id: 'tasks_250',
         title: 'TaskMaster',
-        description: 'Complete 1,000 tasks.',
+        description: 'Complete 250 tasks.',
         unlockedDescription: 'You\'ve gathered serious momentum.',
         tier: 'gold',
         target: 250,
@@ -52,7 +52,7 @@ export const TASK_ACHIEVEMENTS: AchievementDefinition[] = [
     {
         id: 'tasks_500',
         title: 'The Chosen One',
-        description: 'Complete 2,000 tasks.',
+        description: 'Complete 500 tasks.',
         unlockedDescription: 'The first one, the real one',
         tier: 'platinum',
         target: 500,

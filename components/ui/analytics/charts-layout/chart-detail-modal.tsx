@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Modal,
   View,
@@ -14,6 +14,7 @@ import {
   getDetailScale,
   BASE_CHART_HEIGHT,
   MODAL_BASE_WIDTH,
+  CHART_INFO_DETAILS,
 } from "./chart-detail-config";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -23,6 +24,7 @@ import {
   getTransformComponents,
 } from "victory-native";
 import { ChartProps } from "../charts-registry";
+import { ChartInfoModal } from "./charts-explanation-modal";
 
 interface Props {
   visible: boolean;
@@ -39,8 +41,9 @@ export const ChartDetailModal = ({
   chartId,
   children,
 }: Props) => {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const { heightScale, widthScale } = getDetailScale(chartId ?? "");
+  const [chartInfoModal, setChartInfoModal] = useState(false);
 
   const wrapperWidth = Math.min(
     MODAL_BASE_WIDTH * widthScale,
@@ -122,20 +125,31 @@ export const ChartDetailModal = ({
       scaleY - 0.1,
     );
   };
+
+  const onCloseChartInfo = () => {
+    setChartInfoModal(false);
+  };
+
+  const onChartClose = () => {
+    onClose();
+    resetView();
+  };
   return (
     <Modal
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={onChartClose}
     >
       <GestureHandlerRootView>
-        <Pressable style={styles.backdrop} onPress={onClose}>
+        <Pressable style={styles.backdrop} onPress={onChartClose}>
           <Pressable
             style={[
               styles.card,
               {
-                backgroundColor: theme.taskDarkPrimary ?? "#1C1C1E",
+                backgroundColor: isDarkMode
+                  ? theme.taskDarkPrimary
+                  : theme.greyTimeline,
                 borderColor:
                   theme.taskDarkSecondary ?? "rgba(255,255,255,0.08)",
               },
@@ -155,8 +169,14 @@ export const ChartDetailModal = ({
                 : children}
             </View>
             {/*  </View> */}
-            <Pressable onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>x</Text>
+            <Pressable
+              onPress={() => setChartInfoModal(true)}
+              style={styles.helpButton}
+            >
+              <Ionicons name="help-outline" size={24} color={theme.whiteBase} />
+            </Pressable>
+            <Pressable onPress={onChartClose} style={styles.closeButton}>
+              <Ionicons name="close" size={24} color={theme.text} />
             </Pressable>
             <View style={{ flexDirection: "row", gap: 12, marginTop: 20 }}>
               <Pressable
@@ -280,6 +300,13 @@ export const ChartDetailModal = ({
           </Pressable>
         </Pressable>
       </GestureHandlerRootView>
+      {chartInfoModal && (
+        <ChartInfoModal
+          visible={chartInfoModal}
+          onClose={onCloseChartInfo}
+          chartDetails={CHART_INFO_DETAILS[chartId ?? ""]}
+        />
+      )}
     </Modal>
   );
 };
@@ -314,7 +341,18 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "#ffffff1a",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  helpButton: {
+    position: "absolute",
+    top: 8,
+    right: 44,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#ffffff1a",
     alignItems: "center",
     justifyContent: "center",
   },

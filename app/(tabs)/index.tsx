@@ -70,7 +70,11 @@ import { useDbErrorToast } from "@/components/shared/db-error-toast";
  * TODO : Home page search is broken right now
  * TODO : Every Modal must have close button and must close on pressing back
  *  TODO : Habit auto freeze should be optional and toggleable
- *
+ * TODO : The AI chat always has to have chat history avaliable to it,
+ * for example I asked the current chat logic , "how to read a scatter plot", it gave a base explannation on what a scatter plot is
+ * but not how to read it, in the follow up , I asked , "yea, but how to read it tho", it answered some bullshit and asked me what
+ * "it" is . It forgot what I said before.
+ *TODO : Migrate to Interaction API for googlegenAI lib
  */
 
 function HomeScreenInner() {

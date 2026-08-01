@@ -102,6 +102,7 @@ export const RevertLastActionHandler: AIHandler = {
                         }
                         await context.removeTask(lastAction.payload.task.id);
                         context.trackMetric(["tasksAdded"], -1);
+                        context.trackMetric(["tasksAdded"], -1,'ai');
                         break;
                     case 'ADD_DELETED_TASK':
                         if (lastAction.payload.task.notificationId) {
@@ -109,9 +110,12 @@ export const RevertLastActionHandler: AIHandler = {
                         }
                         await context.addTask(lastAction.payload.task);
                         if (lastAction.payload.task.completed)
-                            context.trackMetric(["tasksDeleted"], -1);
+                            {context.trackMetric(["tasksDeleted"], -1);
+                        context.trackMetric(["tasksDeleted"], -1, 'ai');}
                         else
-                            context.trackMetric(["tasksDeleted", "tasksAbandoned"], -1);
+                            {context.trackMetric(["tasksDeleted", "tasksAbandoned"], -1);
+                                context.trackMetric(["tasksDeleted", "tasksAbandoned"], -1, 'ai');
+                            }
                         break;
                     case 'REVERT_UPDATE_TASK':
                         if (lastAction.payload.task.notificationId) {
@@ -119,6 +123,7 @@ export const RevertLastActionHandler: AIHandler = {
                             lastAction.payload.task.notificationId = await scheduleReminderTasks(lastAction.payload.task);
                         }
                         context.trackMetric(["tasksEdited"], -1);
+                        context.trackMetric(["tasksEdited"], -1,'ai');
                         await context.editTask(lastAction.payload.task);
                         break;
                     case 'BATCH_REVERT_TASKS':
@@ -131,9 +136,11 @@ export const RevertLastActionHandler: AIHandler = {
                         await context.removeHabit(lastAction.payload.habit.id);
                         if (lastAction.payload.habit.frequency === 'daily') {
                             context.trackMetric(["habitsAdded", "habitsWithDailyGoals"], -1);
+                            context.trackMetric(["habitsAdded", "habitsWithDailyGoals"], -1,'ai');
                         }
                         else {
                             context.trackMetric(["habitsAdded", "habitsWithWeeklyGoals"], -1);
+                            context.trackMetric(["habitsAdded", "habitsWithWeeklyGoals"], -1,'ai');
                         }
 
                         break;
@@ -145,16 +152,20 @@ export const RevertLastActionHandler: AIHandler = {
                         await context.addHabit(lastAction.payload.habit);
                         if (lastAction.payload.habit.streak < lastAction.payload.habit.goal && lastAction.payload.habit.history.length === 0) {
                             context.trackMetric(["habitsDeleted", "habitsAbandoned"], -1);
+                            context.trackMetric(["habitsDeleted", "habitsAbandoned"], -1,'ai');
                         }
                         else {
+                            context.trackMetric(["habitsDeleted"], -1,'ai');
                             context.trackMetric(["habitsDeleted"], -1);
                         }
                         break;
                     case 'REVERT_UPDATE_HABIT':
+                        //TODO missing logic for metric updation in case of undoing habit checking and freezing
                         if (lastAction.payload.habit.notificationId) {
                             lastAction.payload.habit.notificationId = await scheduleReminderHabits(lastAction.payload.habit);
                         }
                         context.trackMetric(["habitsEdited"], -1);
+                        context.trackMetric(["habitsEdited"], -1,'ai');
                         await context.editHabit(lastAction.payload.habit);
                         break;
                     case 'BATCH_REVERT_HABITS':
@@ -204,6 +215,7 @@ export const RevertLastActionHandler: AIHandler = {
                         }
                         metricsArr.push("eventsAdded")
                         context.trackMetric(metricsArr, -1);
+                        context.trackMetric(metricsArr, -1, 'ai');
                         break;
                     case 'ADD_DELETED_EVENT':
                         if (lastAction.payload.event.reminder) {
@@ -216,6 +228,7 @@ export const RevertLastActionHandler: AIHandler = {
                         }
                         await context.addEvent(lastAction.payload.event);
                         context.trackMetric(["eventsDeleted"], -1);
+                        context.trackMetric(["eventsDeleted"], -1,'ai');
                         break;
                     case 'REVERT_UPDATE_EVENT':
                         if (lastAction.payload.event.notificationIds?.length) {
@@ -226,6 +239,7 @@ export const RevertLastActionHandler: AIHandler = {
                             lastAction.payload.event.notificationIds = await scheduleReminderEvents(lastAction.payload.event);
                         }
                         context.trackMetric(["eventsEdited"], -1);
+                        context.trackMetric(["eventsEdited"], -1,'ai');
                         await context.editEvent(lastAction.payload.event);
                         break;
                     case 'BATCH_REVERT_EVENTS':
@@ -241,6 +255,7 @@ export const RevertLastActionHandler: AIHandler = {
                         break;
                     case 'REVERT_UPDATE_TAG':
                         context.trackMetric(["tagsEdited"], -1);
+                        context.trackMetric(["tagsEdited"], -1,'ai');
                         await context.updateUserTag(lastAction.payload.tag);
                         break;
                     case 'DELETE_CATEGORY':
@@ -251,6 +266,7 @@ export const RevertLastActionHandler: AIHandler = {
                         break;
                     case 'REVERT_UPDATE_CATEGORY':
                         context.trackMetric(["categoriesEdited"], -1);
+                        context.trackMetric(["categoriesEdited"], -1,'ai');
                         await context.updateUserCategory(lastAction.payload.category);
                         break;
                     default:

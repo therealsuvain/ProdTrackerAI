@@ -8,6 +8,7 @@ import { SettingsRow } from "@/components/ui/settings/settings-row";
 import { useSettings } from "@/context/SettingsContext";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { SettingsSection } from "@/types/settings-ui";
+import SettingsSkeleton from "@/components/shared/loading-indicators/screen-loaders/settings-skeleton";
 
 // This is our Configuration map. Adding a new setting is as easy as adding a line here.
 
@@ -146,7 +147,7 @@ const SETTINGS_LAYOUT: SettingsSection[] = [
 ];
 
 export default function SettingsScreen() {
-  const { theme } = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const { settings, updateSetting, resetSettings, isLoading } = useSettings();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredSections, setFilteredSections] =
@@ -158,7 +159,7 @@ export default function SettingsScreen() {
   };
 
   if (isLoading) {
-    return null; // Or your existing <LoadingIndicator />
+    return <SettingsSkeleton isDark={isDarkMode} />; // Or your existing <LoadingIndicator />
   }
   const handlePress = (id: string, type: string, href?: string) => {
     if (href) {

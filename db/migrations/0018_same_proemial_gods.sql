@@ -1,0 +1,1 @@
+ALTER TABLE `global_metrics_ai` DROP COLUMN `last_synced_at`;

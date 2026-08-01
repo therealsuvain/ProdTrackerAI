@@ -22,7 +22,7 @@ interface TileConfigEntry {
 export const CHART_TILE_CONFIG: Record<string, TileConfigEntry> = {
   execution_funnel: { size: 'wide' },
   momentum_delta: { size: 'wide' },
-  focus_trend: { size: 'wide' },
+  time_durations: { size: 'wide' },
   deep_work: { size: 'small' },
   circadian_friction: { size: 'standard' },
   ai_leverage: { size: 'standard' },

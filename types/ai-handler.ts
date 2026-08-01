@@ -30,17 +30,17 @@ export interface AIActionContext {
   batchMutateHabits: (habitsToMutate: Habit[], newValues: any) => Promise<void>;
   batchRestoreHabits: (originalHabits: Habit[]) => Promise<void>;
   categories: Category[];
-  addCategory: (categoryPayload: { id: string, name: string, color: string, icon: string }) => Promise<string>;
+  addCategory: (categoryPayload: { id: string, name: string, color: string, icon: string }, isFromAI?: boolean) => Promise<string>;
   incrementCategoryUsage: (id: string) => Promise<void>;
   updateUserCategory: (category: Category) => Promise<void>;
   deleteUserCategory: (id: string, fallbackId?: string | null) => Promise<void>;
   getCategoryUsageForAll: (id: string) => Promise<any>;
   reassignDeletedCategory : (category: Category, fallbackId:string|null, originalItems:Record<string,string[]>)=>Promise<void>;
   tags: Tag[];
-  addTags: (tagsPayload: { id: string; name: string }[]) => Promise<string[]>;
+  addTags: (tagsPayload: { id: string; name: string }[], isFromAI?: boolean) => Promise<string[]>;
   incrementTagUsage: (id: string) => Promise<void>;
   updateUserTag: (tag: Tag) => Promise<void>;
-  deleteUserTag: (id: string, fallbackId?: string | null) => Promise<void>;
+  deleteUserTag: (id: string, fallbackId?: string | null, isFromAI?: boolean) => Promise<void>;
   getTagUsageForAll: (id: string) => Promise<any>;
   reassignDeletedTag : (tag:Tag, fallbackId:string|null, originalItems:Record<string,string[]>)=>Promise<void>;
   getItemIdsForTagLocal:(tagId:string)=>Promise<Record<string,string[]>>;
@@ -51,7 +51,7 @@ export interface AIActionContext {
   start: () => void;
   stop: () => void;
   navigation: any;
-  trackMetric: (key: GlobalMetricKey[], amount: number) => void;
+  trackMetric: (key: GlobalMetricKey[], amount: number, actor?: "user" | "ai") => void;
   // Add other state setters as needed (Timer, Navigation, etc.)
 }
 

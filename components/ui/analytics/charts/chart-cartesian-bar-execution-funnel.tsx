@@ -39,6 +39,28 @@ export const ExecutionFunnelChart = ({
         <Text style={[styles.chartTitle, { color: theme.text }]}>
           Execution Funnel
         </Text>
+        <View style={styles.legend}>
+          <View style={styles.legendItem}>
+            <View
+              style={[styles.colorBox, { backgroundColor: theme.success }]}
+            />
+            <Text style={{ color: theme.text }}>Completed</Text>
+          </View>
+
+          <View style={styles.legendItem}>
+            <View style={[styles.colorBox, { backgroundColor: theme.error }]} />
+            <Text style={{ color: theme.text }}>Missed</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View
+              style={[
+                styles.colorBox,
+                { backgroundColor: theme.greyBasePrimary },
+              ]}
+            />
+            <Text style={{ color: theme.text }}>Abandoned</Text>
+          </View>
+        </View>
         <CartesianChart
           data={data}
           xKey="x"
@@ -59,11 +81,7 @@ export const ExecutionFunnelChart = ({
           yAxis={[
             {
               font,
-              title: {
-                text: "Completed - Missed - Abandoned",
-                font,
-                color: theme.text,
-              },
+
               lineWidth: 1,
               lineColor: theme.text,
               labelColor: theme.text,
@@ -159,5 +177,21 @@ const styles = StyleSheet.create({
   chartContainer: {
     height: 200,
     width: "90%",
+  },
+  legend: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 16,
+    marginBottom: 8,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  colorBox: {
+    width: 10,
+    height: 10,
+    marginRight: 6,
+    borderRadius: 2,
   },
 });

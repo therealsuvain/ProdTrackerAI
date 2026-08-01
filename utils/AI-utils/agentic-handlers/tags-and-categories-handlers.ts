@@ -113,7 +113,7 @@ export const AddCategoryHandler: AIHandler = {
       payload: { category: { id, name: params.name, color: finalColor, icon: finalIcon } as Category },
       timestamp: Date.now()
     });
-    await context.addCategory({ id, name: params.name, color: finalColor, icon: finalIcon });
+    await context.addCategory({ id, name: params.name, color: finalColor, icon: finalIcon }, true);
 
 
     // Return the newly created ID so the AI can immediately chain it to an addTask call!
@@ -145,6 +145,7 @@ export const EditCategoryHandler: AIHandler = {
 
     if (context.updateUserCategory) {
       context.trackMetric(["categoriesEdited"], 1);
+      context.trackMetric(["categoriesEdited"], 1, 'ai');
       await context.updateUserCategory(updatedCategory);
     }
 
@@ -173,6 +174,7 @@ export const DeleteCategoryHandler: AIHandler = {
 
     if (context.deleteUserCategory) {
       context.trackMetric(["categoriesDeleted"], 1);
+      context.trackMetric(["categoriesDeleted"], 1, 'ai');
       await context.deleteUserCategory(id, fallbackCategoryId || null);
     }
 
@@ -200,7 +202,7 @@ export const AddTagHandler: AIHandler = {
       payload: { tags: newlyCreatedTags as Tag[] },
       timestamp: Date.now()
     })
-    await context.addTags(newlyCreatedTags);
+    await context.addTags(newlyCreatedTags, true);
 
   
     // Return the new ID so the AI can use it in tool chaining
@@ -224,6 +226,7 @@ export const EditTagHandler: AIHandler = {
    })
     if (context.updateUserTag) {
       context.trackMetric(["tagsEdited"], 1);
+      context.trackMetric(["tagsEdited"], 1,'ai');
       await context.updateUserTag(updatedTag);
     }
 
@@ -236,7 +239,7 @@ export const DeleteTagHandler: AIHandler = {
     const { id, fallbackTagId } = params;
 
     if (context.deleteUserTag) {
-      await context.deleteUserTag(id, fallbackTagId || null);
+      await context.deleteUserTag(id, fallbackTagId || null, true);
     }
    
     return { status: "success", message: `Tag ${id} deleted safely.` };

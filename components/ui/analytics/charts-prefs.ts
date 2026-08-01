@@ -33,6 +33,10 @@ export const useDashboardLayout = ()=> {
     persist(newOrder);
   }, [persist]);
 
+ const resetLayout = useCallback(() => {
+   setActiveWidgets(DEFAULT_LAYOUT);
+   persist(DEFAULT_LAYOUT);
+ }, [persist])
 
-  return { activeWidgets, toggleWidget, reorderWidgets };
+  return { activeWidgets, toggleWidget, reorderWidgets, resetLayout };
 };

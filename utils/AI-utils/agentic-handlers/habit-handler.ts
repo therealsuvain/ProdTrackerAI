@@ -9,7 +9,7 @@ import { fastCosineSimilarity, generateEmbedding } from "@/utils/embedding-engin
 
 export const AddHabitHandler: AIHandler = {
   execute: async (params, context) => {
-    const newHabit = await createHabit(params);
+    const newHabit : Habit= await createHabit(params);
     if (newHabit.reminder) {
       try {
         newHabit.notificationId = await scheduleReminderHabits(newHabit);
@@ -21,6 +21,14 @@ export const AddHabitHandler: AIHandler = {
     //!  Undo Stack Push
     AIActionMemory.push({ type: 'DELETE_HABIT', payload: { habit: newHabit }, timestamp: Date.now() })
     context.addHabit(newHabit);
+    if (newHabit.frequency === 'daily') {
+                            context.trackMetric(["habitsAdded", "habitsWithDailyGoals"], 1);
+                            context.trackMetric(["habitsAdded", "habitsWithDailyGoals"], 1,'ai');
+                        }
+                        else {
+                            context.trackMetric(["habitsAdded", "habitsWithWeeklyGoals"], 1);
+                            context.trackMetric(["habitsAdded", "habitsWithWeeklyGoals"], 1,'ai');
+                        }
     console.log(`AI Action: Added Habit "${newHabit.title}"`);
     const { id, embedding, ...rest } = newHabit;
     return { status: "success", habit: { id: id.slice(0, 8), ...rest } };
@@ -56,6 +64,7 @@ export const EditHabitHandler: AIHandler = {
     //!  Undo Stack Push
     AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit }, timestamp: Date.now() });
     context.trackMetric(["habitsEdited"], 1);
+    context.trackMetric(["habitsEdited"], 1, 'ai');
     await context.editHabit(newHabit);
     const { id, embedding, ...rest } = newHabit;
     return { status: "success", habit: { id: id.slice(0, 8), ...rest } };
@@ -74,6 +83,8 @@ export const DeleteHabitHandler: AIHandler = {
     //!  Undo Stack Push
     AIActionMemory.push({ type: 'ADD_DELETED_HABIT', payload: { habit: oldHabit }, timestamp: Date.now() });
     await context.removeHabit(oldHabit.id);
+    context.trackMetric(["habitsDeleted"], 1);
+    context.trackMetric(["habitsDeleted"], 1,'ai');
     const { id, title } = oldHabit;
     return { status: "success", habit: { id: id.slice(0, 8), title } };
   }
@@ -89,6 +100,8 @@ export const CheckInHabitHandler: AIHandler = {
     //!  Undo Stack Push
     AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit }, timestamp: Date.now() });
     await context.editHabit(result.habit);
+    context.trackMetric(["habitsCheckedIn"], 1);
+    context.trackMetric(["habitsCheckedIn"], 1,'ai');
     const { id, title } = result.habit;
     return { status: "success", habit: { id: id.slice(0, 8), title } };
   }
@@ -104,6 +117,8 @@ export const FreezeHabitHandler: AIHandler = {
     //!  Undo Stack Push
     AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit }, timestamp: Date.now() });
     await context.editHabit(result.habit);
+    context.trackMetric(["habitsFrozen"], 1);
+    context.trackMetric(["habitsFrozen"], 1 ,'ai');
     const { id, title } = result.habit;
     return { status: "success", habit: { id: id.slice(0, 8), title } };
   }

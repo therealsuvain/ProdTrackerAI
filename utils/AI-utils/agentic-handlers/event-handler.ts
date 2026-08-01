@@ -6,11 +6,12 @@ import { resolveIdsFromNames } from "./tags-and-categories-handlers";
 import { AIActionMemory } from "./ai-action-undo-handlers";
 import { fastCosineSimilarity, generateEmbedding } from "@/utils/embedding-engine";
 import { GlobalMetricKey } from "@/types/metrics";
+import { CalendarEvent } from "@/types/calendar";
 
 //! 59567 Port for qbitorent
 export const AddEventHandler: AIHandler = {
   execute: async (params, context) => {
-    const newEvent = await createEvent(params);
+    const newEvent : CalendarEvent= await createEvent(params);
     if (newEvent.reminder) {
       try {
         newEvent.notificationIds = await scheduleReminderEvents(newEvent);
@@ -49,7 +50,8 @@ export const AddEventHandler: AIHandler = {
       metricsArr.push("eventsOvernight")
     }
     metricsArr.push("eventsAdded")
-    context.trackMetric(metricsArr, -1);
+    context.trackMetric(metricsArr, 1);
+    context.trackMetric(metricsArr, 1 ,'ai');
     await context.addEvent(newEvent);
     console.log(`AI Action: Added event "${newEvent.title}"`);
     const { id, embedding, ...rest } = newEvent;
@@ -89,6 +91,7 @@ export const EditEventHandler: AIHandler = {
     //!  Undo Stack Push
     AIActionMemory.push({ type: "REVERT_UPDATE_EVENT", payload: { event: oldEvent }, timestamp: Date.now() })
     context.trackMetric(["eventsEdited"], 1);
+    context.trackMetric(["eventsEdited"], 1, 'ai');
     await context.editEvent(updatedEvent);
     const { id, embedding, ...rest } = updatedEvent;
     return { status: "success", event: { id: id.slice(0, 8), ...rest } };
@@ -119,6 +122,7 @@ export const DeleteEventHandler: AIHandler = {
     //!  Undo Stack Push
     AIActionMemory.push({ type: "ADD_DELETED_EVENT", payload: { event: oldEvent }, timestamp: Date.now() })
     context.trackMetric(["eventsDeleted"], 1);
+    context.trackMetric(["eventsDeleted"], 1, 'ai');
     await context.removeEvent(oldEvent.id);
     const { id, title } = oldEvent;
     return { status: "success", event: { id: id.slice(0, 8), title } };

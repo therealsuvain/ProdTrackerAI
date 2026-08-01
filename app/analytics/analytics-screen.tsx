@@ -5,7 +5,6 @@ import Animated, {
   useAnimatedRef,
   measure,
 } from "react-native-reanimated";
-import { scheduleOnRN, scheduleOnUI } from "react-native-worklets";
 
 import {
   DummyMetrics,
@@ -28,15 +27,21 @@ import { useTasks } from "@/hooks/context-hooks/use-tasks";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { AnalyticsBentoGrid } from "@/components/ui/analytics/charts-layout/bento-grid";
 import { useCallback, useRef } from "react";
+import { useChat } from "@/hooks/context-hooks/use-chat";
+import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
+import { useScreenReady } from "@/hooks/use-screen-ready";
+import { AnalyticsSkeleton } from "@/components/shared/loading-indicators/screen-loaders/analytics-skeleton";
 
 //TODO certain charts when rendered in chart-details-modal, need some barWidth, fontSzie, viewPort, domainPadding etc. changes
-export default function AnalyticsScreen() {
-  const { activeWidgets, toggleWidget, reorderWidgets } = useDashboardLayout();
+function AnalyticsScreenInner() {
+  const { activeWidgets, toggleWidget, reorderWidgets, resetLayout } =
+    useDashboardLayout();
   const { tasks } = useTasks();
   const { timerLogs } = useLogs();
   const { events } = useEvents();
   const { habits } = useHabits();
   const { tags, categories, appMetrics } = useData();
+  const { messages } = useChat();
   const { theme } = useTheme();
 
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
@@ -92,8 +97,20 @@ export default function AnalyticsScreen() {
       <LayoutManagerFAB
         activeWidgets={activeWidgets}
         toggleWidget={toggleWidget}
+        resetLayout={resetLayout}
       />
     </View>
+  );
+}
+
+export default function AnalyticsScreen() {
+  const { isDarkMode } = useTheme();
+  const isReady = useScreenReady();
+  if (!isReady) return <AnalyticsSkeleton isDark={isDarkMode} />;
+  return (
+    <ScreenErrorBoundary screenName="Analytics">
+      <AnalyticsScreenInner />
+    </ScreenErrorBoundary>
   );
 }
 

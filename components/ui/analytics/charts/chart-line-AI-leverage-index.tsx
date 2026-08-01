@@ -36,7 +36,7 @@ export const AILeverageChart = ({
   const { theme } = useTheme();
   const { state, isActive } = useChartPressState({
     x: "",
-    y: { timeTracked: 0, aiActions: 0 },
+    y: { manualActions: 0, aiActions: 0 },
   });
   return (
     <View
@@ -53,7 +53,7 @@ export const AILeverageChart = ({
         chartPressState={state}
         data={data}
         xKey="date"
-        yKeys={["timeTracked", "aiActions"]}
+        yKeys={["manualActions", "aiActions"]}
         xAxis={{
           font,
           lineWidth: 1,
@@ -82,7 +82,7 @@ export const AILeverageChart = ({
         {({ points, chartBounds }) => (
           <>
             <Line
-              points={points.timeTracked}
+              points={points.manualActions}
               color="#2196F3"
               strokeWidth={3}
               animate={{ type: "timing", duration: 250 }}
@@ -96,7 +96,7 @@ export const AILeverageChart = ({
             {isActive && (
               <TooltipShell
                 x={state.x.position}
-                y={state.y.timeTracked.position}
+                y={state.y.manualActions.position}
                 chartBounds={chartBounds}
                 theme={theme}
                 cardHeight={50}
@@ -107,8 +107,8 @@ export const AILeverageChart = ({
                     dateLabel={state.x.value}
                     series={[
                       {
-                        value: state.y.timeTracked.value,
-                        label: "Time",
+                        value: state.y.manualActions.value,
+                        label: "Manual",
                         color: "#2196F3",
                       },
                       {

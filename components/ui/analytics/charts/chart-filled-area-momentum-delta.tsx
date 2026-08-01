@@ -70,7 +70,7 @@ export const MomentumDeltaChart = ({
         yAxis={[
           {
             font,
-            title: { text: "Rolling Avg.", font, color: theme.text },
+            title: { text: "Overall App Activity", font, color: theme.text },
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,

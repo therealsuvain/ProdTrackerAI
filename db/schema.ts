@@ -443,6 +443,111 @@ export const dailyMetrics = sqliteTable("daily_metrics", {
     categoriesEdited : integer("categories_edited").notNull().default(0),
 });
 
+export const globalMetricsAI = sqliteTable("global_metrics_ai", {
+    id: integer("id").primaryKey().default(1),       // Always 1
+    tasksAdded: integer("tasks_added").notNull().default(0),       // Always 1
+    tasksCompleted: integer("tasks_completed").notNull().default(0),
+    tasksAbandoned: integer("tasks_abandoned").notNull().default(0),
+    tasksMissed: integer("tasks_missed").notNull().default(0),
+    tasksDeleted: integer("tasks_deleted").notNull().default(0),
+    habitsAdded: integer("habits_added").notNull().default(0),
+    habitsWithWeeklyGoals: integer("habits_with_weekly_goals").notNull().default(0),
+    habitsWithDailyGoals: integer("habits_with_daily_goals").notNull().default(0),
+    habitsAbandoned: integer("habits_abandoned").notNull().default(0),
+    habitsCheckedIn: integer("habits_checked_in").notNull().default(0),
+    habitsCheckedInBefore8am : integer("habits_checked_in_before_8am").notNull().default(0),
+    habitsCheckedInAfter10pm : integer("habits_checked_in_after_10pm").notNull().default(0),
+    habitsGoalsCompleted: integer("habits_goals_completed").notNull().default(0),
+    habitGoalsRestarted: integer("habit_goals_restarted").notNull().default(0),
+    habitCheckInsMissed: integer("habit_check_ins_missed").notNull().default(0),
+    habitsStreakMaxDaily: integer("habits_streak_max_daily").notNull().default(0),
+    habitsStreakMaxWeekly: integer("habits_streak_max_weekly").notNull().default(0),
+    habitsFrozen: integer("habits_frozen").notNull().default(0),
+    habitsAutoFrozen: integer("habits_auto_frozen").notNull().default(0),
+    habitsDeleted: integer("habits_deleted").notNull().default(0),
+    eventsAdded: integer("events_added").notNull().default(0),
+    eventsDeleted: integer("events_deleted").notNull().default(0),
+    eventsEarlymorning: integer("events_earlymorning").notNull().default(0),
+    eventsLatenight: integer("events_latenight").notNull().default(0),
+    eventsOvernight: integer("events_overnight").notNull().default(0),
+    eventsDaily: integer("events_daily").notNull().default(0),
+    eventsWeekly: integer("events_weekly").notNull().default(0),
+    eventsSingleton: integer("events_singleton").notNull().default(0),
+    eventsInfinite: integer("events_infinite").notNull().default(0),
+    timeTracked: integer("time_tracked").notNull().default(0),
+    chatMessagesSent: integer("chat_messages_sent").notNull().default(0),
+    chatActionsConfirmed: integer("chat_actions_confirmed").notNull().default(0),
+    chatActionsExpired: integer("chat_actions_expired").notNull().default(0),
+    chatActionsCancelled: integer("chat_actions_cancelled").notNull().default(0),
+    tagsAdded: integer("tags_added").notNull().default(0),
+    tagsAssigned : integer("tags_assigned").notNull().default(0),
+    tagsDeleted : integer("tags_deleted").notNull().default(0),
+    categoriesAdded : integer("categories_added").notNull().default(0),
+    categoriesAssigned : integer("categories_assigned").notNull().default(0),
+    categoriesDeleted : integer("categories_deleted").notNull().default(0),
+    logsAdded : integer("logs_added").notNull().default(0),
+    logsDeleted : integer("logs_deleted").notNull().default(0),
+    tasksEdited : integer("tasks_edited").notNull().default(0),
+    habitsEdited : integer("habits_edited").notNull().default(0),
+    eventsEdited : integer("events_edited").notNull().default(0),
+    logsEdited : integer("logs_edited").notNull().default(0),
+    tagsEdited : integer("tags_edited").notNull().default(0),
+    categoriesEdited : integer("categories_edited").notNull().default(0),         // ISO 8601
+});
+
+
+export const dailyMetricsAI = sqliteTable("daily_metrics_ai", {
+    date: text("date").primaryKey(),                 // 'YYYY-MM-DD'
+    tasksAdded: integer("tasks_added").notNull().default(0),
+    tasksCompleted: integer("tasks_completed").notNull().default(0),
+    tasksAbandoned: integer("tasks_abandoned").notNull().default(0),
+    tasksMissed: integer("tasks_missed").notNull().default(0),
+    tasksDeleted: integer("tasks_deleted").notNull().default(0),
+    habitsAdded: integer("habits_added").notNull().default(0),
+    habitsWithWeeklyGoals: integer("habits_with_weekly_goals").notNull().default(0),
+    habitsWithDailyGoals: integer("habits_with_daily_goals").notNull().default(0),
+    habitsAbandoned: integer("habits_abandoned").notNull().default(0),
+    habitsCheckedIn: integer("habits_checked_in").notNull().default(0),
+    habitsCheckedInBefore8am : integer("habits_checked_in_before_8am").notNull().default(0),
+    habitsCheckedInAfter10pm : integer("habits_checked_in_after_10pm").notNull().default(0),
+    habitsGoalsCompleted: integer("habits_goals_completed").notNull().default(0),
+    habitGoalsRestarted: integer("habit_goals_restarted").notNull().default(0),
+    habitCheckInsMissed: integer("habit_check_ins_missed").notNull().default(0),
+    habitsStreakMaxDaily: integer("habits_streak_max_daily").notNull().default(0),
+    habitsStreakMaxWeekly: integer("habits_streak_max_weekly").notNull().default(0),
+    habitsFrozen: integer("habits_frozen").notNull().default(0),
+    habitsAutoFrozen: integer("habits_auto_frozen").notNull().default(0),
+    habitsDeleted: integer("habits_deleted").notNull().default(0),
+    eventsAdded: integer("events_added").notNull().default(0),
+    eventsDeleted: integer("events_deleted").notNull().default(0),
+    eventsEarlymorning: integer("events_earlymorning").notNull().default(0),
+    eventsLatenight: integer("events_latenight").notNull().default(0),
+    eventsOvernight: integer("events_overnight").notNull().default(0),
+    eventsDaily: integer("events_daily").notNull().default(0),
+    eventsWeekly: integer("events_weekly").notNull().default(0),
+    eventsSingleton: integer("events_singleton").notNull().default(0),
+    eventsInfinite: integer("events_infinite").notNull().default(0),
+    timeTracked: integer("time_tracked").notNull().default(0),
+    chatMessagesSent: integer("chat_messages_sent").notNull().default(0),
+    chatActionsConfirmed: integer("chat_actions_confirmed").notNull().default(0),
+    chatActionsExpired: integer("chat_actions_expired").notNull().default(0),
+    chatActionsCancelled: integer("chat_actions_cancelled").notNull().default(0),
+    tagsAdded: integer("tags_added").notNull().default(0),
+     tagsAssigned : integer("tags_assigned").notNull().default(0),
+    tagsDeleted : integer("tags_deleted").notNull().default(0),
+    categoriesAdded : integer("categories_added").notNull().default(0),
+    categoriesAssigned : integer("categories_assigned").notNull().default(0),
+    categoriesDeleted : integer("categories_deleted").notNull().default(0),
+    logsAdded : integer("logs_added").notNull().default(0),
+    logsDeleted : integer("logs_deleted").notNull().default(0),
+    tasksEdited : integer("tasks_edited").notNull().default(0),
+    habitsEdited : integer("habits_edited").notNull().default(0),
+    eventsEdited : integer("events_edited").notNull().default(0),
+    logsEdited : integer("logs_edited").notNull().default(0),
+    tagsEdited : integer("tags_edited").notNull().default(0),
+    categoriesEdited : integer("categories_edited").notNull().default(0),
+});
+
 export const achievementGlobalMetrics = sqliteTable("achievement_global_metrics", {
     id: integer("id").primaryKey().default(1),
     tasksAdded: integer("tasks_added").notNull().default(0),       // Always 1
@@ -567,8 +672,15 @@ export type MessageInsert = typeof messages.$inferInsert;
 export type GlobalMetricsRow = typeof globalMetrics.$inferSelect;
 export type GlobalMetricsInsert = typeof globalMetrics.$inferInsert;
 
+export type GlobalMetricsAIRow = typeof globalMetricsAI.$inferSelect;
+export type GlobalMetricsAIInsert = typeof globalMetricsAI.$inferInsert;
+
 export type DailyMetricsRow = typeof dailyMetrics.$inferSelect;
 export type DailyMetricsInsert = typeof dailyMetrics.$inferInsert;
+
+export type DailyMetricsAIRow = typeof dailyMetricsAI.$inferSelect;
+export type DailyMetricsAIInsert = typeof dailyMetricsAI.$inferInsert;
+
 
 export type AchievementGlobalMetricsRow = typeof achievementGlobalMetrics.$inferSelect
 export type AchievementGlobalMetricsInsert = typeof achievementGlobalMetrics.$inferInsert
