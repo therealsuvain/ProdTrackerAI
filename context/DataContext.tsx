@@ -4,6 +4,7 @@ import React, {
   ReactNode,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -72,12 +73,7 @@ import { usePlaySound } from "@/hooks/use-play-sound";
 import { AchievementMetrics } from "@/types/achievement-metrics";
 import { Tag } from "@/types/tag";
 import { Category } from "@/types/category";
-import { analyticsEngine } from "@/utils/Analytics/analytics-engine";
 import { metricsEventBus } from "@/utils/Analytics/metrics-event-bus";
-import { useEvents } from "@/hooks/context-hooks/use-events";
-import { useHabits } from "@/hooks/context-hooks/use-habits";
-import { useLogs } from "@/hooks/context-hooks/use-logs";
-import { useTasks } from "@/hooks/context-hooks/use-tasks";
 
 // TODOX if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
 interface DataContextType {
@@ -530,59 +526,6 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  /*  const trackMetric = useCallback(
-    async (keys: GlobalMetricKey[], amount: number) => {
-      // 1. Mutate storage atomically
-      // note: For now if lastSyncedAt is passed in it works like trackMetric(["lastSyncedAt"], 0)
-      const updatedMetrics = await mutateMetricInDb(keys, amount);
-      console.log("TRACK");
-      // 2. Update React Context so UI (Heatmaps, Progress Bars) re-renders instantly
-      setAppMetrics((prevMetrics) => ({ ...prevMetrics, ...updatedMetrics }));
-
-      // 3. If the user advanced a metric (not undid it), check for achievements!
-      if (amount > 0) {
-        let localUnlocked = [...unlockedAchievementsRef.current];
-        let newlyUnlocked: AchievementBadge[] = [];
-        try {
-          for (const key of keys) {
-            if (key === "lastSyncedAt") {
-              continue;
-            }
-            const newlyUnlockedForKey = await processAchievements(
-              localUnlocked,
-              updatedMetrics.global[key] - achievementMetrics[key],
-              key,
-            );
-            for (const badge of newlyUnlockedForKey) {
-              await addUnlockedAchievement(badge);
-              localUnlocked = [...localUnlocked, badge];
-            }
-            newlyUnlocked = newlyUnlocked.concat(newlyUnlockedForKey);
-          }
-
-          // Phase 6.3 Prep: If we got badges, we will trigger a global toast here later!
-          if (newlyUnlocked.length > 0) {
-            const achievementToastQueue = [...newlyUnlocked];
-            function showNext() {
-              const badge = achievementToastQueue.shift();
-              if (!badge) return;
-              setActiveBadge(badge);
-              audioPlayer.seekTo(0);
-              audioPlayer.play();
-              setTimeout(() => {
-                setActiveBadge(null);
-                setTimeout(showNext, 500); // small gap between badges
-              }, 6000);
-            }
-            showNext();
-          }
-        } catch (err) {
-          console.error("Error evaluating achievements:", err);
-        }
-      }
-    },
-    [],
-  ); */
   const processToastQueue = useCallback(() => {
     // If already playing a badge, or queue is empty, do nothing.
     if (isToastingRef.current || toastQueueRef.current.length === 0) return;
@@ -817,6 +760,37 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     [transactionalAppMutation],
   );
 
+  const getDateRangeArray = (start: string, end: string): string[] => {
+    const dates: string[] = [];
+    const cur = new Date(start);
+    const last = new Date(end);
+    while (cur <= last) {
+      dates.push(cur.toISOString().split("T")[0]);
+      cur.setDate(cur.getDate() + 1);
+    }
+    return dates;
+  };
+
+  const densifyDailyMetrics = (
+    sparse: Record<string, DailyMetricsWithAI>,
+    earliestDate: string,
+    latestDate: string,
+  ): Record<string, DailyMetricsWithAI> => {
+    const allDates = getDateRangeArray(earliestDate, latestDate);
+    const dense: Record<string, DailyMetricsWithAI> = {};
+    for (const date of allDates) {
+      dense[date] = sparse[date] ?? { ...DefaultDailyMetrics, date };
+    }
+    return dense;
+  };
+
+  const denseDaily = useMemo(() => {
+    const dates = Object.keys(appMetrics.daily);
+    if (dates.length === 0) return {};
+    const earliest = dates.sort()[0];
+    const today = new Date().toISOString().split("T")[0];
+    return densifyDailyMetrics(appMetrics.daily, earliest, today);
+  }, [appMetrics.daily]);
   // useEffect for maintaining optimistic updates for appMetrics
   useEffect(() => {
     refreshTagsCatsAchievements();

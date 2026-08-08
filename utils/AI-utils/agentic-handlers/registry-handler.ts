@@ -16,7 +16,6 @@ import { TriageOverdueHandler } from "./triage-overdue-tasks-handler"
  * TODOAdd 56 :  Confidence field like response and reasoning
  * TODOAdd 57 : Add a handler so AI can access chat history and use it as context for future responses
  * TODOAdd 66 : - delete-event_instance(id, date[]), - freeze-habit(id) handlers
-//TODO : the current execution fails when the user asks to retry, the AI cannot comprehend how to retry for some reason, maybe resend chat history when prompted to retry
 //TODO :  Query handler should be able to query based on categories and tags
 //TODO : searchTaxonomy handler should be able to return all categories and tags, currently its not able to handle query type of all
  */

@@ -3,6 +3,26 @@ import { AppMetrics, DailyMetrics, DailyMetricsWithAI } from '@/types/metrics'; 
 import { Task } from '@/types/task';
 import { TimerLog } from '@/types/timer';
 
+ const getDateRangeArray = (start: string, end: string): string[] => {
+    const dates: string[] = [];
+    const cur = new Date(start);
+    const last = new Date(end);
+    while (cur <= last) {
+      dates.push(cur.toISOString().split("T")[0]);
+      cur.setDate(cur.getDate() + 1);
+    }
+    return dates;
+  };
+
+function densifyDateBuckets<T extends { date: string }>(
+  buckets: T[],
+  emptyBucket: (date: string) => T,
+  start: string,
+  end: string,
+): T[] {
+  const byDate = new Map(buckets.map((b) => [b.date, b]));
+  return getDateRangeArray(start, end).map((date) => byDate.get(date) ?? emptyBucket(date));
+}
 
 export const MetricsTransformer = {
   /**
@@ -141,22 +161,7 @@ export const MetricsTransformer = {
    * Maps task completions to their respective hours for the current day.
    * Time Complexity: O(T) where T is today's tasks.
    */
-  getTaskVelocity(tasks: Task[] = [],windowDays = 30): { label: string; completions: number }[] {
-   /* const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - windowDays);
-
-  const hourMap = Array.from({ length: 24 }, (_, i) => ({ hour: i, completions: 0 }));
-
-  tasks.forEach(task => {
-    if (!task.completedAt) return;
-    const completedDate = new Date(task.completedAt);
-    if (completedDate < cutoff) return;
-    hourMap[completedDate.getHours()].completions += 1;
-  });
-
-  return hourMap; */
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - windowDays);
+  getTaskVelocity(tasks: Task[] = []): { label: string; completions: number }[] {
 
   const buckets = {
     "Early Morning": 0,
@@ -169,7 +174,6 @@ export const MetricsTransformer = {
   tasks.forEach(task => {
     if (!task.completedAt) return;
     const completedDate = new Date(task.completedAt);
-    if (completedDate < cutoff) return;
     const hour = completedDate.getHours();
 
     if (hour >= 5 && hour < 8) buckets["Early Morning"]++;
@@ -194,7 +198,7 @@ export const MetricsTransformer = {
     .sort((a, b) => a.date.localeCompare(b.date));
 },
 
-  getTaskThroughput(tasks: Task[] = []) {
+  getTaskThroughput(tasks: Task[] = [], startDate: string, endDate: string) {
    const map = tasks.reduce((acc, task) => {
     if (!task.completed || !task.completedAt) return acc;
 
@@ -216,14 +220,22 @@ export const MetricsTransformer = {
     return acc;
   }, {}as Record<string,{ date: string, onTime: number, late: number}>);
 
-  return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
+ // return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
+ const sorted = Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
+  return densifyDateBuckets(
+    sorted,
+    (date) => ({ date, onTime: 0, late: 0 }),
+    startDate,
+    endDate,
+ );
+ 
   },
 
   /**
    * Aggregates total timer duration per day from raw logs.
    * 
    */
-  getTimerDurations(logs: TimerLog[] = []) {
+  getTimerDurations(logs: TimerLog[] = [], startDate: string, endDate: string) {
     const trendMap = logs.reduce((acc, log) => {
       if (!log.startTime || !log.duration) return acc;
       
@@ -232,9 +244,19 @@ export const MetricsTransformer = {
       return acc;
     }, {} as Record<string, number>);
 
-    return Object.entries(trendMap)
+    /* return Object.entries(trendMap)
       .map(([date, duration]) => ({ date, duration }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+      .sort((a, b) => a.date.localeCompare(b.date)); */
+      const sorted = Object.entries(trendMap)
+     .map(([date, duration]) => ({ date, duration }))
+     .sort((a, b) => a.date.localeCompare(b.date));
+
+  return densifyDateBuckets(
+    sorted,
+    (date) => ({ date, duration: 0 }),
+    startDate,
+    endDate,
+  );
   },
 
   /**
@@ -257,4 +279,49 @@ export const MetricsTransformer = {
       });
   }
   
+,
+  getFreezeReliance(dailyData: Record<string, any> = {}) {
+  return Object.keys(dailyData).sort().map(date => ({
+    date,
+    manualFreezes: dailyData[date].habitsFrozen,
+    autoFreezes: dailyData[date].habitsAutoFrozen,
+  }));
+},
+
+getPriorityCompletionRate(tasks:Task[] = []) {
+  const buckets = { high: { total: 0, completed: 0 }, medium: { total: 0, completed: 0 }, low: { total: 0, completed: 0 } };
+  tasks.forEach(t => {
+    buckets[t.priority].total += 1;
+    if (t.completed) buckets[t.priority].completed += 1;
+  });
+  return Object.entries(buckets).map(([priority, { total, completed }]) => ({
+    priority,
+    rate: total > 0 ? (completed / total) * 100 : 0,
+  }));
+},
+
+getChatFollowThrough(globalData: Record<string, any> = {}) {
+  const total = globalData.chatActionsConfirmed + globalData.chatActionsExpired + globalData.chatActionsCancelled;
+    return [
+      {label: `Confirmed(${Math.round((globalData.chatActionsConfirmed / total) * 100)}%)`, value: globalData.chatActionsConfirmed, color: "green" },
+      {label: `Expired(${Math.round((globalData.chatActionsExpired / total) * 100)})%`, value: globalData.chatActionsExpired, color: "red"},
+      {label : `Cancelled(${Math.round((globalData.chatActionsCancelled / total) * 100)}%)`, value : globalData.chatActionsCancelled , color: "orange"}, 
+      
+];
+
+},
+getSessionLengthDistribution(timerLogs:TimerLog[] = []) {
+  const buckets = { "<15min": 0, "15-30min": 0, "30-60min": 0, "60-120min": 0, ">120min": 0 };
+  timerLogs.forEach(log => {
+    if (!log.duration) return;
+    const mins = log.duration / 60;
+    if (mins < 15) buckets["<15min"]++;
+    else if (mins < 30) buckets["15-30min"]++;
+    else if (mins < 60) buckets["30-60min"]++;
+    else if (mins < 120) buckets["60-120min"]++;
+    else buckets[">120min"]++;
+  });
+  return Object.entries(buckets).map(([label, count]) => ({ label, count }));
+}
+
 };

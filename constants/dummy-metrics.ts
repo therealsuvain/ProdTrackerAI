@@ -3767,7 +3767,7 @@ export const DummyMetrics: AppMetrics = {
       }
     }
   }
-};
+} as AppMetrics;
 
 
 export const DummyCategories: Category[] = [

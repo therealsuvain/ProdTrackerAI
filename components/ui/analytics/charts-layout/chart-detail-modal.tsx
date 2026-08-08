@@ -25,12 +25,21 @@ import {
 } from "victory-native";
 import { ChartProps } from "../charts-registry";
 import { ChartInfoModal } from "./charts-explanation-modal";
+import { ChartFilterModal } from "./chart-detail-filter-modal";
+import {
+  useFiltersStore,
+  useResolvedChartFilters,
+} from "@/hooks/use-filters-store";
+import { Category } from "@/types/category";
+import { Tag } from "@/types/tag";
 
 interface Props {
   visible: boolean;
   onClose: () => void;
   chartId: string | null;
   children: React.ReactElement<ChartProps> | null;
+  tags?: Tag[];
+  categories?: Category[];
 }
 
 const MAX_WRAPPER_WIDTH = Dimensions.get("window").width - 48;
@@ -40,16 +49,26 @@ export const ChartDetailModal = ({
   onClose,
   chartId,
   children,
+  tags = [],
+  categories = [],
 }: Props) => {
   const { theme, isDarkMode } = useTheme();
   const { heightScale, widthScale } = getDetailScale(chartId ?? "");
   const [chartInfoModal, setChartInfoModal] = useState(false);
-
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const setChartDateRangeOverride = useFiltersStore(
+    (s) => s.setChartDateRangeOverride,
+  );
+  const setChartAdvancedFilter = useFiltersStore(
+    (s) => s.setChartAdvancedFilter,
+  );
+  const { dateRange, advanced } = useResolvedChartFilters(chartId ?? "");
   const wrapperWidth = Math.min(
     MODAL_BASE_WIDTH * widthScale,
     MAX_WRAPPER_WIDTH,
   );
   const wrapperHeight = BASE_CHART_HEIGHT * heightScale;
+
   const detailsChartButtonSize = 32;
   const { state: transformState } = useChartTransformState({
     scaleX: 1.0,
@@ -169,6 +188,16 @@ export const ChartDetailModal = ({
                 : children}
             </View>
             {/*  </View> */}
+            <Pressable
+              onPress={() => setFilterModalVisible(true)}
+              style={[styles.closeButton, { right: 78 }]}
+            >
+              <Ionicons
+                name="filter-outline"
+                size={24}
+                color={theme.whiteBase}
+              />
+            </Pressable>
             <Pressable
               onPress={() => setChartInfoModal(true)}
               style={styles.helpButton}
@@ -305,6 +334,24 @@ export const ChartDetailModal = ({
           visible={chartInfoModal}
           onClose={onCloseChartInfo}
           chartDetails={CHART_INFO_DETAILS[chartId ?? ""]}
+        />
+      )}
+      {chartId && dateRange && (
+        <ChartFilterModal
+          visible={filterModalVisible}
+          onClose={() => setFilterModalVisible(false)}
+          chartId={chartId}
+          currentDateRange={dateRange}
+          currentAdvanced={advanced}
+          availableTags={tags.map((t) => ({ id: t.id, name: t.name }))}
+          availableCategories={categories.map((c) => ({
+            id: c.id,
+            name: c.name,
+          }))}
+          onApplyDateRange={(range) =>
+            setChartDateRangeOverride(chartId, range)
+          }
+          onApplyAdvanced={(adv) => setChartAdvancedFilter(chartId, adv)}
         />
       )}
     </Modal>

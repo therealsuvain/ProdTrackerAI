@@ -5,6 +5,7 @@ import React from "react";
 import { View, StyleSheet, Text } from "react-native";
 import { CartesianChart, Line, useChartPressState } from "victory-native";
 import { ChartProps } from "../charts-registry";
+import { getTickCount } from "@/components/ui/analytics/charts-layout/chart-common-config";
 import {
   getDetailScale,
   BASE_CHART_HEIGHT,
@@ -38,6 +39,7 @@ export const AILeverageChart = ({
     x: "",
     y: { manualActions: 0, aiActions: 0 },
   });
+  const tickCount = getTickCount(variant, data.length);
   return (
     <View
       style={[
@@ -67,6 +69,8 @@ export const AILeverageChart = ({
               day: "numeric",
             });
           },
+          enableRescaling: true,
+          tickCount,
         }}
         yAxis={[
           {
@@ -75,6 +79,8 @@ export const AILeverageChart = ({
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,
+            enableRescaling: true,
+            tickCount,
           },
         ]}
         transformState={transformState}

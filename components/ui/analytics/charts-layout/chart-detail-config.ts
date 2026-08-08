@@ -31,6 +31,11 @@ export const CHART_DETAIL_SCALE: Record<string, DetailScale> = {
   ai_leverage: { heightScale: 2, widthScale: 1 },
   circadian_friction: { heightScale: 1.8, widthScale: 1.3 },
   deep_work: { heightScale: 1.6, widthScale: 1.6 },
+  task_procrastination: { heightScale: 2, widthScale: 1 },
+  priority_completion : { heightScale: 2, widthScale: 1 },
+  freeze_reliance : { heightScale: 2, widthScale: 1 },
+  chat_follow_through: { heightScale: 2, widthScale: 1 },
+  session_distribution: { heightScale: 2, widthScale: 1 },
 };
 
 export function getDetailScale(id: string): DetailScale {
@@ -125,5 +130,38 @@ execution_funnel: {
       xAxis : " X-Axis : Represents the time period over which the data is being displayed",
       yAxis : " Y-Axis : Represents the number of tasks completed on time vs late, each with a seperate bar",
     } 
+  },
+  priority_completion: { 
+    title: 'Priority Completion - Bar Chart', 
+    description: 'The priority completion chart shows your priority wise task completion rates', 
+    howToRead: {
+      xAxis : " X-Axis : Represents the 3 different task priorities , low , medium , high",
+      yAxis : " Y-Axis : Represents completion rates for tasks",
+    }
+  },
+
+  freeze_reliance : {
+    title: 'Freeze Reliance - To be changed', 
+    description: 'The freeze reliance chart Habits manually frozen vs auto-frozen', 
+    howToRead: {
+      xAxis : " X-Axis : Manual vs Auto Freezes",
+      yAxis : " Y-Axis : Count of Habit Freezes",
+    }
+  },
+  session_distribution: { 
+    title: 'Session Distribution - Bar Chart', 
+    description: 'The session distribution chart shows your focus over time over different session lengths', 
+    howToRead: {
+      xAxis : " X-Axis : Represents the time duration buckets over which the data is being displayed",
+      yAxis : " Y-Axis : Represents the number of logs clocked in",
+    }
+  },
+  chat_follow_through: { 
+    title: 'Chat Follow Through - Donut Chart', 
+    description: 'The chat follow through chart shows your focus over time.', 
+    howToRead: {
+      xAxis : " X-Axis : Represents the time period over which the data is being displayed",
+      yAxis : " Y-Axis : Represents the number of tasks completed on time vs late, each with a seperate bar",
+    }
   },
 }

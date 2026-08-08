@@ -49,22 +49,17 @@ import { useDbErrorToast } from "@/components/shared/db-error-toast";
  * TODOAdd 12 : Check for Security enhancements and possible securicty concerns for the entire app
  * TODOX 14: Timer Screen Flip Animation state issues- FIX'em
  * TODOAdd 18 : Achievements Badges generation, maybe pixelated or sprite version of meme refered by the achievment phrase
- * TODOAdd 19 : Greatly enhancing analytics
- * TODOAdd 20 : More metrics tracking need to added, not all need to for achievements, instead for analytics
  * TODOX 21 : Codebase updation for iOS
  * TODOX 22 : Testing on bigger/smaller screens. Test on different devices
  * TODOX 23 : home page search enhancment or removal. R&D
  * TODOX 25 : Habit successful checkin feedback
  * TODOADD 27 : R&D better Calendar screen, refer google calendar maybe.
  * TODOX 31 : If tags and categoires are added, embeddings for them?, atleast searchable via physical search, AI handlers also would need to be updated
- * TODOX 32 : Common UI for tags/tag-list, shape like a literal tag
  * TODOX 34 : Maybe keep darkMode as default irrespective of system settings
  * TODOAdd 35 : Item Label(Home-screen Today's tasks , events, habits etc) animations, like ads
  * TODOAdd 36 : Mayeb add more animations for the app. R&D
  * TODOAdd 37 : More settings options
  * TODOAdd 38 : Few more achievements
- * TODOX 60 : R&D how mantain analytics data for deleted items
- * TODOAdd 61 : Allow title change in chat action chips
  * TODOOptim 65 : Check for steps required to adapte date/time fields to different Timezones and day light saving time changes
  * TODOX : Confirmation Diagloue for data deletion/reseting in settings
  * TODO : Home page search is broken right now

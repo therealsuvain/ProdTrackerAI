@@ -26,11 +26,15 @@ import { useLogs } from "@/hooks/context-hooks/use-logs";
 import { useTasks } from "@/hooks/context-hooks/use-tasks";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { AnalyticsBentoGrid } from "@/components/ui/analytics/charts-layout/bento-grid";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useChat } from "@/hooks/context-hooks/use-chat";
 import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { AnalyticsSkeleton } from "@/components/shared/loading-indicators/screen-loaders/analytics-skeleton";
+import { GlobalDateRangePicker } from "@/components/ui/analytics/charts-layout/global-range-date-picker";
+import { GlobalFilterModal } from "@/components/ui/analytics/charts-layout/global-filter-modal";
+import { AnalyticsFilterBar } from "@/components/ui/analytics/charts-layout/analytics-filter-bar";
+import { useFiltersStore } from "@/hooks/use-filters-store";
 
 //TODO certain charts when rendered in chart-details-modal, need some barWidth, fontSzie, viewPort, domainPadding etc. changes
 function AnalyticsScreenInner() {
@@ -43,11 +47,14 @@ function AnalyticsScreenInner() {
   const { tags, categories, appMetrics } = useData();
   const { messages } = useChat();
   const { theme } = useTheme();
-
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollY = useSharedValue(0);
   const viewportRef = useRef({ pageY: 0, height: 0 });
   const viewportWrapperRef = useRef<View>(null);
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const globalDateRange = useFiltersStore((s) => s.global.dateRange);
+  const setGlobalDateRange = useFiltersStore((s) => s.setGlobalDateRange);
   const scrollHandler = useAnimatedScrollHandler((e) => {
     scrollY.value = e.contentOffset.y;
   });
@@ -74,6 +81,25 @@ function AnalyticsScreenInner() {
             paddingBottom: 32,
           }}
         >
+          <AnalyticsFilterBar
+            onOpenDatePicker={() => setDatePickerVisible(true)}
+            onOpenFilterModal={() => setFilterModalVisible(true)}
+          />
+
+          <GlobalDateRangePicker
+            visible={datePickerVisible}
+            onClose={() => setDatePickerVisible(false)}
+            currentRange={globalDateRange}
+            onApply={(range) => {
+              setGlobalDateRange(range);
+              setDatePickerVisible(false);
+            }}
+          />
+
+          <GlobalFilterModal
+            visible={filterModalVisible}
+            onClose={() => setFilterModalVisible(false)}
+          />
           <AnalyticsHeatmap metrics={DummyMetrics} />
           <AnalyticsBentoGrid
             order={activeWidgets}

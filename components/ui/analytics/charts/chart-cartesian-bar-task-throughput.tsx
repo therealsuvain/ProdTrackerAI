@@ -1,9 +1,10 @@
 import React from "react";
 import { View, StyleSheet, Text } from "react-native";
 import { CartesianChart, Bar, BarGroup, StackedBar } from "victory-native";
-import { matchFont } from "@shopify/react-native-skia";
+import { Circle, Line, matchFont, vec } from "@shopify/react-native-skia";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { ChartProps } from "../charts-registry";
+import { getTickCount } from "@/components/ui/analytics/charts-layout/chart-common-config";
 import { MetricsTransformer } from "@/utils/Analytics/metrics-transformer";
 import {
   getDetailScale,
@@ -14,6 +15,8 @@ export const TaskThroughputChart = ({
   tasks,
   variant = "grid",
   transformState = undefined,
+  startDate,
+  endDate,
 }: ChartProps) => {
   const isDetail = variant === "detail";
   const { heightScale } = getDetailScale("task_throughput");
@@ -22,8 +25,13 @@ export const TaskThroughputChart = ({
     fontSize: 12,
   });
   const { theme } = useTheme();
-  const data = MetricsTransformer.getTaskThroughput(tasks);
+  const data = MetricsTransformer.getTaskThroughput(
+    tasks,
+    startDate!,
+    endDate!,
+  );
   const yDomainMax = Math.max(...data.map((d) => d.onTime + d.late));
+  const tickCount = getTickCount(variant, data.length);
   return (
     <View
       style={[
@@ -64,6 +72,7 @@ export const TaskThroughputChart = ({
             });
           },
           enableRescaling: true,
+          tickCount,
         }}
         yAxis={[
           {
@@ -72,6 +81,7 @@ export const TaskThroughputChart = ({
             lineColor: theme.text,
             labelColor: theme.text,
             enableRescaling: true,
+            tickCount,
           },
         ]}
         domain={{ y: [0, yDomainMax] }}
@@ -80,30 +90,55 @@ export const TaskThroughputChart = ({
         transformState={transformState}
       >
         {({ points, chartBounds }) => (
-          <StackedBar
-            animate={{ type: "spring" }}
-            //innerPadding={innerPadding}
-            chartBounds={chartBounds}
-            points={[points.onTime, points.late]} // 👈 the order here must match the order above
-            colors={["#11e21b", "#ff5100"]}
-            barWidth={10}
-            barOptions={({ isBottom, isTop }) => {
-              return {
-                roundedCorners: isTop
-                  ? {
-                      topLeft: 10,
-                      topRight: 10,
-                    }
-                  : undefined,
-              };
-            }}
-          />
+          <>
+            <StackedBar
+              animate={{ type: "spring" }}
+              //innerPadding={innerPadding}
+              chartBounds={chartBounds}
+              points={[points.onTime, points.late]} // 👈 the order here must match the order above
+              colors={["#11e21b", "#ff5100"]}
+              barWidth={10}
+              barOptions={({ isBottom, isTop }) => {
+                return {
+                  roundedCorners: isTop
+                    ? {
+                        topLeft: 10,
+                        topRight: 10,
+                      }
+                    : undefined,
+                };
+              }}
+            />
+            {data.map((d, i) => {
+              if (d.onTime !== 0 || d.late !== 0) return null; // only draw stub for fully-zero days
+              const point = points.onTime[i]; // reuse the already-computed point for x-position
+              if (!point) return null;
+              return (
+                <Line
+                  p1={vec(point.x, chartBounds.bottom - 5)}
+                  p2={vec(point.x, chartBounds.bottom)}
+                  key={d.date}
+                  color={theme.text}
+                  style="stroke"
+                  strokeWidth={isDetail ? 2 : 1}
+                />
+              );
+            })}
+          </>
         )}
       </CartesianChart>
     </View>
   );
 };
-
+{
+  /* <Circle
+                  key={d.date}
+                  cx={point.x}
+                  cy={chartBounds.bottom} // baseline
+                  r={isDetail ? 4 : 2}
+                  color={theme.text}
+                /> */
+}
 const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 16,

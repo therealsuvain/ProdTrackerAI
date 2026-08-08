@@ -26,15 +26,6 @@ export const TaskVelocityChart = ({
     fontFamily: "sans-serif",
     fontSize: 12,
   });
-  const tooltipFont = matchFont({
-    fontFamily: "sans-serif",
-    fontSize: 13,
-    fontWeight: "600",
-  });
-  const tooltipLabelFont = matchFont({
-    fontFamily: "sans-serif",
-    fontSize: 10,
-  });
   const { state, isActive } = useChartPressState({
     x: "",
     y: { completions: 0 },
@@ -70,6 +61,7 @@ export const TaskVelocityChart = ({
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,
+            enableRescaling: true,
           },
         ]}
         transformState={transformState}

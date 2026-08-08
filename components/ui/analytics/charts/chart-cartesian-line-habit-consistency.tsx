@@ -4,6 +4,7 @@ import { CartesianChart, Line, useChartPressState } from "victory-native";
 import { matchFont } from "@shopify/react-native-skia";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { ChartProps } from "../charts-registry";
+import { getTickCount } from "@/components/ui/analytics/charts-layout/chart-common-config";
 import { MetricsTransformer } from "@/utils/Analytics/metrics-transformer";
 import {
   getDetailScale,
@@ -18,7 +19,7 @@ export const HabitConsistencyChart = ({
   transformState = undefined,
 }: ChartProps) => {
   const isDetail = variant === "detail";
-  const tickCount = isDetail ? 5 : 3;
+
   const { heightScale } = getDetailScale("habit_consistency");
   const data = MetricsTransformer.getHabitConsistency(metrics?.daily || {});
   const font = matchFont({
@@ -39,7 +40,7 @@ export const HabitConsistencyChart = ({
     y: { adherence: 0 },
   });
   const { theme } = useTheme();
-
+  const tickCount = getTickCount(variant, data.length);
   return (
     <View
       style={[
@@ -69,6 +70,8 @@ export const HabitConsistencyChart = ({
               day: "numeric",
             });
           },
+          enableRescaling: true,
+          tickCount,
         }}
         yAxis={[
           {
@@ -78,6 +81,7 @@ export const HabitConsistencyChart = ({
             lineColor: theme.text,
             labelColor: theme.text,
             enableRescaling: true,
+            tickCount,
           },
         ]}
         transformState={transformState}

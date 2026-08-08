@@ -5,6 +5,7 @@ import { LinearGradient, vec, matchFont } from "@shopify/react-native-skia";
 import { MetricsTransformer } from "@/utils/Analytics/metrics-transformer";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { ChartProps } from "../charts-registry";
+import { getTickCount } from "@/components/ui/analytics/charts-layout/chart-common-config";
 import {
   getDetailScale,
   BASE_CHART_HEIGHT,
@@ -38,7 +39,7 @@ export const MomentumDeltaChart = ({
     x: "",
     y: { rollingAverage: 0 },
   });
-
+  const tickCount = getTickCount(variant, data.length);
   return (
     <View
       style={[
@@ -66,6 +67,8 @@ export const MomentumDeltaChart = ({
               day: "numeric",
             });
           },
+          enableRescaling: true,
+          tickCount,
         }}
         yAxis={[
           {
@@ -74,6 +77,8 @@ export const MomentumDeltaChart = ({
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,
+            enableRescaling: true,
+            tickCount,
           },
         ]}
         transformState={transformState}

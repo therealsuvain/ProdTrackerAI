@@ -16,14 +16,14 @@ import {
   BASE_CHART_HEIGHT,
 } from "../charts-layout/chart-detail-config";
 
-export const ExecutionFunnelChart = ({
+export const FreezeRelianceChart = ({
   metrics,
   variant = "grid",
   transformState = undefined,
 }: ChartProps) => {
   const isDetail = variant === "detail";
-  const { heightScale } = getDetailScale("execution_funnel");
-  const data = MetricsTransformer.getExecutionFunnelData(metrics.daily);
+  const { heightScale } = getDetailScale("priority_completion");
+  const data = MetricsTransformer.getFreezeReliance(metrics.daily);
   const { theme } = useTheme();
   const font = matchFont({
     fontFamily: "sans-serif",
@@ -31,7 +31,7 @@ export const ExecutionFunnelChart = ({
   });
   const tooltipLabelFont = matchFont({
     fontFamily: "sans-serif",
-    fontSize: 12,
+    fontSize: 16,
   });
   const tickCount = getTickCount(variant, data.length);
   return (
@@ -44,34 +44,33 @@ export const ExecutionFunnelChart = ({
         ]}
       >
         <Text style={[styles.chartTitle, { color: theme.text }]}>
-          Execution Funnel
+          Freeze Reliance
         </Text>
         <View style={styles.legend}>
           <View style={styles.legendItem}>
             <View
-              style={[styles.colorBox, { backgroundColor: theme.success }]}
+              style={[
+                styles.colorBox,
+                { backgroundColor: theme.blueLightPrimary },
+              ]}
             />
-            <Text style={{ color: theme.text }}>Completed</Text>
+            <Text style={{ color: theme.text }}>Manual-Frozen</Text>
           </View>
 
-          <View style={styles.legendItem}>
-            <View style={[styles.colorBox, { backgroundColor: theme.error }]} />
-            <Text style={{ color: theme.text }}>Missed</Text>
-          </View>
           <View style={styles.legendItem}>
             <View
               style={[
                 styles.colorBox,
-                { backgroundColor: theme.greyBasePrimary },
+                { backgroundColor: theme.blueDarkPrimary },
               ]}
             />
-            <Text style={{ color: theme.text }}>Abandoned</Text>
+            <Text style={{ color: theme.text }}>Auto-Frozen</Text>
           </View>
         </View>
         <CartesianChart
           data={data}
-          xKey="x"
-          yKeys={["completed", "missed", "abandoned"]}
+          xKey="date"
+          yKeys={["manualFreezes", "autoFreezes"]}
           xAxis={{
             font,
             lineWidth: 1,
@@ -93,11 +92,11 @@ export const ExecutionFunnelChart = ({
               lineWidth: 1,
               lineColor: theme.text,
               labelColor: theme.text,
-              tickCount,
               enableRescaling: true,
+              tickCount,
             },
           ]}
-          //domainPadding={{ left: 10, right: 5 }}
+          domainPadding={{ left: 10, right: 5 }}
           //viewport={{ x: [0, 10] }}
           transformState={transformState}
         >
@@ -105,92 +104,36 @@ export const ExecutionFunnelChart = ({
             <>
               <BarGroup
                 chartBounds={chartBounds}
-                //betweenGroupPadding={2}
-                //withinGroupPadding={1}
-                //barWidth={10}
-                //barCount={3}
+                //barWidth={15}
+                barCount={2}
+                //withinGroupPadding={0.99}
               >
                 <BarGroup.Bar
-                  points={points.completed}
-                  color={theme.success}
+                  points={points.manualFreezes}
+                  color={theme.blueLightPrimary}
                   animate={{ type: "timing", duration: 250 }}
                 />
                 <BarGroup.Bar
-                  points={points.missed}
-                  color={theme.error}
-                  animate={{ type: "timing", duration: 250 }}
-                />
-                <BarGroup.Bar
-                  points={points.abandoned}
-                  color={theme.greyBasePrimary}
+                  points={points.autoFreezes}
+                  color={theme.blueDarkPrimary}
                   animate={{ type: "timing", duration: 250 }}
                 />
               </BarGroup>
-              {points.completed.map((p, i) => {
-                return (
-                  data[i].completed > 0 && (
-                    <SkiaText
-                      key={`completed-${i}`}
-                      x={p.x ?? 0 /* + 8 */}
-                      y={p.y ?? 0 /* - 4 */}
-                      text={String(data[i].completed)}
-                      font={tooltipLabelFont}
-                      color={theme.text}
-                    />
-                  )
-                );
-              })}
-
-              {points.missed.map((p, i) => {
-                return (
-                  data[i].missed > 0 && (
-                    <SkiaText
-                      key={`missed-${i}`}
-                      x={p.x ?? 0 /* - 4 */}
-                      y={p.y ?? 0 /* - 4 */}
-                      text={String(data[i].missed)}
-                      font={tooltipLabelFont}
-                      color={theme.text}
-                    />
-                  )
-                );
-              })}
-              {points.abandoned.map((p, i) => {
-                return (
-                  data[i].abandoned > 0 && (
-                    <SkiaText
-                      key={`missed-${i}`}
-                      x={p.x ?? 0 /* - 14 */}
-                      y={p.y ?? 0 /* - 4 */}
-                      text={String(data[i].abandoned)}
-                      font={tooltipLabelFont}
-                      color={theme.text}
-                    />
-                  )
-                );
-              })}
               {data.map((_, i) => {
                 const stubs: { key: string; x: number; color: string }[] = [];
 
-                if (data[i].completed === 0 && points.completed[i]) {
+                if (data[i].manualFreezes === 0 && points.manualFreezes[i]) {
                   stubs.push({
-                    key: `completed-stub-${i}`,
-                    x: points.completed[i].x ?? 0,
-                    color: theme.success,
+                    key: `manualFreezes-stub-${i}`,
+                    x: points.manualFreezes[i].x ?? 0,
+                    color: theme.blueLightPrimary,
                   });
                 }
-                if (data[i].missed === 0 && points.missed[i]) {
+                if (data[i].autoFreezes === 0 && points.autoFreezes[i]) {
                   stubs.push({
-                    key: `missed-stub-${i}`,
-                    x: points.missed[i].x ?? 0,
-                    color: theme.error,
-                  });
-                }
-                if (data[i].abandoned === 0 && points.abandoned[i]) {
-                  stubs.push({
-                    key: `abandoned-stub-${i}`,
-                    x: points.abandoned[i].x ?? 0,
-                    color: theme.greyBasePrimary,
+                    key: `autoFreezes-stub-${i}`,
+                    x: points.autoFreezes[i].x ?? 0,
+                    color: theme.blueDarkPrimary,
                   });
                 }
 

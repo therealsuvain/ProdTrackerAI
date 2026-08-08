@@ -4,6 +4,7 @@ import { CartesianChart, Area, Line, useChartPressState } from "victory-native";
 import { LinearGradient, matchFont, vec } from "@shopify/react-native-skia";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { ChartProps } from "../charts-registry";
+import { getTickCount } from "@/components/ui/analytics/charts-layout/chart-common-config";
 import { MetricsTransformer } from "@/utils/Analytics/metrics-transformer";
 import {
   getDetailScale,
@@ -16,10 +17,12 @@ export const TimedDurationsChart = ({
   logs,
   variant = "grid",
   transformState = undefined,
+  startDate,
+  endDate,
 }: ChartProps) => {
   const isDetail = variant === "detail";
   const { heightScale } = getDetailScale("focus_trend");
-  const data = MetricsTransformer.getTimerDurations(logs);
+  const data = MetricsTransformer.getTimerDurations(logs, startDate!, endDate!);
   const font = matchFont({
     fontFamily: "sans-serif",
     fontSize: 12,
@@ -33,6 +36,7 @@ export const TimedDurationsChart = ({
     fontFamily: "sans-serif",
     fontSize: 10,
   });
+  const tickCount = getTickCount(variant, data.length);
   const { state, isActive } = useChartPressState({
     x: "",
     y: { duration: 0 },
@@ -68,6 +72,7 @@ export const TimedDurationsChart = ({
             });
           },
           labelRotate: -45,
+          tickCount,
         }}
         yAxis={[
           {
@@ -89,6 +94,7 @@ export const TimedDurationsChart = ({
 
               return value.toString();
             },
+            tickCount,
           },
         ]}
         transformState={transformState}

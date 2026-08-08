@@ -21,6 +21,7 @@ import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { Portal } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SharedValue } from "react-native-reanimated";
+import { FilteredChart } from "./filtered-chart-component-wrapper";
 
 interface Props {
   order: string[];
@@ -208,7 +209,6 @@ export const AnalyticsBentoGrid = ({
     setEditMode(false);
     setDraggedId(null);
   }, []);
-
   return (
     <View>
       {editMode && (
@@ -226,6 +226,7 @@ export const AnalyticsBentoGrid = ({
       >
         {order.map((id) => {
           const ChartComponent = CHART_REGISTRY[id];
+
           const rect = rects[id];
           if (!ChartComponent || !rect) return null;
           return (
@@ -242,23 +243,36 @@ export const AnalyticsBentoGrid = ({
               onPress={setExpandedId}
               onRemove={onRemove}
             >
-              <ChartComponent {...chartProps} />
+              <FilteredChart
+                chartId={id}
+                chartProps={chartProps}
+                variant="grid"
+              />
             </ChartTile>
           );
         })}
       </View>
-      <ChartDetailModal
-        visible={!!expandedId}
-        onClose={() => setExpandedId(null)}
-        chartId={expandedId}
-      >
-        {expandedId && CHART_REGISTRY[expandedId]
-          ? React.createElement(CHART_REGISTRY[expandedId], {
-              ...chartProps,
-              variant: "detail",
-            })
-          : null}
-      </ChartDetailModal>
+      {expandedId && (
+        <ChartDetailModal
+          visible={!!expandedId}
+          onClose={() => setExpandedId(null)}
+          chartId={expandedId}
+          tags={chartProps.tags}
+          categories={chartProps.categories}
+        >
+          {/* {expandedId && CHART_REGISTRY[expandedId]
+            ? React.createElement(CHART_REGISTRY[expandedId], {
+                ...chartDetailProps,
+                variant: "detail",
+              })
+            : null} */}
+          <FilteredChart
+            chartId={expandedId}
+            chartProps={chartProps}
+            variant="detail"
+          />
+        </ChartDetailModal>
+      )}
     </View>
   );
 };
