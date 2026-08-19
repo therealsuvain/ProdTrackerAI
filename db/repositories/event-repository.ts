@@ -41,7 +41,7 @@ function rowToCalendarEvent(
 
 // ─── private: child row builders ─────────────────────────────────────────────
 
-function buildEventDeletedOccurrenceRows(
+export function buildEventDeletedOccurrenceRows(
     event: CalendarEvent,
 ): Omit<EventDeletedOccurrenceRow, never>[] {
     return (event.deletedOccurrences ?? []).map((date) => ({
@@ -51,7 +51,7 @@ function buildEventDeletedOccurrenceRows(
     }));
 }
 
-function buildEventNotificationIdRows(
+export function buildEventNotificationIdRows(
     event: CalendarEvent,
 ): Omit<EventNotificationIdRow, never>[] {
     return (event.notificationIds ?? []).map((notif) => ({
@@ -82,7 +82,7 @@ async function fetchChildRowsForOne(eventId: string): Promise<ChildRows> {
  * Fetch child rows for many calendarEvents in 3 queries (not N*3).
  * Returns a map keyed by eventId so assembly is O(1) per event.
  */
-async function fetchChildRowsForMany(
+export async function fetchChildRowsForMany(
     eventIds: string[],
 ): Promise<Map<string, ChildRows>> {
     if (eventIds.length === 0) return new Map();

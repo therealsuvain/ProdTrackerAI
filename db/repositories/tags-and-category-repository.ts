@@ -44,6 +44,7 @@ function rowToCategory(row: CategoryRow): Category {
         icon: row.icon,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
+        syncedAt: row.syncedAt ?? undefined,
     };
 }
 
@@ -58,6 +59,7 @@ function categoryToInsert(category: Category): CategoryInsert {
         icon: category.icon,
         createdAt: category.createdAt ?? now,
         updatedAt: now, // always stamp updatedAt to now on any write
+        syncedAt: category.syncedAt ?? null,
     };
 }
 

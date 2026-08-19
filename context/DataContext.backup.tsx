@@ -29,7 +29,7 @@ import {
   deleteTask,
   toggleTaskCompleted,
   bulkInsertTasks,
-  countTasks
+  countTasks,
 } from "@/db/repositories/task-repository";
 
 import {
@@ -182,7 +182,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     message: string;
     type?: "warning" | "fatal";
   } | null>(null);
-  
+
   useDrizzleStudio(sqlite);
 
   const dispatchError = useCallback(
@@ -648,7 +648,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Remove Dont need optmistic app metrics mutator
-/*   const optimisticAppMetricsMutation = useCallback(
+  /*   const optimisticAppMetricsMutation = useCallback(
     async (
       optimisticUpdate: (prev: AppMetrics) => AppMetrics,
       metricDbWrite: (keys: MetricKey[] , amount: number, dateOverride?: string) => Promise<AppMetrics>,
@@ -713,7 +713,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     all: boolean,
   ) => {
     const event = events.find((e) => e.id === eventId);
-    if (!event) return; 
+    if (!event) return;
     if (all) {
       // cancel all notifications
       event.notificationIds?.forEach((n) => cancelReminder(n.id));
@@ -744,7 +744,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         let newlyUnlocked: AchievementBadge[] = [];
         try {
           for (const key of keys) {
-            if (key === "lastSyncedAt") {
+            if (key === "syncedAt") {
               continue;
             }
             const newlyUnlockedForKey = await processAchievements(

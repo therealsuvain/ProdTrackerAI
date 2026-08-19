@@ -18,6 +18,7 @@ import {
   addTimerActionListener,
 } from "../modules/notifications-timer";
 import { useLogs } from "@/hooks/context-hooks/use-logs";
+import { el } from "zod/v4/locales";
 
 export type TimerMode = "stopwatch" | "countdown";
 interface TimerContextType {
@@ -104,7 +105,7 @@ Notifications.setNotificationHandler({
 
 // TODOOptim Clean-up and document this bloated poo
 export default function TimerProvider({ children }: { children: ReactNode }) {
-  const [time, setTime] = useState(0);
+  //!const [time, setTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
@@ -129,7 +130,16 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     countdownTarget: 300,
     isRunning: false,
   });
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const elapsedSeconds =
+    isRunning && startTimestamp
+      ? pausedSeconds + Math.floor((nowMs - startTimestamp) / 1000)
+      : pausedSeconds;
 
+  const time =
+    mode === "countdown"
+      ? Math.max(0, countdownTarget - elapsedSeconds)
+      : elapsedSeconds;
   useEffect(() => {
     timerStateRef.current = {
       startTimestamp,
@@ -171,7 +181,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     return () => {
       listeners.forEach((listener) => listener.remove());
     };
-  }, [time, isRunning, startTimestamp]);
+  }, [/* time, */ isRunning, startTimestamp]);
   // Initialize on mount
   useEffect(() => {
     const init = async () => {
@@ -280,14 +290,16 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
           elapsed,
         ); */
 
-        setTime(elapsed);
+        //!setTime(elapsed);
+        setNowMs(elapsed);
         setPausedSeconds(data.pausedSeconds);
         setStartTimestamp(data.startTimestamp); // Keep original start timestamp
         setIsRunning(true);
         setTitle(data.title);
       } else if (!data.isRunning) {
         // Timer is paused, restore paused state
-        setTime(data.pausedSeconds);
+        //!setTime(data.pausedSeconds);
+        setNowMs(data.pausedSeconds);
         setPausedSeconds(data.pausedSeconds);
         setStartTimestamp(Date.now());
         setIsRunning(false);
@@ -314,8 +326,8 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     isRunning,
   ]);
 
-  // Update timer display and notification when running
-  useEffect(() => {
+  //! Update timer display and notification when running
+  /*  useEffect(() => {
     cleanupIntervals();
     if (isRunning && startTimestamp) {
       // Update UI every 100ms for smooth display
@@ -342,9 +354,9 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
 
       // Update notification every second
       // updateNotificationNow();
-      /*       notificationUpdateRef.current = setInterval(() => {
-        updateNotificationNow();
-      }, 1000); */
+      //       notificationUpdateRef.current = setInterval(() => {
+      //   updateNotificationNow();
+      // }, 1000);
     } else if (!isRunning) {
       if (mode === "countdown") {
         const elapsed = pausedSeconds;
@@ -356,8 +368,27 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     }
 
     return cleanupIntervals;
-  }, [isRunning, startTimestamp, pausedSeconds, mode, countdownTarget]);
+  }, [isRunning, startTimestamp, pausedSeconds, mode, countdownTarget]); */
+  // Ticker's only job now: force a re-render every 100ms while running.
+  useEffect(() => {
+    cleanupIntervals();
+    if (isRunning && startTimestamp) {
+      updateIntervalRef.current = setInterval(() => setNowMs(Date.now()), 100);
+    }
+    return cleanupIntervals;
+  }, [isRunning, startTimestamp]);
 
+  // Countdown-hits-zero watches the computed `time` instead of keeping its own copy.
+  useEffect(() => {
+    if (mode === "countdown" && isRunning && time <= 0 && !zeroHitRef.current) {
+      zeroHitRef.current = true;
+      cleanupIntervals();
+      setPausedSeconds(countdownTarget);
+      setIsRunning(false);
+      setStartTimestamp(null);
+      handleCountdownZero(elapsedSeconds);
+    }
+  }, [time, mode, isRunning, countdownTarget, elapsedSeconds]);
   const cleanupIntervals = () => {
     if (updateIntervalRef.current) {
       clearInterval(updateIntervalRef.current);
@@ -425,7 +456,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     if (isRunning) return; // safety guard — shouldn't be callable while running
     zeroHitRef.current = false;
     setMode((prev) => (prev === "stopwatch" ? "countdown" : "stopwatch"));
-    setTime(0);
+    //!setTime(0);
     setPausedSeconds(0);
     setStartTimestamp(null);
     setLaps([]);
@@ -436,6 +467,8 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     zeroHitRef.current = false;
     const now = Date.now();
     setStartTimestamp(now);
+    //!
+    setNowMs(now);
     setPausedSeconds(
       mode === "countdown"
         ? countdownTarget - time // track elapsed, not remaining
@@ -474,7 +507,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
       setPausedSeconds(() => elapsed);
       const displayTime =
         mode === "countdown" ? Math.max(0, countdownTarget - elapsed) : elapsed;
-      setTime(displayTime);
+      //!setTime(displayTime);
       const now = Date.now();
       showNotification(
         title || "Timer",
@@ -490,7 +523,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
         elapsed,
       ); */
     }
-    //setStartTimestamp(null);
+    setStartTimestamp(null);
     setIsRunning(false);
     //stopNativeTimer();
   };
@@ -501,27 +534,31 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
       isRunning && startTimestamp
         ? pausedSeconds + Math.floor((Date.now() - startTimestamp) / 1000)
         : pausedSeconds;
+    //! Freeze immediately so nothing can tick during the `await` below.
+    setIsRunning(false);
+    setStartTimestamp(null);
     var log: TimerLog | null = null;
-    const workedTime = mode === "countdown" ? finalTime : finalTime;
-    if (workedTime > 0) {
+    //const workedTime = finalTime;
+    if (finalTime > 0) {
       log = {
         id: randomUUID(),
         title: title || "Untitled Activity",
         category: category.trim() || undefined,
-        startTime: new Date(Date.now() - workedTime * 1000).toISOString(),
+        startTime: new Date(Date.now() - finalTime * 1000).toISOString(),
         endTime: new Date().toISOString(),
-        duration: workedTime,
+        duration: finalTime,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         laps: laps.length > 0 ? laps : undefined,
       };
       await addLog(log);
-      trackMetric(["timeTracked"], workedTime);
+      trackMetric(["timeTracked"], finalTime);
       trackMetric(["logsAdded"], 1);
       stopNativeTimer();
     }
 
     resetState();
+    console.log(mode);
     return log;
   };
   const resetWithConfirmation = () => {
@@ -583,7 +620,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
 
   // Internal: zero out all timer state. Called by both stop() and reset paths.
   const resetState = () => {
-    setTime(0);
+    //!setTime(0);
     setTitle("");
     setCategory("");
     setLaps([]);

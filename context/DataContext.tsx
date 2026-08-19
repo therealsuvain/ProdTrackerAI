@@ -121,6 +121,7 @@ interface DataContextType {
     originalItems: Record<string, string[]>,
   ) => Promise<void>;
   getItemIdsForTagLocal: (id: string) => Promise<Record<string, string[]>>;
+  refreshTagsCatsAchievements: () => void;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(
@@ -576,7 +577,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
           if (actor === "ai") {
             if (
               globalKey in nextGlobal.aiMetrics &&
-              globalKey !== "lastSyncedAt" &&
+              globalKey !== "syncedAt" &&
               globalKey !== "aiMetrics"
             ) {
               nextGlobal.aiMetrics[globalKey] = Math.max(
@@ -587,7 +588,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
           } else {
             if (
               globalKey in nextGlobal &&
-              globalKey !== "lastSyncedAt" &&
+              globalKey !== "syncedAt" &&
               globalKey !== "aiMetrics"
             ) {
               nextGlobal[globalKey] = Math.max(
@@ -636,7 +637,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
 
       try {
         for (const key of keys) {
-          if (key === "lastSyncedAt" || key === "aiMetrics") {
+          if (key === "syncedAt" || key === "aiMetrics") {
             continue;
           }
           const optimisticNewValue = currentGlobal[key] + amount;
@@ -833,6 +834,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         reassignDeletedTag,
         reassignDeletedCategory,
         getItemIdsForTagLocal,
+        refreshTagsCatsAchievements,
       }}
     >
       {children}

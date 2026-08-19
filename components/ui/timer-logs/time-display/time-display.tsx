@@ -44,7 +44,7 @@ export default function TimerDisplay({
       onToggleMode,
       onCountdownTargetChange,
     });
-
+  console.log(mode, time);
   return (
     <>
       <TimerDisplayCircle

@@ -1,4 +1,7 @@
+import { AvatarId } from "@/constants/avatars";
+
 export interface SettingsConfig {
+  avatarId:{ id:AvatarId, updatedAt:string}
   isDarkMode: boolean;
   isSystemTheme: boolean;
   hapticsEnabled: boolean;
@@ -19,6 +22,7 @@ export interface SettingsConfig {
 }
 
 export const defaultSettings: SettingsConfig = {
+  avatarId: {id: "avatar_1", updatedAt: ""},
   isDarkMode: true, // Assuming dark mode based on previous context
   isSystemTheme: true,
   hapticsEnabled: true,

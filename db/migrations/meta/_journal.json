@@ -134,6 +134,27 @@
       "when": 1785215217599,
       "tag": "0018_same_proemial_gods",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1786886482663,
+      "tag": "0019_demonic_tag",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1786978853772,
+      "tag": "0020_common_crystal",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1787030667768,
+      "tag": "0021_peaceful_lady_mastermind",
+      "breakpoints": true
     }
   ]
 }

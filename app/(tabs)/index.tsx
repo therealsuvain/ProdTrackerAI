@@ -36,11 +36,10 @@ import { useData } from "@/hooks/context-hooks/use-data";
 import { useHaptics } from "@/hooks/use-haptics";
 import { GlobalMetricKey } from "@/types/metrics";
 import { useDbErrorToast } from "@/components/shared/db-error-toast";
+import { useAuth } from "@/context/AuthContext";
 
 /**
  * TODOOptim 2 : Many files are very large, try and make it more modular. ALL FILES HAVE TO CHECKED FOR POSSIBLE <REFACTORS></REFACTORS>
- * TODOAdd 3 : Account creation, authentication, login
- * TODOAdd 4 : CLOUD DATA SYNC ABILITY with account
  * TODOAdd 5 : Pay wall, barring paid features for free users
  * TODOAdd 6 : Notifications edits via AI chat
  * TODOAdd 7 : Maybe custom notifications options
@@ -66,10 +65,12 @@ import { useDbErrorToast } from "@/components/shared/db-error-toast";
  * TODO : Every Modal must have close button and must close on pressing back
  *  TODO : Habit auto freeze should be optional and toggleable
  * TODO : The AI chat always has to have chat history avaliable to it,
+ * TODO habits checkins missed recording duplicates, some id checker is needed for those habits form whom the metric is incremented alrteady and prevent duplicate increments
  * for example I asked the current chat logic , "how to read a scatter plot", it gave a base explannation on what a scatter plot is
  * but not how to read it, in the follow up , I asked , "yea, but how to read it tho", it answered some bullshit and asked me what
  * "it" is . It forgot what I said before.
  *TODO : Migrate to Interaction API for googlegenAI lib
+ * TODO : Infitely recurring evnets currently are only replicated for 60 days, after that their UI card is not shown in the calendar
  */
 
 function HomeScreenInner() {
@@ -116,7 +117,11 @@ function HomeScreenInner() {
     intervalMs: 15000,
     triggerOffset: 18000,
   }); */
-
+  /* const DebugAuthProbe = () => {
+    const { authLoaded, userId, isAnonymous } = useAuth();
+    console.log("[DebugAuthProbe]", { authLoaded, userId, isAnonymous });
+    return null;
+  }; */
   const toggleTaskCompleted = async (id: string) => {
     const task = tasks.find((t) => t.id === id);
     await toggleTask(id);
@@ -158,7 +163,7 @@ function HomeScreenInner() {
     },
     [trackMetric, habits],
   );
-
+  //DebugAuthProbe();
   return (
     <Provider>
       {/* {(isLoading || isProcessing) && <LoadingIndicator />} */}

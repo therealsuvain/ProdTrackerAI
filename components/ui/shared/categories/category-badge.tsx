@@ -3,12 +3,12 @@ import { View, Text, StyleSheet } from "react-native";
 import { ThemeContext } from "@/context/ThemeContext";
 import { CategoryRow } from "@/db/schema";
 import { Ionicons } from "@expo/vector-icons";
-import { cat } from "@huggingface/transformers";
 import { useData } from "@/hooks/context-hooks/use-data";
+import { Category } from "@/types/category";
 
 export type CategoryBadgeVariant = "default" | "iconOnly";
 interface CategoryBadgeProps {
-  category: CategoryRow | null | undefined;
+  category: CategoryRow | null | undefined | Category;
   size?: "small" | "medium" | "big";
   variant?: CategoryBadgeVariant;
 }

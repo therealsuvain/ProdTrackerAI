@@ -6,4 +6,5 @@ export interface Category {
     icon: string
     createdAt: string
     updatedAt: string
+    syncedAt?: string
 }

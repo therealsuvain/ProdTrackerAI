@@ -78,7 +78,7 @@ function rowToHabit(
 
 // ─── private: child row builders ─────────────────────────────────────────────
 
-function buildCheckInRows(
+export function buildCheckInRows(
     habit: Habit,
 ): Omit<HabitCheckInRow, never>[] {
     //console.log('buildCheckInRows', habit.history);
@@ -89,7 +89,7 @@ function buildCheckInRows(
     }));
 }
 
-function buildFreezeRows(
+export function buildFreezeRows(
     habit: Habit,
 ): Omit<HabitFreezeRow, never>[] {
     return (habit.freezeHistory ?? []).map((date) => ({
@@ -99,7 +99,7 @@ function buildFreezeRows(
     }));
 }
 
-function buildGoalCompletionRows(
+export function buildGoalCompletionRows(
     habit: Habit,
 ): Omit<HabitGoalCompletionRow, never>[] {
     return (habit.goalCompletions ?? []).map((gc, idx) => ({
@@ -119,7 +119,7 @@ interface ChildRows {
 }
 
 /** Fetch all child rows for a single habit id. */
-async function fetchChildRowsForOne(habitId: string): Promise<ChildRows> {
+export async function fetchChildRowsForOne(habitId: string): Promise<ChildRows> {
     const [checkIns, freezes, goalCompletionRows] = await Promise.all([
         db.select().from(habitCheckIns).where(eq(habitCheckIns.habitId, habitId)),
         db.select().from(habitFreezeHistory).where(eq(habitFreezeHistory.habitId, habitId)),
@@ -132,7 +132,7 @@ async function fetchChildRowsForOne(habitId: string): Promise<ChildRows> {
  * Fetch child rows for many habits in 3 queries (not N*3).
  * Returns a map keyed by habitId so assembly is O(1) per habit.
  */
-async function fetchChildRowsForMany(
+export async function fetchChildRowsForMany(
     habitIds: string[],
 ): Promise<Map<string, ChildRows>> {
     if (habitIds.length === 0) return new Map();

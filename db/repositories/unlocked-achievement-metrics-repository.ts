@@ -42,7 +42,7 @@ const achievementGlobalColumnMap: Record<keyof AchievementMetrics, keyof Achieve
     chatActionsConfirmed: "chatActionsConfirmed",
     chatActionsExpired: "chatActionsExpired",
     chatActionsCancelled: "chatActionsCancelled",
-    lastSyncedAt: "lastSyncedAt",
+    syncedAt: "syncedAt",
 };
 
 
@@ -81,7 +81,7 @@ function achievementGlobalRowToObject(row: AchievementGlobalMetricsRow): Achieve
         chatActionsConfirmed: row.chatActionsConfirmed,
         chatActionsExpired: row.chatActionsExpired,
         chatActionsCancelled: row.chatActionsCancelled,
-        lastSyncedAt: row.lastSyncedAt ?? undefined,
+        syncedAt: row.syncedAt ?? undefined,
     };
 }
 

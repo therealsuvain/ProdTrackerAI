@@ -20,18 +20,19 @@ class AnalyticsEngine {
     /**
    * The listener for the UI events
    */
-    private handleTrackEvent = ({ keys, amount,actor = 'user' }: { keys: GlobalMetricKey[], amount: number, actor?: 'user' | 'ai' }) => {
+    private handleTrackEvent = ({ keys, amount, actor = 'user' }: { keys: GlobalMetricKey[], amount: number, actor?: 'user' | 'ai' }) => {
         if (keys.length === 0 || amount === 0) return;
 
         // 1. Update the in-memory queue
         keys.forEach((key) => {
             this.pendingMetrics[key] = (this.pendingMetrics[key] || 0) + amount;
-            if(actor === 'ai') this.pendingAiMetrics[key] = (this.pendingAiMetrics[key] || 0) + amount;
+            if (actor === 'ai') this.pendingAiMetrics[key] = (this.pendingAiMetrics[key] || 0) + amount;
+            console.log(`[AnalyticsEngine] ${actor} tracked ${actor === 'ai' ? this.pendingAiMetrics[key] : this.pendingMetrics[key]} ${key}`);
         });
 
-        // 2. Broadcast the snapshot back to the UI for instant re-renders (Achievements, etc.)
-        metricsEventBus.emit('metric:optimistic_update', { ...this.pendingMetrics });
-        if(actor === 'ai') metricsEventBus.emit('metric:optimistic_update', { ...this.pendingAiMetrics });
+        /*         // 2. Broadcast the snapshot back to the UI for instant re-renders (Achievements, etc.)
+                metricsEventBus.emit('metric:optimistic_update', { ...this.pendingMetrics });
+                if (actor === 'ai') metricsEventBus.emit('metric:optimistic_update', { ...this.pendingAiMetrics }); */
     };
 
     // ============================================================================
@@ -62,13 +63,12 @@ class AnalyticsEngine {
         if (this.isFlushing) return;
 
         const keys = Object.keys(this.pendingMetrics) as AnyMetricKey[];
-        if (keys.length === 0) return;
 
         const aiKeys = Object.keys(this.pendingAiMetrics) as AnyMetricKey[];
-        if (aiKeys.length === 0) return;
+        if (keys.length === 0 && aiKeys.length === 0) return;
 
         this.isFlushing = true;
-        const queueToFlush = { ...this.pendingMetrics };
+        const queueToFlush = { ...this.pendingMetrics, };
         const aiQueueToFlush = { ...this.pendingAiMetrics };
         this.pendingMetrics = {}; // Sync reset
         this.pendingAiMetrics = {};
@@ -76,7 +76,7 @@ class AnalyticsEngine {
         try {
             // Phase 3 hook: Ready for Drizzle batched upsert
             await mutateMetricInDb(queueToFlush, aiQueueToFlush);
-            console.log(`[AnalyticsEngine] Flushed ${keys.length+aiKeys.length} metric types via Mitt.`);
+            console.log(`[AnalyticsEngine] Flushed ${keys.length + aiKeys.length} metric types via Mitt.`);
         } catch (error) {
             console.error("[AnalyticsEngine] Failed to flush metrics:", error);
 
@@ -85,8 +85,8 @@ class AnalyticsEngine {
                 this.pendingMetrics[key] = (this.pendingMetrics[key] || 0) + amount;
             });
             Object.entries(aiQueueToFlush).forEach(([key, amount]) => {
-        this.pendingAiMetrics[key] = (this.pendingAiMetrics[key] || 0) + amount;
-      });
+                this.pendingAiMetrics[key] = (this.pendingAiMetrics[key] || 0) + amount;
+            });
         } finally {
             this.isFlushing = false;
         }

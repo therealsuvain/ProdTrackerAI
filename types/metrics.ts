@@ -11,7 +11,7 @@ export interface DailyMetrics {
   habitsAbandoned: number;
   habitsCheckedIn: number;
   habitsCheckedInBefore8am: number;
-  habitsCheckedInAfter10pm : number;
+  habitsCheckedInAfter10pm: number;
   habitsGoalsCompleted: number;
   habitGoalsRestarted: number; //Habits restarted after completion
   habitCheckInsMissed: number;
@@ -71,7 +71,7 @@ export interface AppMetrics {
     habitsAbandoned: number;
     habitsCheckedIn: number;
     habitsCheckedInBefore8am: number;
-    habitsCheckedInAfter10pm : number;
+    habitsCheckedInAfter10pm: number;
     habitsGoalsCompleted: number;
     habitGoalsRestarted: number;
     habitCheckInsMissed: number;
@@ -109,7 +109,7 @@ export interface AppMetrics {
     tagsEdited: number;
     categoriesEdited: number;
     aiMetrics: DailyMetrics;
-    lastSyncedAt?: string;
+    syncedAt?: string;
   };
   // O(1) lookup for Heatmaps (UI uses this)
   daily: {
@@ -120,8 +120,8 @@ export interface AppMetrics {
 export const DefaultMetrics: AppMetrics = {
   global: {
     tasksAdded: 0, tasksCompleted: 0, tasksAbandoned: 0, tasksMissed: 0, tasksDeleted: 0,
-    habitsAdded: 0, habitsWithWeeklyGoals: 0, habitsWithDailyGoals: 0, habitsAbandoned: 0, 
-    habitsCheckedIn: 0, habitsCheckedInBefore8am: 0, habitsCheckedInAfter10pm : 0, habitsGoalsCompleted: 0,
+    habitsAdded: 0, habitsWithWeeklyGoals: 0, habitsWithDailyGoals: 0, habitsAbandoned: 0,
+    habitsCheckedIn: 0, habitsCheckedInBefore8am: 0, habitsCheckedInAfter10pm: 0, habitsGoalsCompleted: 0,
     habitGoalsRestarted: 0, habitCheckInsMissed: 0, habitsStreakMaxDaily: 0, habitsStreakMaxWeekly: 0, habitsFrozen: 0, habitsAutoFrozen: 0, habitsDeleted: 0,
     eventsAdded: 0, eventsDeleted: 0, eventsEarlymorning: 0, eventsLatenight: 0, eventsOvernight: 0,
     eventsDaily: 0, eventsWeekly: 0, eventsSingleton: 0, eventsInfinite: 0,
@@ -134,25 +134,25 @@ export const DefaultMetrics: AppMetrics = {
 
     aiMetrics: {
       tasksAdded: 0, tasksCompleted: 0, tasksAbandoned: 0, tasksMissed: 0, tasksDeleted: 0,
-    habitsAdded: 0, habitsWithWeeklyGoals: 0, habitsWithDailyGoals: 0, habitsAbandoned: 0, 
-    habitsCheckedIn: 0, habitsCheckedInBefore8am: 0, habitsCheckedInAfter10pm : 0, habitsGoalsCompleted: 0,
-    habitGoalsRestarted: 0, habitCheckInsMissed: 0, habitsStreakMaxDaily: 0, habitsStreakMaxWeekly: 0, habitsFrozen: 0, habitsAutoFrozen: 0, habitsDeleted: 0,
-    eventsAdded: 0, eventsDeleted: 0, eventsEarlymorning: 0, eventsLatenight: 0, eventsOvernight: 0,
-    eventsDaily: 0, eventsWeekly: 0, eventsSingleton: 0, eventsInfinite: 0,
-    timeTracked: 0,
-    chatMessagesSent: 0, chatActionsConfirmed: 0, chatActionsExpired: 0, chatActionsCancelled: 0,
-    tagsAdded: 0, tagsAssigned: 0, tagsDeleted: 0,
-    categoriesAdded: 0, categoriesAssigned: 0, categoriesDeleted: 0,
-    logsAdded: 0, logsDeleted: 0,
-    tasksEdited: 0, habitsEdited: 0, eventsEdited: 0, logsEdited: 0, tagsEdited: 0, categoriesEdited: 0,
-  }
+      habitsAdded: 0, habitsWithWeeklyGoals: 0, habitsWithDailyGoals: 0, habitsAbandoned: 0,
+      habitsCheckedIn: 0, habitsCheckedInBefore8am: 0, habitsCheckedInAfter10pm: 0, habitsGoalsCompleted: 0,
+      habitGoalsRestarted: 0, habitCheckInsMissed: 0, habitsStreakMaxDaily: 0, habitsStreakMaxWeekly: 0, habitsFrozen: 0, habitsAutoFrozen: 0, habitsDeleted: 0,
+      eventsAdded: 0, eventsDeleted: 0, eventsEarlymorning: 0, eventsLatenight: 0, eventsOvernight: 0,
+      eventsDaily: 0, eventsWeekly: 0, eventsSingleton: 0, eventsInfinite: 0,
+      timeTracked: 0,
+      chatMessagesSent: 0, chatActionsConfirmed: 0, chatActionsExpired: 0, chatActionsCancelled: 0,
+      tagsAdded: 0, tagsAssigned: 0, tagsDeleted: 0,
+      categoriesAdded: 0, categoriesAssigned: 0, categoriesDeleted: 0,
+      logsAdded: 0, logsDeleted: 0,
+      tasksEdited: 0, habitsEdited: 0, eventsEdited: 0, logsEdited: 0, tagsEdited: 0, categoriesEdited: 0,
+    }
   },
   daily: {}
 };
 export const DefaultDailyMetrics: DailyMetricsWithAI = {
   tasksAdded: 0, tasksCompleted: 0, tasksAbandoned: 0, tasksMissed: 0, tasksDeleted: 0,
   habitsAdded: 0, habitsWithWeeklyGoals: 0, habitsWithDailyGoals: 0, habitsAbandoned: 0,
-  habitsCheckedIn: 0, habitsCheckedInAfter10pm : 0, habitsCheckedInBefore8am: 0, habitsGoalsCompleted: 0, habitGoalsRestarted: 0, habitCheckInsMissed: 0,
+  habitsCheckedIn: 0, habitsCheckedInAfter10pm: 0, habitsCheckedInBefore8am: 0, habitsGoalsCompleted: 0, habitGoalsRestarted: 0, habitCheckInsMissed: 0,
   habitsStreakMaxDaily: 0, habitsStreakMaxWeekly: 0, habitsFrozen: 0, habitsAutoFrozen: 0, habitsDeleted: 0,
   eventsAdded: 0, eventsDeleted: 0, eventsEarlymorning: 0, eventsLatenight: 0,
   eventsOvernight: 0, eventsDaily: 0, eventsWeekly: 0, eventsSingleton: 0, eventsInfinite: 0,
@@ -164,9 +164,9 @@ export const DefaultDailyMetrics: DailyMetricsWithAI = {
   tasksEdited: 0, habitsEdited: 0, eventsEdited: 0, logsEdited: 0, tagsEdited: 0, categoriesEdited: 0
   ,
   aiMetrics: {
-      tasksAdded: 0, tasksCompleted: 0, tasksAbandoned: 0, tasksMissed: 0, tasksDeleted: 0,
-    habitsAdded: 0, habitsWithWeeklyGoals: 0, habitsWithDailyGoals: 0, habitsAbandoned: 0, 
-    habitsCheckedIn: 0, habitsCheckedInBefore8am: 0, habitsCheckedInAfter10pm : 0, habitsGoalsCompleted: 0,
+    tasksAdded: 0, tasksCompleted: 0, tasksAbandoned: 0, tasksMissed: 0, tasksDeleted: 0,
+    habitsAdded: 0, habitsWithWeeklyGoals: 0, habitsWithDailyGoals: 0, habitsAbandoned: 0,
+    habitsCheckedIn: 0, habitsCheckedInBefore8am: 0, habitsCheckedInAfter10pm: 0, habitsGoalsCompleted: 0,
     habitGoalsRestarted: 0, habitCheckInsMissed: 0, habitsStreakMaxDaily: 0, habitsStreakMaxWeekly: 0, habitsFrozen: 0, habitsAutoFrozen: 0, habitsDeleted: 0,
     eventsAdded: 0, eventsDeleted: 0, eventsEarlymorning: 0, eventsLatenight: 0, eventsOvernight: 0,
     eventsDaily: 0, eventsWeekly: 0, eventsSingleton: 0, eventsInfinite: 0,
@@ -181,5 +181,5 @@ export const DefaultDailyMetrics: DailyMetricsWithAI = {
 export type MetricKey = keyof DailyMetrics | keyof AppMetrics['global'];
 export type GlobalMetricKey = keyof AppMetrics['global'];
 export type GlobalMetricKeyWithoutAI = keyof Omit<AppMetrics['global'], 'aiMetrics'>;
-export type GlobalMetricNums = keyof Omit<AppMetrics['global'], 'lastSyncedAt'| 'aiMetrics'>;
+export type GlobalMetricNums = keyof Omit<AppMetrics['global'], 'syncedAt' | 'aiMetrics'>;
 export type DailyMetricKey = keyof DailyMetrics;
