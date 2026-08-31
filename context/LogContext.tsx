@@ -28,13 +28,13 @@ interface LogContextType {
   reassignLogCategoryLocal: (oldId: string, newId: string) => void;
   reassignLogTagLocal: (oldId: string, newId: string) => void;
   logCount: () => Promise<number>;
-  refreshLogs: () => void;
+  refreshLogs: () => Promise<void>;
 }
 
 export const LogContext = createContext<LogContextType | undefined>(undefined);
 
 export default function LogProvider({ children }: { children: ReactNode }) {
-  const { dispatchError } = useData();
+  const { dispatchError, dBloaded } = useData();
   const [timerLogs, setTimerLogs] = useState<TimerLog[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -161,8 +161,9 @@ export default function LogProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatchError]);
   useEffect(() => {
+    if (!dBloaded) return;
     refreshLogs();
-  }, []);
+  }, [dBloaded]);
 
   return (
     <LogContext.Provider

@@ -1,13 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useContext, useState } from "react";
-import {
-  Alert,
-  AlertButton,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { FAB, Portal } from "react-native-paper";
 
 import ViewSwitcher from "@/components/ui/calendar-events/view-switcher-event";
@@ -30,7 +23,10 @@ import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-lis
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 import { useData } from "@/hooks/context-hooks/use-data";
-import { tr } from "zod/v4/locales/index.js";
+import {
+  AppDialog,
+  DialogAction,
+} from "@/components/shared/dialog-system/AppDialog";
 
 // TODOX - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {
@@ -56,7 +52,9 @@ function CalendarScreenInner() {
     onClose: () => setVisible(false),
     resetEditingEvent: () => setEditingEvent(null),
   });
-
+  const [deleteEventDialogActions, setDeleteEventDialogActions] = useState<
+    DialogAction[] | null
+  >(null);
   const showModal = (event?: CalendarEvent) => {
     if (event) {
       setIsEditing(true);
@@ -98,10 +96,33 @@ function CalendarScreenInner() {
     const event = events.find((e: CalendarEvent) => e.id === id);
     if (!event) return;
     const isSingleOccurrence = isSingleOccurrenceHelper(event);
-    const buttons: AlertButton[] = [
-      { text: "Cancel" },
+    const buttons: DialogAction[] = [];
+    if (!isSingleOccurrence) {
+      buttons.push({
+        label: "Delete Current Occurrence",
+        variant: "destructive",
+        onPress: async () => {
+          try {
+            await deleteEventOccurrence(id, date, false);
+            triggerHaptic();
+          } catch {
+            showToast("Couldn't delete the event. It has been restored.");
+          } finally {
+            setDeleteEventDialogActions(null);
+          }
+        },
+      });
+    }
+    buttons.push(
       {
-        text: "Delete Event",
+        label: "Cancel",
+        onPress: () => {
+          setDeleteEventDialogActions(null);
+        },
+      },
+      {
+        label: "Delete Event",
+        variant: "destructive",
         onPress: async () => {
           try {
             await deleteEventOccurrence(id, date, true);
@@ -109,25 +130,13 @@ function CalendarScreenInner() {
             trackMetric(["eventsDeleted"], 1);
           } catch {
             showToast("Couldn't delete the event. It has been restored.");
+          } finally {
+            setDeleteEventDialogActions(null);
           }
         },
       },
-    ];
-    if (!isSingleOccurrence) {
-      buttons.push({
-        text: "Delete Current Occurrence",
-        onPress: async () => {
-          try {
-            await deleteEventOccurrence(id, date, false);
-            triggerHaptic();
-          } catch {
-            showToast("Couldn't delete the event. It has been restored.");
-          }
-        },
-      });
-    }
-
-    Alert.alert("Delete Event", "Are you sure?", buttons);
+    );
+    setDeleteEventDialogActions(buttons);
   };
   return (
     <>
@@ -183,6 +192,16 @@ function CalendarScreenInner() {
           isNew={!isEditing}
         ></CalendarEventModal>
       </Portal>
+      {deleteEventDialogActions && (
+        <AppDialog
+          visible
+          title={"Delete Event"}
+          description={"Are you sure?"}
+          onDismiss={() => setDeleteEventDialogActions(null)}
+          dismissable={false}
+          actions={deleteEventDialogActions}
+        />
+      )}
     </>
   );
 }

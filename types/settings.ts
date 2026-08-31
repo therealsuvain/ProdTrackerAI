@@ -5,6 +5,9 @@ export interface SettingsConfig {
   isDarkMode: boolean;
   isSystemTheme: boolean;
   hapticsEnabled: boolean;
+  manualSyncEnabled: boolean;
+  restoreRecovery: boolean;
+  autoCloudSync: boolean;
   notificationEnabled: boolean //string | null; // e.g., "09:00" or null if disabled
   soundEffectsEnabled: boolean;
   resetAchievements: boolean;
@@ -26,6 +29,9 @@ export const defaultSettings: SettingsConfig = {
   isDarkMode: true, // Assuming dark mode based on previous context
   isSystemTheme: true,
   hapticsEnabled: true,
+  manualSyncEnabled: false,
+  restoreRecovery: false,
+  autoCloudSync: true,
   notificationEnabled: false,
   soundEffectsEnabled: true,
   resetAchievements: false,

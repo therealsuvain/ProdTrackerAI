@@ -1,5 +1,5 @@
 // components/ui/sidebar-content.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, StyleSheet, Text, TouchableOpacity, Image } from "react-native";
 import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
 import { useRouter } from "expo-router";
@@ -10,12 +10,19 @@ import { useAuth } from "@/context/AuthContext";
 import { useSettings } from "@/context/SettingsContext";
 import { AvatarPickerModal } from "@/components/ui/avatar/avatar-picker-modal";
 import { getAvatarSource, AvatarId } from "@/constants/avatars";
+import { SyncStatusIndicator } from "@/components/ui/shared/sync-status-indicator";
+import { SyncResolutionModal } from "@/components/shared/dialog-system/SyncResolutionDialog";
+import { usePendingNotificationsStore } from "@/utils/Account-utils/pending-notification-store";
+import { useSync } from "@/context/SyncContext";
 
 export const Sidebar = (props: any) => {
-  const router = useRouter();
   const { theme } = useTheme();
   const { isAnonymous, userEmail, authLoaded, signOut } = useAuth();
-
+  const { loadAndReschduleNotifications } = useSync();
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const pendingNotification = usePendingNotificationsStore(
+    (s) => s.pendingNotifications,
+  );
   // NOTE: avatarId storage location is a decision for you — see explanation
   // below the code. This assumes a SettingsContext exposing avatarId +
   // a setter, matching your existing context conventions.
@@ -33,118 +40,149 @@ export const Sidebar = (props: any) => {
       updatedAt: new Date().toISOString(),
     });
   };
-  return (
-    <DrawerContentScrollView
-      {...props}
-      contentContainerStyle={[
-        styles.container,
-        { backgroundColor: theme.background },
-      ]}
-    >
-      {/* Profile Header Section */}
-      <View style={styles.profileSection}>
-        <TouchableOpacity
-          onPress={() => setAvatarPickerVisible(true)}
-          disabled={!authLoaded}
-        >
-          <Image
-            source={getAvatarSource(settings.avatarId.id)}
-            style={styles.avatarImage}
-          />
-        </TouchableOpacity>
-        <Text style={[styles.nameText, { color: theme.text }]}>
-          {displayName}
-        </Text>
-        <Text style={[styles.taglineText, { color: theme.text }]}>
-          {displayTagline}
-        </Text>
-      </View>
 
-      {/* Navigation Items */}
-      <View style={styles.navSection}>
-        {isAnonymous ? (
-          userEmail ? (
-            <DrawerItem
-              label="Sign in"
-              labelStyle={{ color: theme.text }}
-              icon={({ size }) => (
-                <Ionicons
-                  name="log-in-outline"
-                  color={theme.text}
-                  size={size}
-                />
-              )}
-              onPress={() => router.push("/sign-in")}
+  const handleNotifications = async () => {
+    await loadAndReschduleNotifications();
+  };
+  return (
+    <>
+      <DrawerContentScrollView
+        {...props}
+        contentContainerStyle={[
+          styles.container,
+          { backgroundColor: theme.background },
+        ]}
+      >
+        {/* Profile Header Section */}
+        <View style={styles.profileSection}>
+          <TouchableOpacity
+            onPress={() => setAvatarPickerVisible(true)}
+            disabled={!authLoaded}
+          >
+            <Image
+              source={getAvatarSource(settings.avatarId.id)}
+              style={styles.avatarImage}
             />
+          </TouchableOpacity>
+          <Text style={[styles.nameText, { color: theme.text }]}>
+            {displayName}
+          </Text>
+          <Text style={[styles.taglineText, { color: theme.text }]}>
+            {displayTagline}
+          </Text>
+          <SyncStatusIndicator
+            openResolutionModal={() => setShowSyncModal(true)}
+          />
+          {pendingNotification && (
+            <TouchableOpacity
+              onPress={handleNotifications}
+              style={{ marginTop: 10 }}
+            >
+              <Text style={styles.pendingNotificationText}>
+                New reminder avalaible to schedule on this device
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Navigation Items */}
+        <View style={styles.navSection}>
+          {isAnonymous ? (
+            userEmail ? (
+              <DrawerItem
+                label="Sign in"
+                labelStyle={{ color: theme.text }}
+                icon={({ size }) => (
+                  <Ionicons
+                    name="log-in-outline"
+                    color={theme.text}
+                    size={size}
+                  />
+                )}
+                onPress={() => props.navigation.navigate("sign-in")}
+              />
+            ) : (
+              <DrawerItem
+                label="Create account"
+                labelStyle={{ color: theme.text }}
+                icon={({ size }) => (
+                  <Ionicons
+                    name="log-in-outline"
+                    color={theme.text}
+                    size={size}
+                  />
+                )}
+                onPress={() => props.navigation.navigate("sign-up")}
+              />
+            )
           ) : (
             <DrawerItem
-              label="Create account"
+              label="Sign Out"
               labelStyle={{ color: theme.text }}
               icon={({ size }) => (
                 <Ionicons
-                  name="log-in-outline"
+                  name="log-out-outline"
                   color={theme.text}
                   size={size}
                 />
               )}
-              onPress={() => router.push("/sign-up")}
+              onPress={() => signOut()}
             />
-          )
-        ) : (
+          )}
+
           <DrawerItem
-            label="Sign Out"
+            label="Home"
             labelStyle={{ color: theme.text }}
             icon={({ size }) => (
-              <Ionicons name="log-out-outline" color={theme.text} size={size} />
+              <Ionicons name="home-outline" size={size} color={theme.text} />
             )}
-            onPress={() => signOut()}
+            onPress={() => props.navigation.navigate("(tabs)")}
           />
-        )}
-
-        <DrawerItem
-          label="Home"
-          labelStyle={{ color: theme.text }}
-          icon={({ size }) => (
-            <Ionicons name="home-outline" size={size} color={theme.text} />
-          )}
-          onPress={() => router.push("/(tabs)")}
+          <DrawerItem
+            label="Settings"
+            labelStyle={{ color: theme.text }}
+            icon={({ size }) => (
+              <Ionicons
+                name="settings-outline"
+                size={size}
+                color={theme.text}
+              />
+            )}
+            onPress={() => props.navigation.navigate("settings")}
+          />
+          <DrawerItem
+            label="Achievements"
+            labelStyle={{ color: theme.text }}
+            icon={({ size }) => (
+              <Ionicons name="trophy-outline" size={size} color={theme.text} />
+            )}
+            onPress={() => props.navigation.navigate("achievements")}
+          />
+          <DrawerItem
+            label="Analytics"
+            labelStyle={{ color: theme.text }}
+            icon={({ size }) => (
+              <Ionicons
+                name="stats-chart-outline"
+                size={size}
+                color={theme.text}
+              />
+            )}
+            onPress={() => props.navigation.navigate("analytics")}
+          />
+        </View>
+        <AvatarPickerModal
+          visible={avatarPickerVisible}
+          currentAvatarId={(settings.avatarId.id as AvatarId) ?? "avatar_1"}
+          onSelect={handleAvatarSelection}
+          onClose={() => setAvatarPickerVisible(false)}
         />
-        <DrawerItem
-          label="Settings"
-          labelStyle={{ color: theme.text }}
-          icon={({ size }) => (
-            <Ionicons name="settings-outline" size={size} color={theme.text} />
-          )}
-          onPress={() => router.push("/settings/settings-screen")}
-        />
-        <DrawerItem
-          label="Achievements"
-          labelStyle={{ color: theme.text }}
-          icon={({ size }) => (
-            <Ionicons name="trophy-outline" size={size} color={theme.text} />
-          )}
-          onPress={() => router.push("/achievements")}
-        />
-        <DrawerItem
-          label="Analytics"
-          labelStyle={{ color: theme.text }}
-          icon={({ size }) => (
-            <Ionicons
-              name="stats-chart-outline"
-              size={size}
-              color={theme.text}
-            />
-          )}
-          onPress={() => router.push("/analytics/analytics-screen")}
-        />
-      </View>
-      <AvatarPickerModal
-        visible={avatarPickerVisible}
-        currentAvatarId={(settings.avatarId.id as AvatarId) ?? "avatar_1"}
-        onSelect={handleAvatarSelection}
-        onClose={() => setAvatarPickerVisible(false)}
+      </DrawerContentScrollView>
+      <SyncResolutionModal
+        visible={showSyncModal}
+        onClose={() => setShowSyncModal(false)}
       />
-    </DrawerContentScrollView>
+    </>
   );
 };
 
@@ -170,6 +208,12 @@ const styles = StyleSheet.create({
     fontSize: 22,
     letterSpacing: 0,
     lineHeight: 28,
+  },
+  pendingNotificationText: {
+    textDecorationLine: "underline",
+    textDecorationStyle: "dashed",
+    color: "#ffbc02",
+    fontSize: 12,
   },
   taglineText: {
     fontSize: 14,

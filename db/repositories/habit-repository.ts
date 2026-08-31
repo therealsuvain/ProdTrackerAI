@@ -16,7 +16,7 @@
 //
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { eq, asc, desc, inArray } from "drizzle-orm";
+import { eq, asc, desc, inArray, isNull, and } from "drizzle-orm";
 import { db, habits, habitCheckIns, habitFreezeHistory, habitGoalCompletions, habitTags } from "@/db";
 import type { Habit, GoalCompletion } from "@/types/habits";
 import type {
@@ -157,7 +157,7 @@ export async function fetchChildRowsForMany(
 
 // ─── parent row insert shape ──────────────────────────────────────────────────
 
-function habitToInsert(habit: Habit): HabitInsert {
+export function habitToInsert(habit: Habit): HabitInsert {
     const now = new Date().toISOString();
     console.log("habit repo", habit.reminderDate ?? null);
     return {
@@ -189,6 +189,7 @@ export async function getAllHabits(): Promise<Habit[]> {
     const rows = await db
         .select()
         .from(habits)
+        .where(isNull(habits.deletedAt))
         .orderBy(asc(habits.createdAt));
 
     if (rows.length === 0) return [];
@@ -211,7 +212,7 @@ export async function getHabitById(id: string): Promise<Habit | null> {
     const rows = await db
         .select()
         .from(habits)
-        .where(eq(habits.id, id))
+        .where(and(isNull(habits.deletedAt), eq(habits.id, id)))
         .limit(1);
 
     if (rows.length === 0) return null;
@@ -316,7 +317,16 @@ export async function updateHabit(habit: Habit): Promise<Habit> {
  * ON DELETE CASCADE in the schema handles child deletion automatically.
  */
 export async function deleteHabit(id: string): Promise<void> {
-    await db.delete(habits).where(eq(habits.id, id));
+    //await db.delete(habits).where(eq(habits.id, id));
+    const now = new Date().toISOString();
+     await db
+    .update(habits)
+    .set({
+      deletedAt: now,
+      updatedAt: now,
+      syncedAt: null,
+    })
+    .where(eq(habits.id, id));
 }
 
 // ─── bulk operations ──────────────────────────────────────────────────────────
@@ -452,7 +462,13 @@ export async function deleteAllHabits(): Promise<number> {
     const count = await countHabits();
     if (count === 0) return 0;
 
-    await db.delete(habits);
+    //await db.delete(habits);
+    await db.update(habits).
+    set({ 
+        deletedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        syncedAt: null, 
+    });
 
     return count;
 }

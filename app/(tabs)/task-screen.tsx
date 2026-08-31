@@ -1,6 +1,5 @@
 import { useContext, useState } from "react";
 import {
-  Alert,
   TouchableOpacity,
   View,
   StyleSheet,
@@ -43,6 +42,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
+import { ConfirmDialog } from "@/components/shared/dialog-system/ConfirmDialog";
 function TaskScreenInner() {
   const { theme, isDarkMode } = useContext(ThemeContext);
   const { tasks, setTasks, addTask, editTask, removeTask, toggleTask } =
@@ -64,6 +64,7 @@ function TaskScreenInner() {
     onClose: () => setVisible(false),
   });
   const { triggerHaptic } = useHaptics();
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const filteredTasks = tasks
     .filter(
       (t) =>
@@ -100,27 +101,23 @@ function TaskScreenInner() {
     setVisible(false);
   };
 
-  const handleDelete = (id: string) => {
-    Alert.alert("Delete Task", "Are you sure you want to delete this task?", [
-      { text: "Cancel" },
-      {
-        text: "Delete",
-        onPress: async () => {
-          const task = tasks.find((e: Task) => e.id === id);
-          if (task?.notificationId) {
-            cancelReminder(task.notificationId);
-          }
-          try {
-            await removeTask(id);
-            triggerHaptic();
-            if (task?.completed) trackMetric(["tasksDeleted"], 1);
-            else trackMetric(["tasksDeleted", "tasksAbandoned"], 1);
-          } catch {
-            showToast("Couldn't delete the task. It has been restored.");
-          }
-        },
-      },
-    ]);
+  const handleDelete = async () => {
+    if (!taskToDelete) return;
+    const id = taskToDelete;
+    const task = tasks.find((e: Task) => e.id === id);
+    if (task?.notificationId) {
+      cancelReminder(task.notificationId);
+    }
+    try {
+      await removeTask(id);
+      triggerHaptic();
+      if (task?.completed) trackMetric(["tasksDeleted"], 1);
+      else trackMetric(["tasksDeleted", "tasksAbandoned"], 1);
+    } catch {
+      showToast("Couldn't delete the task. It has been restored.");
+    } finally {
+      setTaskToDelete(null);
+    }
   };
 
   const toggleComplete = async (id: string) => {
@@ -245,7 +242,7 @@ function TaskScreenInner() {
                     task={item}
                     onToggleComplete={toggleComplete}
                     onEdit={() => showModal(item)}
-                    onDelete={() => handleDelete(item.id)}
+                    onDelete={() => setTaskToDelete(item.id)}
                   />
                 </TouchableOpacity>
               )}
@@ -264,7 +261,7 @@ function TaskScreenInner() {
                   task={item}
                   onToggleComplete={toggleComplete}
                   onEdit={() => showModal(item)}
-                  onDelete={() => handleDelete(item.id)}
+                  onDelete={() => setTaskToDelete(item.id)}
                 />
               )}
               keyExtractor={(item) => item.id}
@@ -312,6 +309,15 @@ function TaskScreenInner() {
           isNew={!isEditing}
         />
       </Portal>
+      <ConfirmDialog
+        visible={taskToDelete !== null}
+        title="Delete Task"
+        description="Are you sure you want to delete this task?"
+        confirmText="Delete"
+        confirmVariant="destructive"
+        onCancel={() => setTaskToDelete(null)}
+        onConfirm={handleDelete}
+      />
     </>
   );
 }

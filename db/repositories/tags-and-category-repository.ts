@@ -1,4 +1,4 @@
-import { eq, desc, sql, like, and, inArray } from "drizzle-orm";
+import { eq, desc, sql, like, and, inArray, isNull } from "drizzle-orm";
 import { db, tags, categories, tasks, habits, calendarEvents, timerLogs, timerTags , taskTags, habitTags, eventTags} from "@/db";
 import type { Tag } from "@/types/tag";
 import type { Category } from "@/types/category";
@@ -21,7 +21,7 @@ function rowToTag(row: TagRow): Tag {
 }
 
 /** Application Tag → DB insert shape. Called on every write. */
-function tagToInsert(tag: Tag): TagInsert {
+export function tagToInsert(tag: Tag): TagInsert {
     const now = new Date().toISOString();
     return {
         id: tag.id,
@@ -49,7 +49,7 @@ function rowToCategory(row: CategoryRow): Category {
 }
 
 /** Application Category → DB insert shape. Called on every write. */
-function categoryToInsert(category: Category): CategoryInsert {
+export function categoryToInsert(category: Category): CategoryInsert {
     const now = new Date().toISOString();
     return {
         id: category.id,
@@ -70,6 +70,7 @@ export async function getAllTags(): Promise<Tag[]> {
     const rows = await db
         .select()
         .from(tags)
+        .where(isNull(tags.deletedAt))
         .orderBy(desc(tags.count));
     return rows.map(rowToTag);
 }
@@ -136,7 +137,16 @@ export async function updateTag(tag: Tag): Promise<Tag> {
  * Throws on DB error.
  */
 export async function deleteTag(id: string): Promise<void> {
-    await db.delete(tags).where(eq(tags.id, id));
+    //await db.delete(tags).where(eq(tags.id, id));
+    const now = new Date().toISOString();
+    await db
+        .update(tags)
+        .set({
+            deletedAt: now,
+            updatedAt: now,
+            syncedAt: null,
+        })
+        .where(eq(tags.id, id));
 }
 
 /**
@@ -209,7 +219,15 @@ export const deleteTagSafely = async (tagIdToDelete: string, fallbackTagId: stri
     await tx.delete(timerTags).where(eq(timerTags.tagId, tagIdToDelete));
 
     // Finally, safe to delete the actual tag from the dictionary
-    await tx.delete(tags).where(eq(tags.id, tagIdToDelete));
+    //await tx.delete(tags).where(eq(tags.id, tagIdToDelete));
+    await tx.update(tags)
+      .set({
+        deletedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        syncedAt: null,
+    })
+      .where(eq(tags.id, tagIdToDelete));
+
   });
 };
 
@@ -465,7 +483,13 @@ export async function deleteAllTags(): Promise<number> {
     const count = await countTags();
     if (count === 0) return 0;
 
-    await db.delete(tags);
+    //await db.delete(tags);
+    await db.update(tags).set({ 
+      updatedAt: new Date().toISOString(),
+      deletedAt: new Date().toISOString(),
+      syncedAt: null 
+    });
+
 
     return count;
 }
@@ -474,7 +498,7 @@ export async function deleteAllTags(): Promise<number> {
 
 /** Count all tag rows. */
 export async function countTags(): Promise<number> {
-    const result = await db.select({ id: tags.id }).from(tags);
+    const result = await db.select({ id: tags.id }).from(tags).where(isNull(tags.deletedAt));
     return result.length;
 }
 
@@ -520,6 +544,7 @@ export async function getAllCategories(): Promise<Category[]> {
     const rows = await db
         .select()
         .from(categories)
+        .where(isNull(categories.deletedAt))
         .orderBy(desc(categories.count));
     return rows.map(rowToCategory);
 }
@@ -625,7 +650,17 @@ export const deleteCategorySafely = async (categoryIdToDelete: string, fallbackC
     }
 
     // Now safe to delete the category
-    await tx.delete(categories).where(eq(categories.id, categoryIdToDelete));
+    //await tx.delete(categories).where(eq(categories.id, categoryIdToDelete));
+
+    const now = new Date().toISOString();
+    await tx
+      .update(categories)
+      .set({
+        deletedAt: now,
+        updatedAt: now,
+        syncedAt: null,
+      })
+      .where(eq(categories.id, categoryIdToDelete));
   });
 };
 
@@ -661,7 +696,14 @@ export async function deleteAllCategories(): Promise<number> {
     const count = await countCategories();
     if (count === 0) return 0;
 
-    await db.delete(categories);
+    //await db.delete(categories);
+    await db
+    .update(categories)
+    .set({
+      deletedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      syncedAt: null,
+    })
 
     return count;
 }
@@ -670,7 +712,7 @@ export async function deleteAllCategories(): Promise<number> {
 
 /** Count all category rows. */
 export async function countCategories(): Promise<number> {
-    const result = await db.select({ id: categories.id }).from(categories);
+    const result = await db.select({ id: categories.id }).from(categories).where(isNull(categories.deletedAt));
     return result.length;
 }
 

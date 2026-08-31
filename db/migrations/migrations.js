@@ -23,6 +23,9 @@ import m0018 from './0018_same_proemial_gods.sql';
 import m0019 from './0019_demonic_tag.sql';
 import m0020 from './0020_common_crystal.sql';
 import m0021 from './0021_peaceful_lady_mastermind.sql';
+import m0022 from './0022_melodic_scream.sql';
+import m0023 from './0023_aberrant_jetstream.sql';
+import m0024 from './0024_new_blink.sql';
 
   export default {
     journal,
@@ -48,7 +51,10 @@ m0017,
 m0018,
 m0019,
 m0020,
-m0021
+m0021,
+m0022,
+m0023,
+m0024
     }
   }
   

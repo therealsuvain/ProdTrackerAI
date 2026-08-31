@@ -36,7 +36,7 @@ interface HabitContextType {
   habitCount: () => Promise<number>;
   batchMutateHabits: (habitsToMutate: Habit[], newValues: any) => Promise<void>;
   batchRestoreHabits: (originalHabits: Habit[]) => Promise<void>;
-  refreshHabits: () => void;
+  refreshHabits: () => Promise<void>;
 }
 
 export const HabitContext = createContext<HabitContextType | undefined>(
@@ -44,7 +44,7 @@ export const HabitContext = createContext<HabitContextType | undefined>(
 );
 
 export default function HabitProvider({ children }: { children: ReactNode }) {
-  const { dispatchError, trackMetric } = useData();
+  const { dispatchError, trackMetric, dBloaded } = useData();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -259,8 +259,8 @@ export default function HabitProvider({ children }: { children: ReactNode }) {
   ]);
 
   useEffect(() => {
-    refreshHabits();
-  }, []);
+    if (dBloaded) refreshHabits();
+  }, [dBloaded]);
   return (
     <HabitContext.Provider
       value={{

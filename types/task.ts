@@ -14,5 +14,7 @@ export interface Task {
   createdAt: string;                 // ISO 8601 — set once, never mutated
   updatedAt: string;                 // ISO 8601 — updated on every save
   completedAt?: string;              // ISO 8601 — set when completed, cleared on un-complete
+  deletedAt?: string;                // ISO 8601 — set when deleted, cleared on undelete
+  syncedAt?: string;                 // ISO 8601 — set when synced
   embedding?:number[]; // For Semantic Search
 }

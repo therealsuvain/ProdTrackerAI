@@ -35,7 +35,7 @@ export const ChatContext = createContext<ChatContextType | undefined>(
 );
 
 export default function ChatProvider({ children }: { children: ReactNode }) {
-  const { dispatchError, trackMetric } = useData();
+  const { dispatchError, trackMetric, dBloaded } = useData();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -196,8 +196,9 @@ export default function ChatProvider({ children }: { children: ReactNode }) {
         setLoaded(true);
       }
     };
+    if (!dBloaded) return;
     loadMessages();
-  }, []);
+  }, [dBloaded]);
 
   return (
     <ChatContext.Provider

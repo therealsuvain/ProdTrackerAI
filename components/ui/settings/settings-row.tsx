@@ -1,19 +1,21 @@
 import { FontAwesome6, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import glyphMap from "@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/FontAwesome6Free.json";
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Switch, TouchableRipple } from "react-native-paper";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  cancelAnimation,
+} from "react-native-reanimated";
 
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { SettingItem } from "@/types/settings-ui";
-import { CategorySettingsWidget } from "@/components/ui/shared/categories/category-settings-widget";
-import { TagSettingsWidget } from "@/components/ui/shared/tags/tags-settings-widget";
+import { WidgetRegistry } from "@/components/ui/settings/widgets/registry";
+import { useSync } from "@/context/SyncContext";
 
-const WidgetRegistry: Record<string, React.FC<any>> = {
-  CategoryWidget: CategorySettingsWidget,
-  TagsWidget: TagSettingsWidget,
-  // Future widgets go here...
-};
 interface SettingsRowProps {
   item: SettingItem;
   value?: any; // Simplified to boolean for toggles initially
@@ -30,6 +32,9 @@ export const SettingsRow = ({
   isLast,
 }: SettingsRowProps) => {
   const { theme, preference } = useTheme();
+  const rotationMaunalSync = useSharedValue(0);
+  const rotationRestoreSync = useSharedValue(0);
+  const { isSyncing, isReplacingWorkspace } = useSync();
 
   if (preference === "system" && item.id === "isDarkMode") return null;
   const renderRightElement = () => {
@@ -59,18 +64,65 @@ export const SettingsRow = ({
         return <Ionicons name="chevron-forward" size={30} color={theme.text} />;
 
       case "action":
-        // Actions (like 'Delete All Data')
+        if (item.id === "manualSyncEnabled" || item.id === "restoreRecovery") {
+          return (
+            <Animated.View
+              style={
+                item.id === "manualSyncEnabled"
+                  ? rotateManualStyle
+                  : rotateRestoreStyle
+              }
+            >
+              <Ionicons
+                name="refresh-circle-outline"
+                size={30}
+                color={theme.text}
+              />
+            </Animated.View>
+          );
+        }
         return null;
 
       default:
         return null;
     }
   };
+
+  useEffect(() => {
+    if (isSyncing) {
+      rotationMaunalSync.value = withRepeat(
+        withTiming(360, { duration: 1000 }),
+        -1,
+        false,
+      );
+    } else {
+      cancelAnimation(rotationMaunalSync);
+      rotationMaunalSync.value = 0;
+    }
+  }, [isSyncing]);
+
+  useEffect(() => {
+    if (isReplacingWorkspace) {
+      rotationRestoreSync.value = withRepeat(
+        withTiming(360, { duration: 1000 }),
+        -1,
+        false,
+      );
+    } else {
+      cancelAnimation(rotationRestoreSync);
+      rotationRestoreSync.value = 0;
+    }
+  }, [isReplacingWorkspace]);
+
+  const rotateManualStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotationMaunalSync.value}deg` }],
+  }));
+
+  const rotateRestoreStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotationRestoreSync.value}deg` }],
+  }));
+
   const renderIcon = () => {
-    /*   console.log("item.icon", item.icon);
-    console.log("Ionicons.glyphMap", item.icon in Ionicons.glyphMap);
-    console.log("MaterialCommunityIcons.glyphMap", item.icon in MaterialCommunityIcons.glyphMap);
-    console.log("FontAwesome6.glyphMap", item.icon in glyphMap); */
     if (item.icon in Ionicons.glyphMap) {
       return (
         <Ionicons
@@ -156,32 +208,6 @@ export const SettingsRow = ({
     );
   };
 
-  /*   const renderOptions = () => {
-    if (item.options) {
-      if (item.options[0].value === "CategorySettingsWidget") {
-        return (
-          <View>
-            {item.options.map((option, index) =>
-              option.type === "widget" ? (
-                <CategorySettingsWidget key={index} />
-              ) : null,
-            )}
-          </View>
-        );
-      } else {
-        return (
-          <View>
-            {item.options.map((option, index) =>
-              option.type === "widget" ? (
-                <TagSettingsWidget key={index} />
-              ) : null,
-            )}
-          </View>
-        );
-      }
-    }
-    return null;
-  }; */
   const handleRowPress = () => {
     if (item.type === "toggle" && onToggle) {
       onToggle(item.id, !value);
@@ -197,11 +223,6 @@ export const SettingsRow = ({
       borderless
       style={{ borderRadius: 12, overflow: "hidden" }}
     >
-      {/* <Pressable
-        android_ripple={{ color: "red" }}
-        onPress={handleRowPress}
-        style={{ borderRadius: 12, overflow: "hidden" }}
-      > */}
       <View
         style={[
           styles.container,
@@ -214,19 +235,6 @@ export const SettingsRow = ({
         <View style={styles.row}>
           <View style={styles.leftContent}>
             {renderIcon()}
-            {/* {item.icon in Ionicons.glyphMap ? (
-            <Ionicons
-              name={item.icon as keyof typeof Ionicons.glyphMap}
-              size={30}
-              color={theme.text}
-            />
-          ) : (
-            <MaterialIcons
-              name={item.icon as keyof typeof MaterialIcons.glyphMap}
-              size={30}
-              color={theme.text}
-            />
-          )} */}
 
             <Text style={[styles.label, { color: theme.text }]}>
               {item.label}

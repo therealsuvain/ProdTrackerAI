@@ -18,7 +18,7 @@
  * 3. One-time data migration from AsyncStorage (called by initDatabase).
  */
 
-import { eq, desc, asc } from "drizzle-orm";
+import { eq, desc, asc, isNull, and } from "drizzle-orm";
 import { db, tasks, taskTags } from "@/db";
 import type { Task } from "@/types/task";
 import type { TaskRow, TaskInsert } from "@/db/schema";
@@ -46,7 +46,7 @@ function rowToTask(row: TaskRow): Task {
 }
 
 /** Application Task → DB insert shape. Called on every write. */
-function taskToInsert(task: Task): TaskInsert {
+export function taskToInsert(task: Task): TaskInsert {
     const now = new Date().toISOString();
     return {
         id: task.id,
@@ -74,6 +74,7 @@ export async function getAllTasks(): Promise<Task[]> {
     const rows = await db
         .select()
         .from(tasks)
+        .where(isNull(tasks.deletedAt))
         .orderBy(asc(tasks.createdAt));
     return rows.map(rowToTask);
 }
@@ -83,7 +84,7 @@ export async function getTaskById(id: string): Promise<Task | null> {
     const rows = await db
         .select()
         .from(tasks)
-        .where(eq(tasks.id, id))
+        .where(and(isNull(tasks.deletedAt), eq(tasks.id, id)))
         .limit(1);
     return rows.length > 0 ? rowToTask(rows[0]) : null;
 }
@@ -181,7 +182,16 @@ export async function toggleTaskCompleted(
  * Throws on DB error.
  */
 export async function deleteTask(id: string): Promise<void> {
-    await db.delete(tasks).where(eq(tasks.id, id));
+    //await db.delete(tasks).where(eq(tasks.id, id));
+    const now = new Date().toISOString();
+    await db
+        .update(tasks)
+        .set({
+            deletedAt: now,
+            updatedAt: now,
+            syncedAt: null,
+        })
+        .where(eq(tasks.id, id));
 }
 
 // ─── bulk operations (used by data migration) ────────────────────────────────
@@ -208,7 +218,13 @@ export async function deleteAllTasks(): Promise<number> {
     const count = await countTasks();
     if (count === 0) return 0;
 
-    await db.delete(tasks);
+    //await db.delete(tasks);
+    await db.update(tasks)
+        .set({ 
+            deletedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            syncedAt: null, 
+        });
 
     return count;
 }

@@ -1,4 +1,4 @@
-import { View, StyleSheet, FlatList, Alert, Text } from "react-native";
+import { View, StyleSheet, FlatList, Text } from "react-native";
 import { useContext, useState, useEffect, useCallback, useRef } from "react";
 import { FAB, Portal, Searchbar } from "react-native-paper";
 
@@ -25,6 +25,7 @@ import {
 import { useHaptics } from "@/hooks/use-haptics";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
+import { ConfirmDialog } from "@/components/shared/dialog-system/ConfirmDialog";
 
 // TODOOptim : shifting logic from habit-screen , habit-item, habiit-stats to utils maybe
 function HabitsScreenInner() {
@@ -49,6 +50,7 @@ function HabitsScreenInner() {
       setVisibleInEditMode(false);
     },
   });
+  const [habitToDelete, setHabitToDelete] = useState<string | null>(null);
   const audioSource = require("@/assets/audio/habit-congrats-2.mp3");
   const audioPlayer = usePlaySound(audioSource, 0.5);
   const showModal = (habit?: Habit) => {
@@ -123,33 +125,30 @@ function HabitsScreenInner() {
     [trackMetric, habits],
   );
 
-  const handleDelete = useCallback((id: string) => {
+  const handleDelete = useCallback(async () => {
+    if (!habitToDelete) return;
+    const id = habitToDelete;
     if (id === "") return;
-    Alert.alert("Delete Habit", "Are you sure", [
-      { text: "Cancel" },
-      {
-        text: "Delete",
-        onPress: async () => {
-          const habit = habits.find((h: Habit) => h.id === id);
-          if (habit?.notificationId) {
-            cancelReminder(habit.notificationId);
-          }
-          try {
-            if (!habit) return;
-            await removeHabit(id);
-            if (habit.streak < habit.goal && history.length === 0) {
-              trackMetric(["habitsDeleted", "habitsAbandoned"], 1);
-            } else {
-              trackMetric(["habitsDeleted"], 1);
-            }
-            triggerHaptic();
-          } catch {
-            showToast("Couldn't delete the habit. It has been restored.");
-          }
-        },
-      },
-    ]);
-  }, []);
+
+    const habit = habits.find((h: Habit) => h.id === id);
+    if (habit?.notificationId) {
+      cancelReminder(habit.notificationId);
+    }
+    try {
+      if (!habit) return;
+      await removeHabit(id);
+      if (habit.streak < habit.goal && history.length === 0) {
+        trackMetric(["habitsDeleted", "habitsAbandoned"], 1);
+      } else {
+        trackMetric(["habitsDeleted"], 1);
+      }
+      triggerHaptic();
+    } catch {
+      showToast("Couldn't delete the habit. It has been restored.");
+    } finally {
+      setHabitToDelete(null);
+    }
+  }, [habitToDelete, trackMetric, habits]);
 
   const handleGoalRestart = useCallback(
     (updated: Habit) => {
@@ -238,7 +237,7 @@ function HabitsScreenInner() {
             <HabitItem
               habit={item}
               onUpdate={handleUpdate}
-              onDelete={() => handleDelete(item.id)}
+              onDelete={() => setHabitToDelete(item.id)}
               onEdit={() => showModal(item)}
               onGoalReached={handleGoalReached}
             />
@@ -274,13 +273,22 @@ function HabitsScreenInner() {
             habit={completedHabit}
             onRestart={handleGoalRestart}
             onDelete={() => {
-              if (completedHabit) handleDelete(completedHabit.id);
+              if (completedHabit) setHabitToDelete(completedHabit.id);
               setGoalModalVisible(false);
             }}
             onDismiss={() => setGoalModalVisible(false)}
           />
         )}
       </Portal>
+      <ConfirmDialog
+        visible={habitToDelete !== null}
+        title="Delete Log"
+        description="Are you sure you want to delete this log?"
+        confirmText="Delete"
+        confirmVariant="destructive"
+        onCancel={() => setHabitToDelete(null)}
+        onConfirm={handleDelete}
+      />
     </>
   );
 }

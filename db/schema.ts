@@ -41,6 +41,7 @@ const auditFields = {
         .notNull()
         .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
     syncedAt: text("synced_at"),
+    deletedAt: text("deleted_at"),
 };
 
 // ─── tasks ────────────────────────────────────────────────────────────────────
@@ -656,7 +657,47 @@ export const categories = sqliteTable(
     ])
 );
 
+export const localRecoverySnapshots = sqliteTable(
+  "local_recovery_snapshots",
+  {
+    id: text("id").primaryKey(),
+    createdAt: text("created_at").notNull(),
+    expiresAt: text("expires_at").notNull(),
+    sourceUserId: text("source_user_id"),
+    sourceIsAnonymous: integer("source_is_anonymous", {
+      mode: "boolean",
+    }).notNull().default(true),
+  },
+);
 
+export const localRecoveryItems = sqliteTable(
+  "local_recovery_items",
+  {
+    snapshotId: text("snapshot_id")
+      .notNull()
+      .references(() => localRecoverySnapshots.id, {
+        onDelete: "cascade",
+      }),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id").notNull(),
+    payload: text("payload").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [
+        table.snapshotId,
+        table.entityType,
+        table.entityId,
+      ],
+    }),
+  ],
+);
+
+export const syncCursors = sqliteTable("sync_cursors", {
+  userId: text("user_id").primaryKey(),
+  lastPulledAt: text("last_pulled_at"),
+  updatedAt: text("updated_at").notNull(),
+});
 
 // ─── Drizzle inferred types ───────────────────────────────────────────────────
 // These are the raw DB row shapes — used internally by repositories.

@@ -9,6 +9,15 @@ import { useSettings } from "@/context/SettingsContext";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { SettingsSection } from "@/types/settings-ui";
 import SettingsSkeleton from "@/components/shared/loading-indicators/screen-loaders/settings-skeleton";
+import { useSync } from "@/context/SyncContext";
+import { getRecoverySnapshotSummary } from "@/db/repositories/sync-repository";
+import { AppDialog } from "@/components/shared/dialog-system/AppDialog";
+import { ConfirmDialog } from "@/components/shared/dialog-system/ConfirmDialog";
+import { SyncResolutionModal } from "@/components/shared/dialog-system/SyncResolutionDialog";
+import {
+  getWorkspaceSyncMode,
+  useWorkspaceSyncModeStore,
+} from "@/utils/Account-utils/workspace-sync-mode-store";
 
 // This is our Configuration map. Adding a new setting is as easy as adding a line here.
 
@@ -48,6 +57,53 @@ const filterSettings = (
 };
 
 const SETTINGS_LAYOUT: SettingsSection[] = [
+  {
+    title: "Profile",
+    data: [
+      {
+        id: "soundEffectsEnabled",
+        label: "ADMIN Mode",
+        icon: "key",
+        type: "link",
+      },
+      {
+        id: "deleteProfile",
+        label: "Delete Profle",
+        icon: "trash",
+        type: "link",
+      },
+      {
+        id: "manualSyncEnabled",
+        label: "Sync Now",
+        icon: "cloud-upload-outline",
+        type: "action",
+        options: [
+          {
+            type: "widget",
+            value: "ManualSyncWidget",
+          },
+        ],
+      },
+      {
+        id: "restoreRecovery",
+        label: "Restore Old Data",
+        icon: "restore",
+        type: "action",
+        options: [
+          {
+            type: "widget",
+            value: "RestoreRecoveryWidget",
+          },
+        ],
+      },
+      {
+        id: "autoCloudSync",
+        label: "Auto Cloud Sync",
+        icon: "cloud-sync",
+        type: "toggle",
+      },
+    ],
+  },
   {
     title: "Appearance",
     data: [
@@ -127,35 +183,36 @@ const SETTINGS_LAYOUT: SettingsSection[] = [
       },
     ],
   },
-  {
-    title: "Profile",
-    data: [
-      {
-        id: "soundEffectsEnabled",
-        label: "ADMIN Mode",
-        icon: "key",
-        type: "link",
-      },
-      {
-        id: "deleteProfile",
-        label: "Delete Profle",
-        icon: "trash",
-        type: "link",
-      },
-    ],
-  },
 ];
 
 export default function SettingsScreen() {
   const { theme, isDarkMode } = useTheme();
   const { settings, updateSetting, resetSettings, isLoading } = useSettings();
+  const {
+    restoreFromRecovery,
+    mergeRecoveryWithCloud,
+    syncNow,
+    setAutoSyncEnabled,
+  } = useSync();
   const [searchQuery, setSearchQuery] = useState("");
+  const [confirmDialogVisible, setConfirmDialogVisible] = useState(false);
+  const [multiDialogVisible, setMultiDialogVisible] = useState(false);
   const [filteredSections, setFilteredSections] =
     useState<SettingsSection[]>(SETTINGS_LAYOUT);
 
   const handleToggle = (id: string, newValue: boolean) => {
     // Type assertion is safe here because our SETTINGS_LAYOUT strictly maps to SettingsConfig keys
+    if (id === "autoCloudSync") {
+      setAutoSyncEnabled(newValue);
+    }
     updateSetting(id as any, newValue);
+  };
+
+  const handleRestore = async () => {
+    const summary = await getRecoverySnapshotSummary();
+    if (!summary) return;
+
+    await restoreFromRecovery(summary.id);
   };
 
   if (isLoading) {
@@ -165,15 +222,28 @@ export default function SettingsScreen() {
     if (href) {
       router.push(href as any);
     }
-    if (type === "action" && id === "resetSettings") {
-      resetSettings();
+    if (type === "action") {
+      switch (id) {
+        case "resetSettings":
+          setConfirmDialogVisible(true);
+          break;
+        case "manualSyncEnabled":
+          syncNow();
+          break;
+        case "restoreRecovery":
+          setMultiDialogVisible(true);
+          break;
+        default:
+          break;
+      }
+      //resetSettings();
     }
   };
 
   useEffect(() => {
     setFilteredSections(filterSettings(SETTINGS_LAYOUT, searchQuery));
   }, [searchQuery]);
-
+  const workspaceSyncMode = useWorkspaceSyncModeStore((state) => state.mode);
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Searchbar
@@ -203,6 +273,63 @@ export default function SettingsScreen() {
           </SettingsGroup>
         ))}
       </ScrollView>
+      {confirmDialogVisible && (
+        <ConfirmDialog
+          visible={confirmDialogVisible}
+          onDismiss={() => setConfirmDialogVisible(false)}
+          title="Reset Settings"
+          description="Are you sure you want to reset all settings to their default values?"
+          confirmText="Reset"
+          confirmVariant="destructive"
+          onCancel={() => setConfirmDialogVisible(false)}
+          onConfirm={() => {
+            resetSettings();
+            setConfirmDialogVisible(false);
+          }}
+        />
+      )}
+      {multiDialogVisible &&
+        workspaceSyncMode === "detached_pending_choice" && (
+          <SyncResolutionModal
+            visible={multiDialogVisible}
+            onClose={() => setMultiDialogVisible(false)}
+          />
+        )}
+      {multiDialogVisible &&
+        (workspaceSyncMode === "synced" || workspaceSyncMode === null) && (
+          <AppDialog
+            visible={multiDialogVisible}
+            title="Restore Old Data"
+            description="Are you sure you want to restore old data? You can either merge with the current workspace or replace the entire workspace with old data."
+            onDismiss={() => setMultiDialogVisible(false)}
+            dismissable={false}
+            actions={[
+              {
+                label: "Merge",
+                variant: "primary",
+                onPress: async () => {
+                  await mergeRecoveryWithCloud();
+                  setMultiDialogVisible(false);
+                },
+              },
+              {
+                label: "Replace",
+                variant: "destructive",
+                onPress: async () => {
+                  await handleRestore();
+                  setMultiDialogVisible(false);
+                },
+              },
+              {
+                label: "Cancel",
+                variant: "default",
+                onPress: () => {
+                  setMultiDialogVisible(false);
+                },
+              },
+            ]}
+          />
+        )}
     </View>
   );
 }

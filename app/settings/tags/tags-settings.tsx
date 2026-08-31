@@ -6,8 +6,6 @@ import {
   TextInput,
   ScrollView,
   Pressable,
-  Modal,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -22,6 +20,10 @@ import { TagAnalyticsModal } from "@/components/ui/shared/tags/tags-modal";
 import { TagBadge } from "@/components/ui/shared/tags/tag-badge";
 import { TagsDeleteModal } from "@/components/ui/shared/tags/tags-delete-modal";
 import { TagsEditModal } from "@/components/ui/shared/tags/tags-edit-modal";
+import {
+  AppDialog,
+  DialogAction,
+} from "@/components/shared/dialog-system/AppDialog";
 
 export default function TagsSettingsScreen() {
   const { theme } = useContext(ThemeContext);
@@ -38,6 +40,11 @@ export default function TagsSettingsScreen() {
   const [tagToEdit, setTagToEdit] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState("");
   const [tagToDelete, setTagToDelete] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<{
+    title: string;
+    description?: string;
+    actions: DialogAction[];
+  } | null>(null);
 
   // --- HANDLERS ---
   const handleEditRequest = (id: string) => {
@@ -67,32 +74,64 @@ export default function TagsSettingsScreen() {
     setSelectedTagId(null);
 
     if (stats.total === 0) {
-      Alert.alert("Delete Tag", "This tag is empty. Delete it?", [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => deleteUserTag(id, null),
-        },
-      ]);
+      showEmptyTagDeleteDialog(id);
     } else {
-      Alert.alert(
-        "Tag in Use",
-        `This tag is attached to ${stats.total} items. What would you like to do?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Remove Tag from Items",
-            style: "destructive",
-            onPress: () => deleteUserTag(id, null),
-          },
-          {
-            text: "Reassign to Another Tag",
-            onPress: () => setTagToDelete(id),
-          },
-        ],
-      );
+      showTagInUseDialog(id, stats.total);
     }
+  };
+
+  const showEmptyTagDeleteDialog = (id: string) => {
+    setDialog({
+      title: "Delete Tag",
+      description: "This tag is empty. Are you sure you want to delete it?",
+      actions: [
+        {
+          label: "Delete",
+          variant: "destructive",
+          onPress: async () => {
+            setDialog(null);
+            await deleteUserTag(id, null);
+          },
+        },
+        {
+          label: "Cancel",
+          variant: "text",
+          onPress: () => {
+            setDialog(null);
+          },
+        },
+      ],
+    });
+  };
+
+  const showTagInUseDialog = (id: string, total: number) => {
+    setDialog({
+      title: "Tag in Use",
+      description: `This tag is attached to ${total} items. What would you like to do?`,
+      actions: [
+        {
+          label: "Delete",
+          variant: "destructive",
+          onPress: async () => {
+            setDialog(null);
+            await deleteUserTag(id, null);
+          },
+        },
+        {
+          label: "Reassign",
+          onPress: () => {
+            (setTagToDelete(id), setDialog(null));
+          },
+        },
+        {
+          label: "Cancel",
+          variant: "text",
+          onPress: () => {
+            setDialog(null);
+          },
+        },
+      ],
+    });
   };
 
   const executeReassignment = async (fallbackId: string) => {
@@ -210,6 +249,16 @@ export default function TagsSettingsScreen() {
           tagToDelete={tagToDelete}
           onClose={() => setTagToDelete(null)}
           onReassign={executeReassignment}
+        />
+      )}
+      {dialog && (
+        <AppDialog
+          visible
+          title={dialog.title}
+          description={dialog.description}
+          onDismiss={() => setDialog(null)}
+          dismissable={false}
+          actions={dialog.actions}
         />
       )}
     </View>

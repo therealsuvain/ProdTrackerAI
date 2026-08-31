@@ -88,6 +88,7 @@ interface DataContextType {
   } | null;
   dispatchError: (err: Error | string, type: "warning" | "fatal") => void;
   clearError: () => void;
+  dBloaded: boolean;
   appMetrics: AppMetrics;
   achievementMetrics: AchievementMetrics;
   trackMetric: (key: GlobalMetricKey[], amount: number) => void;
@@ -121,7 +122,7 @@ interface DataContextType {
     originalItems: Record<string, string[]>,
   ) => Promise<void>;
   getItemIdsForTagLocal: (id: string) => Promise<Record<string, string[]>>;
-  refreshTagsCatsAchievements: () => void;
+  refreshTagsCatsAchievements: () => Promise<void>;
 }
 
 export const DataContext = createContext<DataContextType | undefined>(
@@ -144,7 +145,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   const appMetricsRef = useRef(appMetrics);
   const unlockedAchievementsRef = useRef<AchievementBadge[]>([]);
   const [activeBadge, setActiveBadge] = useState<AchievementBadge | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const [dBloaded, setDBLoaded] = useState(false);
   const [error, setError] = useState<{
     message: string;
     type?: "warning" | "fatal";
@@ -705,7 +706,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       );
     } finally {
       // mark that initial load finished so save effects don't overwrite storage during startup
-      setLoaded(true);
+      setDBLoaded(true);
     }
   }, [dispatchError]);
 
@@ -814,6 +815,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         error,
         dispatchError,
         clearError,
+        dBloaded,
         appMetrics,
         achievementMetrics,
         trackMetric,

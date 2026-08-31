@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/context-hooks/use-data"; // Adjust to your context
-import { TagBadge } from "./tag-badge";
+import { TagBadge } from "../../shared/tags/tag-badge";
 
 export const TagSettingsWidget = () => {
   const { theme } = useContext(ThemeContext);

@@ -37,7 +37,7 @@ interface TaskContextType {
   taskCount: () => Promise<number>;
   batchMutateTasks: (tasksToMutate: Task[], newValues: any) => Promise<void>;
   batchRestoreTasks: (originalTasks: Task[]) => Promise<void>;
-  refreshTasks: () => void;
+  refreshTasks: () => Promise<void>;
 }
 
 export const TaskContext = createContext<TaskContextType | undefined>(

@@ -51,7 +51,7 @@ export const allScheduledNotificationsLogs = async () => {
 };
 
 export const cancelAllScheduledNotifications = async () => {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+ await Notifications.cancelAllScheduledNotificationsAsync();
 };
 const getTriggerOptionsHabit = (habit: Habit) => {
   const habitDate = new Date(habit.reminderDate!);
@@ -73,7 +73,7 @@ const getTriggerOptionsHabit = (habit: Habit) => {
   } as Notifications.DailyTriggerInput;
 };
 
-export const scheduleReminderEvents = async (event: CalendarEvent) => {
+export const scheduleReminderEvents = async (event : CalendarEvent) => {
   let ids: { date: string; id: string }[] = [];
   console.log("EVENT NOTIFCATION");
   let current = new Date(event.startTime);

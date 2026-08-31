@@ -13,7 +13,7 @@ export const TagList = ({ tags, holeColor }: TagListProps) => {
   const parsedTags: string[] =
     typeof tags === "string" ? JSON.parse(tags) : tags;
 
-  if (parsedTags.length === 0) return null;
+  if (!parsedTags || parsedTags.length === 0) return null;
 
   return (
     <View style={styles.listContainer}>

@@ -6,8 +6,6 @@ import {
   TextInput,
   ScrollView,
   Pressable,
-  Modal,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -22,6 +20,10 @@ import { CategoryBadge } from "@/components/ui/shared/categories/category-badge"
 import { CategoryEditModal } from "@/components/ui/shared/categories/category-edit-modal";
 import { CategoryCreator } from "@/components/ui/shared/categories/category-creation-view";
 import { CategoryDeleteModal } from "@/components/ui/shared/categories/category-delete-modal";
+import {
+  AppDialog,
+  DialogAction,
+} from "@/components/shared/dialog-system/AppDialog";
 
 // We will build this in Step 3. Importing it now as a placeholder.
 // import { CategoryAnalyticsModal } from '@/components/settings/category-analytics-modal';
@@ -47,6 +49,11 @@ export default function CategoriesSettingsScreen() {
   );
   const [categoryToEdit, setCategoryToEdit] = useState<string | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<{
+    title: string;
+    description?: string;
+    actions: DialogAction[];
+  } | null>(null);
 
   // 1. Filter by Search, then Sort by Color (Hex Code String Comparison)
   const displayCategories = useMemo(() => {
@@ -84,36 +91,12 @@ export default function CategoriesSettingsScreen() {
 
     if (stats.total === 0) {
       // Safe to hard delete immediately
+
+      showEmptyCategoryDeleteDialog(id);
       //TODO this doesnt work if the category has been assgined once already and then maybe changed, so current allotment is 0, but total is not 0
-      Alert.alert(
-        "Delete Category",
-        "This category is empty. Are you sure you want to delete it?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: () => handleDeleteRequestHelper(id),
-          },
-        ],
-      );
     } else {
       // Needs reassignment
-      Alert.alert(
-        "Category in Use",
-        `This category is attached to ${stats.total} items. What would you like to do?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          // Option A: Hard delete everything (Set to null or cascade depending on your schema)
-          {
-            text: "Delete From Items",
-            style: "destructive",
-            onPress: () => handleDeleteRequestHelper(id, null),
-          },
-          // Option B: Reassign Flow
-          { text: "Reassign Items", onPress: () => setCategoryToDelete(id) },
-        ],
-      );
+      showCategoryInUseDialog(id, stats.total);
     }
   };
 
@@ -128,6 +111,62 @@ export default function CategoriesSettingsScreen() {
     }
     await deleteUserCategory(id, fallbackId);
   };
+
+  const showEmptyCategoryDeleteDialog = (id: string) => {
+    setDialog({
+      title: "Delete Category",
+      description:
+        "This category is empty. Are you sure you want to delete it?",
+      actions: [
+        {
+          label: "Delete",
+          variant: "destructive",
+          onPress: async () => {
+            setDialog(null);
+            await handleDeleteRequestHelper(id);
+          },
+        },
+        {
+          label: "Cancel",
+          variant: "text",
+          onPress: () => {
+            setDialog(null);
+          },
+        },
+      ],
+    });
+  };
+
+  const showCategoryInUseDialog = (id: string, total: number) => {
+    setDialog({
+      title: "Category in Use",
+      description: `This category is attached to ${total} items. What would you like to do?`,
+      actions: [
+        {
+          label: "Delete",
+          variant: "destructive",
+          onPress: async () => {
+            setDialog(null);
+            await handleDeleteRequestHelper(id, null);
+          },
+        },
+        {
+          label: "Reassign Items",
+          onPress: () => {
+            (setCategoryToDelete(id), setDialog(null));
+          },
+        },
+        {
+          label: "Cancel",
+          variant: "text",
+          onPress: () => {
+            setDialog(null);
+          },
+        },
+      ],
+    });
+  };
+
   const executeReassignment = async (fallbackId: string) => {
     if (!categoryToDelete) return;
     trackMetric(["categoriesDeleted"], 1);
@@ -239,6 +278,16 @@ export default function CategoriesSettingsScreen() {
           categoryToDelete={categoryToDelete}
           onClose={() => setCategoryToDelete(null)}
           onReassign={executeReassignment}
+        />
+      )}
+      {dialog && (
+        <AppDialog
+          visible
+          title={dialog.title}
+          description={dialog.description}
+          onDismiss={() => setDialog(null)}
+          dismissable={false}
+          actions={dialog.actions}
         />
       )}
     </View>

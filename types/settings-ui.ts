@@ -2,7 +2,7 @@ import { SettingsConfig } from './settings';
 import { FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export type SettingInputType = 'toggle' | 'link' | 'action' | 'value-link'; // Expanded later for 'timepicker'
+export type SettingInputType = 'toggle' | 'link' | 'action' | 'value-link' | 'custom'; // Expanded later for 'timepicker'
 
 export interface SettingOption {
   type: 'widget' | 'radio' | 'dropdown';

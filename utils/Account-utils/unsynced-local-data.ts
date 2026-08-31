@@ -3,7 +3,7 @@
 // Checks across all syncable tables whether any row is dirty (never synced,
 // or edited since last sync). Call this BEFORE pulling on sign-in.
 
-import { calendarEvents, db, habits, tasks, timerLogs } from "@/db";
+import { calendarEvents, db, habits, tags, tasks, timerLogs } from "@/db";
 import { categories } from "@/db";
 import { isNull, or, lt, sql } from "drizzle-orm";
 
@@ -30,6 +30,10 @@ export async function hasUnsyncedEvents(): Promise<boolean> {
 }
 export async function hasUnsyncedLogs(): Promise<boolean> {
   return (await countDirty(timerLogs)) > 0;
+}
+
+export async function hasUnsyncedTags(): Promise<boolean> {
+  return (await countDirty(tags)) > 0;
 }
 
 export async function hasAnyUnsyncedData(): Promise<boolean> {
@@ -62,3 +66,42 @@ export async function unsyncedLocalDataCount(): Promise<number> {
   return categoryDirtyCount + taskDirtyCount + habitDirtyCount + eventDirtyCount + logDirtyCount;
 }
 
+
+const DEFAULT_CATEGORY_IDS = new Set([
+  "00000000-0000-0000-0000-000000000001",
+  "00000000-0000-0000-0000-000000000002",
+  "00000000-0000-0000-0000-000000000003",
+  "00000000-0000-0000-0000-000000000004",
+  "00000000-0000-0000-0000-000000000005",
+  "00000000-0000-0000-0000-000000000006",
+  "00000000-0000-0000-0000-000000000007",
+  "00000000-0000-0000-0000-000000000008",
+]);
+
+export async function hasAnyMeaningfulUnsyncedData(): Promise<boolean> {
+  const dirtyCategories = await db
+    .select()
+    .from(categories)
+    .where(or(isNull(categories.syncedAt), lt(categories.syncedAt, categories.updatedAt)));
+
+  const meaningfulDirtyCategories = dirtyCategories.filter(
+    (row) => !DEFAULT_CATEGORY_IDS.has(row.id),
+  );
+
+  const [hasDirtyTags, hasDirtyTasks, hasDirtyHabits, hasDirtyEvents, hasDirtyLogs] = await Promise.all([
+    hasUnsyncedTags(),
+    hasUnsyncedTasks(),
+    hasUnsyncedHabits(),
+    hasUnsyncedEvents(),
+    hasUnsyncedLogs(),
+  ]);
+
+  return (
+    meaningfulDirtyCategories.length > 0 ||
+    hasDirtyTags ||
+    hasDirtyTasks ||
+    hasDirtyHabits ||
+    hasDirtyEvents ||
+    hasDirtyLogs
+  );
+}

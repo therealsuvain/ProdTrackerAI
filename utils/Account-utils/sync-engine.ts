@@ -9,7 +9,8 @@ import {
   timerLogs,
   habitTags, eventTags, taskTags, timerTags,
   unlockedAchievements,
-  globalMetrics, dailyMetrics, dailyMetricsAI, globalMetricsAI, achievementGlobalMetrics
+  globalMetrics, dailyMetrics, dailyMetricsAI, globalMetricsAI, achievementGlobalMetrics,
+  eventNotificationIds
 } from "@/db";
 import {
   fetchChildRowsForMany as habitChildRowsMulti,
@@ -26,7 +27,43 @@ import { Habit } from "@/types/habits";
 import { CalendarEvent } from "@/types/calendar";
 import { TimerLog } from "@/types/timer";
 import { generateEmbedding } from "../embedding-engine";
+import de from "zod/v4/locales/de.cjs";
 
+
+/**
+ * 
+ * TODO do delted_at fields need to pulled in?
+ * TODO Added deleted_at field to supabase anyhting else to be changed in supabase
+ * TODO no pushing is needed on merge or is it needed check , currently only pushCateogries runs
+ *  Ok added deleted_at fields to schema and supabase ,
+change all delete repo functions to set deleted_at instead of just delte, 
+and changed all data fetcvhess to check only for rows where deletedAt is null,
+Both tags and categories already had logic for reassignment to other category when deleting the category if its assigned to a number of items, so it should be ok deleting the categories
+I had delete all fucntions as well I updated them to :
+export async function deleteAllTimerLogs(): Promise<number> {
+  const count = await countTimerLogs();
+  if (count === 0) return 0;
+
+ // await db.delete(timerLogs);
+  await db
+    .update(timerLogs)
+    .set({
+      deletedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      syncedAt: null,
+    });
+
+  return count;
+}
+
+This is correct right?
+
+In supabase I onyl have added deleted_at field and nothing else, no policies are requried to be hcanged or addded right?
+
+You said "Add deleted_at to sync push/pull payloads." - Should be pull in deleted_at fields from supabase, I only am just pushing from local to supa right now?
+
+You also said "Extend unsynced-data detection." - How to do this, rest all steps are done, anser these and proceed for next steps as well
+ */
 function isDirty(row: { updatedAt: string; syncedAt: string | null }): boolean {
   if (!row.syncedAt) return true;
   return new Date(row.updatedAt).getTime() > new Date(row.syncedAt).getTime();
@@ -40,10 +77,45 @@ async function markRowsSynced(
   await db.update(table).set({ syncedAt }).where(inArray(table.id, ids));
 }
 
+
+export async function persistReconciledNotificationIds(data: {
+  tasks: Task[];
+  habits: Habit[];
+  events: CalendarEvent[];
+}): Promise<void> {
+  for (const task of data.tasks) {
+    if (task.notificationId === undefined) continue;
+    await db.update(tasks)
+      .set({ notificationId: task.notificationId })
+      .where(eq(tasks.id, task.id));
+  }
+
+  for (const habit of data.habits) {
+    if (habit.notificationId === undefined) continue;
+    await db.update(habits)
+      .set({ notificationId: habit.notificationId })
+      .where(eq(habits.id, habit.id));
+  }
+
+  for (const event of data.events) {
+    if (!event.notificationIds?.length) continue;
+    await db.transaction(async (tx) => {
+      await tx.delete(eventNotificationIds).where(eq(eventNotificationIds.eventId, event.id));
+      await tx.insert(eventNotificationIds).values(
+        event.notificationIds!.map((entry) => ({
+          id: typeof entry === "string" ? entry : entry.id,
+          eventId: event.id,
+          date:  entry.date,
+        })),
+      );
+    });
+  }
+}
+
 // ── Categories ─────────────────────────────────
 
 export async function pushCategories(userId: string): Promise<void> {
-  console.log("[sync] Pushing categories for user:", userId);
+  //console.log("[sync] Pushing categories for user:", userId);
   const dirtyRows = await db
     .select()
     .from(categories)
@@ -65,6 +137,8 @@ export async function pushCategories(userId: string): Promise<void> {
     count: row.count,
     created_at: row.createdAt,
     updated_at: row.updatedAt,
+    deleted_at: row.deletedAt,
+    synced_at: row.syncedAt
   }));
 
   const { error } = await supabase.from("categories").upsert(payload);
@@ -82,7 +156,7 @@ export async function pushCategories(userId: string): Promise<void> {
 }
 
 export async function pullCategories(userId: string, since: string | null): Promise<void> {
-  console.log("[sync] Pulling categories for user:", userId);
+  //console.log("[sync] Pulling categories for user:", userId);
   let query = supabase.from("categories").select("*").eq("user_id", userId);
 
   if (since) {
@@ -116,6 +190,7 @@ export async function pullCategories(userId: string, since: string | null): Prom
         createdAt: remote.created_at,
         updatedAt: remote.updated_at,
         syncedAt: remote.updated_at, // just pulled — locally in sync as of now
+        deletedAt: remote.deleted_at,
       })
       .onConflictDoUpdate({
         target: categories.id,
@@ -126,6 +201,8 @@ export async function pullCategories(userId: string, since: string | null): Prom
           icon: remote.icon,
           updatedAt: remote.updated_at,
           syncedAt: remote.updated_at,
+          deletedAt: remote.deleted_at
+
         },
       });
   }
@@ -151,6 +228,8 @@ export async function pushTasks(userId: string): Promise<void> {
     tags: t.tags ? JSON.parse(t.tags) : [],               // text[] on the cloud side
     created_at: t.createdAt,
     updated_at: t.updatedAt,
+    deleted_at: t.deletedAt,
+    synced_at: t.syncedAt,
     // notification_id intentionally omitted — local-only field
   }));
 
@@ -206,6 +285,8 @@ export async function pullTasks(userId: string, since: string): Promise<Task[]> 
       tags: remote.tags ?? null,
       createdAt: remote.created_at,
       updatedAt: remote.updated_at,
+      deletedAt: remote.deleted_at,
+
       // notificationId intentionally NOT set here — reconciled separately
     };
 
@@ -216,7 +297,7 @@ export async function pullTasks(userId: string, since: string): Promise<Task[]> 
           ...mapped,
           tags: JSON.stringify(mapped.tags),
           embedding,
-          syncedAt: new Date().toISOString()
+          syncedAt: remote.updated_at,
         })
         .onConflictDoUpdate({
           target: tasks.id,
@@ -224,7 +305,7 @@ export async function pullTasks(userId: string, since: string): Promise<Task[]> 
             ...mapped,
             tags: JSON.stringify(mapped.tags),
             embedding,
-            syncedAt: new Date().toISOString()
+            syncedAt: remote.updated_at,
           },
         });
 
@@ -246,7 +327,7 @@ export async function pullTasks(userId: string, since: string): Promise<Task[]> 
 }
 
 // ─── HABITS ──────────────────────────────────────────────────────────────────
-
+// TODO supabase soter time with time zone local sotre UTC  
 
 export async function pushHabits(userId: string): Promise<void> {
   const allHabits = await db.select().from(habits);
@@ -281,6 +362,8 @@ export async function pushHabits(userId: string): Promise<void> {
       tags: h.tags ? JSON.parse(h.tags) : [],
       created_at: h.createdAt,
       updated_at: h.updatedAt,
+      deleted_at: h.deletedAt ?? null,
+      synced_at: h.syncedAt
     };
   });
 
@@ -353,7 +436,8 @@ export async function pullHabits(userId: string, since: string): Promise<Habit[]
           targetDays: JSON.stringify(mapped.targetDays),
           tags: JSON.stringify(mapped.tags),
           embedding,
-          syncedAt: new Date().toISOString()
+          syncedAt: remote.updated_at,
+          deletedAt : remote.deleted_at
         })
         .onConflictDoUpdate({
           target: habits.id,
@@ -362,7 +446,8 @@ export async function pullHabits(userId: string, since: string): Promise<Habit[]
             targetDays: JSON.stringify(mapped.targetDays),
             tags: JSON.stringify(mapped.tags),
             embedding,
-            syncedAt: new Date().toISOString()
+            syncedAt:remote.updated_at,
+            deletedAt : remote.deleted_at
           },
         });
 
@@ -419,6 +504,8 @@ export async function pushEvents(userId: string): Promise<void> {
       created_at: e.createdAt,
       updated_at: e.updatedAt,
       deleted_occurrences: deletedOccurrences.length > 0 ? deletedOccurrences.map((r) => r.date) : undefined,
+      deleted_at: e.deletedAt,
+      synced_at: e.syncedAt,
       // notification_ids intentionally omitted
     }
   });
@@ -476,6 +563,8 @@ export async function pullEvents(userId: string, since: string): Promise<Calenda
       updatedAt: remote.updated_at,
 
     };
+
+    const now = new Date().toISOString();
     await db.transaction(async (tx) => {
       await tx.delete(eventTags).where(eq(eventTags.eventId, mapped.id));
       await tx.insert(calendarEvents)
@@ -483,7 +572,8 @@ export async function pullEvents(userId: string, since: string): Promise<Calenda
           ...mapped,
           tags: JSON.stringify(mapped.tags),
           embedding,
-          syncedAt: new Date().toISOString()
+          syncedAt: remote.updated_at,
+          deletedAt: remote.deleted_at ?? null
         })
         .onConflictDoUpdate({
           target: calendarEvents.id,
@@ -491,7 +581,8 @@ export async function pullEvents(userId: string, since: string): Promise<Calenda
             ...mapped,
             tags: JSON.stringify(mapped.tags),
             embedding,
-            syncedAt: new Date().toISOString()
+            syncedAt: remote.updated_at,
+            deletedAt: remote.deleted_at ?? null
           },
         });
 
@@ -536,6 +627,8 @@ export async function pushLogs(userId: string): Promise<void> {
     is_partial: l.isPartial? 1:0,
     created_at: l.createdAt,
     updated_at: l.updatedAt,
+    deleted_at: l.deletedAt,
+    synced_at: l.syncedAt
 
   }));
 
@@ -563,7 +656,7 @@ export async function pullLogs(userId: string, since: string): Promise<TimerLog[
   if (!data?.length) return [];
 
   const pulledLogs: TimerLog[] = [];
-
+const now = new Date().toISOString();
   for (const remote of data) {
     const [local] = await db.select().from(timerLogs).where(eq(timerLogs.id, remote.id));
     if (local && new Date(local.updatedAt) >= new Date(remote.updated_at)) continue;
@@ -581,13 +674,15 @@ export async function pullLogs(userId: string, since: string): Promise<TimerLog[
       createdAt: remote.created_at,
       updatedAt: remote.updated_at,
     };
+
+    
     await db.transaction(async (tx) => {
       await tx.delete(timerTags).where(eq(timerTags.logId, mapped.id));
       await tx.insert(timerLogs)
-        .values({ ...mapped, tags: JSON.stringify(mapped.tags), laps: JSON.stringify(mapped.laps), syncedAt: new Date().toISOString() })
+        .values({ ...mapped, tags: JSON.stringify(mapped.tags), laps: JSON.stringify(mapped.laps), syncedAt: remote.updated_at, deletedAt: remote.deleted_at ?? null })
         .onConflictDoUpdate({
           target: timerLogs.id,
-          set: { ...mapped, tags: JSON.stringify(mapped.tags), laps: JSON.stringify(mapped.laps), syncedAt: new Date().toISOString() },
+          set: { ...mapped, tags: JSON.stringify(mapped.tags), laps: JSON.stringify(mapped.laps), syncedAt: remote.updated_at, deletedAt: remote.deleted_at ?? null },
         });
 
 
@@ -622,6 +717,8 @@ export async function pushTags(userId: string): Promise<void> {
     count: row.count,
     created_at: row.createdAt,
     updated_at: row.updatedAt,
+    deleted_at: row.deletedAt,
+    synced_at: row.syncedAt
   }));
 
   const { error } = await supabase.from("tags").upsert(payload);
@@ -648,10 +745,12 @@ export async function pullTags(userId: string, since: string | null): Promise<vo
   }
   if (!data || data.length === 0) return;
 
+  const now = new Date().toISOString();
   for (const remote of data) {
     const [local] = await db.select().from(tags).where(eq(tags.id, remote.id));
     if (local && new Date(local.updatedAt) >= new Date(remote.updated_at)) continue;
 
+    
     await db
       .insert(tags)
       .values({
@@ -661,6 +760,7 @@ export async function pullTags(userId: string, since: string | null): Promise<vo
         createdAt: remote.created_at,
         updatedAt: remote.updated_at,
         syncedAt: remote.updated_at,
+        deletedAt: remote.deleted_at ?? null
       })
       .onConflictDoUpdate({
         target: tags.id,
@@ -668,7 +768,8 @@ export async function pullTags(userId: string, since: string | null): Promise<vo
           name: remote.name,
           count: remote.count,
           updatedAt: remote.updated_at,
-          syncedAt: remote.updated_at,
+          syncedAt:remote.updated_at,
+          deletedAt: remote.deleted_at ?? null
         },
       });
   }
@@ -819,7 +920,7 @@ export async function pushDailyMetrics(userId: string): Promise<void> {
     .select()
     .from(dailyMetrics)
     .where(or(isNull(dailyMetrics.syncedAt), lt(dailyMetrics.syncedAt, dailyMetrics.updatedAt)));
-  console.log("[sync] Pushing daily metrics for user:", dirtyRows.length);
+  //console.log("[sync] Pushing daily metrics for user:", dirtyRows.length);
   if (dirtyRows.length === 0) return;
   const syncedRowDates: string[] = [];
   for (const row of dirtyRows) {
@@ -912,12 +1013,13 @@ export async function pullDailyMetrics(userId: string, since: string | null): Pr
       Object.fromEntries(METRIC_COLUMNS.map((k) => [k, mapped[k]])),
     );
 
+    const now = new Date().toISOString();
     if (local) {
       await db
         .update(dailyMetrics)
         .set({
           ...mapped,
-          syncedAt: new Date().toISOString(),
+          syncedAt: now,
           syncedSnapshot: nowSyncedSnapshot,
         })
         .where(eq(dailyMetrics.date, remote.metric_date));
@@ -927,7 +1029,7 @@ export async function pullDailyMetrics(userId: string, since: string | null): Pr
       await db.insert(dailyMetrics).values({
         date: remote.metric_date,
         ...mapped,
-        syncedAt: new Date().toISOString(),
+        syncedAt: now,
         syncedSnapshot: nowSyncedSnapshot,
       });
     }
@@ -944,10 +1046,10 @@ export async function pushGlobalMetrics(userId: string): Promise<void> {
   /* if (!local || (local.syncedAt && local.updatedAt && new Date(local.syncedAt) >= new Date(local.updatedAt))) {
     return; // nothing dirty
   } */
- console.log("[sync] Pushing global metrics for user, db", JSON.stringify(local));
+ //console.log("[sync] Pushing global metrics for user, db", JSON.stringify(local));
   const snapshot = local.syncedSnapshot ? JSON.parse(local.syncedSnapshot) : null;
   const delta = computeMetricsDelta(local, snapshot);
-  console.log("[sync] Pushing global metrics for user, delta:", delta);
+  //console.log("[sync] Pushing global metrics for user, delta:", delta);
   const hasAnyChange = Object.values(delta).some((v) => v !== 0);
   if (!hasAnyChange) return; // nothing new since last sync — skip the round trip entirely
 
@@ -1011,11 +1113,12 @@ export async function pullGlobalMetrics(userId: string): Promise<void> {
     Object.fromEntries(METRIC_COLUMNS.map((k) => [k, mapped[k]])),
   );
 
+  const now = new Date().toISOString()
   const [local] = await db.select().from(globalMetrics);
   if (local) {
-    await db.update(globalMetrics).set({ ...mapped, syncedAt: new Date().toISOString(), syncedSnapshot: nowSyncedSnapshot, });
+    await db.update(globalMetrics).set({ ...mapped, syncedAt: now, syncedSnapshot: nowSyncedSnapshot, });
   } else {
-    await db.insert(globalMetrics).values({ ...mapped, syncedAt: new Date().toISOString(), syncedSnapshot: nowSyncedSnapshot, });
+    await db.insert(globalMetrics).values({ ...mapped, syncedAt: now, syncedSnapshot: nowSyncedSnapshot, });
   }
 }
 
@@ -1103,13 +1206,13 @@ export async function pullDailyAIMetrics(userId: string, since: string | null): 
     const nowSyncedSnapshot = JSON.stringify(
       Object.fromEntries(METRIC_COLUMNS.map((k) => [k, mapped[k]])),
     );
-
+  const now = new Date().toISOString()
     if (local) {
       await db
         .update(dailyMetricsAI)
         .set({
           ...mapped,
-          syncedAt: new Date().toISOString(),
+          syncedAt: now,
           syncedSnapshot: nowSyncedSnapshot,
         })
         .where(eq(dailyMetricsAI.date, remote.metric_date));
@@ -1119,7 +1222,7 @@ export async function pullDailyAIMetrics(userId: string, since: string | null): 
       await db.insert(dailyMetricsAI).values({
         date: remote.metric_date,
         ...mapped,
-        syncedAt: new Date().toISOString(),
+        syncedAt: now,
         syncedSnapshot: nowSyncedSnapshot,
       });
     }
@@ -1197,12 +1300,12 @@ export async function pullGlobalAIMetrics(userId: string): Promise<void> {
   const nowSyncedSnapshot = JSON.stringify(
     Object.fromEntries(METRIC_COLUMNS.map((k) => [k, mapped[k]])),
   );
-
+ const now = new Date().toISOString()
   const [local] = await db.select().from(globalMetricsAI);
   if (local) {
-    await db.update(globalMetricsAI).set({ ...mapped, syncedAt: new Date().toISOString(), syncedSnapshot: nowSyncedSnapshot, });
+    await db.update(globalMetricsAI).set({ ...mapped, syncedAt: now, syncedSnapshot: nowSyncedSnapshot, });
   } else {
-    await db.insert(globalMetricsAI).values({ ...mapped, syncedAt: new Date().toISOString(), syncedSnapshot: nowSyncedSnapshot, });
+    await db.insert(globalMetricsAI).values({ ...mapped, syncedAt: now, syncedSnapshot: nowSyncedSnapshot, });
   }
 }
 
@@ -1274,11 +1377,12 @@ export async function pullAchievementMetrics(userId: string): Promise<void> {
     Object.fromEntries(METRIC_COLUMNS.map((k) => [k, mapped[k]])),
   );
 
+  const now = new Date().toISOString()
   const [local] = await db.select().from(achievementGlobalMetrics);
   if (local) {
-    await db.update(achievementGlobalMetrics).set({ ...mapped, syncedAt: new Date().toISOString(), syncedSnapshot: nowSyncedSnapshot, });
+    await db.update(achievementGlobalMetrics).set({ ...mapped, syncedAt: now, syncedSnapshot: nowSyncedSnapshot, });
   } else {
-    await db.insert(achievementGlobalMetrics).values({ ...mapped, syncedAt: new Date().toISOString(), syncedSnapshot: nowSyncedSnapshot, });
+    await db.insert(achievementGlobalMetrics).values({ ...mapped, syncedAt: now, syncedSnapshot: nowSyncedSnapshot, });
   }
 }
 

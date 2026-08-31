@@ -1,4 +1,4 @@
-import { eq, desc, asc } from "drizzle-orm";
+import { eq, desc, asc, isNull, and } from "drizzle-orm";
 import { db, timerLogs, timerTags } from "@/db";
 import type { TimerLog } from "@/types/timer";
 import type { TimerLogRow, TimerLogInsert } from "@/db/schema";
@@ -23,7 +23,7 @@ function rowToTimerLog(row: TimerLogRow): TimerLog {
 }
 
 /** Application TimerLog → DB insert shape. Called on every write. */
-function timer_logToInsert(timer_log: TimerLog): TimerLogInsert {
+export function timer_logToInsert(timer_log: TimerLog): TimerLogInsert {
     const now = new Date().toISOString();
     return {
         id: timer_log.id,
@@ -47,6 +47,7 @@ export async function getAllTimerLogs(): Promise<TimerLog[]> {
     const rows = await db
         .select()
         .from(timerLogs)
+        .where(isNull(timerLogs.deletedAt))
         .orderBy(desc(timerLogs.createdAt));
     return rows.map(rowToTimerLog);
 }
@@ -56,7 +57,7 @@ export async function getTimerLogById(id: string): Promise<TimerLog | null> {
     const rows = await db
         .select()
         .from(timerLogs)
-        .where(eq(timerLogs.id, id))
+        .where(and(isNull(timerLogs.deletedAt), eq(timerLogs.id, id)))
         .limit(1);
     return rows.length > 0 ? rowToTimerLog(rows[0]) : null;
 }
@@ -112,7 +113,16 @@ export async function updateTimerLog(timer_log: TimerLog): Promise<TimerLog> {
  * Throws on DB error.
  */
 export async function deleteTimerLog(id: string): Promise<void> {
-    await db.delete(timerLogs).where(eq(timerLogs.id, id));
+   // await db.delete(timerLogs).where(eq(timerLogs.id, id));
+    const now = new Date().toISOString();
+    await db
+        .update(timerLogs)
+        .set({
+            deletedAt: now,
+            updatedAt: now,
+            syncedAt: null,
+        })
+        .where(eq(timerLogs.id, id));
 }
 
 // ─── bulk operations (used by data migration) ────────────────────────────────
@@ -139,7 +149,15 @@ export async function deleteAllTimerLogs(): Promise<number> {
   const count = await countTimerLogs();
   if (count === 0) return 0;
 
-  await db.delete(timerLogs);
+ // await db.delete(timerLogs);
+ const now = new Date().toISOString();
+  await db
+    .update(timerLogs)
+    .set({
+      deletedAt: now,
+      updatedAt: now,
+      syncedAt: null,
+    });
 
   return count;
 }

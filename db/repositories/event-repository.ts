@@ -1,4 +1,4 @@
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, isNull, and } from "drizzle-orm";
 import { db, calendarEvents, eventDeletedOccurrences, eventNotificationIds, eventTags } from "@/db";
 import type { CalendarEvent } from "@/types/calendar";
 import type { CalendarEventRow, CalendarEventInsert, EventDeletedOccurrenceRow, EventNotificationIdRow } from "@/db/schema";
@@ -105,7 +105,7 @@ export async function fetchChildRowsForMany(
 
 // ─── parent row insert shape ──────────────────────────────────────────────────
 
-function eventToInsert(event: CalendarEvent): CalendarEventInsert {
+export function eventToInsert(event: CalendarEvent): CalendarEventInsert {
     const now = new Date().toISOString();
     return {
         id: event.id,
@@ -133,6 +133,7 @@ export async function getAllCalendarEvents(): Promise<CalendarEvent[]> {
     const rows = await db
         .select()
         .from(calendarEvents)
+        .where(isNull(calendarEvents.deletedAt))
         .orderBy(desc(calendarEvents.createdAt));
 
     if (rows.length === 0) return [];
@@ -153,7 +154,7 @@ export async function getCalendarEventById(id: string): Promise<CalendarEvent | 
     const rows = await db
         .select()
         .from(calendarEvents)
-        .where(eq(calendarEvents.id, id))
+        .where(and(isNull(calendarEvents.deletedAt), eq(calendarEvents.id, id)))
         .limit(1);
 
     if (rows.length === 0) return null;
@@ -242,7 +243,16 @@ export async function updateCalendarEvent(event: CalendarEvent): Promise<Calenda
  * ON DELETE CASCADE in the schema handles child deletion automatically.
  */
 export async function deleteCalendarEvent(id: string): Promise<void> {
-    await db.delete(calendarEvents).where(eq(calendarEvents.id, id));
+    //await db.delete(calendarEvents).where(eq(calendarEvents.id, id));
+    const now = new Date().toISOString();
+     await db
+    .update(calendarEvents)
+    .set({
+      deletedAt: now,
+      updatedAt: now,
+      syncedAt: null,
+    })
+    .where(eq(calendarEvents.id, id));
 }
 
 // ─── bulk operations ──────────────────────────────────────────────────────────
@@ -350,7 +360,14 @@ export async function deleteAllCalendarEvents(): Promise<number> {
     const count = await countCalendarEvents();
     if (count === 0) return 0;
 
-    await db.delete(calendarEvents);
+   // await db.delete(calendarEvents);
+    await db
+    .update(calendarEvents)
+    .set({
+      deletedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      syncedAt: null,
+    });
 
     return count;
 }

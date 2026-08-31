@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,16 +11,20 @@ import { router } from "expo-router";
 
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
+import { useSync } from "@/context/SyncContext";
 
 // This SWITCHES to a different, already-existing account.
 // It does NOT merge the current device's anonymous local data —
 // that data stays behind under the old anonymous identity.
 export default function SignInScreen() {
   const { signInWithPassword } = useAuth();
+  const { isSignInSyncCompleted } = useSync();
+  const syncVersionAtSignIn = useRef(isSignInSyncCompleted);
   const { theme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [waitingForSync, setWaitingForSync] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSignIn = async () => {
@@ -31,9 +35,10 @@ export default function SignInScreen() {
     setLoading(true);
     setErrorMessage(null);
     try {
+      setWaitingForSync(true);
       await signInWithPassword(email.trim(), password);
-      router.back();
     } catch (err) {
+      setWaitingForSync(false);
       setErrorMessage(
         err instanceof Error ? err.message : "Failed to sign in.",
       );
@@ -41,6 +46,15 @@ export default function SignInScreen() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!waitingForSync) return;
+
+    if (isSignInSyncCompleted > syncVersionAtSignIn.current) {
+      setWaitingForSync(false);
+      router.back();
+    }
+  }, [waitingForSync, isSignInSyncCompleted]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -83,6 +97,11 @@ export default function SignInScreen() {
           </Text>
         )}
       </TouchableOpacity>
+      <ActivityIndicator
+        size="large"
+        color="#01696f"
+        animating={waitingForSync}
+      />
     </View>
   );
 }

@@ -63,14 +63,25 @@ import { useAuth } from "@/context/AuthContext";
  * TODOX : Confirmation Diagloue for data deletion/reseting in settings
  * TODO : Home page search is broken right now
  * TODO : Every Modal must have close button and must close on pressing back
- *  TODO : Habit auto freeze should be optional and toggleable
+ * TODO : Habit auto freeze should be optional and toggleable
  * TODO : The AI chat always has to have chat history avaliable to it,
- * TODO habits checkins missed recording duplicates, some id checker is needed for those habits form whom the metric is incremented alrteady and prevent duplicate increments
+ * TODO : habits checkins missed recording duplicates, some id checker is needed for those habits form whom the metric is incremented alrteady and prevent duplicate increments
  * for example I asked the current chat logic , "how to read a scatter plot", it gave a base explannation on what a scatter plot is
  * but not how to read it, in the follow up , I asked , "yea, but how to read it tho", it answered some bullshit and asked me what
  * "it" is . It forgot what I said before.
- *TODO : Migrate to Interaction API for googlegenAI lib
+ * TODO : Migrate to Interaction API for googlegenAI lib
  * TODO : Infitely recurring evnets currently are only replicated for 60 days, after that their UI card is not shown in the calendar
+ * TODO : Achievment Badge notifciation out of bounds on smaller or lower resolution screens, almost all views have to be checked for screen size specific issues
+ * TODO : notification badge for items with notifcation, pressing on the badge should allow to disable notifications for that item
+ * TODO : Completed task deletion, either prompt or auto delete after 30 days
+ * TODO : Calendar item re-design
+ * TODO : All erro handling , every where.
+ * TODO : If no cloud data then dont open prompt for mrege or replace, function to check if cloud has data but there is sequencing problem.
+ * TODO : Custom colors for categories currently only local to devices and dont sync to cloud
+ * TODO : Analytics - if filter leads to no data for that filter, empty tiles are displaed, isntead display soem message or hide tiles or something
+ * TODO : If due date of task is changed, the notification should be updated, or user should be told to reschedule the notification or something, same with events, probably not habit
+ *
+ *
  */
 
 function HomeScreenInner() {

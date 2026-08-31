@@ -3,7 +3,6 @@ import { useCallback, useContext, useMemo, useState } from "react";
 import {
   View,
   Text,
-  Alert,
   StyleSheet,
   Button,
   FlatList,
@@ -34,6 +33,7 @@ import { Category } from "@/types/category";
 import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
+import { ConfirmDialog } from "@/components/shared/dialog-system/ConfirmDialog";
 // Note : Timescreen is the only component where value prop is used for the TextInput instead of defaultValue
 // Note ContinuedFromAbove: default Value only takes input once, then doesnt update, the reason its works in other places is because
 // Note ContinuedFromAbove: the modals re-render everytime, so default value gets feeded the latest state value and it looks ok,
@@ -42,7 +42,8 @@ import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-lo
 function TimerScreenInner() {
   const { theme, isDarkMode } = useContext(ThemeContext);
   const { trackMetric } = useData();
-  const { timerLogs, setTimerLogs, addLog, removeLog, editLog } = useLogs();
+  const { timerLogs, removeLog, editLog } = useLogs();
+  const [logToDelete, setLogToDelete] = useState<string | null>(null);
   const { categories } = useData();
   //const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
   const {
@@ -78,15 +79,10 @@ function TimerScreenInner() {
     for (const log of timerLogs) {
       if (!log.duration) continue;
       const logDate = log.startTime.split("T")[0];
-      // typeof log.startTime === "string"
-      //   ? log.startTime.split("T")[0]
-      //   : log.startTime.toString().split("T")[0];
-
       if (logDate === todayISO) todayTotal += log.duration;
       if (logDate >= weekStartISO) {
         weekTotal += log.duration;
         if (log.category) {
-          //const category = categories.find((c) => c.id === log.category);
           categoryTotals[log.category] =
             (categoryTotals[log.category] ?? 0) + log.duration;
         }
@@ -115,22 +111,18 @@ function TimerScreenInner() {
     return null;
   }, [timerLogs]);
 
-  const handleDelete = (id: string) => {
-    Alert.alert("Delete Log", "Are you sure?", [
-      { text: "Cancel" },
-      {
-        text: "Delete",
-        onPress: async () => {
-          try {
-            trackMetric(["logsDeleted"], 1);
-            await removeLog(id);
-            triggerHaptic();
-          } catch {
-            showToast("Couldn't delete the log. It has been restored.");
-          }
-        },
-      },
-    ]);
+  const handleDelete = async () => {
+    if (!logToDelete) return;
+    const id = logToDelete;
+    try {
+      trackMetric(["logsDeleted"], 1);
+      await removeLog(id);
+      triggerHaptic();
+      setLogToDelete(null);
+    } catch {
+      setLogToDelete(null);
+      showToast("Couldn't delete the log. It has been restored.");
+    }
   };
 
   const handleEdit = async (updated: TimerLog) => {
@@ -250,40 +242,8 @@ function TimerScreenInner() {
           activeOutlineColor={theme.timerBase}
           outlineColor={timerBaseColor}
         />
-
-        {/*  <TextInput
-          placeholder="Category (optional)"
-          value={category}
-          textColor={theme.text}
-          onChangeText={setCategory}
-          style={[
-            styles.input,
-            styles.categoryInput,
-            { backgroundColor: theme.background },
-          ]}
-          mode="outlined"
-          theme={{
-            colors: {
-              onSurfaceVariant: withAlpha(timerBaseColor, "90"),
-            },
-          }}
-          activeOutlineColor={theme.timerBase}
-          outlineColor={timerBaseColor}
-        /> */}
       </View>
-      {/*     <View style={styles.categoryRow}>
-        {!category && lastUsedCategory && (
-          <TouchableOpacity
-            style={[styles.suggestionChip, { borderColor: timerBaseColor }]}
-            onPress={() => setCategory(lastUsedCategory)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.suggestionText, { color: timerBaseColor }]}>
-              ↩ {lastUsedCategory}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View> */}
+
       <TimerDisplay
         time={time}
         mode={mode}
@@ -396,7 +356,7 @@ function TimerScreenInner() {
         renderItem={({ item }) => (
           <TimerLogItem
             log={item}
-            onDelete={() => handleDelete(item.id)}
+            onDelete={() => setLogToDelete(item.id)}
             onEdit={() => showModal(item)}
           />
         )}
@@ -428,6 +388,15 @@ function TimerScreenInner() {
           />
         )}
       </Portal>
+      <ConfirmDialog
+        visible={logToDelete !== null}
+        title="Delete Log"
+        description="Are you sure you want to delete this log?"
+        confirmText="Delete"
+        confirmVariant="destructive"
+        onCancel={() => setLogToDelete(null)}
+        onConfirm={handleDelete}
+      />
     </View>
   );
 }
