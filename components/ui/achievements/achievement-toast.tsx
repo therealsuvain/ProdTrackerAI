@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Pressable, StyleSheet, View, Text } from "react-native";
+import { Pressable, StyleSheet, View, Text, Image } from "react-native";
 import {
   Surface,
   useTheme,
@@ -19,6 +19,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 import { AchievementBadge } from "@/types/achievements";
+import {
+  badgeBorders,
+  unlockedBadgeIcons,
+} from "@/constants/achievement-assets-loader";
 
 interface AchievementToastProps {
   badge: AchievementBadge | null;
@@ -76,51 +80,65 @@ export const AchievementToast = ({ badge }: AchievementToastProps) => {
 
   // We still render the component even if badge is null so the slide-out animation can play
   return (
-        <Animated.View
-          style={[styles.wrapper, animatedStyle, { zIndex: 9999 }]}
+    <Animated.View style={[styles.wrapper, animatedStyle, { zIndex: 9999 }]}>
+      <Pressable
+        /* style={{borderWidth: 4, borderColor: "white", padding:40}} */ onPress={
+          handleToastPress
+        }
+      >
+        <Surface
+          style={[
+            styles.container,
+            { backgroundColor: theme.colors.elevation.level5 },
+          ]}
+          elevation={5}
         >
-          <Pressable
-            /* style={{borderWidth: 4, borderColor: "white", padding:40}} */ onPress={
-              handleToastPress
-            }
-          >
-            <Surface
+          <View style={[styles.iconRing]}>
+            <Image
+              source={badge ? badgeBorders[badge.tier] : null}
               style={[
-                styles.container,
-                { backgroundColor: theme.colors.elevation.level5 },
+                { width: 60, height: 60, position: "absolute" },
+                badge
+                  ? badge.tier === "diamond" && {
+                      width: 90,
+                      height: 90,
+                    }
+                  : null,
               ]}
-              elevation={5}
+            />
+            <Image
+              source={badge ? unlockedBadgeIcons[badge.id] : null}
+              style={{
+                width: 45,
+                height: 45,
+                position: "absolute",
+              }}
+            />
+          </View>
+          <View style={styles.textContainer}>
+            <Text
+              style={[
+                styles.unlocked,
+                {
+                  color: getTierColor(badge?.tier),
+                  fontWeight: "bold",
+                },
+              ]}
             >
-              <View
-                style={[
-                  styles.iconRing,
-                  { borderColor: getTierColor(badge?.tier) },
-                ]}
-              >
-                <Ionicons
-                  name="trophy"
-                  size={24}
-                  color={getTierColor(badge?.tier)}
-                />
-              </View>
-              <View style={styles.textContainer}>
-                <Text
-                  style={[styles.unlocked,{
-                    color: getTierColor(badge?.tier),
-                    fontWeight: "bold",
-                  }]}
-                >
-                  ACHIEVEMENT UNLOCKED
-                </Text>
-                <Text
-                  style={[styles.title,{ color: theme.colors.onSurface, fontWeight: "700" }]}
-                >
-                  {badge?.title || ""}
-                </Text>
-              </View>
-            </Surface>
-          </Pressable>
-        </Animated.View>
+              ACHIEVEMENT UNLOCKED
+            </Text>
+            <Text
+              style={[
+                styles.title,
+                { color: theme.colors.onSurface, fontWeight: "700" },
+              ]}
+            >
+              {badge?.title || ""}
+            </Text>
+          </View>
+        </Surface>
+      </Pressable>
+    </Animated.View>
   );
 };
 
@@ -149,11 +167,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    borderWidth: 2,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
-    backgroundColor: "rgba(255,255,255,0.05)",
   },
   textContainer: {
     justifyContent: "center",

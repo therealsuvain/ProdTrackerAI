@@ -80,8 +80,10 @@ import { useAuth } from "@/context/AuthContext";
  * TODO : Custom colors for categories currently only local to devices and dont sync to cloud
  * TODO : Analytics - if filter leads to no data for that filter, empty tiles are displaed, isntead display soem message or hide tiles or something
  * TODO : If due date of task is changed, the notification should be updated, or user should be told to reschedule the notification or something, same with events, probably not habit
- *
- *
+ * TODO : Toggling Match System Theme crashes app due to hook changes
+ * TODO : achivement resets with cloud sync check how to get it to work or what should to logic
+ * TODO : completeling task is very laggy
+ * TODO : Achivements metrics are not being used currently
  */
 
 function HomeScreenInner() {

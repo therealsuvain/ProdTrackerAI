@@ -107,18 +107,18 @@ export const HABIT_ACHIEVEMENTS: AchievementDefinition[] = [
     },
     {
         id: 'habits_250',
-        title: 'The Daily Grind',
+        title: 'Groundhog Day',
         description: 'Check-in your habits 250 times.',
-        unlockedDescription: 'Discipline beats motivation. You\'re building something real',
+        unlockedDescription: 'Same routine, different day. Somehow, you\'re still showing up.',
         tier: 'gold',
         target: 250,
         metricTrigger: 'habitsCheckedIn'
     },
     {
         id: 'habits_500',
-        title: 'Creature of Habit',
+        title: 'I Am Inevitable',
         description: 'Check-in your habits 500 times.',
-        unlockedDescription: 'Consistency is now second nature. The system runs itself.',
+        unlockedDescription: 'Motivation comes and goes. You apparently don\'t.',
         tier: 'platinum',
         target: 500,
         metricTrigger: 'habitsCheckedIn'

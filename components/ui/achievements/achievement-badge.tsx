@@ -2,8 +2,12 @@ import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { AchievementDefinition } from "@/types/achievements-ui";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, Image } from "react-native";
 import { ProgressBar, useTheme as usePaperTheme } from "react-native-paper";
+import {
+  badgeBorders,
+  unlockedBadgeIcons,
+} from "@/constants/achievement-assets-loader";
 
 interface AchievementBadgeProps {
   badge: AchievementDefinition;
@@ -82,12 +86,32 @@ function AchievementBadge({
       ]}
       //elevation={isUnlocked ? 5 : 0} // Flatten the elevation if locked
     >
-      <View style={[styles.iconRing, { borderColor: tierColor }]}>
-        <Ionicons
-          name={isUnlocked ? "trophy" : "lock-closed"}
-          size={28}
-          color={tierColor}
+      <View style={[styles.iconRing]}>
+        <Image
+          source={badgeBorders[badge.tier]}
+          //resizeMode="contain"
+          style={[
+            { width: 80, height: 80, position: "absolute" },
+            badge.tier === "diamond" && {
+              width: 90,
+              height: 90,
+            },
+          ]}
         />
+        {isUnlocked ? (
+          <Image
+            source={unlockedBadgeIcons[badge.id]}
+            resizeMode="contain"
+            style={{
+              width: 60,
+              height: 60,
+              position: "absolute",
+              opacity: 1,
+            }}
+          />
+        ) : (
+          <Ionicons name={"lock-closed"} size={28} color={tierColor} />
+        )}
       </View>
 
       <View style={styles.textContainer}>
@@ -156,14 +180,12 @@ const styles = StyleSheet.create({
     borderColor: "rgba(150, 150, 150, 0.2)", // Subtle border instead of shadow
   },
   iconRing: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 2,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
-    backgroundColor: "rgba(255,255,255,0.05)",
   },
   textContainer: {
     flex: 1,

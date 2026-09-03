@@ -17,7 +17,7 @@ class AnalyticsEngine {
         metricsEventBus.on('metric:track', this.handleTrackEvent);
     }
 
-    /**
+   /**
    * The listener for the UI events
    */
     private handleTrackEvent = ({ keys, amount, actor = 'user' }: { keys: GlobalMetricKey[], amount: number, actor?: 'user' | 'ai' }) => {
