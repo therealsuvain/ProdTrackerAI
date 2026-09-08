@@ -13,6 +13,7 @@ import { getAvatarSource, AvatarId } from "@/constants/avatars";
 import { SyncStatusIndicator } from "@/components/ui/shared/sync-status-indicator";
 import { SyncResolutionModal } from "@/components/shared/dialog-system/SyncResolutionDialog";
 import { usePendingNotificationsStore } from "@/utils/Account-utils/pending-notification-store";
+import { PaywallGate } from "@/components/ui/paywall/paywall-gate";
 import { useSync } from "@/context/SyncContext";
 
 export const Sidebar = (props: any) => {
@@ -158,18 +159,20 @@ export const Sidebar = (props: any) => {
             )}
             onPress={() => props.navigation.navigate("achievements")}
           />
-          <DrawerItem
-            label="Analytics"
-            labelStyle={{ color: theme.text }}
-            icon={({ size }) => (
-              <Ionicons
-                name="stats-chart-outline"
-                size={size}
-                color={theme.text}
-              />
-            )}
-            onPress={() => props.navigation.navigate("analytics")}
-          />
+          <PaywallGate requiredTier="gold" featureId="analytics">
+            <DrawerItem
+              label="Analytics"
+              labelStyle={{ color: theme.text }}
+              icon={({ size }) => (
+                <Ionicons
+                  name="stats-chart-outline"
+                  size={size}
+                  color={theme.text}
+                />
+              )}
+              onPress={() => props.navigation.navigate("analytics")}
+            />
+          </PaywallGate>
         </View>
         <AvatarPickerModal
           visible={avatarPickerVisible}

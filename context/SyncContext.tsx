@@ -69,12 +69,6 @@ type SyncContextValue = {
   loadAndReschduleNotifications: () => Promise<void>;
 };
 
-// TODO cloud data delteion otion in settings
-// TODO local data deltetion option in settings without deleting cloud data
-// TODO tag names unique issue, maybe can be psued and pulled that causes error, either ignore duplciate or silently
-// TODO duplicate adds for habitAutoFrozen metric
-// TODO a recovery snapshot is created even if there is not data
-// TODO add a indicator that current data is jsut restored from a currently saved recovery snapshot
 const SyncContext = createContext<SyncContextValue | null>(null);
 
 export function SyncProvider({ children }: { children: React.ReactNode }) {

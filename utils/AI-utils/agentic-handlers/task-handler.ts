@@ -7,12 +7,6 @@ import { AIActionMemory } from "./ai-action-undo-handlers";
 import { fastCosineSimilarity, generateEmbedding } from "@/utils/embedding-engine";
 import { Task } from "@/types/task";
 
-
-// TODOX : If task is marked complete then notification is cancelled in the AI handler, but not in the task item logic, 
-// also if task is then marked incomplete, then a new notificaiton is not scheduled, R&D how it should be ideally
-
-//TODO CAtch high demand errors nad return a suitable response, catch any other possibel errors too
-// TODOX task due date, event startdate and end date are just in (YYYY-MM-DD) format, convert to ISO 8601 format
 export const AddTaskHandler: AIHandler = {
   execute: async (params, context) => {
     // 1. Use your existing factory to create a consistent Task object

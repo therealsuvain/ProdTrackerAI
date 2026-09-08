@@ -36,7 +36,6 @@ import { GlobalFilterModal } from "@/components/ui/analytics/charts-layout/globa
 import { AnalyticsFilterBar } from "@/components/ui/analytics/charts-layout/analytics-filter-bar";
 import { useFiltersStore } from "@/hooks/use-filters-store";
 
-//TODO certain charts when rendered in chart-details-modal, need some barWidth, fontSzie, viewPort, domainPadding etc. changes
 function AnalyticsScreenInner() {
   const { activeWidgets, toggleWidget, reorderWidgets, resetLayout } =
     useDashboardLayout();

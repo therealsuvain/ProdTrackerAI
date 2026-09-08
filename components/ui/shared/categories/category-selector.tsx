@@ -8,8 +8,6 @@ import { CategoryCreator } from "./category-creation-view";
 import { CategoryList } from "./category-list-view";
 import { Category } from "@/types/category";
 
-//TODO duplicate cateogries get added to UI, and count gets updated in db for exisitng one
-// TODO swap color from white to black for icon depending on background color lightness or darkness
 interface CategorySelectorProps {
   itemType: "task" | "habit" | "event" | "log";
   categoriesDb: Category[]; // Passed down from DataContext

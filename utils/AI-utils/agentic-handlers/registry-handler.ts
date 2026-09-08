@@ -8,21 +8,6 @@ import { SearchTaxonomyHandler, AddCategoryHandler, EditCategoryHandler, DeleteC
 import { RevertLastActionHandler } from "./ai-action-undo-handlers"
 import { TriageOverdueHandler } from "./triage-overdue-tasks-handler"
 
-/**  
- * TODOAdd 51 : Handler that allows the AI to add a additonal custom System prompt instruction curated by the user
- * TODOAdd 52 : Handler that allows the AI to trigger a custom notification with a personalized message to the user (for reminders, encouragement, etc)
- * TODOAdd 53 : Add a "reasoning" field to the handler calls, so that when we log them, we can also log the AI's reasoning for why it called that tool, which will be helpful for debugging and future training/fine-tuning
- * TODOAdd 55 : Add error handling and edge case handling for each handler, and log any errors that occur during execution, so that we can identify common failure points and improve the system over time.
- * TODOAdd 56 :  Confidence field like response and reasoning
- * TODOAdd 57 : Add a handler so AI can access chat history and use it as context for future responses
- * TODOAdd 66 : - delete-event_instance(id, date[]), - freeze-habit(id) handlers 
- * TODO :  Query handler should be able to query based on categories and tags
- * TODO : searchTaxonomy handler should be able to return all categories and tags, currently its not able to handle query type of all
- * TODO : Maybe handler for cloud syncing via AI chat
- * TODO : handler for theme management via AI chat
- * TODO : for opening color picker via AI chat
- */
-
 
 export const SilentHandlerList: string[] = [
     "searchItems",

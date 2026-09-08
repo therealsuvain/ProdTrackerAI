@@ -32,9 +32,6 @@ import de from "zod/v4/locales/de.cjs";
 
 /**
  * 
- * TODO do delted_at fields need to pulled in?
- * TODO Added deleted_at field to supabase anyhting else to be changed in supabase
- * TODO no pushing is needed on merge or is it needed check , currently only pushCateogries runs
  *  Ok added deleted_at fields to schema and supabase ,
 change all delete repo functions to set deleted_at instead of just delte, 
 and changed all data fetcvhess to check only for rows where deletedAt is null,

@@ -13,8 +13,7 @@ import { TagsAndCategorySection } from "@/components/ui/shared/tags-and-categori
 import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { GlobalMetricKey } from "@/types/metrics";
-// TODO date field managment for multi timezone users CHECK
-//TODOX What in case when a user wants to schedule an overnight event, when the start time is later than the end time but of previous date, current logic breaks in case
+
 interface Props {
   visible: boolean;
   onDismiss: () => void;

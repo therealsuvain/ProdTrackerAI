@@ -27,7 +27,6 @@ import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 import { ConfirmDialog } from "@/components/shared/dialog-system/ConfirmDialog";
 
-// TODOOptim : shifting logic from habit-screen , habit-item, habiit-stats to utils maybe
 function HabitsScreenInner() {
   const { theme, isDarkMode } = useContext(ThemeContext);
   const { habits, addHabit, editHabit, removeHabit } = useHabits();

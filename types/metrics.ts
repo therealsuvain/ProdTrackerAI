@@ -1,9 +1,9 @@
-//TODO feeback for habits goal reach and restart option via the Chat
+
 export interface DailyMetrics {
   tasksAdded: number;
   tasksCompleted: number;
   tasksAbandoned: number; //Deleted before completion
-  tasksMissed: number; //Tasks that went overdue //TODO
+  tasksMissed: number; //Tasks that went overdue
   tasksDeleted: number; // Counts task deleted in any state
   habitsAdded: number;
   habitsWithWeeklyGoals: number;
@@ -75,7 +75,7 @@ export interface AppMetrics {
     habitsGoalsCompleted: number;
     habitGoalsRestarted: number;
     habitCheckInsMissed: number;
-    habitsStreakMaxDaily: number;  // Longest Streak ever for checking in  in any habit //TODOX 48
+    habitsStreakMaxDaily: number;  // Longest Streak ever for checking in  in any habit 
     habitsStreakMaxWeekly: number;
     habitsFrozen: number;
     habitsAutoFrozen: number;

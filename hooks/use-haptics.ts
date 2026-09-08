@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useCallback } from 'react';
 import { useSettings } from '../context/SettingsContext';
 
-//TODOAdd Diff Haptic modes for different functions
+
 export const useHaptics = () => {
   const { settings } = useSettings();
 
@@ -16,7 +16,6 @@ export const useHaptics = () => {
       if (settings.hapticsEnabled) {
         try {
           //Note impactAsync doesnt work with my phone with Android 10, custom One Plus OS - Oxygen OS
-          //TODOAdd will have to be curated for iOS too
           await Haptics.impactAsync(style);
           //await Haptics.impactAsync(style);
           //await Haptics.selectionAsync();

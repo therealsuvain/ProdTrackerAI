@@ -8,9 +8,6 @@ import { ALL_ACHIEVEMENTS } from "@/types/achievements-ui";
 import { useData } from "../hooks/context-hooks/use-data";
 import { AchievementBadge as BadgeType } from "../types/achievements";
 
-/**
- * TODOAdd : Hnadle hidden achievements
- */
 export default function AchievementsScreen() {
   const { theme } = useTheme();
   const { targetBadgeId } = useLocalSearchParams<{ targetBadgeId: string }>();

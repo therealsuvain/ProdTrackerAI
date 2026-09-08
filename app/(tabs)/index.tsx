@@ -38,54 +38,6 @@ import { GlobalMetricKey } from "@/types/metrics";
 import { useDbErrorToast } from "@/components/shared/db-error-toast";
 import { useAuth } from "@/context/AuthContext";
 
-/**
- * TODOOptim 2 : Many files are very large, try and make it more modular. ALL FILES HAVE TO CHECKED FOR POSSIBLE <REFACTORS></REFACTORS>
- * TODOAdd 5 : Pay wall, barring paid features for free users
- * TODOAdd 6 : Notifications edits via AI chat
- * TODOAdd 7 : Maybe custom notifications options
- * TODOOptim 10 : new Date() is expensive in javascript so have be to memomized everywhere
- * TODOAdd 11 : Input sanitization
- * TODOAdd 12 : Check for Security enhancements and possible securicty concerns for the entire app
- * TODOX 14: Timer Screen Flip Animation state issues- FIX'em
- * TODOAdd 18 : Achievements Badges generation, maybe pixelated or sprite version of meme refered by the achievment phrase
- * TODOX 21 : Codebase updation for iOS
- * TODOX 22 : Testing on bigger/smaller screens. Test on different devices
- * TODOX 23 : home page search enhancment or removal. R&D
- * TODOX 25 : Habit successful checkin feedback
- * TODOADD 27 : R&D better Calendar screen, refer google calendar maybe.
- * TODOX 31 : If tags and categoires are added, embeddings for them?, atleast searchable via physical search, AI handlers also would need to be updated
- * TODOX 34 : Maybe keep darkMode as default irrespective of system settings
- * TODOAdd 35 : Item Label(Home-screen Today's tasks , events, habits etc) animations, like ads
- * TODOAdd 36 : Mayeb add more animations for the app. R&D
- * TODOAdd 37 : More settings options
- * TODOAdd 38 : Few more achievements
- * TODOOptim 65 : Check for steps required to adapte date/time fields to different Timezones and day light saving time changes
- * TODOX : Confirmation Diagloue for data deletion/reseting in settings
- * TODO : Home page search is broken right now
- * TODO : Every Modal must have close button and must close on pressing back
- * TODO : Habit auto freeze should be optional and toggleable
- * TODO : The AI chat always has to have chat history avaliable to it,
- * TODO : habits checkins missed recording duplicates, some id checker is needed for those habits form whom the metric is incremented alrteady and prevent duplicate increments
- * for example I asked the current chat logic , "how to read a scatter plot", it gave a base explannation on what a scatter plot is
- * but not how to read it, in the follow up , I asked , "yea, but how to read it tho", it answered some bullshit and asked me what
- * "it" is . It forgot what I said before.
- * TODO : Migrate to Interaction API for googlegenAI lib
- * TODO : Infitely recurring evnets currently are only replicated for 60 days, after that their UI card is not shown in the calendar
- * TODO : Achievment Badge notifciation out of bounds on smaller or lower resolution screens, almost all views have to be checked for screen size specific issues
- * TODO : notification badge for items with notifcation, pressing on the badge should allow to disable notifications for that item
- * TODO : Completed task deletion, either prompt or auto delete after 30 days
- * TODO : Calendar item re-design
- * TODO : All erro handling , every where.
- * TODO : If no cloud data then dont open prompt for mrege or replace, function to check if cloud has data but there is sequencing problem.
- * TODO : Custom colors for categories currently only local to devices and dont sync to cloud
- * TODO : Analytics - if filter leads to no data for that filter, empty tiles are displaed, isntead display soem message or hide tiles or something
- * TODO : If due date of task is changed, the notification should be updated, or user should be told to reschedule the notification or something, same with events, probably not habit
- * TODO : Toggling Match System Theme crashes app due to hook changes
- * TODO : achivement resets with cloud sync check how to get it to work or what should to logic
- * TODO : completeling task is very laggy
- * TODO : Achivements metrics are not being used currently
- */
-
 function HomeScreenInner() {
   const { triggerHaptic } = useHaptics();
   const { trackMetric } = useData();
@@ -135,6 +87,7 @@ function HomeScreenInner() {
     console.log("[DebugAuthProbe]", { authLoaded, userId, isAnonymous });
     return null;
   }; */
+
   const toggleTaskCompleted = async (id: string) => {
     const task = tasks.find((t) => t.id === id);
     await toggleTask(id);
