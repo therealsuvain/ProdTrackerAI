@@ -4,27 +4,40 @@ import { StyleSheet, View, Text, Button } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { XButton } from "../shared/x-button";
 import { useRoute } from "@react-navigation/native";
-import { useContext } from "react";
+import React, { useCallback, useContext, useMemo } from "react";
 import { ThemeContext } from "@/context/ThemeContext";
 import { TagList } from "../shared/tags/tag-list";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { desc } from "drizzle-orm";
 
-const today = new Date().toISOString().split("T")[0];
 interface TaskItemProps {
   task: Task;
   onToggleComplete: (id: string) => void;
-  onEdit?: () => void;
-  onDelete?: () => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-export default function TaskItem({
-  task,
-  onToggleComplete,
-  onEdit,
-  onDelete,
-}: TaskItemProps) {
+const customComparator = (prev: TaskItemProps, next: TaskItemProps) => {
+  // Return true = props are equal = skip re-render
+  // Only re-render if the task's meaningful data changed or callbacks changed.
+  return (
+    prev.task.id === next.task.id &&
+    prev.task.completed === next.task.completed &&
+    prev.task.title === next.task.title &&
+    prev.task.dueDate === next.task.dueDate &&
+    prev.task.priority === next.task.priority &&
+    prev.task.description === next.task.description &&
+    prev.task.reminder === next.task.reminder && // array ref — stable if not edited
+    prev.task.category === next.task.category &&
+    prev.task.tags === next.task.tags &&
+    prev.onEdit === next.onEdit && // stable via useCallback in screen
+    prev.onToggleComplete === next.onToggleComplete && // stable via useCallback in screen
+    prev.onDelete === next.onDelete // stable via useCallback in screen
+  );
+};
+
+function TaskItem({ task, onToggleComplete, onEdit, onDelete }: TaskItemProps) {
   const { theme } = useContext(ThemeContext);
   const { categories } = useData();
   const priorityColor = {
@@ -38,7 +51,18 @@ export default function TaskItem({
   }
   const route = useRoute();
   const isNotHome = route.name !== "index";
-  const overDue = task.dueDate.split("T")[0] < today;
+
+  const overDue = useMemo(() => {
+    if (task.completed) return false; // don't bother computing for completed tasks
+    const today = new Date().toISOString().split("T")[0];
+    return task.dueDate.split("T")[0] < today;
+  }, [task.dueDate, task.completed]);
+
+  const handleEdit = useCallback(() => onEdit?.(task.id), [task.id, onEdit]);
+  const handleDelete = useCallback(
+    () => onDelete?.(task.id),
+    [task.id, onDelete],
+  );
   // Edit and Delete buttons are bad, need changes
   return (
     <Card
@@ -87,8 +111,8 @@ export default function TaskItem({
             <TagList tags={task.tags} holeColor={theme.taskDarkPrimary} />
           )}
         </View>
-        {isNotHome && <XButton icon="pencil-outline" onPress={onEdit} />}
-        {isNotHome && <XButton icon="trash-outline" onPress={onDelete} />}
+        {isNotHome && <XButton icon="pencil-outline" onPress={handleEdit} />}
+        {isNotHome && <XButton icon="trash-outline" onPress={handleDelete} />}
         <Badge
           size={7.5}
           style={[styles.badge, { backgroundColor: priorityColor }]}
@@ -97,6 +121,8 @@ export default function TaskItem({
     </Card>
   );
 }
+
+export default React.memo(TaskItem, customComparator);
 
 const styles = StyleSheet.create({
   card: { marginVertical: 8, position: "relative" },

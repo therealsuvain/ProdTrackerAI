@@ -90,8 +90,8 @@ export const CategoryCreator = ({
     selectedColorValue.value = color.hex;
   };
 
-  const handleCustomColorSaved = async () => {
-    const updatedRecents = await saveCustomColor(selectedColor);
+  const handleCustomColorSaved = () => {
+    const updatedRecents = saveCustomColor(selectedColor);
     const paletteWithPlaceholders = [
       ...updatedRecents,
       ...Array(Math.max(0, 25 - updatedRecents.length)).fill(null),
@@ -108,8 +108,8 @@ export const CategoryCreator = ({
 
   const textColor = mode === "ai" ? theme.blackBase : theme.greyBasePrimary;
   useEffect(() => {
-    const hydrateQueue = async () => {
-      const recents = await getRecentColors();
+    const hydrateQueue = () => {
+      const recents = getRecentColors();
       const paletteWithPlaceholders = [
         ...recents,
         ...Array(Math.max(0, MAX_COLORS - recents.length)).fill(null),

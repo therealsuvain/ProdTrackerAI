@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useCallback, useContext, useMemo, useState } from "react";
 import {
   TouchableOpacity,
   View,
@@ -39,7 +39,6 @@ import {
 } from "@/components/shared/db-error-toast";
 import { useTasks } from "@/hooks/context-hooks/use-tasks";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 import { ConfirmDialog } from "@/components/shared/dialog-system/ConfirmDialog";
@@ -65,25 +64,27 @@ function TaskScreenInner() {
   });
   const { triggerHaptic } = useHaptics();
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
-  const filteredTasks = tasks
-    .filter(
-      (t) =>
-        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (t.description &&
-          t.description.toLowerCase().includes(searchQuery.toLowerCase())),
-    )
-    .sort((a, b) => {
-      if (sortBy === "priority") {
-        const priorityOrder = { high: 2, medium: 1, low: 0 };
-        return priorityOrder[b.priority] - priorityOrder[a.priority];
-      } else if (sortBy === "duedate") {
-        return (
-          (new Date(a.dueDate).getTime() || Infinity) -
-          (new Date(b.dueDate).getTime() || Infinity)
-        );
-      }
-      return 0;
-    });
+  const filteredTasks = useMemo(() => {
+    return tasks
+      .filter(
+        (t) =>
+          t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (t.description &&
+            t.description.toLowerCase().includes(searchQuery.toLowerCase())),
+      )
+      .sort((a, b) => {
+        if (sortBy === "priority") {
+          const priorityOrder = { high: 2, medium: 1, low: 0 };
+          return priorityOrder[b.priority] - priorityOrder[a.priority];
+        } else if (sortBy === "duedate") {
+          return (
+            (new Date(a.dueDate).getTime() || Infinity) -
+            (new Date(b.dueDate).getTime() || Infinity)
+          );
+        }
+        return 0;
+      });
+  }, [tasks, searchQuery, sortBy]);
 
   const showModal = (task?: Task) => {
     if (task) {
@@ -120,28 +121,43 @@ function TaskScreenInner() {
     }
   };
 
-  const toggleComplete = async (id: string) => {
-    const task = tasks.find((t) => t.id === id);
-    if (!task) return;
-    try {
-      await toggleTask(id);
+  const toggleComplete = useCallback(
+    async (id: string) => {
+      const task = tasks.find((t) => t.id === id);
+      if (!task) return;
+      try {
+        await toggleTask(id);
 
-      // Track metric — same logic as before, using pre-toggle state
-      if (task.completed) {
-        trackMetric(["tasksCompleted"], -1); // undoing completion
-      } else {
-        trackMetric(["tasksCompleted"], 1);
-        triggerHaptic();
+        // Track metric — same logic as before, using pre-toggle state
+        if (task.completed) {
+          trackMetric(["tasksCompleted"], -1); // undoing completion
+        } else {
+          trackMetric(["tasksCompleted"], 1);
+          triggerHaptic();
+        }
+      } catch {
+        showToast("Couldn't update the task. Changes have been undone.");
       }
-    } catch {
-      showToast("Couldn't update the task. Changes have been undone.");
-    }
-  };
+    },
+    [tasks, toggleTask, trackMetric],
+  );
 
   const handleDragEnd = ({ data }: { data: Task[] }) => {
     setTasks(data);
     triggerHaptic();
   };
+
+  const handleEditRow = useCallback(
+    (id: string) => {
+      const task = tasks.find((t) => t.id === id);
+      if (task) showModal(task);
+    },
+    [tasks, showModal],
+  );
+
+  const handleDeleteRow = useCallback((id: string) => {
+    setTaskToDelete(id);
+  }, []);
 
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
@@ -241,8 +257,8 @@ function TaskScreenInner() {
                   <TaskItem
                     task={item}
                     onToggleComplete={toggleComplete}
-                    onEdit={() => showModal(item)}
-                    onDelete={() => setTaskToDelete(item.id)}
+                    onEdit={handleEditRow}
+                    onDelete={handleDeleteRow}
                   />
                 </TouchableOpacity>
               )}
@@ -260,8 +276,8 @@ function TaskScreenInner() {
                 <TaskItem
                   task={item}
                   onToggleComplete={toggleComplete}
-                  onEdit={() => showModal(item)}
-                  onDelete={() => setTaskToDelete(item.id)}
+                  onEdit={handleEditRow}
+                  onDelete={handleDeleteRow}
                 />
               )}
               keyExtractor={(item) => item.id}
@@ -273,22 +289,6 @@ function TaskScreenInner() {
         <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
         <DbErrorToast error={toastError} onDismiss={dismissToast} />
         {/*  <FAB style={styles.fab} icon="plus" onPress={() => allScheduledNotificationsLogs()} /> */}
-        {/* <FAB
-          style={styles.fab}
-          icon="plus"
-          onPress={async () => {
-             const stored = await AsyncStorage.getItem("AI_TOKEN_MONITOR_STATS");
-            if (stored) console.log(JSON.parse(stored)); 
-            clearStorageByKey("AI_TOKEN_MONITOR_STATS");
-               clearStorageByKey("timeLogs");
-            clearStorageByKey("@prodtracker_metrics");
-            clearStorageByKey("@prodtracker_achievements");
-            clearStorageByKey("tasks");
-            clearStorageByKey("habits");
-            clearStorageByKey("events");
-            clearStorageByKey("messages"); 
-          }}
-        /> */}
         {/*  <FAB
           style={styles.fab}
           icon="plus"

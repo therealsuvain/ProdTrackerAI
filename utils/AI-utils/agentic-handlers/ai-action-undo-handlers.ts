@@ -2,10 +2,10 @@ import { cancelReminder, scheduleReminderEvents, scheduleReminderHabits, schedul
 import { AIActionContext, AIHandler } from '@/types/ai-handler';
 import { InverseAction } from '@/types/ai-undo-stack';
 import { GlobalMetricKey } from '@/types/metrics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import storageMMKV from '@/utils/Storage-Utils/mmkv-instance'
+import { STORAGE_KEYS } from '@/utils/Storage-Utils/storage-keys'
 
 // Module-scoped state for encapsulated O(1) LIFO queue access
-const MEMORY_STORAGE_KEY = '@prodtracker_ai_undo_stack';
 const MAX_UNDO_DEPTH = 10;
 let undoStack: Array<InverseAction> = [];
 const UNDO_TTL_MS = 30 * 60 * 1000; // 30 minutes
@@ -15,19 +15,19 @@ const pruneUndoStack = (stack: InverseAction[]): InverseAction[] => {
     return stack.filter(action => action.timestamp > cutoff);
 };
 
-const persistStackToDisk = async () => {
+const persistStackToDisk = () => {
     try {
         const serialized = JSON.stringify(undoStack);
-        await AsyncStorage.setItem(MEMORY_STORAGE_KEY, serialized);
+       storageMMKV.set(STORAGE_KEYS.AI_UNDO_STACK, serialized);
     } catch (error) {
         console.error("AI Memory Write-Behind Failed:", error);
     }
 };
 
 export const AIActionMemory = {
-    init: async () => {
+    init: () => {
         try {
-            const stored = await AsyncStorage.getItem(MEMORY_STORAGE_KEY);
+            const stored =storageMMKV.getString(STORAGE_KEYS.AI_UNDO_STACK);
             if (stored) {
                 undoStack = JSON.parse(stored);
             }

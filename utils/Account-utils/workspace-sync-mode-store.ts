@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import storageMMKV from '@/utils/Storage-Utils/mmkv-instance'
+import { STORAGE_KEYS } from '@/utils/Storage-Utils/storage-keys'
 
-const STORAGE_KEY = "workspace_sync_mode";
 
 export type WorkspaceSyncMode = "synced" | "detached_pending_choice";
 
@@ -18,7 +18,7 @@ export const useWorkspaceSyncModeStore = create<WorkspaceSyncModeStore>(
     hydrated: false,
 
     hydrate: async () => {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
+      const stored = storageMMKV.getString(STORAGE_KEYS.WORKSPACE_SYNC_MODE);
       set({
         mode: stored === "detached_pending_choice" ? "detached_pending_choice" : "synced",
         hydrated: true,
@@ -26,7 +26,7 @@ export const useWorkspaceSyncModeStore = create<WorkspaceSyncModeStore>(
     },
 
     setMode: async (mode) => {
-      await AsyncStorage.setItem(STORAGE_KEY, mode);
+      storageMMKV.set(STORAGE_KEYS.WORKSPACE_SYNC_MODE, mode);
       set({ mode });
     },
   }),

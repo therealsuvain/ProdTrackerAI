@@ -8,17 +8,16 @@ import React, {
 import { Alert, AppState } from "react-native";
 import * as Notifications from "expo-notifications";
 import { randomUUID } from "expo-crypto";
-
 import { TimerLog } from "@/types/timer";
 import { useData } from "@/hooks/context-hooks/use-data";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import storageMMKV from "@/utils/Storage-Utils/mmkv-instance";
+import { STORAGE_KEYS } from "@/utils/Storage-Utils/storage-keys";
 import {
   showNotification,
   stopNativeTimer,
   addTimerActionListener,
 } from "../modules/notifications-timer";
 import { useLogs } from "@/hooks/context-hooks/use-logs";
-import { el } from "zod/v4/locales";
 
 export type TimerMode = "stopwatch" | "countdown";
 interface TimerContextType {
@@ -44,7 +43,6 @@ export const TimerContext = createContext<TimerContextType | undefined>(
   undefined,
 );
 
-const TIMER_KEY = "timer_data";
 const NOTIFICATION_ID = "timer-notification"; // Use consistent ID
 
 export const formatDuration = (seconds: number): string => {
@@ -211,7 +209,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
       ]); */
 
       // Load saved timer state
-      await loadTimerData();
+      loadTimerData();
       isInitializedRef.current = true;
     };
 
@@ -231,16 +229,16 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
     // Listen for app state changes (foreground/background)
     const appStateSubscription = AppState.addEventListener(
       "change",
-      async (nextAppState) => {
+      (nextAppState) => {
         if (nextAppState === "active") {
           // App came to foreground - recalculate time
-          await loadTimerData();
+          loadTimerData();
         } else if (
           nextAppState === "background" ||
           nextAppState === "inactive"
         ) {
           // App went to background - save state
-          await saveTimerData();
+          saveTimerData();
         }
       },
     );
@@ -253,21 +251,21 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Save timer state to AsyncStorage
-  const saveTimerData = async () => {
+  const saveTimerData = () => {
     try {
       const data: TimerData = {
         ...timerStateRef.current,
       };
-      await AsyncStorage.setItem(TIMER_KEY, JSON.stringify(data));
+      storageMMKV.set(STORAGE_KEYS.TIMER, JSON.stringify(data));
     } catch (error) {
       console.error("Failed to save timer data:", error);
     }
   };
 
   // Load timer state from AsyncStorage
-  const loadTimerData = async () => {
+  const loadTimerData = () => {
     try {
-      const json = await AsyncStorage.getItem(TIMER_KEY);
+      const json = storageMMKV.getString(STORAGE_KEYS.TIMER);
       if (!json) return;
 
       const data: TimerData = JSON.parse(json);
@@ -282,13 +280,6 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
         const elapsed =
           data.pausedSeconds +
           Math.floor((Date.now() - data.startTimestamp) / 1000);
-
-        /*  console.log(
-          "Recalculating time - pausedSeconds:",
-          data.pausedSeconds,
-          "elapsed:",
-          elapsed,
-        ); */
 
         //!setTime(elapsed);
         setNowMs(elapsed);

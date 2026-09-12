@@ -1,14 +1,14 @@
-// src/utils/storage.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import { SettingsConfig, defaultSettings } from '@/types/settings';
+import storageMMKV from '@/utils/Storage-Utils/mmkv-instance'
+import { STORAGE_KEYS } from '@/utils/Storage-Utils/storage-keys'
 
 const SETTINGS_KEY = '@prodtracker_settings';
-const SYNC_MODE_KEY = "workspace_sync_mode";
 
-export const loadSettings = async (): Promise<SettingsConfig> => {
+
+export const loadSettings = (): SettingsConfig => {
   try {
-    const jsonValue = await AsyncStorage.getItem(SETTINGS_KEY);
+    const jsonValue = storageMMKV.getString(SETTINGS_KEY);
     return jsonValue != null ? JSON.parse(jsonValue) : defaultSettings;
   } catch (error) {
     console.error('Error fetching settings:', error);
@@ -16,27 +16,27 @@ export const loadSettings = async (): Promise<SettingsConfig> => {
   }
 };
 
-export const saveSettings = async (settings: SettingsConfig): Promise<void> => {
+export const saveSettings = (settings: SettingsConfig): void => {
   try {
     const jsonValue = JSON.stringify(settings);
-    await AsyncStorage.setItem(SETTINGS_KEY, jsonValue);
+    storageMMKV.set(SETTINGS_KEY, jsonValue);
   } catch (error) {
     console.error('Error saving settings:', error);
   }
 };
 
-export const clearStorageByKey = async (key: string) => {
+export const clearStorageByKey = (key: string) => {
   try {
-    await AsyncStorage.removeItem(key);
+    storageMMKV.remove(key);
     console.log("Cleared key:", key);
   } catch (e) {
     console.error('Error clearing metrics:', e);
   }
 };
 
-export const clearStorage = async () => {
+export const clearStorage =  () => {
   try {
-    await AsyncStorage.clear();
+    storageMMKV.clearAll();
   } catch (e) {
     console.error('Error clearing storage:', e);
   }

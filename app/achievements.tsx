@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import AchievementBadge from "@/components/ui/achievements/achievement-badge";
@@ -15,11 +15,8 @@ export default function AchievementsScreen() {
   const itemOffsets = useRef<Record<string, number>>({}); // The Offset Dictionary
   const { unlockedAchievements, appMetrics, achievementMetrics } = useData();
   const [achievements, setAchievements] = useState(ALL_ACHIEVEMENTS);
-  const [unlockedData, setUnlockedData] = useState<Record<string, BadgeType>>(
-    {},
-  );
 
-  useEffect(() => {
+  /*   useEffect(() => {
     const loadBadges = async () => {
       // Convert array to a dictionary for O(1) lookups during rendering
       const unlockedMap: Record<string, BadgeType> = {};
@@ -32,7 +29,33 @@ export default function AchievementsScreen() {
       });
     };
     loadBadges();
-  }, [unlockedAchievements]); // Re-run if core data changes
+  }, [unlockedAchievements]); // Re-run if core data changes */
+
+  const unlockedData = useMemo(() => {
+    const map: Record<string, BadgeType> = {};
+    unlockedAchievements.forEach((badge) => {
+      map[badge.id] = badge;
+    });
+    return map;
+  }, [unlockedAchievements]);
+
+  const achievementsWithProgress = useMemo(() => {
+    return achievements.map((def) => {
+      const unlockedInfo = unlockedData[def.id];
+      const isUnlocked = !!unlockedInfo;
+      let metricValue = 0;
+      let baseLineValue = 0;
+      if (def.metricTrigger !== "meta") {
+        metricValue = appMetrics?.global[def.metricTrigger] || 0;
+        baseLineValue = achievementMetrics[def.metricTrigger] || 0;
+      }
+      const currentProgress =
+        def.metricTrigger === "meta"
+          ? Object.keys(unlockedData).length
+          : metricValue - baseLineValue;
+      return { def, unlockedInfo, isUnlocked, currentProgress };
+    });
+  }, [achievements, unlockedData, appMetrics, achievementMetrics]);
 
   useEffect(() => {
     if (targetBadgeId) {
@@ -69,15 +92,9 @@ export default function AchievementsScreen() {
     > */}
 
       <ScrollView ref={scrollViewRef} contentContainerStyle={styles.content}>
-        {achievements.map((def) => {
-          const unlockedInfo = unlockedData[def.id];
+        {achievementsWithProgress.map((achievement) => {
+          /* const unlockedInfo = unlockedData[def.id];
           const isUnlocked = !!unlockedInfo;
-          /* def.id === "tasks_10" ||
-            def.id === "habits_100" ||
-            def.id === "timer_1440" ||
-            def.id === "achievements_all"
-              ? true
-              : !!unlockedInfo; */
           let metricValue = 0;
           let baseLineValue = 0;
           if (def.metricTrigger !== "meta") {
@@ -87,10 +104,10 @@ export default function AchievementsScreen() {
           const currentProgress =
             def.metricTrigger === "meta"
               ? unlockedBadgesCount
-              : metricValue - baseLineValue;
+              : metricValue - baseLineValue; */
           return (
             <View
-              key={def.id}
+              key={achievement.def.id}
               // Record the exact Y position of this item as it renders
               style={{
                 backgroundColor: "transparent",
@@ -99,15 +116,15 @@ export default function AchievementsScreen() {
               }}
               onLayout={(event) => {
                 const { y } = event.nativeEvent.layout;
-                itemOffsets.current[def.id] = y;
+                itemOffsets.current[achievement.def.id] = y;
               }}
             >
               <AchievementBadge
-                key={def.id}
-                badge={def}
-                isUnlocked={isUnlocked}
-                unlockedAt={unlockedInfo?.unlockedAt}
-                currentProgress={currentProgress as number}
+                key={achievement.def.id}
+                badge={achievement.def}
+                isUnlocked={achievement.isUnlocked}
+                unlockedAt={achievement.unlockedInfo?.unlockedAt}
+                currentProgress={achievement.currentProgress as number}
               />
             </View>
           );

@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
   ReactNode,
@@ -7,6 +6,8 @@ import React, {
   useState,
 } from "react";
 import { AppState, StatusBar, useColorScheme } from "react-native";
+import storageMMKV from "@/utils/Storage-Utils/mmkv-instance";
+import { STORAGE_KEYS } from "@/utils/Storage-Utils/storage-keys";
 
 // Define theme colors
 const themes = {
@@ -94,8 +95,8 @@ interface ThemeContextType {
   isDarkMode: boolean;
   theme: ThemeColors;
   preference: ThemeName;
-  toggleTheme: () => Promise<void>;
-  setThemeToSystemTheme: () => Promise<void>;
+  toggleTheme: () => void;
+  setThemeToSystemTheme: () => void;
 }
 
 const defaultTheme: ThemeColors = themes.dark;
@@ -104,7 +105,7 @@ export const ThemeContext = createContext<ThemeContextType>({
   isDarkMode: true,
   theme: defaultTheme,
   preference: "system",
-  toggleTheme: async () => {},
+  toggleTheme: () => {},
   setThemeToSystemTheme: async () => {},
 });
 
@@ -120,46 +121,14 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   const theme = isDarkMode ? themes.dark : themes.light;
 
-  // Load saved preference from AsyncStorage (if any)
   useEffect(() => {
-    //let mounted = true;
-    (async () => {
-      try {
-        const saved = await AsyncStorage.getItem("@app:theme");
-        //if (!mounted) return;
-        if (saved === "light" || saved === "dark" || saved === "system") {
-          setPreference(saved);
-        }
-        /* if (saved === "dark") setIsDarkMode(true);
-        else if (saved === "light") setIsDarkMode(false) */
-      } catch (e) {
-        // ignore
+    (() => {
+      const saved = storageMMKV.getString(STORAGE_KEYS.THEME);
+      if (saved === "light" || saved === "dark" || saved === "system") {
+        setPreference(saved);
       }
     })();
-
-    /*  return () => {
-      mounted = false;
-    }; */
   }, []);
-
-  /*   // Listen for system theme changes and respect user preference only when no saved preference
-  useEffect(() => {
-    const listener = ({ colorScheme }: { colorScheme: ColorSchemeName }) => {
-      (async () => {
-        try {
-          const saved = await AsyncStorage.getItem("@app:theme");
-          if (saved == null) {
-            setIsDarkMode(colorScheme === "dark");
-          }
-        } catch (e) {
-          // ignore
-        }
-      })();
-    };
-
-    const subscription = Appearance.addChangeListener(listener as any);
-    return () => subscription.remove();
-  }, []); */
 
   const appState = useRef(AppState.currentState);
 
@@ -194,43 +163,22 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isDarkMode]);
 
-  //   useEffect(() => {
-  //     theme= isDarkMode ? themes.dark : themes.light;
-  // }, [isDarkMode]);
-
-  const setThemeName = async (t: ThemeName) => {
-    try {
-      await AsyncStorage.setItem("@app:theme", t);
-      setPreference(t);
-      /* console.log("setThemeName", t);
-      console.log("SYSTEM:", systemScheme);
-      if (t === "system") setIsDarkMode(systemScheme === "dark");
-      else setIsDarkMode(t === "dark"); */
-    } catch (e) {
-      // ignore
-    }
+  const setThemeName = (t: ThemeName) => {
+    storageMMKV.set(STORAGE_KEYS.THEME, t);
+    setPreference(t);
   };
 
-  /*   const toggleTheme = async () => {
-    const newTheme = !isDarkMode;
-    try {
-      await AsyncStorage.setItem("@app:theme", newTheme ? "dark" : "light");
-    } catch (e) {
-      // ignore
-    }
-    setIsDarkMode(newTheme);
-  }; */
-  const toggleTheme = async () => {
+  const toggleTheme = () => {
     const next: ThemeName = preference === "light" ? "dark" : "light";
-    await setThemeName(next);
+    setThemeName(next);
   };
 
-  const setThemeToSystemTheme = async () => {
+  const setThemeToSystemTheme = () => {
     if (preference === "system") {
-      await setThemeName("dark");
+      setThemeName("dark");
       return;
     }
-    await setThemeName("system");
+    setThemeName("system");
   };
 
   return (

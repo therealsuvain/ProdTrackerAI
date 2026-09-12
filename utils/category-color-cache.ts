@@ -1,15 +1,15 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const COLOR_CACHE_KEY = '@prodtracker_recent_colors';
+import storageMMKV from '@/utils/Storage-Utils/mmkv-instance'
+import { STORAGE_KEYS } from '@/utils/Storage-Utils/storage-keys'
+;
 export const MAX_COLORS = 30;
 
 /**
  * Updates the LRU cache of custom colors.
  * Moves existing colors to the front, unshifts new colors, and truncates to MAX_COLORS.
  */
-export const saveCustomColor = async (newColor: string): Promise<string[]> => {
+export const saveCustomColor = (newColor: string): string[] => {
     try {
-        const storedColors = await AsyncStorage.getItem(COLOR_CACHE_KEY);
+        const storedColors =  storageMMKV.getString(STORAGE_KEYS.COLOR_CACHE);
         let colors: string[] = storedColors ? JSON.parse(storedColors) : [];
 
         // Remove the color if it already exists to avoid duplicates
@@ -23,7 +23,7 @@ export const saveCustomColor = async (newColor: string): Promise<string[]> => {
             colors.pop();
         }
 
-        await AsyncStorage.setItem(COLOR_CACHE_KEY, JSON.stringify(colors));
+       storageMMKV.set(STORAGE_KEYS.COLOR_CACHE, JSON.stringify(colors));
         return colors;
     } catch (error) {
         console.error('Failed to save color to LRU cache:', error);
@@ -31,9 +31,9 @@ export const saveCustomColor = async (newColor: string): Promise<string[]> => {
     }
 };
 
-export const getRecentColors = async (): Promise<string[]> => {
+export const getRecentColors = (): string[] => {
     try {
-        const storedColors = await AsyncStorage.getItem(COLOR_CACHE_KEY);
+        const storedColors =storageMMKV.getString(STORAGE_KEYS.COLOR_CACHE);
         return storedColors ? JSON.parse(storedColors) : [];
     } catch (error) {
         console.error('Failed to retrieve color cache:', error);

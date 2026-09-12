@@ -1,5 +1,12 @@
 import { View, StyleSheet, FlatList, Text } from "react-native";
-import { useContext, useState, useEffect, useCallback, useRef } from "react";
+import {
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { FAB, Portal, Searchbar } from "react-native-paper";
 
 import { useHabits } from "@/hooks/context-hooks/use-habits";
@@ -31,7 +38,7 @@ function HabitsScreenInner() {
   const { theme, isDarkMode } = useContext(ThemeContext);
   const { habits, addHabit, editHabit, removeHabit } = useHabits();
   const { trackMetric, appMetrics } = useData();
-  const [filteredHabits, setFilteredHabits] = useState<Habit[]>(habits);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [visible, setVisible] = useState(false);
   const [visibleInEditMode, setVisibleInEditMode] = useState(false);
@@ -49,6 +56,14 @@ function HabitsScreenInner() {
       setVisibleInEditMode(false);
     },
   });
+  const filteredHabits = useMemo(
+    () =>
+      habits.filter((habit) =>
+        habit.title.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [habits, searchQuery],
+  );
+
   const [habitToDelete, setHabitToDelete] = useState<string | null>(null);
   const audioSource = require("@/assets/audio/habit-congrats-2.mp3");
   const audioPlayer = usePlaySound(audioSource, 0.5);
@@ -169,13 +184,6 @@ function HabitsScreenInner() {
     [trackMetric],
   );
 
-  useEffect(() => {
-    setFilteredHabits(
-      habits.filter((habit) =>
-        habit.title.toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
-    );
-  }, [searchQuery, habits]);
   const emptyStateColor = isDarkMode ? theme.habitBase : theme.habitDarkPrimary;
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
-import { chartMMKV } from "@/components/ui/analytics/charts-prefs";
+import storageMMKV from "@/utils/Storage-Utils/mmkv-instance";
 import {
   PersistedFilters,
   DateRangeFilter,
@@ -15,7 +15,7 @@ const DEFAULT_FILTERS: PersistedFilters = {
 };
 
 function loadFilters(): PersistedFilters {
-  const raw = chartMMKV.getString(FILTERS_STORAGE_KEY);
+  const raw = storageMMKV.getString(FILTERS_STORAGE_KEY);
   if (!raw) return DEFAULT_FILTERS;
   try {
     return JSON.parse(raw) as PersistedFilters;
@@ -25,7 +25,7 @@ function loadFilters(): PersistedFilters {
 }
 
 function persist(next: PersistedFilters) {
-  chartMMKV.set(FILTERS_STORAGE_KEY, JSON.stringify(next));
+  storageMMKV.set(FILTERS_STORAGE_KEY, JSON.stringify(next));
 }
 
 interface FiltersStore extends PersistedFilters {

@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, View } from "react-native";
-import React, { useCallback, useContext, useState } from "react";
+import React, { useCallback, useContext, useMemo, useState } from "react";
 import Animated from "react-native-reanimated";
 import {
   Button,
@@ -53,10 +53,17 @@ function HomeScreenInner() {
   useNotifications();
   const [viewMode, setViewMode] = useState<"overview" | "timeline">("overview");
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const todayDate = getTodayISO();
-  let todaysTasks = tasks.filter(
-    (t) => t.dueDate && t.dueDate.split("T")[0] === todayDate,
+  const todayDate = useMemo(() => getTodayISO(), []);
+  const isSelectedDateToday = useMemo(
+    () => selectedDate.toDateString() === new Date().toDateString(),
+    [selectedDate],
   );
+  let todaysTasks = useMemo(() => {
+    return tasks.filter(
+      (t) => t.dueDate && t.dueDate.split("T")[0] === todayDate,
+    );
+  }, [tasks, todayDate]);
+
   let upcomingEvents = events.slice(0, 3);
   let activeHabits = habits.slice(0, 3);
   let recentLogs = timerLogs.slice(0, 3);
@@ -98,7 +105,6 @@ function HomeScreenInner() {
   const handleHabitUpdate = useCallback(
     async (updated: Habit) => {
       const habit = habits.find((h) => h.id === updated.id);
-      await editHabit(updated);
       if (!habit) return;
       try {
         await editHabit(updated);
@@ -396,9 +402,7 @@ function HomeScreenInner() {
               textColor={theme.whiteBase}
               onPress={() => setSelectedDate(new Date())}
             >
-              {selectedDate.toDateString() === new Date().toDateString()
-                ? "Today"
-                : selectedDate.toDateString()}
+              {isSelectedDateToday ? "Today" : selectedDate.toDateString()}
             </Button>
             <Button
               icon="chevron-right"

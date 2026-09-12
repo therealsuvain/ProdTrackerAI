@@ -1,19 +1,18 @@
-import { createMMKV } from 'react-native-mmkv';
 import { useState, useCallback } from 'react';
 import { DEFAULT_LAYOUT } from './charts-registry'
+import storageMMKV from '@/utils/Storage-Utils/mmkv-instance'
+import { STORAGE_KEYS } from '@/utils/Storage-Utils/storage-keys'
 
-export const chartMMKV = createMMKV();
-const LAYOUT_KEY = 'analytics_dashboard_layout';
 
 export const useDashboardLayout = ()=> {
   // Synchronous initial read prevents layout shift
   const [activeWidgets, setActiveWidgets] = useState<string[]>(() => {
-    const saved = chartMMKV.getString(LAYOUT_KEY);
+    const saved = storageMMKV.getString(STORAGE_KEYS.CHART_LAYOUT);
     return saved ? JSON.parse(saved) : DEFAULT_LAYOUT;
   });
 
  const persist = useCallback((next: string[]) => {
-    chartMMKV.set(LAYOUT_KEY, JSON.stringify(next));
+    storageMMKV.set(STORAGE_KEYS.CHART_LAYOUT, JSON.stringify(next));
   }, []);
 
   const toggleWidget = useCallback((widgetId: string) => {
@@ -23,7 +22,7 @@ export const useDashboardLayout = ()=> {
         ? prev.filter(id => id !== widgetId) 
         : [...prev, widgetId];
       
-      chartMMKV.set(LAYOUT_KEY, JSON.stringify(newLayout));
+      storageMMKV.set(STORAGE_KEYS.CHART_LAYOUT, JSON.stringify(newLayout));
       return newLayout;
     });
   }, []);

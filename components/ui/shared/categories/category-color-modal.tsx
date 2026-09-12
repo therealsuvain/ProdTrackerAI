@@ -17,7 +17,7 @@ interface CategoryColorPickerProps {
   onClose: () => void;
   updateColor: (color: string) => void;
   handleColorPicked: (color: ColorFormatsObject) => Promise<void>;
-  handleColorSaved: () => Promise<void>;
+  handleColorSaved: () => void;
 }
 export const CategoryColorPicker = ({
   visible,
