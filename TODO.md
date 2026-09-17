@@ -77,6 +77,8 @@
 - TODO : Every Modal must have close button and must close on pressing back
 - TODO : Input sanitization
 - TODO : Check for Security enhancements and possible securicty concerns for the entire app
+- TODO : Home timeline has to be tweaked, each tasks, timeline feels useless mostly, category based event colors is commneted out for now
+- TOOD : Where should GestureHandlerRootView be
 
 # AI-Based
 

@@ -12,13 +12,13 @@ import {
   SegmentedButtons,
   Text,
 } from "react-native-paper";
+import { useShallow } from "zustand/react/shallow";
 
 import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
-import { AnalyticsSection } from "@/components/ui/analytics-section";
 import EventItem from "@/components/ui/calendar-events/event-item";
 import { ChatScreen } from "@/components/ui/chat/chat-screen";
 import HabitItem from "@/components/ui/habits/habit-item";
-import UnifiedTimeline from "@/components/ui/home-timeline";
+import UnifiedTimeline from "@/components/ui/home-timeline/home-timeline";
 import { SearchResults } from "@/components/ui/search-results";
 import TaskItem from "@/components/ui/tasks/task-item";
 import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
@@ -28,7 +28,7 @@ import { useHabits } from "@/hooks/context-hooks/use-habits";
 import { useLogs } from "@/hooks/context-hooks/use-logs";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useSearch } from "@/hooks/use-search";
-import { useTasks } from "@/hooks/context-hooks/use-tasks";
+import { selectedDateTaskIds, useTaskStore } from "@/stores/use-task-store";
 import { Habit } from "@/types/habits";
 import { getTodayISO } from "@/utils/common-utils";
 import { useFlapAnimation } from "@/hooks/animations/use-flap-animation-new";
@@ -37,13 +37,17 @@ import { useHaptics } from "@/hooks/use-haptics";
 import { GlobalMetricKey } from "@/types/metrics";
 import { useDbErrorToast } from "@/components/shared/db-error-toast";
 import { useAuth } from "@/context/AuthContext";
+import { useIsFocused } from "@react-navigation/native";
+import { toggleTaskWithEffects } from "@/utils/Data-services/task-services/task-actions";
+
+const EMPTY_IDS: string[] = [];
 
 function HomeScreenInner() {
   const { triggerHaptic } = useHaptics();
   const { trackMetric } = useData();
   const { theme } = useContext(ThemeContext);
   const { showToast } = useDbErrorToast();
-  const { tasks, toggleTask } = useTasks();
+  const isFocused = useIsFocused();
   const { events } = useEvents();
   const { timerLogs } = useLogs();
   const { habits, editHabit } = useHabits();
@@ -53,16 +57,19 @@ function HomeScreenInner() {
   useNotifications();
   const [viewMode, setViewMode] = useState<"overview" | "timeline">("overview");
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const todayDate = useMemo(() => getTodayISO(), []);
+  const todayDate = useMemo(() => getTodayISO(), [isFocused]);
   const isSelectedDateToday = useMemo(
-    () => selectedDate.toDateString() === new Date().toDateString(),
-    [selectedDate],
+    () => selectedDate.toDateString() === todayDate,
+    [selectedDate, todayDate],
   );
-  let todaysTasks = useMemo(() => {
-    return tasks.filter(
-      (t) => t.dueDate && t.dueDate.split("T")[0] === todayDate,
-    );
-  }, [tasks, todayDate]);
+
+  const todaysTaskIds = useTaskStore(
+    useShallow((state) => {
+      if (!isFocused) return EMPTY_IDS;
+
+      return selectedDateTaskIds(state, todayDate);
+    }),
+  );
 
   let upcomingEvents = events.slice(0, 3);
   let activeHabits = habits.slice(0, 3);
@@ -95,13 +102,14 @@ function HomeScreenInner() {
     return null;
   }; */
 
-  const toggleTaskCompleted = async (id: string) => {
-    const task = tasks.find((t) => t.id === id);
-    await toggleTask(id);
-    triggerHaptic();
-    if (task?.completed) trackMetric(["tasksCompleted"], -1);
-    else trackMetric(["tasksCompleted"], 1);
-  };
+  const toggleTaskCompleted = useCallback(
+    async (id: string) => {
+      const task = useTaskStore.getState().tasksById[id];
+      void toggleTaskWithEffects(id);
+      triggerHaptic();
+    },
+    [toggleTaskWithEffects, triggerHaptic, trackMetric],
+  );
   const handleHabitUpdate = useCallback(
     async (updated: Habit) => {
       const habit = habits.find((h) => h.id === updated.id);
@@ -216,11 +224,11 @@ function HomeScreenInner() {
           >
             Today's Task
           </Text>
-          {todaysTasks.length ? (
-            todaysTasks.map((task) => (
+          {todaysTaskIds.length > 0 ? (
+            todaysTaskIds.map((taskId) => (
               <TaskItem
-                key={task.id}
-                task={task}
+                key={taskId}
+                id={taskId}
                 onToggleComplete={toggleTaskCompleted}
               />
             ))
@@ -332,7 +340,6 @@ function HomeScreenInner() {
             <Text style={{ color: theme.habitBase }}>No Active Habits</Text>
           )}
           <Divider style={styles.divider} />
-          <AnalyticsSection />
           <Portal>
             <Modal
               visible={searchVisible}
@@ -426,7 +433,6 @@ function HomeScreenInner() {
 
           <UnifiedTimeline
             events={events}
-            tasks={tasks}
             timerLogs={timerLogs}
             habits={habits}
             selectedDate={selectedDate}
@@ -441,9 +447,14 @@ function HomeScreenInner() {
         icon="brain"
         onPress={() => setAiVisible(true)}
       />
-      <Portal>
-        <ChatScreen visible={aiVisible} onDismiss={() => setAiVisible(false)} />
-      </Portal>
+      {aiVisible && (
+        <Portal>
+          <ChatScreen
+            visible={aiVisible}
+            onDismiss={() => setAiVisible(false)}
+          />
+        </Portal>
+      )}
     </Provider>
   );
 }

@@ -16,6 +16,14 @@ import {
 import { Checkbox, ProgressBar } from "react-native-paper";
 import Animated from "react-native-reanimated";
 
+const EMPTY_IDS: string[] = [];
+const EMPTY_TIMELINE_DATA = {
+  tasks: [],
+  logs: [],
+  events: [],
+  habits: [],
+};
+
 import { useHabitDeniedFeedback } from "@/components/ui/habits/habit-denied-feedback-util";
 import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/context-hooks/use-data";
@@ -26,10 +34,13 @@ import { Task } from "@/types/task";
 import { TimerLog } from "@/types/timer";
 import { checkInHabit } from "@/utils/habit-utils";
 import { Ionicons } from "@expo/vector-icons";
+import { selectedDateTaskIds, useTaskStore } from "@/stores/use-task-store";
+import { useShallow } from "zustand/shallow";
+import { useIsFocused } from "@react-navigation/native";
+import { TimelineTasks } from "./timeline-tasks";
 
 interface UnifiedTimelineProps {
   events: CalendarEvent[];
-  tasks: Task[];
   timerLogs: TimerLog[];
   habits: Habit[];
   selectedDate: Date;
@@ -47,7 +58,7 @@ const TIMELINE_END = 24;
 const AnimatedTouchableOpacity =
   Animated.createAnimatedComponent(TouchableOpacity);
 
-const categoryColorCache = new Map<string, string>();
+/* const categoryColorCache = new Map<string, string>();
 const getCategoryColor = (id: string, category: string | undefined): string => {
   const key = `${category ?? "default"}-${id}`;
   if (categoryColorCache.has(key)) return categoryColorCache.get(key)!;
@@ -70,18 +81,7 @@ const getCategoryColor = (id: string, category: string | undefined): string => {
     .padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`;
   categoryColorCache.set(key, color);
   return color;
-};
-
-const getPriorityColor = (
-  priority: "low" | "medium" | "high",
-  theme: any,
-): string => {
-  return {
-    low: theme.success,
-    medium: theme.habitBase,
-    high: theme.eventBase,
-  }[priority];
-};
+}; */
 
 interface HabitCardProps {
   habit: Habit;
@@ -184,7 +184,6 @@ const TIME_LABELS = Array.from(
 
 export default function UnifiedTimeline({
   events,
-  tasks,
   timerLogs,
   habits,
   selectedDate,
@@ -192,11 +191,10 @@ export default function UnifiedTimeline({
   onTaskToggle,
   onHabitCheckIn,
   onDeleteEvent,
-  onDeleteTask,
 }: UnifiedTimelineProps) {
   const { theme } = useContext(ThemeContext);
   const { trackMetric } = useData();
-
+  const isFocused = useIsFocused();
   const scrollViewRef = useRef<ScrollView>(null);
   const selectedDateStr = useMemo(
     () => selectedDate.toDateString(),
@@ -211,14 +209,27 @@ export default function UnifiedTimeline({
   const isToday = useMemo(() => {
     return new Date().toDateString() === selectedDateStr;
   }, [selectedDateStr]);
+
+  const taskIds = useTaskStore(
+    useShallow((state) => {
+      if (!isFocused) return EMPTY_IDS;
+
+      return selectedDateTaskIds(state, selectedDateISO);
+    }),
+  );
+
+  const taskCount = taskIds.length;
   // Filter items for selected date
   const filteredData = useMemo(() => {
+    if (!isFocused) {
+      return EMPTY_TIMELINE_DATA;
+    }
     // Filter tasks due on this date
-    const dayTasks = tasks.filter(
+    /* const dayTasks = tasks.filter(
       (task) =>
         new Date(task.dueDate ? task.dueDate : "0").toDateString() ===
         selectedDateStr,
-    );
+    ); */
 
     // Filter timer logs from this date
     const dayLogs = timerLogs.filter(
@@ -257,14 +268,12 @@ export default function UnifiedTimeline({
 
     // All habits are shown (they're daily check-ins)
     return {
-      tasks: dayTasks,
       logs: dayLogs,
       events: dayEvents,
       habits: habits,
     };
   }, [
     events,
-    tasks,
     timerLogs,
     habits,
     selectedDateStr,
@@ -304,7 +313,7 @@ export default function UnifiedTimeline({
         event,
         top: startHour * HOUR_HEIGHT,
         height: Math.max((endHour - startHour) * HOUR_HEIGHT, 40),
-        color: getCategoryColor(event.id, event.category),
+        color: "red",
         startTimeLabel: eventStartTime.toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -320,7 +329,7 @@ export default function UnifiedTimeline({
   }, [filteredData.events]);
 
   // Calculate positions for tasks (default to 9 AM if no specific time)
-  const taskPositions = useMemo(() => {
+  /*  const taskPositions = useMemo(() => {
     return filteredData.tasks.map((task, index) => {
       // Stack tasks at 9 AM, slightly offset
       const baseHour =
@@ -336,7 +345,26 @@ export default function UnifiedTimeline({
         priorityColor: getPriorityColor(task.priority, theme),
       };
     });
-  }, [filteredData.tasks]);
+  }, [filteredData.tasks]); */
+
+  /*   const taskPositions = useMemo(() => {
+    return taskIdsForSelectedDate.map((taskId, index) => {
+      const task = useTaskStore.getState().tasksById[taskId];
+      const baseHour =
+        task.reminderDate && new Date(task.reminderDate).getHours();
+      const offset = index * 50; // Offset each task by 50px
+      return {
+        taskId,
+        top: baseHour
+          ? baseHour * HOUR_HEIGHT + offset
+          : 9 * HOUR_HEIGHT + offset,
+        height: 45,
+        priorityColor: task
+          ? getPriorityColor(task.priority, theme)
+          : theme.taskBase,
+      };
+    });
+  }, [taskIdsForSelectedDate, theme]); */
 
   // Calculate positions for timer logs
   const logPositions = useMemo(() => {
@@ -533,7 +561,7 @@ export default function UnifiedTimeline({
     theme.whiteBaseTrans,
   ]);
 
-  const renderTasks = useMemo(() => {
+  /*   const renderTasks = useMemo(() => {
     return taskPositions.map(({ task, top, height, priorityColor }) => (
       <TouchableOpacity
         key={task.id}
@@ -578,13 +606,10 @@ export default function UnifiedTimeline({
             </Text>
           </View>
 
-          {/* <Text style={[styles.taskSubtext,{color:theme.greyBasePrimary}]}>
-            Due: {task.dueDate?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) || "Today"}
-          </Text> */}
         </View>
       </TouchableOpacity>
     ));
-  }, [taskPositions, handleTaskToggle, theme, trackMetric]);
+  }, [taskPositions, handleTaskToggle, theme, trackMetric]); */
 
   const renderTimerLogs = useMemo(() => {
     return logPositions.map(
@@ -627,72 +652,6 @@ export default function UnifiedTimeline({
   }, [logPositions, theme]);
 
   const renderHabits = useMemo(() => {
-    /*     const HabitCard = ({ habit }: { habit: Habit }) => {
-      const { playDeniedFeedback, animatedStyle } = useHabitDeniedFeedback();
-      const completed = isHabitCompletedToday(habit);
-      const progress = habit.goal ? habit.streak / habit.goal : 0;
-      const handleHabitCheckIn = () => {
-        const result = checkInHabit(habit);
-        if (result.status === "denied") {
-          playDeniedFeedback();
-          return;
-        }
-        trackMetric(["habitsCheckedIn"], 1);
-        onHabitCheckIn(result.habit);
-      };
-
-      return (
-        <AnimatedTouchableOpacity
-          key={habit.id}
-          style={[
-            styles.habitCard,
-            {
-              backgroundColor: theme.habitDarkPrimary,
-              borderColor: theme.habitBaseTrans,
-            },
-            animatedStyle,
-            completed && { borderColor: theme.success },
-          ]}
-          onPress={handleHabitCheckIn}
-        >
-          <View style={styles.habitCardHeader}>
-            <Text
-              style={[styles.habitTitle, { color: theme.whiteBase }]}
-              numberOfLines={1}
-            >
-              {habit.title}
-            </Text>
-            {completed ? (
-              <Ionicons
-                name="checkmark-circle"
-                size={24}
-                color={theme.success}
-              />
-            ) : (
-              <Ionicons
-                name="ellipse-outline"
-                size={24}
-                color={theme.habitBase}
-              />
-            )}
-          </View>
-          <View style={styles.habitStats}>
-            <Text style={[styles.habitStreak, { color: theme.habitBase }]}>
-              🔥 {habit.streak} day streak
-            </Text>
-
-            <Text style={[styles.habitGoal, { color: theme.habitBase }]}>
-              Goal: {habit.goal}
-            </Text>
-          </View>
-          <ProgressBar
-            progress={progress}
-            color={theme.habitBase}
-            style={[styles.habitProgress, { backgroundColor: theme.modalBase }]}
-          />
-        </AnimatedTouchableOpacity>
-      );
-    }; */
     return filteredData.habits.map((habit) => {
       return (
         <HabitCard
@@ -714,9 +673,7 @@ export default function UnifiedTimeline({
   ]);
 
   const isEmpty =
-    filteredData.events.length === 0 &&
-    filteredData.tasks.length === 0 &&
-    filteredData.logs.length === 0;
+    filteredData.events.length === 0 && filteredData.logs.length === 0;
 
   return (
     <View
@@ -805,8 +762,12 @@ export default function UnifiedTimeline({
             {/* Render all timeline items */}
             {renderTimerLogs}
             {renderEvents}
-            {renderTasks}
-
+            <TimelineTasks
+              taskIds={taskIds}
+              selectedDateISO={selectedDateISO}
+              onToggleTask={onTaskToggle}
+              color={theme.taskBase}
+            />
             {/* Current time indicator (if today) */}
             {isToday && (
               <View style={[styles.currentTimeLine, { top: currentTimeTop }]}>
@@ -858,7 +819,7 @@ export default function UnifiedTimeline({
         <View style={styles.summaryItem}>
           <Ionicons name="checkbox" size={16} color={theme.taskBase} />
           <Text style={[styles.summaryText, { color: theme.whiteBase }]}>
-            {filteredData.tasks.length}
+            {taskCount}
           </Text>
         </View>
         <View style={styles.summaryItem}>
@@ -979,18 +940,7 @@ const styles = StyleSheet.create({
     padding: 8,
     overflow: "hidden",
   },
-  taskBlock: {
-    position: "absolute",
-    justifyContent: "center",
-    left: 8,
-    right: 8,
-    borderRadius: 8,
-    padding: 8,
-    borderWidth: 2,
-    borderRightWidth: 8,
-    borderTopRightRadius: 4,
-    borderBottomRightRadius: 4,
-  },
+
   logBlock: {
     position: "absolute",
     left: 8,
@@ -1013,18 +963,6 @@ const styles = StyleSheet.create({
   },
   blockTime: {
     fontSize: 11,
-  },
-  taskTitle: {
-    fontSize: 13,
-    fontWeight: "500",
-    flex: 1,
-  },
-  completedTask: {
-    textDecorationLine: "line-through",
-  },
-  taskSubtext: {
-    fontSize: 11,
-    marginLeft: 40,
   },
   logTitle: {
     fontSize: 13,

@@ -12,7 +12,6 @@ import { useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/context-hooks/use-data";
-import { useTasks } from "@/hooks/context-hooks/use-tasks";
 import { useHabits } from "@/hooks/context-hooks/use-habits";
 import { useEvents } from "@/hooks/context-hooks/use-events";
 import { useLogs } from "@/hooks/context-hooks/use-logs";
@@ -24,6 +23,7 @@ import {
   AppDialog,
   DialogAction,
 } from "@/components/shared/dialog-system/AppDialog";
+import { reassignTaskCategoryWithEffects } from "@/utils/Data-services/task-services/task-actions";
 
 // We will build this in Step 3. Importing it now as a placeholder.
 // import { CategoryAnalyticsModal } from '@/components/settings/category-analytics-modal';
@@ -37,7 +37,7 @@ export default function CategoriesSettingsScreen() {
     getCategoryUsageForAll,
     trackMetric,
   } = useData();
-  const { reassignTaskCategoryLocal } = useTasks();
+
   const { reassignHabitCategoryLocal } = useHabits();
   const { reassignEventCategoryLocal } = useEvents();
   const { reassignLogCategoryLocal } = useLogs();
@@ -171,7 +171,7 @@ export default function CategoriesSettingsScreen() {
     if (!categoryToDelete) return;
     trackMetric(["categoriesDeleted"], 1);
     await deleteUserCategory(categoryToDelete, fallbackId);
-    reassignTaskCategoryLocal(categoryToDelete, fallbackId);
+    reassignTaskCategoryWithEffects(categoryToDelete, fallbackId);
     reassignEventCategoryLocal(categoryToDelete, fallbackId);
     reassignHabitCategoryLocal(categoryToDelete, fallbackId);
     reassignLogCategoryLocal(categoryToDelete, fallbackId);

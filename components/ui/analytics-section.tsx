@@ -1,4 +1,4 @@
-import { ThemeContext } from "@/context/ThemeContext";
+/* import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/context-hooks/use-data";
 import {
   getHabitProgress,
@@ -52,3 +52,4 @@ export function AnalyticsSection() {
 }
 
 const styles = StyleSheet.create({});
+ */

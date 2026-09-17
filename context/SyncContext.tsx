@@ -30,7 +30,7 @@ import {
 import { getAllTasks } from "@/db/repositories/task-repository";
 import { getAllHabits } from "@/db/repositories/habit-repository";
 import { getAllCalendarEvents } from "@/db/repositories/event-repository";
-import { useTasks } from "@/hooks/context-hooks/use-tasks";
+import { useTaskStore } from "@/stores/use-task-store";
 import { useHabits } from "@/hooks/context-hooks/use-habits";
 import { useEvents } from "@/hooks/context-hooks/use-events";
 import { useLogs } from "@/hooks/context-hooks/use-logs";
@@ -43,6 +43,7 @@ import { useWorkspaceSyncModeStore } from "@/utils/Account-utils/workspace-sync-
 import { useRecoveryConsumedStore } from "@/utils/Account-utils/snapshot-status-store";
 import { usePendingNotificationsStore } from "@/utils/Account-utils/pending-notification-store";
 import { NotificationRescheduleChoice } from "@/components/modal/notificaiton-reschedule-modal";
+import { runTaskMaintenanceOncePerDay } from "@/utils/Data-services/task-services/task-maintenance";
 
 type SyncContextValue = {
   isSyncing: boolean;
@@ -95,7 +96,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   } | null>(null);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [isSignInSyncCompleted, setSignInSyncCompleted] = useState(0);
-  const { refreshTasks } = useTasks();
   const { refreshHabits } = useHabits();
   const { refreshEvents } = useEvents();
   const { refreshLogs } = useLogs();
@@ -108,18 +108,14 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   const lastPulledAtRef = useRef<string | null>(null);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const refreshAllLocalState = useCallback(async () => {
-    await refreshTagsCatsAchievements();
-    await refreshTasks();
-    await refreshHabits();
-    await refreshEvents();
-    await refreshLogs();
-  }, [
-    refreshTagsCatsAchievements,
-    refreshTasks,
-    refreshHabits,
-    refreshEvents,
-    refreshLogs,
-  ]);
+    await Promise.all([
+      refreshTagsCatsAchievements(),
+      useTaskStore.getState().refreshTasks(),
+      refreshHabits(),
+      refreshEvents(),
+      refreshLogs(),
+    ]);
+  }, [refreshTagsCatsAchievements, refreshHabits, refreshEvents, refreshLogs]);
   const mode = useWorkspaceSyncModeStore((state) => state.mode);
   const setWorkspaceSyncMode = useWorkspaceSyncModeStore(
     (state) => state.setMode,
@@ -527,6 +523,12 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     syncNow,
     refreshAllLocalState,
   ]);
+
+  useEffect(() => {
+    if (!authLoaded) return;
+    const tasks = useTaskStore.getState().tasksById;
+    void runTaskMaintenanceOncePerDay(tasks, userId);
+  }, [authLoaded, userId]);
 
   return (
     <SyncContext.Provider

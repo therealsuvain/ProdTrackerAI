@@ -45,10 +45,13 @@ export const sqlite = openDatabaseSync("prodtracker.db", {
   enableChangeListener: true, // Enables useLiveQuery if you want reactive queries later
 });
 sqlite.execSync('PRAGMA journal_mode = WAL');
+sqlite.execSync('PRAGMA synchronous = NORMAL');
+sqlite.execSync('PRAGMA temp_store = MEMORY');
 sqlite.execSync("PRAGMA foreign_keys = ON;")
 // The Drizzle instance. Pass schema so Drizzle knows all table shapes.
 export const db = drizzle(sqlite, { schema });
-
+let hasInitialized = false;
+let initPromise: Promise<void> | null = null;
 // ─── migration runner ─────────────────────────────────────────────────────────
 
 /**
@@ -66,6 +69,9 @@ export const db = drizzle(sqlite, { schema });
  * dispatchError to the UI rather than silently failing.
  */
 export async function initDatabase(): Promise<void> {
+  if (hasInitialized) return;
+  if (initPromise) return initPromise; // a call is already in-flight; wait on it instead of starting a second one
+   initPromise = (async () => {
   try {
     // migrations is the folder drizzle-kit generate writes to.
     // The require() call is a Metro bundler pattern for loading the
@@ -75,10 +81,13 @@ export async function initDatabase(): Promise<void> {
     await migrate(db, migrations.default);
     console.log("[DB] Migrations applied successfully");
     await initializeFTS();
+    hasInitialized = true;
   } catch (error) {
     console.error("[DB] Migration failed:", error);
-    throw error; // Let DataProvider handle this
+     initPromise = null; // allow retry on next call if it failed
+      throw error;
   }
+   })();
 }
 
 // ─── type export ─────────────────────────────────────────────────────────────

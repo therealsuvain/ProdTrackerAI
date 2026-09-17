@@ -1,4 +1,4 @@
-import { useCallback, useContext, useMemo, useState } from "react";
+import React, { useCallback, useContext, useMemo, useState } from "react";
 import {
   TouchableOpacity,
   View,
@@ -17,6 +17,7 @@ import {
 } from "react-native-paper";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import Octicons from "@expo/vector-icons/Octicons";
+import { useShallow } from "zustand/react/shallow";
 
 import { useData } from "@/hooks/context-hooks/use-data";
 import { Task } from "@/types/task";
@@ -37,16 +38,20 @@ import {
   DbErrorToast,
   useDbErrorToast,
 } from "@/components/shared/db-error-toast";
-import { useTasks } from "@/hooks/context-hooks/use-tasks";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useTaskStore } from "@/stores/use-task-store";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 import { ConfirmDialog } from "@/components/shared/dialog-system/ConfirmDialog";
+import {
+  addTaskWithEffects,
+  editTaskWithEffects,
+  deleteTaskWithEffects,
+  toggleTaskWithEffects,
+  replaceTasksWithEffects,
+} from "@/utils/Data-services/task-services/task-actions";
 function TaskScreenInner() {
-  const { theme, isDarkMode } = useContext(ThemeContext);
-  const { tasks, setTasks, addTask, editTask, removeTask, toggleTask } =
-    useTasks();
-  const { trackMetric, addTags } = useData();
+  const { theme } = useContext(ThemeContext);
+
   const [visible, setVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -57,36 +62,41 @@ function TaskScreenInner() {
   const [showSortOptions, setShowSortOptions] = useState(false);
   const { toastError, showToast, dismissToast } = useDbErrorToast();
   const { state, updateField, onSubmit } = useTaskForm({
-    addTask,
-    editTask,
+    addTask: addTaskWithEffects,
+    editTask: editTaskWithEffects,
     editingTask,
     onClose: () => setVisible(false),
   });
   const { triggerHaptic } = useHaptics();
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
-  const filteredTasks = useMemo(() => {
-    return tasks
-      .filter(
-        (t) =>
-          t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (t.description &&
-            t.description.toLowerCase().includes(searchQuery.toLowerCase())),
-      )
-      .sort((a, b) => {
-        if (sortBy === "priority") {
-          const priorityOrder = { high: 2, medium: 1, low: 0 };
-          return priorityOrder[b.priority] - priorityOrder[a.priority];
-        } else if (sortBy === "duedate") {
-          return (
-            (new Date(a.dueDate).getTime() || Infinity) -
-            (new Date(b.dueDate).getTime() || Infinity)
-          );
-        }
-        return 0;
-      });
-  }, [tasks, searchQuery, sortBy]);
+  const filteredTaskIds = useTaskStore(
+    useShallow((state) =>
+      Object.values(state.tasksById)
+        .filter(
+          (task) =>
+            task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            task.description?.toLowerCase().includes(searchQuery.toLowerCase()),
+        )
+        .sort((a, b) => {
+          if (sortBy === "priority") {
+            const priorityOrder = { high: 2, medium: 1, low: 0 };
+            return priorityOrder[b.priority] - priorityOrder[a.priority];
+          }
 
-  const showModal = (task?: Task) => {
+          if (sortBy === "duedate") {
+            return (
+              (new Date(a.dueDate).getTime() || Infinity) -
+              (new Date(b.dueDate).getTime() || Infinity)
+            );
+          }
+
+          return 0;
+        })
+        .map((task) => task.id),
+    ),
+  );
+
+  const showModal = useCallback((task?: Task) => {
     if (task) {
       setEditingTask(task);
       setIsEditing(true);
@@ -95,69 +105,86 @@ function TaskScreenInner() {
     }
     setEditingTask(null);
     setVisible(true);
-  };
+  }, []);
 
-  const hideModal = () => {
+  const hideModal = useCallback(() => {
     setIsEditing(false);
     setVisible(false);
-  };
+  }, []);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(() => {
     if (!taskToDelete) return;
     const id = taskToDelete;
-    const task = tasks.find((e: Task) => e.id === id);
-    if (task?.notificationId) {
-      cancelReminder(task.notificationId);
-    }
-    try {
-      await removeTask(id);
-      triggerHaptic();
-      if (task?.completed) trackMetric(["tasksDeleted"], 1);
-      else trackMetric(["tasksDeleted", "tasksAbandoned"], 1);
-    } catch {
-      showToast("Couldn't delete the task. It has been restored.");
-    } finally {
-      setTaskToDelete(null);
-    }
-  };
+    void deleteTaskWithEffects(id)
+      .then(() => {
+        triggerHaptic();
+      })
+      .catch(() => {
+        showToast("Couldn't delete the task. It has been restored.");
+      })
+      .finally(() => setTaskToDelete(null));
+  }, [
+    deleteTaskWithEffects,
+    taskToDelete,
+    showToast,
+    triggerHaptic /* , trackMetric */,
+  ]);
 
   const toggleComplete = useCallback(
-    async (id: string) => {
-      const task = tasks.find((t) => t.id === id);
-      if (!task) return;
-      try {
-        await toggleTask(id);
-
-        // Track metric — same logic as before, using pre-toggle state
-        if (task.completed) {
-          trackMetric(["tasksCompleted"], -1); // undoing completion
-        } else {
-          trackMetric(["tasksCompleted"], 1);
-          triggerHaptic();
-        }
-      } catch {
+    (id: string) => {
+      void toggleTaskWithEffects(id).catch(() => {
         showToast("Couldn't update the task. Changes have been undone.");
-      }
+      });
     },
-    [tasks, toggleTask, trackMetric],
+    [toggleTaskWithEffects, triggerHaptic, showToast /* trackMetric */],
   );
 
-  const handleDragEnd = ({ data }: { data: Task[] }) => {
-    setTasks(data);
-    triggerHaptic();
-  };
-
+  const handleDragEnd = useCallback(
+    ({ data }: { data: string[] }) => {
+      triggerHaptic();
+      replaceTasksWithEffects(data);
+    },
+    [triggerHaptic],
+  );
   const handleEditRow = useCallback(
     (id: string) => {
-      const task = tasks.find((t) => t.id === id);
+      const task = useTaskStore.getState().tasksById[id];
       if (task) showModal(task);
     },
-    [tasks, showModal],
+    [showModal],
   );
 
   const handleDeleteRow = useCallback((id: string) => {
     setTaskToDelete(id);
   }, []);
+
+  const keyExtractor = useCallback((id: string) => id, []);
+
+  const renderTask = useCallback(
+    ({ item: id }: { item: string }) => (
+      <TaskItem
+        id={id}
+        onToggleComplete={toggleComplete}
+        onEdit={handleEditRow}
+        onDelete={handleDeleteRow}
+      />
+    ),
+    [toggleComplete, handleEditRow, handleDeleteRow],
+  );
+
+  const renderDraggableTask = useCallback(
+    ({ item: id, drag }: { item: string; drag: () => void }) => (
+      <TouchableOpacity onLongPress={drag}>
+        <TaskItem
+          id={id}
+          onToggleComplete={toggleComplete}
+          onEdit={handleEditRow}
+          onDelete={handleDeleteRow}
+        />
+      </TouchableOpacity>
+    ),
+    [toggleComplete, handleEditRow, handleDeleteRow],
+  );
 
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
@@ -251,18 +278,9 @@ function TaskScreenInner() {
         {sortBy === "manual" ? (
           <View style={styles.flatlist}>
             <DraggableFlatList
-              data={filteredTasks}
-              renderItem={({ item, drag }) => (
-                <TouchableOpacity onLongPress={drag}>
-                  <TaskItem
-                    task={item}
-                    onToggleComplete={toggleComplete}
-                    onEdit={handleEditRow}
-                    onDelete={handleDeleteRow}
-                  />
-                </TouchableOpacity>
-              )}
-              keyExtractor={(item) => item.id}
+              data={filteredTaskIds}
+              renderItem={renderDraggableTask}
+              keyExtractor={keyExtractor}
               onDragEnd={handleDragEnd}
               showsVerticalScrollIndicator={false}
               ListEmptyComponent={EmptyState}
@@ -271,16 +289,9 @@ function TaskScreenInner() {
         ) : (
           <View style={styles.flatlist}>
             <FlatList
-              data={filteredTasks}
-              renderItem={({ item }) => (
-                <TaskItem
-                  task={item}
-                  onToggleComplete={toggleComplete}
-                  onEdit={handleEditRow}
-                  onDelete={handleDeleteRow}
-                />
-              )}
-              keyExtractor={(item) => item.id}
+              data={filteredTaskIds}
+              renderItem={renderTask}
+              keyExtractor={keyExtractor}
               showsVerticalScrollIndicator={false}
               ListEmptyComponent={EmptyState}
             />
@@ -332,6 +343,7 @@ export default function TaskScreen() {
     </ScreenErrorBoundary>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

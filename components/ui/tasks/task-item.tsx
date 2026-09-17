@@ -10,15 +10,16 @@ import { TagList } from "../shared/tags/tag-list";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { desc } from "drizzle-orm";
+import { useTaskStore } from "@/stores/use-task-store";
 
 interface TaskItemProps {
-  task: Task;
+  id: string;
   onToggleComplete: (id: string) => void;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
 }
 
-const customComparator = (prev: TaskItemProps, next: TaskItemProps) => {
+/* const customComparator = (prev: TaskItemProps, next: TaskItemProps) => {
   // Return true = props are equal = skip re-render
   // Only re-render if the task's meaningful data changed or callbacks changed.
   return (
@@ -35,10 +36,13 @@ const customComparator = (prev: TaskItemProps, next: TaskItemProps) => {
     prev.onToggleComplete === next.onToggleComplete && // stable via useCallback in screen
     prev.onDelete === next.onDelete // stable via useCallback in screen
   );
-};
+}; */
 
-function TaskItem({ task, onToggleComplete, onEdit, onDelete }: TaskItemProps) {
+function TaskItem({ id, onToggleComplete, onEdit, onDelete }: TaskItemProps) {
   const { theme } = useContext(ThemeContext);
+  const task = useTaskStore((state) => state.tasksById[id]);
+
+  if (!task) return null;
   const { categories } = useData();
   const priorityColor = {
     low: theme.success,
@@ -122,7 +126,7 @@ function TaskItem({ task, onToggleComplete, onEdit, onDelete }: TaskItemProps) {
   );
 }
 
-export default React.memo(TaskItem, customComparator);
+export default React.memo(TaskItem);
 
 const styles = StyleSheet.create({
   card: { marginVertical: 8, position: "relative" },

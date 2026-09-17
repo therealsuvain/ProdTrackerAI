@@ -79,6 +79,33 @@ export async function getAllTasks(): Promise<Task[]> {
     return rows.map(rowToTask);
 }
 
+export async function getAllTasksWithoutEmbeddings(): Promise<Task[]> {
+    const rows = await db
+        .select({
+            id: tasks.id,
+            title: tasks.title,
+            description: tasks.description,
+            category: tasks.category,
+            dueDate: tasks.dueDate,
+            reminderDate: tasks.reminderDate,
+            reminder: tasks.reminder,
+            notificationId: tasks.notificationId,
+            priority: tasks.priority,
+            completed: tasks.completed,
+            completedAt: tasks.completedAt,
+            tags: tasks.tags,
+            createdAt: tasks.createdAt,
+            updatedAt: tasks.updatedAt,
+        })
+        .from(tasks)
+        .where(isNull(tasks.deletedAt))
+        .orderBy(asc(tasks.createdAt));
+
+    return rows.map((row) =>
+        rowToTask({ ...row, embedding: null } as TaskRow),
+    );
+}
+
 /** Load a single task by id. Returns null if not found. */
 export async function getTaskById(id: string): Promise<Task | null> {
     const rows = await db

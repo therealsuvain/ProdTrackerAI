@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   KeyboardProvider,
 } from "react-native-keyboard-controller";
+import { useShallow } from "zustand/react/shallow";
 
 import {
   DbErrorToast,
@@ -25,7 +26,8 @@ import { useData } from "@/hooks/context-hooks/use-data";
 import { useEvents } from "@/hooks/context-hooks/use-events";
 import { useHabits } from "@/hooks/context-hooks/use-habits";
 import { usePlaySound } from "@/hooks/use-play-sound";
-import { useTasks } from "@/hooks/context-hooks/use-tasks";
+import { useTaskStore } from "@/stores/use-task-store";
+
 import { useTimer } from "@/hooks/context-hooks/use-timer";
 import { useVoiceInput } from "@/hooks/use-voice-input";
 import { Message } from "@/types/chat";
@@ -61,6 +63,14 @@ import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { useLogs } from "@/hooks/context-hooks/use-logs";
+import {
+  addTaskWithEffects,
+  batchMutateTasksWithEffects,
+  batchRestoreTasksWithEffects,
+  deleteTaskWithEffects,
+  editTaskWithEffects,
+  toggleTaskWithEffects,
+} from "@/utils/Data-services/task-services/task-actions";
 //import { LoadingBubble } from "./loading-bubble-split-flap-opt";
 
 interface Props {
@@ -110,7 +120,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     reassignDeletedCategory,
     reassignDeletedTag,
   } = useData();
-  const {
+  /*   const {
     tasks,
     addTask,
     editTask,
@@ -118,7 +128,10 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     toggleTask,
     batchMutateTasks,
     batchRestoreTasks,
-  } = useTasks();
+  } = useTasks(); */
+  const tasks = useTaskStore(
+    useShallow((state) => Object.values(state.tasksById)),
+  );
   const {
     habits,
     addHabit,
@@ -147,12 +160,12 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const player = usePlaySound(audioSource);
   const curatedContext = {
     tasks,
-    addTask,
-    editTask,
-    removeTask,
-    toggleTask,
-    batchMutateTasks,
-    batchRestoreTasks,
+    addTask: addTaskWithEffects,
+    editTask: editTaskWithEffects,
+    removeTask: deleteTaskWithEffects,
+    toggleTask: toggleTaskWithEffects,
+    batchMutateTasks: batchMutateTasksWithEffects,
+    batchRestoreTasks: batchRestoreTasksWithEffects,
     habits,
     addHabit,
     editHabit,

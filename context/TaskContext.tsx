@@ -20,9 +20,8 @@ import {
   batchRestore,
 } from "@/db/repositories/task-repository";
 
-import { initDatabase } from "@/db";
 import { useData } from "@/hooks/context-hooks/use-data";
-import { runTasksMissedMaintenanceOnActive } from "@/utils/analytics-utils";
+//import { runTasksMissedMaintenanceOnActive } from "@/utils/analytics-utils";
 
 interface TaskContextType {
   tasks: Task[];
@@ -209,10 +208,9 @@ export default function TaskProvider({ children }: { children: ReactNode }) {
   const refreshTasks = useCallback(async () => {
     try {
       setRefreshing(true);
-      await initDatabase();
       let loadedTasks = await getAllTasks();
       setTasks(loadedTasks);
-      await runTasksMissedMaintenanceOnActive(tasks, trackMetric);
+      //await runTasksMissedMaintenanceOnActive(tasks, trackMetric);
     } catch (err) {
       console.error("[TaskContext] Failed to initialise database:", err);
       dispatchError(

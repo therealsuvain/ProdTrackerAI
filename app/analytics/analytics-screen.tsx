@@ -23,7 +23,7 @@ import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { useEvents } from "@/hooks/context-hooks/use-events";
 import { useHabits } from "@/hooks/context-hooks/use-habits";
 import { useLogs } from "@/hooks/context-hooks/use-logs";
-import { useTasks } from "@/hooks/context-hooks/use-tasks";
+
 import { useData } from "@/hooks/context-hooks/use-data";
 import { AnalyticsBentoGrid } from "@/components/ui/analytics/charts-layout/bento-grid";
 import { useCallback, useRef, useState } from "react";
@@ -35,11 +35,15 @@ import { GlobalDateRangePicker } from "@/components/ui/analytics/charts-layout/g
 import { GlobalFilterModal } from "@/components/ui/analytics/charts-layout/global-filter-modal";
 import { AnalyticsFilterBar } from "@/components/ui/analytics/charts-layout/analytics-filter-bar";
 import { useFiltersStore } from "@/hooks/use-filters-store";
+import { useTaskStore } from "@/stores/use-task-store";
+import { useShallow } from "zustand/shallow";
 
 function AnalyticsScreenInner() {
   const { activeWidgets, toggleWidget, reorderWidgets, resetLayout } =
     useDashboardLayout();
-  const { tasks } = useTasks();
+  const tasks = useTaskStore(
+    useShallow((state) => Object.values(state.tasksById)),
+  );
   const { timerLogs } = useLogs();
   const { events } = useEvents();
   const { habits } = useHabits();

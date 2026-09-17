@@ -9,4 +9,6 @@ export const STORAGE_KEYS = {
   AI_UNDO_STACK: "ai_action_undo_stack",       // confirm actual existing key name in ai-action-undo-handlers
   WORKSPACE_SYNC_MODE: "workspace_sync_mode",  // confirm actual existing key name in the zustand store
   CHART_LAYOUT: 'analytics_dashboard_layout',
+  TASK_MAINTENANCE_LAST_RUN: 'task_maintenance_last_run',
+  MISSED_TASK_IDS : "missed_task_ids",
 } as const;

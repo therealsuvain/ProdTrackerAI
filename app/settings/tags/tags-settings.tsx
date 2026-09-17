@@ -12,7 +12,6 @@ import { useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/context-hooks/use-data";
-import { useTasks } from "@/hooks/context-hooks/use-tasks";
 import { useHabits } from "@/hooks/context-hooks/use-habits";
 import { useEvents } from "@/hooks/context-hooks/use-events";
 import { useLogs } from "@/hooks/context-hooks/use-logs";
@@ -24,12 +23,12 @@ import {
   AppDialog,
   DialogAction,
 } from "@/components/shared/dialog-system/AppDialog";
+import { reassignTaskTagWithEffects } from "@/utils/Data-services/task-services/task-actions";
 
 export default function TagsSettingsScreen() {
   const { theme } = useContext(ThemeContext);
   const { tags, updateUserTag, deleteUserTag, getTagUsageForAll, trackMetric } =
     useData();
-  const { reassignTaskTagLocal } = useTasks();
   const { reassignHabitTagLocal } = useHabits();
   const { reassignEventTagLocal } = useEvents();
   const { reassignLogTagLocal } = useLogs();
@@ -137,7 +136,7 @@ export default function TagsSettingsScreen() {
   const executeReassignment = async (fallbackId: string) => {
     if (!tagToDelete) return;
     await deleteUserTag(tagToDelete, fallbackId);
-    reassignTaskTagLocal(tagToDelete, fallbackId);
+    reassignTaskTagWithEffects(tagToDelete, fallbackId);
     reassignHabitTagLocal(tagToDelete, fallbackId);
     reassignEventTagLocal(tagToDelete, fallbackId);
     reassignLogTagLocal(tagToDelete, fallbackId);

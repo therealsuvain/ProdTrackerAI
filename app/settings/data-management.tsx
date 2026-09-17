@@ -9,10 +9,13 @@ import { useData } from "@/hooks/context-hooks/use-data";
 import { useEvents } from "@/hooks/context-hooks/use-events";
 import { useHabits } from "@/hooks/context-hooks/use-habits";
 import { useLogs } from "@/hooks/context-hooks/use-logs";
-import { useTasks } from "@/hooks/context-hooks/use-tasks";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { SettingItem } from "@/types/settings-ui";
 import { clearStorage } from "@/utils/storage-utils"; // Make sure clearStorage is exported
+import {
+  deleteAllTasksWithEffects,
+  taskCountWithEffects,
+} from "@/utils/Data-services/task-services/task-actions";
 
 //TODOOptim 110 : add loading indicator for dark mode atleast
 const DATA_SETTINGS: SettingItem[] = [
@@ -60,7 +63,6 @@ export default function DataManagementScreen() {
   // We bring in the setters from your DataContext to clear the UI state instantly
   //const { setTasks, setHabits, setEvents, setTimerLogs, setMessages } = useData();-
   const { resetMetrics, resetAchievements } = useData();
-  const { removeTasks, taskCount } = useTasks();
   const { removeHabits, habitCount } = useHabits();
   const { removeEvents, eventCount } = useEvents();
   const { removeLogs, logCount } = useLogs();
@@ -99,14 +101,14 @@ export default function DataManagementScreen() {
   const handlePress = async (id: string) => {
     switch (id) {
       case "deleteTasks":
-        const countT = await taskCount();
+        const countT = await taskCountWithEffects();
         openModal(
           "Delete Tasks?",
           "This will permanently delete all your tasks. Your achievements will not be affected.",
           true,
           "tasks",
           async () => {
-            await removeTasks();
+            await deleteAllTasksWithEffects();
             setModalVisible(false);
           },
           countT,
@@ -181,7 +183,7 @@ export default function DataManagementScreen() {
             await clearStorage();
             await resetMetrics();
             await resetAchievements();
-            await removeTasks();
+            await deleteAllTasksWithEffects();
             await removeHabits();
             await removeEvents();
             await removeLogs();

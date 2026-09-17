@@ -38,15 +38,6 @@ export default function TaskModal({
   isNew,
 }: Props) {
   const { theme } = useContext(ThemeContext);
-  const { trackMetric } = useData();
-  /*   const {
-    tags,
-    addTags,
-    categories,
-    addCategory,
-    incrementCategoryUsage,
-    deleteUserCategory,
-  } = useData(); */
 
   const tagsAndCategoryEditor = useTagsAndCategories({
     visible,
@@ -57,15 +48,7 @@ export default function TaskModal({
   const [dueDate, setDueDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  //const [taskTags, setTaskTags] = useState<string[]>([]);
-  /*   const [category, setCategory] = useState<string | null>(null);
-  const [sessionCatIds, setSessionCatIds] = useState<Set<string>>(
-    new Set<string>(),
-  );
-  const [tagNames, setTagNames] = useState<string[]>([]);
-  const originalTagIdsRef = useRef<string[]>([]);
-  const originalCategoryRef = useRef<string>(null); */
-  //const taskTagsRef = useRef<string[]>([]);
+
   const onDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
@@ -87,113 +70,13 @@ export default function TaskModal({
   };
 
   const onSubmitWithTags = async () => {
-    /*    let finalIds: string[];
-
-    if (originalTagIdsRef.current && originalTagIdsRef.current.length > 0) {
-      // Get original tag names from the tags store using editingTask's IDs
-      const originalNames = originalTagIdsRef.current
-        .map((id) => tags.find((t) => t.id === id)?.name)
-        .filter(Boolean) as string[];
-
-      // Diff: only names that are NEW (not in original)
-      const newNames = tagNames.filter((name) => !originalNames.includes(name));
-
-      // Names that already existed on this task (no addTags needed for these)
-      const existingNames = tagNames.filter((name) =>
-        originalNames.includes(name),
-      );
-
-      // Get IDs for existing names from the tags store (they're already in DB)
-      const existingIds = existingNames
-        .map((name) => tags.find((t) => t.name === name)?.id)
-        .filter(Boolean) as string[];
-
-      // Only call addTags for the diff — this avoids double-counting
-      const newIds = newNames.length > 0 ? await addTags(newNames) : [];
-
-      finalIds = [...existingIds, ...newIds];
-    } else {
-      // New task — all tagNames are new, pass everything to addTags
-      finalIds = tagNames.length > 0 ? await addTags(tagNames) : [];
-    }
-
-    if (state.category !== originalCategoryRef.current) {
-      await incrementCategoryUsage(state.category);
-    } */
     console.log("orig Tags", state.tags);
     const finalTagIds = await tagsAndCategoryEditor.processMetadataOnSave(
       state.category,
     );
     console.log("final Tags", finalTagIds);
     await onSubmit(finalTagIds);
-    if (isNew) trackMetric(["tasksAdded"], 1);
-    else trackMetric(["tasksEdited"], 1);
   };
-
-  /*   const addTagToTask = (tag: string) => {
-    setTagNames((prev) => [...prev, tag]);
-  };
-
-  const removeTagFromTask = (tag: string) => {
-    setTagNames((prev) => prev.filter((t) => t !== tag));
-  };
-
-  const handleCreateCategory = async (
-    name: string,
-    color: string,
-    icon: string,
-  ) => {
-    const id = await addCategory(name, color, icon);
-    setSessionCatIds((prevSet) => {
-      const newSet = new Set(prevSet);
-      newSet.add(id);
-      return newSet;
-    });
-    setCategory(id);
-  };
-
-  const handleDeleteCateogry = async (draftId: string) => {
-    if (!sessionCatIds.has(draftId)) {
-      console.log("What Category, not in sessionCreatedCatIds");
-    }
-    setSessionCatIds((prevSet) => {
-      const newSet = new Set(prevSet);
-      newSet.delete(draftId);
-      return newSet;
-    });
-    if (category === draftId) {
-      setCategory(null);
-      updateField("category", null);
-    }
-    await deleteUserCategory(draftId);
-  };
-
-  useEffect(() => {
-    // Assuming 'isVisible' dictates if the modal is open, and 'task' is the passed item
-    if (visible) {
-      // Populate the draft state when opening an existing task
-      //setTaskTags(state.tags ?? []);
-      originalTagIdsRef.current = state.tags ?? [];
-      originalCategoryRef.current = state.category ?? null;
-      if (state.tags && state.tags.length > 0) {
-        // tags = your TagRow[] from useData()
-        const names = state.tags
-          .map((id: string) => tags.find((t) => t.id === id)?.name)
-          .filter(Boolean) as string[];
-        setTagNames(names);
-      } else {
-        setTagNames([]);
-      }
-      setCategory(state.category ?? null);
-    } else if (!visible) {
-      // Clean up the draft state when the modal closes to prevent memory leaks
-      // and stop old data from flashing on the next open.
-      //setTaskTags([]);
-      originalTagIdsRef.current = [];
-      setTagNames([]);
-      setCategory(null);
-    }
-  }, [visible, state.tags]); */
 
   return (
     <Modal
@@ -245,22 +128,6 @@ export default function TaskModal({
         itemType="task"
         updateField={updateField}
       />
-      {/*  <CategorySelector
-        categoriesDb={categories}
-        sessionCategories={sessionCatIds}
-        selectedCategory={category}
-        onSelectCategory={setCategory}
-        onCreateCategory={handleCreateCategory}
-        onDeleteCategory={handleDeleteCateogry}
-        updateField={updateField}
-      />
-      <TagInput
-        itemType="task"
-        currentTags={tagNames}
-        userTagsDb={tags} // [{ name: 'high-energy', count: 5 }, ...]
-        onAddTag={addTagToTask}
-        onRemoveTag={removeTagFromTask}
-      /> */}
       <SegmentedButtons
         value={state.priority}
         onValueChange={(v) =>

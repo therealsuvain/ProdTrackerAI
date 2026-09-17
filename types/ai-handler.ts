@@ -10,10 +10,10 @@ import { TimerLog } from './timer';
 // By passing the 'context', we allow the handler to modify the app's state.
 export interface AIActionContext {
   tasks: Task[];
-  addTask: (task: Task) => Promise<void>;
-  editTask: (task: Task) => Promise<void>;
-  removeTask: (id: string) => Promise<void>;
-  toggleTask: (id: string) => Promise<void>;
+  addTask: (task: Task, actor?: 'user' | 'ai') => Promise<void>;
+  editTask: (task: Task, actor?: 'user' | 'ai') => Promise<void>;
+  removeTask: (id: string, actor?: 'user' | 'ai') => Promise<void>;
+  toggleTask: (id: string, actor?: 'user' | 'ai') => Promise<void>;
   batchMutateTasks: (tasksToMutate: Task[], newValues: any) => Promise<void>;
   batchRestoreTasks: (originalTasks: Task[]) => Promise<void>;
   events: CalendarEvent[];

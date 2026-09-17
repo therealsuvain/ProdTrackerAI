@@ -68,7 +68,6 @@ import { sqlite } from "@/db/index";
 import { processAchievements } from "@/utils/achievements-util";
 
 import { AchievementToast } from "@/components/ui/achievements/achievement-toast";
-import { initDatabase } from "@/db";
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { AchievementMetrics } from "@/types/achievement-metrics";
 import { Tag } from "@/types/tag";
@@ -685,7 +684,6 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   // Initialize and load data
   const refreshTagsCatsAchievements = useCallback(async () => {
     try {
-      await initDatabase();
       await seedCategoriesIfEmpty();
       let loadedMetrics = await loadAppMetricsFromDb();
       let loadedAchievementMetrics = await loadAchievementMetrics();

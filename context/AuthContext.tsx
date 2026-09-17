@@ -101,6 +101,24 @@ export default function AuthProvider({
       if ((count ?? 0) > 0) return true;
     }
 
+    //!Parallel Version
+    /* const results = await Promise.all(
+    tables.map((table) =>
+      supabase
+        .from(table)
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId),
+    ),
+  );
+
+  for (let i = 0; i < results.length; i++) {
+    const { count, error } = results[i];
+    if (error) {
+      console.error(`[accountHasAnyCloudData] Failed checking ${tables[i]}:`, error);
+      throw error;
+    }
+    if ((count ?? 0) > 0) return true;
+  } */
     return false;
   };
 
