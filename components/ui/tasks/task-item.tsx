@@ -1,7 +1,5 @@
-import { Task } from "@/types/task";
 import { Badge, Card, Checkbox } from "react-native-paper";
-import { StyleSheet, View, Text, Button } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { StyleSheet, View, Text } from "react-native";
 import { XButton } from "../shared/x-button";
 import { useRoute } from "@react-navigation/native";
 import React, { useCallback, useContext, useMemo } from "react";
@@ -9,7 +7,6 @@ import { ThemeContext } from "@/context/ThemeContext";
 import { TagList } from "../shared/tags/tag-list";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "../shared/categories/category-badge";
-import { desc } from "drizzle-orm";
 import { useTaskStore } from "@/stores/use-task-store";
 
 interface TaskItemProps {
@@ -18,25 +15,6 @@ interface TaskItemProps {
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
 }
-
-/* const customComparator = (prev: TaskItemProps, next: TaskItemProps) => {
-  // Return true = props are equal = skip re-render
-  // Only re-render if the task's meaningful data changed or callbacks changed.
-  return (
-    prev.task.id === next.task.id &&
-    prev.task.completed === next.task.completed &&
-    prev.task.title === next.task.title &&
-    prev.task.dueDate === next.task.dueDate &&
-    prev.task.priority === next.task.priority &&
-    prev.task.description === next.task.description &&
-    prev.task.reminder === next.task.reminder && // array ref — stable if not edited
-    prev.task.category === next.task.category &&
-    prev.task.tags === next.task.tags &&
-    prev.onEdit === next.onEdit && // stable via useCallback in screen
-    prev.onToggleComplete === next.onToggleComplete && // stable via useCallback in screen
-    prev.onDelete === next.onDelete // stable via useCallback in screen
-  );
-}; */
 
 function TaskItem({ id, onToggleComplete, onEdit, onDelete }: TaskItemProps) {
   const { theme } = useContext(ThemeContext);

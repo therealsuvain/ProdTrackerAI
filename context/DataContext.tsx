@@ -151,10 +151,6 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   } | null>(null);
   const toastQueueRef = useRef<AchievementBadge[]>([]);
   const isToastingRef = useRef(false);
-  /*   const { refreshTasks } = useTasks();
-  const { refreshEvents } = useEvents();
-  const { refreshHabits } = useHabits();
-  const { refreshLogs } = useLogs(); */
   useDrizzleStudio(sqlite);
 
   const dispatchError = useCallback(

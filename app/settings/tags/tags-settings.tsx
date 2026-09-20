@@ -12,9 +12,6 @@ import { useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/context-hooks/use-data";
-import { useHabits } from "@/hooks/context-hooks/use-habits";
-import { useEvents } from "@/hooks/context-hooks/use-events";
-import { useLogs } from "@/hooks/context-hooks/use-logs";
 import { TagAnalyticsModal } from "@/components/ui/shared/tags/tags-modal";
 import { TagBadge } from "@/components/ui/shared/tags/tag-badge";
 import { TagsDeleteModal } from "@/components/ui/shared/tags/tags-delete-modal";
@@ -24,14 +21,14 @@ import {
   DialogAction,
 } from "@/components/shared/dialog-system/AppDialog";
 import { reassignTaskTagWithEffects } from "@/utils/Data-services/task-services/task-actions";
+import { reassignHabitTagWithEffects } from "@/utils/Data-services/habit-services/habit-actions";
+import { reassignEventTagWithEffects } from "@/utils/Data-services/event-services/event-actions";
+import { reassignLogTagWithEffects } from "@/utils/Data-services/timerlog-services/log-actions";
 
 export default function TagsSettingsScreen() {
   const { theme } = useContext(ThemeContext);
   const { tags, updateUserTag, deleteUserTag, getTagUsageForAll, trackMetric } =
     useData();
-  const { reassignHabitTagLocal } = useHabits();
-  const { reassignEventTagLocal } = useEvents();
-  const { reassignLogTagLocal } = useLogs();
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -137,9 +134,9 @@ export default function TagsSettingsScreen() {
     if (!tagToDelete) return;
     await deleteUserTag(tagToDelete, fallbackId);
     reassignTaskTagWithEffects(tagToDelete, fallbackId);
-    reassignHabitTagLocal(tagToDelete, fallbackId);
-    reassignEventTagLocal(tagToDelete, fallbackId);
-    reassignLogTagLocal(tagToDelete, fallbackId);
+    reassignHabitTagWithEffects(tagToDelete, fallbackId);
+    reassignEventTagWithEffects(tagToDelete, fallbackId);
+    reassignLogTagWithEffects(tagToDelete, fallbackId);
     setTagToDelete(null);
   };
   // Filter and sort alphabetically

@@ -11,8 +11,6 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { ThemeContext } from "@/context/ThemeContext";
 import { TagsAndCategorySection } from "@/components/ui/shared/tags-and-categories-addon";
 import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
-import { useData } from "@/hooks/context-hooks/use-data";
-import { GlobalMetricKey } from "@/types/metrics";
 
 interface Props {
   visible: boolean;
@@ -20,7 +18,6 @@ interface Props {
   state: any;
   updateField: (field: any, value: any) => void;
   onSubmit: (tagsIds: string[]) => Promise<void> | void;
-  isNew?: boolean;
 }
 
 export default function CalendarEventModal({
@@ -29,12 +26,8 @@ export default function CalendarEventModal({
   state,
   updateField,
   onSubmit,
-  isNew,
 }: Props) {
-  //console.log("sS", state.startTime);
-  //console.log("sE", state.endTime);
   const { theme } = useContext(ThemeContext);
-  const { trackMetric } = useData();
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [showAndroidStartTimePicker, setShowAndroidStartTimerPicker] =
@@ -96,40 +89,7 @@ export default function CalendarEventModal({
     const finalTagIds = await tagsAndCategoryEditor.processMetadataOnSave(
       state.category,
     );
-    const metricsArr: GlobalMetricKey[] = [];
-    if (state.recurrence === "daily" && state.endDate) {
-      metricsArr.push("eventsDaily");
-    } else if (state.recurrence === "weekly" && state.endDate) {
-      metricsArr.push("eventsWeekly");
-    } else if (state.recurrence === "none") {
-      metricsArr.push("eventsSingleton");
-    } else {
-      metricsArr.push("eventsInfinite");
-    }
-    const start = new Date(state.startTime);
-    const end = new Date(state.endTime);
 
-    const startSeconds =
-      start.getHours() * 3600 + start.getMinutes() * 60 + start.getSeconds();
-
-    const endSeconds =
-      end.getHours() * 3600 + end.getMinutes() * 60 + end.getSeconds();
-
-    const SIX_AM = 6 * 3600;
-    const NINE_AM = 9 * 3600;
-    const NINE_PM = 21 * 3600;
-    const END_OF_DAY = 23 * 3600 + 59 * 60 + 59;
-
-    if (startSeconds >= SIX_AM && endSeconds <= NINE_AM) {
-      metricsArr.push("eventsEarlymorning");
-    } else if (startSeconds >= NINE_PM && endSeconds <= END_OF_DAY) {
-      metricsArr.push("eventsLatenight");
-    } else if (startSeconds >= NINE_PM || endSeconds <= SIX_AM) {
-      metricsArr.push("eventsOvernight");
-    }
-    metricsArr.push("eventsAdded");
-    isNew && trackMetric(metricsArr, 1);
-    !isNew && trackMetric(["eventsEdited"], 1);
     await onSubmit(finalTagIds);
   };
 

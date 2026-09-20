@@ -1,5 +1,4 @@
 import React, {
-  memo,
   useCallback,
   useContext,
   useEffect,
@@ -13,8 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Checkbox, ProgressBar } from "react-native-paper";
-import Animated from "react-native-reanimated";
 
 const EMPTY_IDS: string[] = [];
 const EMPTY_TIMELINE_DATA = {
@@ -24,29 +21,31 @@ const EMPTY_TIMELINE_DATA = {
   habits: [],
 };
 
-import { useHabitDeniedFeedback } from "@/components/ui/habits/habit-denied-feedback-util";
 import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { CalendarEvent } from "@/types/calendar";
-import { Habit } from "@/types/habits";
-import { GlobalMetricKey } from "@/types/metrics";
-import { Task } from "@/types/task";
 import { TimerLog } from "@/types/timer";
-import { checkInHabit } from "@/utils/habit-utils";
 import { Ionicons } from "@expo/vector-icons";
 import { selectedDateTaskIds, useTaskStore } from "@/stores/use-task-store";
 import { useShallow } from "zustand/shallow";
 import { useIsFocused } from "@react-navigation/native";
 import { TimelineTasks } from "./timeline-tasks";
+import { CheckInOutcome } from "@/utils/Data-services/habit-services/habit-actions";
+import { useHabitStore } from "@/stores/use-habit-store";
+import { TimelineHabits } from "./timeline-habits";
+import { selectedDateEventIds, useEventStore } from "@/stores/use-event-store";
+import {
+  selectedDateLogIds,
+  useTimerLogStore,
+} from "@/stores/use-timerLog-store";
 
 interface UnifiedTimelineProps {
   events: CalendarEvent[];
   timerLogs: TimerLog[];
-  habits: Habit[];
   selectedDate: Date;
   onEventSelect?: (event: CalendarEvent) => void;
   onTaskToggle: (id: string) => void;
-  onHabitCheckIn: (habit: Habit) => void;
+  onHabitCheckIn: (id: string) => Promise<CheckInOutcome | undefined>;
   onDeleteEvent?: (id: string) => void;
   onDeleteTask?: (id: string) => void;
 }
@@ -54,125 +53,6 @@ interface UnifiedTimelineProps {
 const HOUR_HEIGHT = 80;
 const TIMELINE_START = 0;
 const TIMELINE_END = 24;
-
-const AnimatedTouchableOpacity =
-  Animated.createAnimatedComponent(TouchableOpacity);
-
-/* const categoryColorCache = new Map<string, string>();
-const getCategoryColor = (id: string, category: string | undefined): string => {
-  const key = `${category ?? "default"}-${id}`;
-  if (categoryColorCache.has(key)) return categoryColorCache.get(key)!;
-
-  const colorMap: Record<string, string> = {
-    work: "#FF6B6B",
-    personal: "#4ECDC4",
-    health: "#45B7D1",
-    social: "#FFA07A",
-  };
-  if (category && colorMap[category]) {
-    categoryColorCache.set(key, colorMap[category]);
-    return colorMap[category];
-  }
-  const red = Math.floor(Math.random() * 56) + 200; // 200-255
-  const green = Math.floor(Math.random() * 100); // 0-100
-  const blue = Math.floor(Math.random() * 100);
-  const color = `#${red.toString(16).padStart(2, "0")}${green
-    .toString(16)
-    .padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`;
-  categoryColorCache.set(key, color);
-  return color;
-}; */
-
-interface HabitCardProps {
-  habit: Habit;
-  completed: boolean;
-  onHabitCheckIn: (habit: Habit) => void;
-  trackMetric: (key: GlobalMetricKey[], amount: number) => void;
-  theme: any;
-}
-
-const HabitCard = memo(
-  ({
-    habit,
-    completed,
-    onHabitCheckIn,
-    trackMetric,
-    theme,
-  }: HabitCardProps) => {
-    const { playDeniedFeedback, animatedStyle } = useHabitDeniedFeedback();
-    const progress = habit.goal ? habit.streak / habit.goal : 0;
-    const handlePress = useCallback(() => {
-      const result = checkInHabit(habit);
-
-      if (result.status === "denied") {
-        playDeniedFeedback();
-        return;
-      }
-      const updatedMetrics: GlobalMetricKey[] = ["habitsCheckedIn"];
-      const now = new Date();
-      const nowSecs =
-        now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-      const FOUR_AM = 4 * 3600;
-      const EIGHT_AM = 8 * 3600;
-      const TEN_PM = 22 * 3600;
-      const TWO_AM = 2 * 3600;
-      if (nowSecs <= EIGHT_AM && nowSecs >= FOUR_AM) {
-        updatedMetrics.push("habitsCheckedInBefore8am");
-      } else if (nowSecs >= TEN_PM || nowSecs <= TWO_AM) {
-        updatedMetrics.push("habitsCheckedInAfter10pm");
-      }
-      if (result.habit.frequency === "daily")
-        trackMetric(["habitsStreakMaxDaily"], result.habit.streak);
-      else trackMetric(["habitsStreakMaxWeekly"], result.habit.streak);
-
-      trackMetric(updatedMetrics, 1);
-      onHabitCheckIn(result.habit);
-    }, [habit, onHabitCheckIn, trackMetric, playDeniedFeedback]);
-
-    return (
-      <Animated.View style={animatedStyle}>
-        <TouchableOpacity
-          style={[
-            styles.habitCard,
-            {
-              backgroundColor: theme.habitDarkPrimary,
-              borderColor: completed ? theme.success : theme.habitBaseTrans,
-            },
-          ]}
-          onPress={handlePress}
-          activeOpacity={0.8}
-        >
-          <View style={styles.habitCardHeader}>
-            <Text
-              style={[styles.habitTitle, { color: theme.whiteBase }]}
-              numberOfLines={1}
-            >
-              {habit.title}
-            </Text>
-            <Ionicons
-              name={completed ? "checkmark-circle" : "ellipse-outline"}
-              size={24}
-              color={completed ? theme.success : theme.habitBase}
-            />
-          </View>
-          <View style={styles.habitStats}>
-            <Text style={[styles.habitStreak, { color: theme.habitBase }]}>
-              🔥 {habit.streak} day streak
-            </Text>
-            <Text style={[styles.habitGoal, { color: theme.habitBase }]}>
-              Goal: {habit.goal}
-            </Text>
-          </View>
-          <ProgressBar
-            progress={progress}
-            color={theme.habitBase}
-            style={[styles.habitProgress, { backgroundColor: theme.modalBase }]}
-          />
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  },
-);
 
 // ─── FIX 4: Static time slots memoized at module level ───
 // Was: re-created as JSX on every render
@@ -185,7 +65,6 @@ const TIME_LABELS = Array.from(
 export default function UnifiedTimeline({
   events,
   timerLogs,
-  habits,
   selectedDate,
   onEventSelect,
   onTaskToggle,
@@ -204,7 +83,7 @@ export default function UnifiedTimeline({
     () => selectedDate.toISOString().split("T")[0],
     [selectedDate],
   );
-
+  const todayISO = useMemo(() => new Date().toISOString().split("T")[0], []);
   // ─── FIX 6: isToday computed once, not inline in JSX multiple times ───
   const isToday = useMemo(() => {
     return new Date().toDateString() === selectedDateStr;
@@ -218,18 +97,42 @@ export default function UnifiedTimeline({
     }),
   );
 
+  const habitIds = useHabitStore(
+    useShallow((state) => {
+      if (!isFocused) return EMPTY_IDS;
+      return Object.keys(state.habitsById);
+    }),
+  );
+  const completedHabitIds = useHabitStore(
+    useShallow((state) => {
+      return Object.values(state.habitsById);
+    }),
+  )
+    .filter((h) => h.history.includes(todayISO))
+    .map((h) => h.id);
+
+  const completedHabitsCount = completedHabitIds.length;
   const taskCount = taskIds.length;
   // Filter items for selected date
+  const eventIds = useEventStore(
+    useShallow((state) => {
+      if (!isFocused) return EMPTY_IDS;
+
+      return selectedDateEventIds(state, selectedDate);
+    }),
+  );
+
+  const logIds = useTimerLogStore(
+    useShallow((state) => {
+      if (!isFocused) return EMPTY_IDS;
+      return selectedDateLogIds(state, selectedDateISO);
+    }),
+  );
+
   const filteredData = useMemo(() => {
     if (!isFocused) {
       return EMPTY_TIMELINE_DATA;
     }
-    // Filter tasks due on this date
-    /* const dayTasks = tasks.filter(
-      (task) =>
-        new Date(task.dueDate ? task.dueDate : "0").toDateString() ===
-        selectedDateStr,
-    ); */
 
     // Filter timer logs from this date
     const dayLogs = timerLogs.filter(
@@ -270,33 +173,8 @@ export default function UnifiedTimeline({
     return {
       logs: dayLogs,
       events: dayEvents,
-      habits: habits,
     };
-  }, [
-    events,
-    timerLogs,
-    habits,
-    selectedDateStr,
-    selectedDateISO,
-    selectedDate,
-  ]);
-
-  const completedHabitIds = useMemo(() => {
-    const todayISO = new Date().toISOString().split("T")[0];
-    return new Set(
-      filteredData.habits
-        .filter((h) => h.history.includes(todayISO))
-        .map((h) => h.id),
-    );
-  }, [filteredData.habits]);
-
-  const completedHabitsCount = completedHabitIds.size;
-  // Check if habit was completed today
-  /*   const isHabitCompletedToday = (habit: Habit) => {
-    const today = new Date();
-    const todayISO = today.toISOString().split("T")[0];
-    return habit.history.includes(todayISO);
-  }; */
+  }, [events, timerLogs, selectedDateStr, selectedDateISO, selectedDate]);
 
   // Calculate positions for events
   const eventPositions = useMemo(() => {
@@ -328,45 +206,6 @@ export default function UnifiedTimeline({
     });
   }, [filteredData.events]);
 
-  // Calculate positions for tasks (default to 9 AM if no specific time)
-  /*  const taskPositions = useMemo(() => {
-    return filteredData.tasks.map((task, index) => {
-      // Stack tasks at 9 AM, slightly offset
-      const baseHour =
-        task.reminderDate && new Date(task.reminderDate).getHours();
-      const offset = index * 50; // Offset each task by 50px
-
-      return {
-        task,
-        top: baseHour
-          ? baseHour * HOUR_HEIGHT + offset
-          : 9 * HOUR_HEIGHT + offset,
-        height: 45,
-        priorityColor: getPriorityColor(task.priority, theme),
-      };
-    });
-  }, [filteredData.tasks]); */
-
-  /*   const taskPositions = useMemo(() => {
-    return taskIdsForSelectedDate.map((taskId, index) => {
-      const task = useTaskStore.getState().tasksById[taskId];
-      const baseHour =
-        task.reminderDate && new Date(task.reminderDate).getHours();
-      const offset = index * 50; // Offset each task by 50px
-      return {
-        taskId,
-        top: baseHour
-          ? baseHour * HOUR_HEIGHT + offset
-          : 9 * HOUR_HEIGHT + offset,
-        height: 45,
-        priorityColor: task
-          ? getPriorityColor(task.priority, theme)
-          : theme.taskBase,
-      };
-    });
-  }, [taskIdsForSelectedDate, theme]); */
-
-  // Calculate positions for timer logs
   const logPositions = useMemo(() => {
     return filteredData.logs.map((log) => {
       const startHour =
@@ -405,6 +244,13 @@ export default function UnifiedTimeline({
   // ─── FIX 9: Scroll effect deps cleaned up ───
   // Was: depended on eventPositions (new array ref every render) → fired too often
   const firstEventTop = eventPositions[0]?.top ?? null;
+  const firstEventTop2 = useEventStore(
+    (state) => state.eventsById[eventIds[0]].startTime,
+  );
+  const firstEventTop3 = useMemo(
+    () => new Date(firstEventTop2).getHours() * HOUR_HEIGHT,
+    [firstEventTop2],
+  );
 
   useEffect(() => {
     const scrollTarget = isToday
@@ -422,14 +268,6 @@ export default function UnifiedTimeline({
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDateStr]); // Only scroll when the date actually changes
-
-  // ─── FIX 10: Stable callbacks for handlers ───
-  const handleTaskToggle = useCallback(
-    (id: string) => {
-      onTaskToggle(id);
-    },
-    [onTaskToggle],
-  );
 
   const handleEventSelect = useCallback(
     (event: CalendarEvent) => {
@@ -474,49 +312,7 @@ export default function UnifiedTimeline({
       )),
     [theme.greyBaseSecondary],
   );
-  /*   // Scroll to current time on mount
-  useEffect(() => {
-    const now = new Date();
-    const isToday = now.toDateString() === selectedDate.toDateString();
 
-    setTimeout(() => {
-      if (isToday) {
-        const currentHour = now.getHours();
-        const scrollOffset = currentHour * HOUR_HEIGHT - 100;
-        scrollViewRef.current?.scrollTo({
-          y: Math.max(0, scrollOffset),
-          animated: true,
-        });
-      } else if (eventPositions.length > 0) {
-        scrollViewRef.current?.scrollTo({
-          y: Math.max(0, eventPositions[0].top - 100),
-          animated: true,
-        });
-      }
-    }, 100);
-  }, [selectedDate, eventPositions]);
-
-  const renderTimeSlots = () => {
-    const hours = [];
-    for (let i = TIMELINE_START; i < TIMELINE_END; i++) {
-      hours.push(
-        <View
-          key={`slot-${i}`}
-          style={[
-            styles.timeSlot,
-            styles.hourSlot,
-            { borderBottomColor: theme.greyBaseSecondary },
-          ]}
-        >
-          <Text style={[styles.timeText, { color: theme.greyBasePrimary }]}>
-            {String(i).padStart(2, "0")}:00
-          </Text>
-        </View>,
-      );
-    }
-    return hours;
-  };
- */
   const renderEvents = useMemo(() => {
     return eventPositions.map(
       ({ event, top, height, color, startTimeLabel, endTimeLabel }) => (
@@ -561,56 +357,6 @@ export default function UnifiedTimeline({
     theme.whiteBaseTrans,
   ]);
 
-  /*   const renderTasks = useMemo(() => {
-    return taskPositions.map(({ task, top, height, priorityColor }) => (
-      <TouchableOpacity
-        key={task.id}
-        style={[
-          styles.taskBlock,
-          {
-            top,
-            height,
-            borderColor: theme.taskBase,
-            borderRightColor: priorityColor,
-            backgroundColor: theme.taskBaseTransToo,
-          },
-        ]}
-        onPress={() => {
-          if (!task.completed) trackMetric(["tasksCompleted"], 1);
-          handleTaskToggle(task.id);
-        }}
-      >
-        <View>
-          <View style={styles.blockHeader}>
-            <Checkbox
-              status={task.completed ? "checked" : "unchecked"}
-              onPress={() => {
-                if (!task.completed) {
-                  trackMetric(["tasksCompleted"], 1);
-                }
-                handleTaskToggle(task.id);
-              }}
-              color={theme.taskBase}
-            />
-            <Text
-              style={[
-                [styles.taskTitle, { color: theme.whiteBase }],
-                task.completed && [
-                  styles.completedTask,
-                  { color: theme.greyBasePrimary },
-                ],
-              ]}
-              numberOfLines={1}
-            >
-              {task.title}
-            </Text>
-          </View>
-
-        </View>
-      </TouchableOpacity>
-    ));
-  }, [taskPositions, handleTaskToggle, theme, trackMetric]); */
-
   const renderTimerLogs = useMemo(() => {
     return logPositions.map(
       ({ log, top, height, startTimeLabel, endTimeLabel, durationLabel }) => (
@@ -651,27 +397,6 @@ export default function UnifiedTimeline({
     );
   }, [logPositions, theme]);
 
-  const renderHabits = useMemo(() => {
-    return filteredData.habits.map((habit) => {
-      return (
-        <HabitCard
-          key={habit.id}
-          habit={habit}
-          completed={completedHabitIds.has(habit.id)}
-          onHabitCheckIn={onHabitCheckIn}
-          trackMetric={trackMetric}
-          theme={theme}
-        />
-      );
-    });
-  }, [
-    filteredData.habits,
-    completedHabitIds,
-    onHabitCheckIn,
-    trackMetric,
-    theme,
-  ]);
-
   const isEmpty =
     filteredData.events.length === 0 && filteredData.logs.length === 0;
 
@@ -679,45 +404,11 @@ export default function UnifiedTimeline({
     <View
       style={[styles.container, { backgroundColor: theme.modalDarkPrimary }]}
     >
-      {/* Habits Section */}
-      {filteredData.habits.length > 0 && (
-        <View
-          style={[
-            styles.habitsContainer,
-            {
-              backgroundColor: theme.background,
-              borderBottomColor: theme.greyBaseSecondary,
-            },
-          ]}
-        >
-          <View style={styles.habitHeader}>
-            <Ionicons
-              name="checkmark-circle"
-              size={20}
-              color={theme.habitBase}
-              style={{
-                textShadowColor: "black",
-                textShadowOffset: { width: 0.1, height: 0.1 },
-                textShadowRadius: 0.1,
-              }}
-            />
-            <Text style={[styles.habitHeaderText, { color: theme.habitBase }]}>
-              Daily Habits
-            </Text>
-            <Text style={[styles.habitCount, { color: theme.habitBase }]}>
-              {completedHabitsCount}/{filteredData.habits.length}
-            </Text>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.habitScroll}
-          >
-            {renderHabits}
-          </ScrollView>
-        </View>
-      )}
-
+      <TimelineHabits
+        habitIds={habitIds}
+        completedHabitsCount={completedHabitsCount}
+        onHabitCheckIn={onHabitCheckIn}
+      />
       {/* Timeline */}
       <ScrollView
         ref={scrollViewRef}
@@ -831,7 +522,7 @@ export default function UnifiedTimeline({
         <View style={styles.summaryItem}>
           <Ionicons name="checkmark-circle" size={16} color={theme.habitBase} />
           <Text style={[styles.summaryText, { color: theme.whiteBase }]}>
-            {completedHabitsCount}/{filteredData.habits.length}
+            {completedHabitsCount}/{habitIds.length}
           </Text>
         </View>
       </View>
@@ -843,65 +534,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  habitsContainer: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  habitHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  habitHeaderText: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
-    textShadowColor: "black",
-    textShadowOffset: { width: 0, height: 0.15 },
-    textShadowRadius: 0.1,
-    flex: 1,
-  },
-  habitCount: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  habitScroll: {
-    paddingLeft: 16,
-  },
-  habitCard: {
-    borderRadius: 12,
-    padding: 12,
-    marginRight: 12,
-    width: 160,
-    borderWidth: 2,
-  },
-  habitCardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  habitTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    flex: 1,
-    marginRight: 8,
-  },
-  habitStats: {
-    marginBottom: 8,
-  },
-  habitStreak: {
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  habitGoal: {
-    fontSize: 11,
-  },
-  habitProgress: {
-    height: 4,
-    borderRadius: 2,
-  },
+
   timelineContainer: {
     flex: 1,
   },

@@ -11,4 +11,5 @@ export const STORAGE_KEYS = {
   CHART_LAYOUT: 'analytics_dashboard_layout',
   TASK_MAINTENANCE_LAST_RUN: 'task_maintenance_last_run',
   MISSED_TASK_IDS : "missed_task_ids",
+  HABIT_MAINTENANCE_LAST_RUN: 'habit_maintenance_last_run',
 } as const;

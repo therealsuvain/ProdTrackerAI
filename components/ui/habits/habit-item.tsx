@@ -1,13 +1,12 @@
 import { Card, ProgressBar } from "react-native-paper";
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, View, Text } from "react-native";
 import { useRoute } from "@react-navigation/native";
-import { useContext, useCallback, useRef, useState } from "react";
+import { useContext, useCallback } from "react";
 import Animated from "react-native-reanimated";
 
 import { ThemeContext } from "@/context/ThemeContext";
 import { Habit } from "@/types/habits";
-import { checkInHabit } from "@/utils/habit-utils";
 import { XButton } from "../shared/x-button";
 import { HabitStats } from "./habit-stats";
 import { TargetDaysRow } from "./habit-target-days";
@@ -15,18 +14,32 @@ import { useHabitDeniedFeedback } from "./habit-denied-feedback-util";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { TagList } from "../shared/tags/tag-list";
+import { useHabitStore } from "@/stores/use-habit-store";
+import { CheckInOutcome } from "@/utils/Data-services/habit-services/habit-actions";
+import { isFrozen } from "@/utils/habit-utils";
 
 interface HabitItemProps {
-  habit: Habit;
-  onUpdate: (updated: Habit) => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  id: string;
+  onCheckin: (id: string) => Promise<CheckInOutcome | undefined>;
+  onFreeze?: (
+    id: string,
+  ) => Promise<
+    | "success"
+    | "already_frozen"
+    | "no_freezes_left"
+    | "not_a_target_day"
+    | "already_checked_in"
+    | "habit_not_found"
+    | undefined
+  >;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
   onGoalReached?: (habit: Habit) => void;
 }
 
 const AnimatedCard = Animated.createAnimatedComponent(Card);
 
-const customComparator = (prev: HabitItemProps, next: HabitItemProps) => {
+/* const customComparator = (prev: HabitItemProps, next: HabitItemProps) => {
   // Return true = props are equal = skip re-render
   // Only re-render if the habit's meaningful data changed or callbacks changed.
   return (
@@ -46,22 +59,24 @@ const customComparator = (prev: HabitItemProps, next: HabitItemProps) => {
     prev.onDelete === next.onDelete && // stable via useCallback in screen
     prev.onGoalReached === next.onGoalReached
   );
-};
+}; */
+
 function HabitItem({
-  habit,
-  onUpdate,
+  id,
+  onCheckin,
+  onFreeze,
   onEdit,
   onDelete,
   onGoalReached,
 }: HabitItemProps) {
   const { theme } = useContext(ThemeContext);
   const { categories } = useData();
-  const progress = habit.goal ? habit.streak / habit.goal : 0;
-  /* const handleCheckIn = () =>
-     onUpdate(checkInHabit(habit)); */
+  const habit = useHabitStore((state) => state.habitsById[id]);
+  if (!habit) return null;
   const route = useRoute();
   const isNotHome = route.name !== "index";
   const { playDeniedFeedback, animatedStyle } = useHabitDeniedFeedback();
+  const progress = habit.goal ? habit.streak / habit.goal : 0;
   let habitCategory;
   if (habit.category) {
     habitCategory = categories.find((c) => c.id === habit.category);
@@ -71,28 +86,44 @@ function HabitItem({
       playDeniedFeedback();
       return;
     }
-    onEdit();
+    onEdit(id);
   }, [onEdit, habit, playDeniedFeedback]);
-  const handleCheckIn = useCallback(() => {
-    const result = checkInHabit(habit);
 
-    if (result.status === "denied") {
+  const handleCheckIn = useCallback(async () => {
+    const result = await onCheckin(id);
+    if (!result) return;
+    if (
+      result === "already_checked_in" ||
+      result === "frozen" ||
+      result === "not_a_target_day"
+    ) {
       // Give the user clear tactile + audio feedback instead of silently ignoring
       playDeniedFeedback();
       return;
     }
 
-    onUpdate(result.habit);
-
-    if (result.status === "goal_reached") {
+    if (result === "goal_reached") {
       // Hold the updated habit for the modal, then open after 1s.
       // The delay makes the completion feel earned — the user sees the streak
       // tick up first, then the celebration fires. More rewarding than an
       // immediate modal that obscures the check-in animation.
-      onGoalReached ? onGoalReached(result.habit) : null;
+      onGoalReached ? onGoalReached(habit) : null;
       //setTimeout(() => setGoalModalVisible(true), 1000);
     }
-  }, [habit, onUpdate, playDeniedFeedback, onGoalReached]);
+  }, [habit, onCheckin, playDeniedFeedback, onGoalReached]);
+
+  const handleDelete = useCallback(() => {
+    onDelete(id);
+  }, [onDelete]);
+
+  const handleFreeze = useCallback(async () => {
+    if (!onFreeze) return;
+    const result = await onFreeze(id);
+    if (!result) return;
+    return result;
+  }, [onFreeze]);
+
+  const frozen = useMemo(() => isFrozen(habit), [habit]);
 
   return (
     <AnimatedCard
@@ -162,9 +193,10 @@ function HabitItem({
         </View> */}
           {!habit.pendingStreakResetAfter && (
             <HabitStats
-              habit={habit}
-              onUpdate={onUpdate}
+              habitId={id}
+              onFreeze={handleFreeze}
               onDenied={playDeniedFeedback}
+              isFrozen={frozen}
             />
           )}
         </View>
@@ -195,7 +227,7 @@ function HabitItem({
               <XButton
                 icon="trash-outline"
                 mode="habit"
-                onPress={onDelete}
+                onPress={handleDelete}
               ></XButton>
             </View>
           </View>
@@ -205,7 +237,7 @@ function HabitItem({
   );
 }
 
-export default React.memo(HabitItem, customComparator);
+export default React.memo(HabitItem);
 
 const styles = StyleSheet.create({
   container: {

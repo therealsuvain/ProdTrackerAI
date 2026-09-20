@@ -24,7 +24,6 @@ import { ThemeContext } from "@/context/ThemeContext";
 import { useChat } from "@/hooks/context-hooks/use-chat";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { useEvents } from "@/hooks/context-hooks/use-events";
-import { useHabits } from "@/hooks/context-hooks/use-habits";
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { useTaskStore } from "@/stores/use-task-store";
 
@@ -71,6 +70,14 @@ import {
   editTaskWithEffects,
   toggleTaskWithEffects,
 } from "@/utils/Data-services/task-services/task-actions";
+import { useHabitStore } from "@/stores/use-habit-store";
+import {
+  addHabitWithEffects,
+  batchMutateHabitsWithEffects,
+  batchRestoreHabitsWithEffects,
+  deleteHabitWithEffects,
+  editHabitWithEffects,
+} from "@/utils/Data-services/habit-services/habit-actions";
 //import { LoadingBubble } from "./loading-bubble-split-flap-opt";
 
 interface Props {
@@ -132,14 +139,9 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const tasks = useTaskStore(
     useShallow((state) => Object.values(state.tasksById)),
   );
-  const {
-    habits,
-    addHabit,
-    editHabit,
-    removeHabit,
-    batchMutateHabits,
-    batchRestoreHabits,
-  } = useHabits();
+  const habits = useHabitStore(
+    useShallow((state) => Object.values(state.habitsById)),
+  );
   const {
     events,
     addEvent,
@@ -167,11 +169,11 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     batchMutateTasks: batchMutateTasksWithEffects,
     batchRestoreTasks: batchRestoreTasksWithEffects,
     habits,
-    addHabit,
-    editHabit,
-    removeHabit,
-    batchMutateHabits,
-    batchRestoreHabits,
+    addHabit: addHabitWithEffects,
+    editHabit: editHabitWithEffects,
+    removeHabit: deleteHabitWithEffects,
+    batchMutateHabits: batchMutateHabitsWithEffects,
+    batchRestoreHabits: batchRestoreHabitsWithEffects,
     events,
     addEvent,
     editEvent,

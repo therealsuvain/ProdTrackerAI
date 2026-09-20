@@ -31,9 +31,6 @@ import { getAllTasks } from "@/db/repositories/task-repository";
 import { getAllHabits } from "@/db/repositories/habit-repository";
 import { getAllCalendarEvents } from "@/db/repositories/event-repository";
 import { useTaskStore } from "@/stores/use-task-store";
-import { useHabits } from "@/hooks/context-hooks/use-habits";
-import { useEvents } from "@/hooks/context-hooks/use-events";
-import { useLogs } from "@/hooks/context-hooks/use-logs";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { loadSettings } from "@/utils/storage-utils";
 import { Task } from "@/types/task";
@@ -44,6 +41,10 @@ import { useRecoveryConsumedStore } from "@/utils/Account-utils/snapshot-status-
 import { usePendingNotificationsStore } from "@/utils/Account-utils/pending-notification-store";
 import { NotificationRescheduleChoice } from "@/components/modal/notificaiton-reschedule-modal";
 import { runTaskMaintenanceOncePerDay } from "@/utils/Data-services/task-services/task-maintenance";
+import { useHabitStore } from "@/stores/use-habit-store";
+import { runHabitMaintenanceOncePerDay } from "@/utils/Data-services/habit-services/habit-maintenance";
+import { useEventStore } from "@/stores/use-event-store";
+import { useTimerLogStore } from "@/stores/use-timerLog-store";
 
 type SyncContextValue = {
   isSyncing: boolean;
@@ -96,9 +97,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   } | null>(null);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [isSignInSyncCompleted, setSignInSyncCompleted] = useState(0);
-  const { refreshHabits } = useHabits();
-  const { refreshEvents } = useEvents();
-  const { refreshLogs } = useLogs();
   const { refreshTagsCatsAchievements } = useData();
   // Inside SyncProvider — add this effect
   const prevUserIdRef = useRef<string | null>(null);
@@ -111,11 +109,12 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     await Promise.all([
       refreshTagsCatsAchievements(),
       useTaskStore.getState().refreshTasks(),
-      refreshHabits(),
-      refreshEvents(),
-      refreshLogs(),
+      useHabitStore.getState().refreshHabits(),
+      useEventStore.getState().refreshEvents(),
+      useTimerLogStore.getState().refreshLogs(),
     ]);
-  }, [refreshTagsCatsAchievements, refreshHabits, refreshEvents, refreshLogs]);
+  }, [refreshTagsCatsAchievements]);
+
   const mode = useWorkspaceSyncModeStore((state) => state.mode);
   const setWorkspaceSyncMode = useWorkspaceSyncModeStore(
     (state) => state.setMode,
@@ -528,6 +527,8 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     if (!authLoaded) return;
     const tasks = useTaskStore.getState().tasksById;
     void runTaskMaintenanceOncePerDay(tasks, userId);
+    const habits = useHabitStore.getState().habitsById;
+    void runHabitMaintenanceOncePerDay(habits, userId);
   }, [authLoaded, userId]);
 
   return (

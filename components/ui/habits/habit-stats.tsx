@@ -1,28 +1,44 @@
 import React, { useRef, useContext, useEffect } from "react";
 import { View, Text, StyleSheet, Animated, Pressable } from "react-native";
-import { Svg, Text as SvgText } from "react-native-svg";
 import LottieView from "lottie-react-native";
 import { ThemeContext } from "@/context/ThemeContext";
 import { Habit } from "@/types/habits";
-import { freezeHabit, isFrozen } from "@/utils/habit-utils";
 import { usePlaySound } from "@/hooks/use-play-sound";
+import { useHabitStore } from "@/stores/use-habit-store";
 
 interface HabitStatsProps {
-  habit: Habit;
-  onUpdate: (updated: Habit) => void;
+  habitId: string;
+  onFreeze: () => Promise<
+    | "success"
+    | "already_frozen"
+    | "no_freezes_left"
+    | "not_a_target_day"
+    | "already_checked_in"
+    | "habit_not_found"
+    | undefined
+  >;
   onDenied: () => void;
+  isFrozen: boolean;
 }
 
 const AnimatedLottieView = Animated.createAnimatedComponent(LottieView);
 
-export const HabitStats = ({ habit, onUpdate, onDenied }: HabitStatsProps) => {
+export const HabitStats = ({
+  habitId,
+  onFreeze,
+  onDenied,
+  isFrozen,
+}: HabitStatsProps) => {
   const { theme } = useContext(ThemeContext);
   const playedSoundRef = useRef(false);
   const freezeAnimRef = useRef<LottieView>(null);
   const scaleFireAnime = useRef(new Animated.Value(0)).current;
   const audioSource = require("@/assets/audio/freeze.mp3");
   const player = usePlaySound(audioSource);
-
+  const streak =
+    useHabitStore((state) => state.habitsById[habitId]?.streak) || 0;
+  const streakFreezes =
+    useHabitStore((state) => state.habitsById[habitId]?.goal) || 0;
   const playFreezingAudio = async () => {
     if (playedSoundRef.current) return;
     playedSoundRef.current = true;
@@ -34,26 +50,25 @@ export const HabitStats = ({ habit, onUpdate, onDenied }: HabitStatsProps) => {
   };
 
   const handleFreeze = async () => {
-    let oldStreakFreezes = habit.streakFreezes;
-    const result = freezeHabit(habit);
+    const result = await onFreeze();
 
-    if (result.status === "denied") {
+    if (
+      result === "already_checked_in" ||
+      result === "already_frozen" ||
+      result === "no_freezes_left" ||
+      result === "not_a_target_day"
+    ) {
       onDenied();
       return;
     }
 
-    onUpdate(result.habit);
-    console.log("NEW FREEZE", result.habit.streakFreezes);
-
-    if (oldStreakFreezes > result.habit.streakFreezes) {
-       playedSoundRef.current = false
-      freezeAnimRef.current?.play();
-      await playFreezingAudio();
-    }
+    playedSoundRef.current = false;
+    freezeAnimRef.current?.play();
+    await playFreezingAudio();
   };
 
   useEffect(() => {
-    if (habit.streak >= 2) {
+    if (streak >= 2) {
       Animated.timing(scaleFireAnime, {
         toValue: 1,
         duration: 500,
@@ -65,16 +80,14 @@ export const HabitStats = ({ habit, onUpdate, onDenied }: HabitStatsProps) => {
       // Reset immediately if streak is lost
       scaleFireAnime.setValue(0);
     }
-  }, [habit.streak]);
+  }, [streak]);
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.text, { color: theme.habitBase }]}>
-        {habit.streak}
-      </Text>
+      <Text style={[styles.text, { color: theme.habitBase }]}>{streak}</Text>
       {/* <Svg>
         <SvgText stroke="black" strokeWidth={2} fill={theme.habitBase}fontSize="20" fontWeight="bold">
-          {habit.streak}
+          {streak}
         </SvgText>
       </Svg> */}
       <View style={styles.animationContainer}>
@@ -92,9 +105,9 @@ export const HabitStats = ({ habit, onUpdate, onDenied }: HabitStatsProps) => {
       </View>
       <Pressable onPress={handleFreeze}>
         <Text style={[styles.text, { color: theme.habitBase }]}>
-          {habit.streakFreezes}
+          {streakFreezes}
         </Text>
-        {isFrozen(habit) ? (
+        {isFrozen ? (
           <LottieView
             source={require("../../../assets/lottie/Freeze.json")}
             autoPlay={true}
@@ -112,7 +125,7 @@ export const HabitStats = ({ habit, onUpdate, onDenied }: HabitStatsProps) => {
       </Pressable>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

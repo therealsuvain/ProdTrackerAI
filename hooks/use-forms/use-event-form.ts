@@ -65,34 +65,7 @@ interface UseEventFormProps {
   resetEditingEvent: () => void;
 }
 
-const cancelAllRemniders = async (notifications: { date: string; id: string }[]) => {
-  notifications?.forEach((n) => cancelReminder(n.id));
-};
 
-const isTimeEdited = (editingEvent: CalendarEvent | null, newEvent: CalendarEvent) => {
-  // If this is a new event
-  if (!editingEvent) return false;
-  // If old event never had a reminder
-  if (!editingEvent.reminder) return false;
-  // Either old event had end date and edited event doesnt or edited has it and old doesnt
-  if ((editingEvent.endDate && !newEvent.endDate) || (!editingEvent.endDate && newEvent.endDate)) return true
-  // Neither have end date so only compare if startDate/Time are diff
-  if (!editingEvent.endDate && !newEvent.endDate) {
-    return (
-      editingEvent.startDate.split("T")[0] !== newEvent.startDate.split("T")[0] ||
-      editingEvent.startTime.split("T")[1] !== newEvent.startTime.split("T")[1] ||
-      editingEvent.endTime.split("T")[1] !== newEvent.endTime.split("T")[1]
-    );
-  }
-  // If execution reaches here then editingEvent and newEvent will have an end date, adding ! after for non-null assertion to overcome type checker cries
-  return (
-    editingEvent.startDate.split("T")[0] !== newEvent.startDate.split("T")[0] ||
-    editingEvent.endDate!.split("T")[0] !== newEvent.endDate!.split("T")[0] ||
-    editingEvent.startTime.split("T")[1] !== newEvent.startTime.split("T")[1] ||
-    editingEvent.endTime.split("T")[1] !== newEvent.endTime.split("T")[1] ||
-    editingEvent.recurrence !== newEvent.recurrence
-  );
-};
 
 export const useEventForm = ({
   addEvent,
@@ -196,36 +169,8 @@ export const useEventForm = ({
       embedding: state.embedding || await generateEmbedding(state.title, false)
     };
 
-    // If old had reminders ON and new edited doesnt
-    if (
-      editingEvent &&
-      editingEvent.reminder &&
-      editingEvent.notificationIds &&
-      !newEvent.reminder
-    ) {
-      console.log("EVENT FORM NOtifs: old cancelled old:1 , new:0");
-      cancelAllRemniders(editingEvent.notificationIds);
-    }
 
-    /* 
-    if (editingEvent && editingEvent.notificationId) {
-      await cancelReminder(editingEvent.notificationId);
-    } */
 
-    // If old didnt have reminders ON and new edited does
-    if (newEvent.reminder && !editingEvent?.reminder) {
-      console.log("EVENT FORM NOtifs: new reminder old:0 , new:1");
-      const notifIds = await scheduleReminderEvents(newEvent);
-      newEvent.notificationIds = notifIds;
-    }
-
-    // If both had reminders ON and time was edited
-    if (isTimeEdited(editingEvent, newEvent) && editingEvent?.notificationIds) {
-      console.log("EVENT FORM NOtifs: new reminder old:1 , new:1");
-      await cancelAllRemniders(editingEvent.notificationIds)
-      const notifIds = await scheduleReminderEvents(newEvent);
-      newEvent.notificationIds = notifIds;
-    }
 
     if (tagsIds.length > 0) {
       newEvent.tags = tagsIds

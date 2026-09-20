@@ -12,9 +12,6 @@ import { useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/context-hooks/use-data";
-import { useHabits } from "@/hooks/context-hooks/use-habits";
-import { useEvents } from "@/hooks/context-hooks/use-events";
-import { useLogs } from "@/hooks/context-hooks/use-logs";
 import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
 import { CategoryEditModal } from "@/components/ui/shared/categories/category-edit-modal";
 import { CategoryCreator } from "@/components/ui/shared/categories/category-creation-view";
@@ -24,6 +21,9 @@ import {
   DialogAction,
 } from "@/components/shared/dialog-system/AppDialog";
 import { reassignTaskCategoryWithEffects } from "@/utils/Data-services/task-services/task-actions";
+import { reassignHabitCategoryWithEffects } from "@/utils/Data-services/habit-services/habit-actions";
+import { reassignEventCategoryWithEffects } from "@/utils/Data-services/event-services/event-actions";
+import { reassignLogCategoryWithEffects } from "@/utils/Data-services/timerlog-services/log-actions";
 
 // We will build this in Step 3. Importing it now as a placeholder.
 // import { CategoryAnalyticsModal } from '@/components/settings/category-analytics-modal';
@@ -38,9 +38,6 @@ export default function CategoriesSettingsScreen() {
     trackMetric,
   } = useData();
 
-  const { reassignHabitCategoryLocal } = useHabits();
-  const { reassignEventCategoryLocal } = useEvents();
-  const { reassignLogCategoryLocal } = useLogs();
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -172,9 +169,9 @@ export default function CategoriesSettingsScreen() {
     trackMetric(["categoriesDeleted"], 1);
     await deleteUserCategory(categoryToDelete, fallbackId);
     reassignTaskCategoryWithEffects(categoryToDelete, fallbackId);
-    reassignEventCategoryLocal(categoryToDelete, fallbackId);
-    reassignHabitCategoryLocal(categoryToDelete, fallbackId);
-    reassignLogCategoryLocal(categoryToDelete, fallbackId);
+    reassignEventCategoryWithEffects(categoryToDelete, fallbackId);
+    reassignHabitCategoryWithEffects(categoryToDelete, fallbackId);
+    reassignLogCategoryWithEffects(categoryToDelete, fallbackId);
     setCategoryToDelete(null);
   };
 

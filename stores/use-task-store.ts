@@ -26,7 +26,7 @@ type TaskStoreState = {
   removeTask: (id: string) => Promise<void>;
   removeTasks: () => Promise<void>;
   toggleTask: (id: string) => Promise<void>;
-  replaceTasksLocally: (tasks: string[]) => void;
+  setTaskOrder: (tasks: string[]) => void;
 
   reassignTaskCategoryLocal: (
     oldCategoryId: string,
@@ -206,11 +206,11 @@ export const useTaskStore = create<TaskStoreState>((set, get) => {
       );
     },
 
-replaceTasksLocally: (taskIds) => {
-  set({
-    tasksById: reorderTasks(taskIds, get().tasksById),
-  });
-},
+    setTaskOrder: (taskIds) => {
+      set({
+        tasksById: reorderTasks(taskIds, get().tasksById),
+      });
+    },
     reassignTaskCategoryLocal: (oldCategoryId, newCategoryId) => {
       set((state) => {
         let changed = false;
@@ -293,15 +293,15 @@ replaceTasksLocally: (taskIds) => {
     },
 
     refreshTasks: async () => {
-  set({ refreshing: true });
-  try {
-    const loadedTasks = await getAllTasks();
-    set({ tasksById: normalizeTasks(loadedTasks), loaded: true });
-    return get().tasksById; // ← new
-  } finally {
-    set({ refreshing: false });
-  }
-},
+      set({ refreshing: true });
+      try {
+        const loadedTasks = await getAllTasks();
+        set({ tasksById: normalizeTasks(loadedTasks), loaded: true });
+        return get().tasksById; // ← new
+      } finally {
+        set({ refreshing: false });
+      }
+    },
 
   };
 });

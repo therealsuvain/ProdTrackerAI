@@ -1,7 +1,5 @@
-import { selectedDateTaskIds, useTaskStore } from "@/stores/use-task-store";
 import { useIsFocused } from "@react-navigation/native";
 import React, { useMemo } from "react";
-import { useShallow } from "zustand/shallow";
 import { TimelineTaskRow } from "./timeline-task-row";
 
 type TimelineTasksProps = {

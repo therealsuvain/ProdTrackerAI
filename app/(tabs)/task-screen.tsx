@@ -7,26 +7,13 @@ import {
   Pressable,
   Text,
 } from "react-native";
-import {
-  Button,
-  FAB,
-  Portal,
-  Searchbar,
-  TouchableRipple,
-  useTheme,
-} from "react-native-paper";
+import { Button, FAB, Portal, Searchbar } from "react-native-paper";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import Octicons from "@expo/vector-icons/Octicons";
 import { useShallow } from "zustand/react/shallow";
 
-import { useData } from "@/hooks/context-hooks/use-data";
 import { Task } from "@/types/task";
 import TaskItem from "@/components/ui/tasks/task-item";
-import {
-  cancelReminder,
-  allScheduledNotificationsLogs,
-  cancelAllScheduledNotifications,
-} from "@/hooks/use-notifications";
 import TaskModal from "@/components/modal/task-modal";
 import { useTaskForm } from "@/hooks/use-forms/use-task-form";
 import { ThemeContext } from "@/context/ThemeContext";
@@ -47,7 +34,7 @@ import {
   editTaskWithEffects,
   deleteTaskWithEffects,
   toggleTaskWithEffects,
-  replaceTasksWithEffects,
+  setTaskOrderWithEffects,
 } from "@/utils/Data-services/task-services/task-actions";
 function TaskScreenInner() {
   const { theme } = useContext(ThemeContext);
@@ -142,7 +129,7 @@ function TaskScreenInner() {
   const handleDragEnd = useCallback(
     ({ data }: { data: string[] }) => {
       triggerHaptic();
-      replaceTasksWithEffects(data);
+      setTaskOrderWithEffects(data);
     },
     [triggerHaptic],
   );

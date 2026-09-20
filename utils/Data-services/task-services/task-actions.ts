@@ -13,49 +13,49 @@ import {
  * from a component if the completion should count toward metrics.
  */
 
-export async function addTaskWithEffects(task: Task, actor: 'user'|'ai' = "user"): Promise<void> {
-  if(task.reminder) {
+export async function addTaskWithEffects(task: Task, actor: 'user' | 'ai' = "user"): Promise<void> {
+  if (task.reminder) {
     const notificationId = await scheduleReminderTasks(task);
     task.notificationId = notificationId;
   }
   await useTaskStore.getState().addTask(task);
   metricsEventBus.emit("metric:track", {
-      keys: ["tasksAdded"],
-      amount: 1,
-      actor,
-    });
+    keys: ["tasksAdded"],
+    amount: 1,
+    actor,
+  });
 }
 
-export async function editTaskWithEffects(task: Task, actor: 'user'|'ai' = "user"): Promise<void> {
+export async function editTaskWithEffects(task: Task, actor: 'user' | 'ai' = "user"): Promise<void> {
   const oldTask = useTaskStore.getState().tasksById[task.id];
   if (!oldTask) throw new Error(`Task ${task.id} not found`);
 
   //Note: Cancel old task's reminder regardless of any case
-  if(oldTask.reminder && oldTask.notificationId) {
+  if (oldTask.reminder && oldTask.notificationId) {
     await cancelReminder(oldTask.notificationId);
   }
 
-  if(task.reminder) {
+  if (task.reminder) {
     const notificationId = await scheduleReminderTasks(task);
     task.notificationId = notificationId;
   }
 
   await useTaskStore.getState().editTask(task);
-   metricsEventBus.emit("metric:track", {
-      keys: ["tasksEdited"],
-      amount: 1,
-      actor,
-    });
+  metricsEventBus.emit("metric:track", {
+    keys: ["tasksEdited"],
+    amount: 1,
+    actor,
+  });
 }
 
-export async function deleteTaskWithEffects(id: string, actor: 'user'|'ai' = "user"): Promise<void> {
+export async function deleteTaskWithEffects(id: string, actor: 'user' | 'ai' = "user"): Promise<void> {
   const task = useTaskStore.getState().tasksById[id];
   if (!task) throw new Error(`Task ${id} not found`);
   await useTaskStore.getState().removeTask(id);
 
-   if (task.notificationId) {
-      cancelReminder(task.notificationId);
-    }
+  if (task.notificationId) {
+    cancelReminder(task.notificationId);
+  }
 
   if (task.completed) {
     metricsEventBus.emit("metric:track", { keys: ["tasksDeleted"], amount: 1 });
@@ -68,11 +68,11 @@ export async function deleteTaskWithEffects(id: string, actor: 'user'|'ai' = "us
   }
 }
 
-export async function deleteAllTasksWithEffects( actor: 'user'|'ai' = "user"): Promise<void> {
+export async function deleteAllTasksWithEffects(actor: 'user' | 'ai' = "user"): Promise<void> {
   const DeletedTasks = Object.values(useTaskStore.getState().tasksById);
   const noOfDeletedTasks = DeletedTasks.length;
   await useTaskStore.getState().removeTasks();
-  metricsEventBus.emit("metric:track", { keys: ["tasksDeleted"], amount: noOfDeletedTasks , actor});
+  metricsEventBus.emit("metric:track", { keys: ["tasksDeleted"], amount: noOfDeletedTasks, actor });
   let noOfAbandonedTasks = 0;
   for (const task of DeletedTasks) {
     if (task.completed) continue;
@@ -81,7 +81,7 @@ export async function deleteAllTasksWithEffects( actor: 'user'|'ai' = "user"): P
   metricsEventBus.emit("metric:track", { keys: ["tasksAbandoned"], amount: noOfAbandonedTasks, actor });
 
 }
-export async function toggleTaskWithEffects(id: string, actor: 'user'|'ai' = "user"): Promise<void> {
+export async function toggleTaskWithEffects(id: string, actor: 'user' | 'ai' = "user"): Promise<void> {
   const task = useTaskStore.getState().tasksById[id];
   if (!task) throw new Error(`Task ${id} not found`);
 
@@ -100,8 +100,8 @@ export async function toggleTaskWithEffects(id: string, actor: 'user'|'ai' = "us
   });
 }
 
-export function replaceTasksWithEffects(tasks: string[]): void {
-  useTaskStore.getState().replaceTasksLocally(tasks);
+export function setTaskOrderWithEffects(tasks: string[]): void {
+  useTaskStore.getState().setTaskOrder(tasks);
 }
 export function reassignTaskCategoryWithEffects(oldId: string, newId: string): void {
   useTaskStore.getState().reassignTaskCategoryLocal(oldId, newId);

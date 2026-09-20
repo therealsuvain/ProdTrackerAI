@@ -6,9 +6,6 @@ import { SettingsGroup } from "@/components/ui/settings/settings-group";
 import { SettingsRow } from "@/components/ui/settings/settings-row";
 import { useChat } from "@/hooks/context-hooks/use-chat";
 import { useData } from "@/hooks/context-hooks/use-data";
-import { useEvents } from "@/hooks/context-hooks/use-events";
-import { useHabits } from "@/hooks/context-hooks/use-habits";
-import { useLogs } from "@/hooks/context-hooks/use-logs";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { SettingItem } from "@/types/settings-ui";
 import { clearStorage } from "@/utils/storage-utils"; // Make sure clearStorage is exported
@@ -16,6 +13,18 @@ import {
   deleteAllTasksWithEffects,
   taskCountWithEffects,
 } from "@/utils/Data-services/task-services/task-actions";
+import {
+  deleteAllHabitsWithEffects,
+  habitCountWithEffects,
+} from "@/utils/Data-services/habit-services/habit-actions";
+import {
+  deleteAllEventsWithEffects,
+  eventCountWithEffects,
+} from "@/utils/Data-services/event-services/event-actions";
+import {
+  deleteAllLogsWithEffects,
+  logCountWithEffects,
+} from "@/utils/Data-services/timerlog-services/log-actions";
 
 //TODOOptim 110 : add loading indicator for dark mode atleast
 const DATA_SETTINGS: SettingItem[] = [
@@ -63,9 +72,6 @@ export default function DataManagementScreen() {
   // We bring in the setters from your DataContext to clear the UI state instantly
   //const { setTasks, setHabits, setEvents, setTimerLogs, setMessages } = useData();-
   const { resetMetrics, resetAchievements } = useData();
-  const { removeHabits, habitCount } = useHabits();
-  const { removeEvents, eventCount } = useEvents();
-  const { removeLogs, logCount } = useLogs();
   const { removeMessages, messageCount } = useChat();
   // Unified Modal State
   const [modalVisible, setModalVisible] = useState(false);
@@ -116,14 +122,14 @@ export default function DataManagementScreen() {
         break;
 
       case "deleteHabits":
-        const countH = await habitCount();
+        const countH = await habitCountWithEffects();
         openModal(
           "Delete Habits?",
           "This will permanently delete all habit tracking history and streaks.",
           true,
           "habits",
           async () => {
-            await removeHabits();
+            await deleteAllHabitsWithEffects();
             setModalVisible(false);
           },
           countH,
@@ -131,14 +137,14 @@ export default function DataManagementScreen() {
         break;
 
       case "deleteEvents":
-        const countE = await eventCount();
+        const countE = await eventCountWithEffects();
         openModal(
           "Delete Events?",
           "This will permanently delete all event tracking history.",
           true,
           "events",
           async () => {
-            await removeEvents();
+            await deleteAllEventsWithEffects();
             setModalVisible(false);
           },
           countE,
@@ -146,14 +152,14 @@ export default function DataManagementScreen() {
         break;
 
       case "deleteTimerLogs":
-        const countL = await logCount();
+        const countL = await logCountWithEffects();
         openModal(
           "Delete Timer Logs?",
           "This will permanently delete all timer log history.",
           true,
           "logs",
           async () => {
-            await removeLogs();
+            await deleteAllLogsWithEffects();
             setModalVisible(false);
           },
           countL,
@@ -184,9 +190,9 @@ export default function DataManagementScreen() {
             await resetMetrics();
             await resetAchievements();
             await deleteAllTasksWithEffects();
-            await removeHabits();
-            await removeEvents();
-            await removeLogs();
+            await deleteAllHabitsWithEffects();
+            await deleteAllEventsWithEffects();
+            await deleteAllLogsWithEffects();
             setModalVisible(false);
           },
         );

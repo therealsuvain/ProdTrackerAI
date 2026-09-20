@@ -51,7 +51,7 @@ export const allScheduledNotificationsLogs = async () => {
 };
 
 export const cancelAllScheduledNotifications = async () => {
- await Notifications.cancelAllScheduledNotificationsAsync();
+  await Notifications.cancelAllScheduledNotificationsAsync();
 };
 const getTriggerOptionsHabit = (habit: Habit) => {
   const habitDate = new Date(habit.reminderDate!);
@@ -73,7 +73,7 @@ const getTriggerOptionsHabit = (habit: Habit) => {
   } as Notifications.DailyTriggerInput;
 };
 
-export const scheduleReminderEvents = async (event : CalendarEvent) => {
+export const scheduleReminderEvents = async (event: CalendarEvent) => {
   let ids: { date: string; id: string }[] = [];
   console.log("EVENT NOTIFCATION");
   let current = new Date(event.startTime);
@@ -83,7 +83,7 @@ export const scheduleReminderEvents = async (event : CalendarEvent) => {
     (i < maxScheduledNotifications)
     && (event.recurrence === "none" ||
       current.getTime() < new Date(event.endDate ?
-      event.endDate : current.setDate(current.getDate() + maxScheduledNotifications)).getTime());
+        event.endDate : current.setDate(current.getDate() + maxScheduledNotifications)).getTime());
     i++
   ) {
     if (
@@ -115,8 +115,8 @@ export const scheduleReminderEvents = async (event : CalendarEvent) => {
 
 export const scheduleReminderTasks = async (task: Task): Promise<string> => {
   const triggerDate = new Date((task.reminderDate && task.reminderDate) || Date.now());
-  //console.log("TASK NOTIFCATION");
-  //console.log(triggerDate.toLocaleString());
+  console.log("TASK NOTIFCATION");
+  console.log(triggerDate.toLocaleString());
   const id = await Notifications.scheduleNotificationAsync({
     content: {
       title: "Upcoming Task",
@@ -127,11 +127,12 @@ export const scheduleReminderTasks = async (task: Task): Promise<string> => {
       date: triggerDate,
     },
   });
+  console.log(id);
   return id;
 };
 
 export const scheduleReminderHabits = async (habit: Habit): Promise<string> => {
- // console.log("HABIT NOTIFCATION");
+  // console.log("HABIT NOTIFCATION");
   const id = await Notifications.scheduleNotificationAsync({
     content: {
       title: "Check in on your habit",
@@ -139,7 +140,7 @@ export const scheduleReminderHabits = async (habit: Habit): Promise<string> => {
     },
     trigger: getTriggerOptionsHabit(habit),
   });
- // console.log(id);
+  // console.log(id);
   return id;
 };
 

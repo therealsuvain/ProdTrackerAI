@@ -24,33 +24,28 @@ import TaskItem from "@/components/ui/tasks/task-item";
 import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
 import { ThemeContext } from "@/context/ThemeContext";
 import { useEvents } from "@/hooks/context-hooks/use-events";
-import { useHabits } from "@/hooks/context-hooks/use-habits";
 import { useLogs } from "@/hooks/context-hooks/use-logs";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useSearch } from "@/hooks/use-search";
 import { selectedDateTaskIds, useTaskStore } from "@/stores/use-task-store";
-import { Habit } from "@/types/habits";
 import { getTodayISO } from "@/utils/common-utils";
 import { useFlapAnimation } from "@/hooks/animations/use-flap-animation-new";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { useHaptics } from "@/hooks/use-haptics";
-import { GlobalMetricKey } from "@/types/metrics";
 import { useDbErrorToast } from "@/components/shared/db-error-toast";
-import { useAuth } from "@/context/AuthContext";
 import { useIsFocused } from "@react-navigation/native";
 import { toggleTaskWithEffects } from "@/utils/Data-services/task-services/task-actions";
+import { checkInHabitWithEffects } from "@/utils/Data-services/habit-services/habit-actions";
+import { useHabitStore } from "@/stores/use-habit-store";
 
 const EMPTY_IDS: string[] = [];
 
 function HomeScreenInner() {
   const { triggerHaptic } = useHaptics();
-  const { trackMetric } = useData();
   const { theme } = useContext(ThemeContext);
   const { showToast } = useDbErrorToast();
   const isFocused = useIsFocused();
   const { events } = useEvents();
   const { timerLogs } = useLogs();
-  const { habits, editHabit } = useHabits();
   const [searchVisible, setSearchVisible] = useState(false);
   const { query, performSearch, results } = useSearch();
   const [aiVisible, setAiVisible] = useState(false);
@@ -72,7 +67,13 @@ function HomeScreenInner() {
   );
 
   let upcomingEvents = events.slice(0, 3);
-  let activeHabits = habits.slice(0, 3);
+  let activeHabits = useHabitStore(
+    useShallow((state) => {
+      if (!isFocused) return EMPTY_IDS;
+      return Object.values(state.habitsById).map((habit) => habit.id);
+    }),
+  ).slice(0, 3);
+  /* let activeHabits: string[] = []; */
   let recentLogs = timerLogs.slice(0, 3);
   // Launch anim values
   /* 
@@ -104,44 +105,21 @@ function HomeScreenInner() {
 
   const toggleTaskCompleted = useCallback(
     async (id: string) => {
-      const task = useTaskStore.getState().tasksById[id];
       void toggleTaskWithEffects(id);
       triggerHaptic();
     },
-    [toggleTaskWithEffects, triggerHaptic, trackMetric],
+    [toggleTaskWithEffects, triggerHaptic],
   );
   const handleHabitUpdate = useCallback(
-    async (updated: Habit) => {
-      const habit = habits.find((h) => h.id === updated.id);
-      if (!habit) return;
+    async (id: string) => {
       try {
-        await editHabit(updated);
-        let updateMetrics: GlobalMetricKey[] = [];
-        if (habit.history.length < updated.history.length) {
-          updateMetrics.push("habitsCheckedIn");
-        }
-        if (
-          !updated.pendingStreakResetAfter &&
-          updated.streak === updated.goal
-        ) {
-          updateMetrics.push("habitsGoalsCompleted");
-        }
-        if (
-          (!habit.freezeHistory && updated.freezeHistory) ||
-          (habit.freezeHistory &&
-            updated.freezeHistory &&
-            habit.freezeHistory.length < updated.freezeHistory.length)
-        ) {
-          updateMetrics.push("habitsFrozen");
-        }
-        if (updateMetrics.length > 0) {
-          trackMetric(updateMetrics, 1);
-        }
+        const status = await checkInHabitWithEffects(id);
+        return status;
       } catch (e) {
-        showToast("Couldn't save habit. Changes have been undone.");
+        showToast("Couldn't check in habit. Changes have been undone.");
       }
     },
-    [trackMetric, habits],
+    [checkInHabitWithEffects],
   );
   //DebugAuthProbe();
   return (
@@ -327,11 +305,11 @@ function HomeScreenInner() {
             Active Habits
           </Text>
           {activeHabits.length ? (
-            activeHabits.map((habit) => (
+            activeHabits.map((id) => (
               <HabitItem
-                key={habit.id}
-                habit={habit}
-                onUpdate={handleHabitUpdate}
+                key={id}
+                id={id}
+                onCheckin={handleHabitUpdate}
                 onDelete={() => 0}
                 onEdit={() => 0}
               />
@@ -434,7 +412,6 @@ function HomeScreenInner() {
           <UnifiedTimeline
             events={events}
             timerLogs={timerLogs}
-            habits={habits}
             selectedDate={selectedDate}
             onTaskToggle={toggleTaskCompleted}
             onHabitCheckIn={handleHabitUpdate}

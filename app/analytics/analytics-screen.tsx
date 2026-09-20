@@ -21,7 +21,6 @@ import { useDashboardLayout } from "@/components/ui/analytics/charts-prefs";
 import { LayoutManagerFAB } from "@/components/ui/analytics/charts-FAB";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { useEvents } from "@/hooks/context-hooks/use-events";
-import { useHabits } from "@/hooks/context-hooks/use-habits";
 import { useLogs } from "@/hooks/context-hooks/use-logs";
 
 import { useData } from "@/hooks/context-hooks/use-data";
@@ -37,6 +36,8 @@ import { AnalyticsFilterBar } from "@/components/ui/analytics/charts-layout/anal
 import { useFiltersStore } from "@/hooks/use-filters-store";
 import { useTaskStore } from "@/stores/use-task-store";
 import { useShallow } from "zustand/shallow";
+import { useHabitStore } from "@/stores/use-habit-store";
+import { useEventStore } from "@/stores/use-event-store";
 
 function AnalyticsScreenInner() {
   const { activeWidgets, toggleWidget, reorderWidgets, resetLayout } =
@@ -45,8 +46,12 @@ function AnalyticsScreenInner() {
     useShallow((state) => Object.values(state.tasksById)),
   );
   const { timerLogs } = useLogs();
-  const { events } = useEvents();
-  const { habits } = useHabits();
+  const events = useEventStore(
+    useShallow((state) => Object.values(state.eventsById)),
+  );
+  const habits = useHabitStore(
+    useShallow((state) => Object.values(state.habitsById)),
+  );
   const { tags, categories, appMetrics } = useData();
   const { messages } = useChat();
   const { theme } = useTheme();

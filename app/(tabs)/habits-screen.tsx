@@ -1,18 +1,8 @@
 import { View, StyleSheet, FlatList, Text } from "react-native";
-import {
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo,
-} from "react";
+import { useContext, useState, useCallback } from "react";
 import { FAB, Portal, Searchbar } from "react-native-paper";
-
-import { useHabits } from "@/hooks/context-hooks/use-habits";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { Habit } from "@/types/habits";
-import { GlobalMetricKey } from "@/types/metrics";
 
 import HabitItem from "@/components/ui/habits/habit-item";
 import HabitModal from "@/components/modal/habit-modal";
@@ -20,7 +10,6 @@ import { GoalCompletionModal } from "@/components/modal/goal-completion-modal";
 import HabitHeatmap from "@/components/ui/habits/habit-heatmap";
 import { useHabitForm } from "@/hooks/use-forms/use-habit-form";
 import { ThemeContext } from "@/context/ThemeContext";
-import { cancelReminder } from "@/hooks/use-notifications";
 import { withAlpha } from "@/utils/common-utils";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { usePlaySound } from "@/hooks/use-play-sound";
@@ -33,11 +22,20 @@ import { useHaptics } from "@/hooks/use-haptics";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 import { ConfirmDialog } from "@/components/shared/dialog-system/ConfirmDialog";
+import {
+  addHabitWithEffects,
+  checkInHabitWithEffects,
+  freezeHabitWithEffects,
+  restartHabitWithEffects,
+  deleteHabitWithEffects,
+  editHabitWithEffects,
+} from "@/utils/Data-services/habit-services/habit-actions";
+import { useHabitStore } from "@/stores/use-habit-store";
+import { useShallow } from "zustand/shallow";
 
 function HabitsScreenInner() {
   const { theme, isDarkMode } = useContext(ThemeContext);
-  const { habits, addHabit, editHabit, removeHabit } = useHabits();
-  const { trackMetric, appMetrics } = useData();
+  const { appMetrics } = useData();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [visible, setVisible] = useState(false);
@@ -48,20 +46,22 @@ function HabitsScreenInner() {
   const { toastError, showToast, dismissToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
   const { state, updateField, onSubmit } = useHabitForm({
-    addHabit,
-    editHabit,
+    addHabit: addHabitWithEffects,
+    editHabit: editHabitWithEffects,
     editingHabit,
     onClose: () => {
       setVisible(false);
       setVisibleInEditMode(false);
     },
   });
-  const filteredHabits = useMemo(
-    () =>
-      habits.filter((habit) =>
-        habit.title.toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
-    [habits, searchQuery],
+  const filteredHabitsIds = useHabitStore(
+    useShallow((state) =>
+      Object.values(state.habitsById)
+        .filter((habit) =>
+          habit.title.toLowerCase().includes(searchQuery.toLowerCase()),
+        )
+        .map((habit) => habit.id),
+    ),
   );
 
   const [habitToDelete, setHabitToDelete] = useState<string | null>(null);
@@ -82,106 +82,87 @@ function HabitsScreenInner() {
     setVisible(false);
   };
 
-  const handleUpdate = useCallback(
-    async (updated: Habit) => {
-      // console.log("Updated Habit:", updated.id);
-      // console.log("Updated Habitsss:", habits.map((h)=>h.id));
-      const habit = habits.find((h) => h.id === updated.id);
-      if (!habit) return;
+  const handleCheckin = useCallback(
+    async (id: string) => {
       try {
-        await editHabit(updated);
-        let updateMetrics: GlobalMetricKey[] = [];
-        if (habit.history.length < updated.history.length) {
-          updateMetrics.push("habitsCheckedIn");
-        }
-        if (
-          !updated.pendingStreakResetAfter &&
-          updated.streak === updated.goal
-        ) {
-          updateMetrics.push("habitsGoalsCompleted");
-        }
-        if (
-          (!habit.freezeHistory && updated.freezeHistory) ||
-          (habit.freezeHistory &&
-            updated.freezeHistory &&
-            habit.freezeHistory.length < updated.freezeHistory.length)
-        ) {
-          updateMetrics.push("habitsFrozen");
-        }
-        if (habit.streak < updated.streak) {
-          if (updated.frequency === "daily") {
-            trackMetric(["habitsStreakMaxDaily"], updated.streak);
-          } else {
-            trackMetric(["habitsStreakMaxWeekly"], updated.streak);
-          }
-        }
-        if (habit.streak !== updated.streak) {
-          const now = new Date();
-          const nowSecs =
-            now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-          const TWO_AM = 2 * 3600;
-          const FOUR_AM = 4 * 3600;
-          const EIGHT_AM = 8 * 3600;
-          const TEN_PM = 22 * 3600;
-          if (nowSecs <= EIGHT_AM && nowSecs >= FOUR_AM) {
-            updateMetrics.push("habitsCheckedInBefore8am");
-          } else if (nowSecs >= TEN_PM || nowSecs <= TWO_AM) {
-            updateMetrics.push("habitsCheckedInAfter10pm");
-          }
-        }
-        if (updateMetrics.length > 0) {
-          trackMetric(updateMetrics, 1);
-        }
-      } catch (e) {
-        showToast("Couldn't save habit. Changes have been undone.");
+        const status = await checkInHabitWithEffects(id);
+        return status;
+      } catch {
+        showToast("Couldn't check in habit. Changes have been undone.");
       }
     },
-    [trackMetric, habits],
+    [checkInHabitWithEffects, showToast],
+  );
+
+  const handleFreeze = useCallback(
+    async (id: string) => {
+      try {
+        const status = await freezeHabitWithEffects(id);
+        return status;
+      } catch {
+        showToast("Couldn't freeze habit. Changes have been undone.");
+      }
+    },
+    [freezeHabitWithEffects, showToast],
   );
 
   const handleDelete = useCallback(async () => {
     if (!habitToDelete) return;
     const id = habitToDelete;
     if (id === "") return;
-
-    const habit = habits.find((h: Habit) => h.id === id);
-    if (habit?.notificationId) {
-      cancelReminder(habit.notificationId);
-    }
-    try {
-      if (!habit) return;
-      await removeHabit(id);
-      if (habit.streak < habit.goal && history.length === 0) {
-        trackMetric(["habitsDeleted", "habitsAbandoned"], 1);
-      } else {
-        trackMetric(["habitsDeleted"], 1);
-      }
-      triggerHaptic();
-    } catch {
-      showToast("Couldn't delete the habit. It has been restored.");
-    } finally {
-      setHabitToDelete(null);
-    }
-  }, [habitToDelete, trackMetric, habits]);
+    void deleteHabitWithEffects(id)
+      .then(() => {
+        triggerHaptic();
+      })
+      .catch(() => {
+        showToast("Couldn't delete the habit. It has been restored.");
+      })
+      .finally(() => {
+        setHabitToDelete(null);
+      });
+  }, [habitToDelete, showToast, triggerHaptic, deleteHabitWithEffects]);
 
   const handleGoalRestart = useCallback(
     (updated: Habit) => {
-      handleUpdate(updated);
+      restartHabitWithEffects(updated);
       setGoalModalVisible(false);
-      trackMetric(["habitGoalsRestarted"], 1);
     },
-    [handleUpdate, trackMetric],
+    [restartHabitWithEffects],
   );
 
-  const handleGoalReached = useCallback(
-    (habit: Habit) => {
-      setCompletedHabit(habit);
-      setGoalModalVisible(true);
-      audioPlayer.seekTo(0);
-      audioPlayer.play();
-      trackMetric(["habitsGoalsCompleted"], 1);
+  const handleGoalReached = useCallback((habit: Habit) => {
+    setCompletedHabit(habit);
+    setGoalModalVisible(true);
+    audioPlayer.seekTo(0);
+    audioPlayer.play();
+  }, []);
+
+  const handleEditRow = useCallback(
+    (id: string) => {
+      const habit = useHabitStore.getState().habitsById[id];
+      if (habit) showModal(habit);
     },
-    [trackMetric],
+    [showModal],
+  );
+
+  const handleDeleteRow = useCallback((id: string) => {
+    setHabitToDelete(id);
+  }, []);
+
+  const keyExtractor = useCallback((id: string) => id, []);
+
+  const renderHabit = useCallback(
+    ({ item: id }: { item: string }) => (
+      <HabitItem
+        id={id}
+        onCheckin={handleCheckin}
+        onEdit={handleEditRow}
+        onDelete={handleDeleteRow}
+        onFreeze={handleFreeze}
+        onGoalReached={handleGoalReached}
+      />
+    ),
+    [handleCheckin, handleEditRow, handleDeleteRow, handleGoalReached],
   );
 
   const emptyStateColor = isDarkMode ? theme.habitBase : theme.habitDarkPrimary;
@@ -234,21 +215,13 @@ function HabitsScreenInner() {
           theme={{ colors: { onSurfaceVariant: theme.whiteBase } }}
         />
         <FlatList
-          data={filteredHabits}
+          data={filteredHabitsIds}
           showsVerticalScrollIndicator={false}
-          keyExtractor={(item) => item.id}
+          keyExtractor={keyExtractor}
           ListHeaderComponent={
             appMetrics && <HabitHeatmap metrics={appMetrics} />
           }
-          renderItem={({ item }) => (
-            <HabitItem
-              habit={item}
-              onUpdate={handleUpdate}
-              onDelete={() => setHabitToDelete(item.id)}
-              onEdit={() => showModal(item)}
-              onGoalReached={handleGoalReached}
-            />
-          )}
+          renderItem={renderHabit}
           ListEmptyComponent={EmptyState}
         />
         <FAB

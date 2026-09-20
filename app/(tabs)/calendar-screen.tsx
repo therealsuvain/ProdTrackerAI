@@ -22,17 +22,20 @@ import { useHaptics } from "@/hooks/use-haptics";
 import CalendarListAgendaMain from "@/components/ui/calendar-events/calendar-list-agenda-view-main";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
-import { useData } from "@/hooks/context-hooks/use-data";
 import {
   AppDialog,
   DialogAction,
 } from "@/components/shared/dialog-system/AppDialog";
+import {
+  addEventWithEffects,
+  editEventWithEffects,
+  deleteEventOccurrenceWithEffects,
+} from "@/utils/Data-services/event-services/event-actions";
 
 // TODOX - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { trackMetric } = useData();
-  const { events, addEvent, editEvent, deleteEventOccurrence } = useEvents();
+  const { events } = useEvents();
   const {
     currentView,
     setCurrentView,
@@ -46,8 +49,8 @@ function CalendarScreenInner() {
   const { toastError, showToast, dismissToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
   const { state, updateField, onSubmit } = useEventForm({
-    addEvent,
-    editEvent,
+    addEvent: addEventWithEffects,
+    editEvent: editEventWithEffects,
     editingEvent,
     onClose: () => setVisible(false),
     resetEditingEvent: () => setEditingEvent(null),
@@ -103,7 +106,7 @@ function CalendarScreenInner() {
         variant: "destructive",
         onPress: async () => {
           try {
-            await deleteEventOccurrence(id, date, false);
+            await deleteEventOccurrenceWithEffects(id, date, false);
             triggerHaptic();
           } catch {
             showToast("Couldn't delete the event. It has been restored.");
@@ -125,9 +128,8 @@ function CalendarScreenInner() {
         variant: "destructive",
         onPress: async () => {
           try {
-            await deleteEventOccurrence(id, date, true);
+            await deleteEventOccurrenceWithEffects(id, date, true);
             triggerHaptic();
-            trackMetric(["eventsDeleted"], 1);
           } catch {
             showToast("Couldn't delete the event. It has been restored.");
           } finally {
@@ -189,7 +191,6 @@ function CalendarScreenInner() {
           updateField={updateField}
           state={state}
           onSubmit={onSubmit}
-          isNew={!isEditing}
         ></CalendarEventModal>
       </Portal>
       {deleteEventDialogActions && (

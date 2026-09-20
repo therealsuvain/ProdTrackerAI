@@ -1,9 +1,7 @@
 import { Habit } from "@/types/habits";
 import { useReducer, useEffect } from "react";
 import { randomUUID } from "expo-crypto";
-import { cancelReminder, scheduleReminderHabits } from "../use-notifications";
 import { generateEmbedding } from '@/utils/embedding-engine'
-import { stat } from "react-native-fs";
 
 type Frequency = "daily" | "weekly";
 
@@ -191,7 +189,7 @@ export const useHabitForm = ({
     };
 
     console.log("HABIT FORM", newHabit.reminderDate);
-    if (editingHabit && editingHabit.notificationId) {
+    /* if (editingHabit && editingHabit.notificationId) {
       console.log("HABIT FORM NOTIF: old cancelled");
       await cancelReminder(editingHabit.notificationId);
     }
@@ -200,7 +198,7 @@ export const useHabitForm = ({
       console.log("HABIT FORM NOTIF: new scheduled");
       const notifId = await scheduleReminderHabits(newHabit);
       newHabit.notificationId = notifId;
-    }
+    } */
 
     if (tagIds.length > 0) {
       newHabit.tags = tagIds

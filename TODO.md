@@ -79,6 +79,8 @@
 - TODO : Check for Security enhancements and possible securicty concerns for the entire app
 - TODO : Home timeline has to be tweaked, each tasks, timeline feels useless mostly, category based event colors is commneted out for now
 - TOOD : Where should GestureHandlerRootView be
+- TOOD : Habit checked in from the home page if reached goal, doesnt open modal and it cannot be restarted
+- TODO : if a habit is a at a streak 1 , but then you miss a day and check in again later the habit streak is then reset and streak is back to 1 , but there is no UI/visuals for that, it looks like nothing happened when in fact it when to from 1 to 0 then from from 0 to 1 , but it looks as if the check in didnt regsiter
 
 # AI-Based
 
