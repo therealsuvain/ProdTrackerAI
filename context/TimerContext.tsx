@@ -9,7 +9,6 @@ import { Alert, AppState } from "react-native";
 import * as Notifications from "expo-notifications";
 import { randomUUID } from "expo-crypto";
 import { TimerLog } from "@/types/timer";
-import { useData } from "@/hooks/context-hooks/use-data";
 import storageMMKV from "@/utils/Storage-Utils/mmkv-instance";
 import { STORAGE_KEYS } from "@/utils/Storage-Utils/storage-keys";
 import {
@@ -17,7 +16,7 @@ import {
   stopNativeTimer,
   addTimerActionListener,
 } from "../modules/notifications-timer";
-import { useLogs } from "@/hooks/context-hooks/use-logs";
+import { addLogWithEffects } from "@/utils/Data-services/timerlog-services/log-actions";
 
 export type TimerMode = "stopwatch" | "countdown";
 interface TimerContextType {
@@ -112,8 +111,6 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
   const [countdownTarget, setCountdownTarget] = useState(300); // default 5 min
   const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
   const [pausedSeconds, setPausedSeconds] = useState(0);
-  const { trackMetric } = useData();
-  const { addLog } = useLogs();
   const updateIntervalRef = useRef<number | null>(null);
   //const notificationUpdateRef = useRef<number | null>(null);
   const isInitializedRef = useRef(false);
@@ -416,9 +413,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
               updatedAt: new Date().toISOString(),
               laps: laps.length > 0 ? laps : undefined,
             };
-            await addLog(log);
-            trackMetric(["timeTracked"], finalTime);
-            trackMetric(["logsAdded"], 1);
+            await addLogWithEffects(log);
             stopNativeTimer();
             resetState();
           },
@@ -542,9 +537,8 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
         updatedAt: new Date().toISOString(),
         laps: laps.length > 0 ? laps : undefined,
       };
-      await addLog(log);
-      trackMetric(["timeTracked"], finalTime);
-      trackMetric(["logsAdded"], 1);
+      await addLogWithEffects(log);
+
       stopNativeTimer();
     }
 
@@ -588,9 +582,7 @@ export default function TimerProvider({ children }: { children: ReactNode }) {
                 updatedAt: new Date().toISOString(),
                 isPartial: true, // flagged so the log item can show "(partial)"
               };
-              await addLog(log);
-              trackMetric(["timeTracked"], finalTime);
-              trackMetric(["logsAdded"], 1);
+              await addLogWithEffects(log);
             }
             stopNativeTimer();
             resetState();

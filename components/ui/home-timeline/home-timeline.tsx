@@ -24,7 +24,6 @@ const EMPTY_TIMELINE_DATA = {
 import { ThemeContext } from "@/context/ThemeContext";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { CalendarEvent } from "@/types/calendar";
-import { TimerLog } from "@/types/timer";
 import { Ionicons } from "@expo/vector-icons";
 import { selectedDateTaskIds, useTaskStore } from "@/stores/use-task-store";
 import { useShallow } from "zustand/shallow";
@@ -38,10 +37,10 @@ import {
   selectedDateLogIds,
   useTimerLogStore,
 } from "@/stores/use-timerLog-store";
+import { TimelineEvents } from "./timeline-events";
+import { TimelineLogs } from "./timeline-logs";
 
 interface UnifiedTimelineProps {
-  events: CalendarEvent[];
-  timerLogs: TimerLog[];
   selectedDate: Date;
   onEventSelect?: (event: CalendarEvent) => void;
   onTaskToggle: (id: string) => void;
@@ -63,8 +62,6 @@ const TIME_LABELS = Array.from(
 );
 
 export default function UnifiedTimeline({
-  events,
-  timerLogs,
   selectedDate,
   onEventSelect,
   onTaskToggle,
@@ -108,12 +105,9 @@ export default function UnifiedTimeline({
       return Object.values(state.habitsById);
     }),
   )
-    .filter((h) => h.history.includes(todayISO))
+    .filter((h) => h.history.includes(todayISO) || h.streak === h.goal)
     .map((h) => h.id);
 
-  const completedHabitsCount = completedHabitIds.length;
-  const taskCount = taskIds.length;
-  // Filter items for selected date
   const eventIds = useEventStore(
     useShallow((state) => {
       if (!isFocused) return EMPTY_IDS;
@@ -128,8 +122,13 @@ export default function UnifiedTimeline({
       return selectedDateLogIds(state, selectedDateISO);
     }),
   );
+  const completedHabitsCount = completedHabitIds.length;
+  const taskCount = taskIds.length;
+  const eventCount = eventIds.length;
+  const logCount = logIds.length;
+  // Filter items for selected date
 
-  const filteredData = useMemo(() => {
+  /*  const filteredData = useMemo(() => {
     if (!isFocused) {
       return EMPTY_TIMELINE_DATA;
     }
@@ -174,10 +173,10 @@ export default function UnifiedTimeline({
       logs: dayLogs,
       events: dayEvents,
     };
-  }, [events, timerLogs, selectedDateStr, selectedDateISO, selectedDate]);
+  }, [events, timerLogs, selectedDateStr, selectedDateISO, selectedDate]); */
 
   // Calculate positions for events
-  const eventPositions = useMemo(() => {
+  /*   const eventPositions = useMemo(() => {
     return filteredData.events.map((event) => {
       const eventStartTime = new Date(event.startTime);
       const eventEndTime = new Date(event.endTime);
@@ -235,7 +234,7 @@ export default function UnifiedTimeline({
           : null,
       };
     });
-  }, [filteredData.logs]);
+  }, [filteredData.logs]); */
   const currentTimeTop = useMemo(() => {
     const now = new Date();
     return (now.getHours() + now.getMinutes() / 60) * HOUR_HEIGHT;
@@ -243,8 +242,8 @@ export default function UnifiedTimeline({
 
   // ─── FIX 9: Scroll effect deps cleaned up ───
   // Was: depended on eventPositions (new array ref every render) → fired too often
-  const firstEventTop = eventPositions[0]?.top ?? null;
-  const firstEventTop2 = useEventStore(
+  //const firstEventTop = eventPositions[0]?.top ?? null;
+  /*   const firstEventTop2 = useEventStore(
     (state) => state.eventsById[eventIds[0]].startTime,
   );
   const firstEventTop3 = useMemo(
@@ -255,8 +254,8 @@ export default function UnifiedTimeline({
   useEffect(() => {
     const scrollTarget = isToday
       ? Math.max(0, new Date().getHours() * HOUR_HEIGHT - 100)
-      : firstEventTop !== null
-        ? Math.max(0, firstEventTop - 100)
+      : firstEventTop3 !== null
+        ? Math.max(0, firstEventTop3 - 100)
         : null;
 
     if (scrollTarget === null) return;
@@ -267,7 +266,7 @@ export default function UnifiedTimeline({
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDateStr]); // Only scroll when the date actually changes
+  }, [selectedDateStr]); // Only scroll when the date actually changes */
 
   const handleEventSelect = useCallback(
     (event: CalendarEvent) => {
@@ -313,7 +312,7 @@ export default function UnifiedTimeline({
     [theme.greyBaseSecondary],
   );
 
-  const renderEvents = useMemo(() => {
+  /*   const renderEvents = useMemo(() => {
     return eventPositions.map(
       ({ event, top, height, color, startTimeLabel, endTimeLabel }) => (
         <TouchableOpacity
@@ -395,10 +394,9 @@ export default function UnifiedTimeline({
         </View>
       ),
     );
-  }, [logPositions, theme]);
+  }, [logPositions, theme]); */
 
-  const isEmpty =
-    filteredData.events.length === 0 && filteredData.logs.length === 0;
+  const isEmpty = eventIds.length === 0 && logIds.length === 0;
 
   return (
     <View
@@ -451,8 +449,8 @@ export default function UnifiedTimeline({
             )} */}
             {gridLines}
             {/* Render all timeline items */}
-            {renderTimerLogs}
-            {renderEvents}
+            <TimelineEvents eventIds={eventIds} color={theme.eventBase} />
+            <TimelineLogs logIds={logIds} color={theme.timerBase} />
             <TimelineTasks
               taskIds={taskIds}
               selectedDateISO={selectedDateISO}
@@ -504,7 +502,7 @@ export default function UnifiedTimeline({
         <View style={styles.summaryItem}>
           <Ionicons name="calendar" size={16} color={theme.eventBase} />
           <Text style={[styles.summaryText, { color: theme.whiteBase }]}>
-            {filteredData.events.length}
+            {eventCount}
           </Text>
         </View>
         <View style={styles.summaryItem}>
@@ -516,7 +514,7 @@ export default function UnifiedTimeline({
         <View style={styles.summaryItem}>
           <Ionicons name="timer" size={16} color={theme.timerBase} />
           <Text style={[styles.summaryText, { color: theme.whiteBase }]}>
-            {filteredData.logs.length}
+            {logCount}
           </Text>
         </View>
         <View style={styles.summaryItem}>
@@ -534,7 +532,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-
   timelineContainer: {
     flex: 1,
   },
@@ -564,53 +561,6 @@ const styles = StyleSheet.create({
   },
   gridLine: {
     borderBottomWidth: 1,
-  },
-  eventBlock: {
-    position: "absolute",
-    left: 8,
-    right: 8,
-    borderRadius: 8,
-    padding: 8,
-    overflow: "hidden",
-  },
-
-  logBlock: {
-    position: "absolute",
-    left: 8,
-    right: 8,
-    borderRadius: 8,
-    padding: 8,
-    borderLeftWidth: 4,
-  },
-  blockContent: {},
-  blockHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  blockTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginLeft: 6,
-    flex: 1,
-  },
-  blockTime: {
-    fontSize: 11,
-  },
-  logTitle: {
-    fontSize: 13,
-    fontWeight: "500",
-    marginLeft: 6,
-    flex: 1,
-  },
-  logTime: {
-    fontSize: 11,
-    marginLeft: 20,
-  },
-  logDuration: {
-    fontSize: 10,
-    marginLeft: 20,
-    fontStyle: "italic",
   },
   currentTimeLine: {
     position: "absolute",

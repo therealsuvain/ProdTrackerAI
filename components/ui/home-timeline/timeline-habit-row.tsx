@@ -19,11 +19,13 @@ export const TimelineHabitRow = React.memo(function TimelineHabitRow({
 }: TimelineHabitRow) {
   const { theme } = useTheme();
   const { playDeniedFeedback, animatedStyle } = useHabitDeniedFeedback();
-  const habit = useHabitStore((state) => state.habitsById[id]);
-  if (!habit) return null;
+  const title = useHabitStore((state) => state.habitsById[id].title);
+  const goal = useHabitStore((state) => state.habitsById[id].goal);
+  const streak = useHabitStore((state) => state.habitsById[id].streak);
+  if (!title || !goal) return null;
 
-  const progress = habit.goal ? habit.streak / habit.goal : 0;
-  const completed = habit.streak >= habit.goal;
+  const progress = goal ? streak / goal : 0;
+  const completed = streak >= goal;
   const handlePress = useCallback(async () => {
     const status = await onHabitCheckIn(id);
     if (
@@ -54,7 +56,7 @@ export const TimelineHabitRow = React.memo(function TimelineHabitRow({
             style={[styles.habitTitle, { color: theme.whiteBase }]}
             numberOfLines={1}
           >
-            {habit.title}
+            {title}
           </Text>
           <Ionicons
             name={completed ? "checkmark-circle" : "ellipse-outline"}
@@ -64,10 +66,10 @@ export const TimelineHabitRow = React.memo(function TimelineHabitRow({
         </View>
         <View style={styles.habitStats}>
           <Text style={[styles.habitStreak, { color: theme.habitBase }]}>
-            🔥 {habit.streak} day streak
+            🔥 {streak} day streak
           </Text>
           <Text style={[styles.habitGoal, { color: theme.habitBase }]}>
-            Goal: {habit.goal}
+            Goal: {goal}
           </Text>
         </View>
         <ProgressBar

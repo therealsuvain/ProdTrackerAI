@@ -1,29 +1,26 @@
 import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
 import { Card } from "react-native-paper";
 import { useRoute } from "@react-navigation/native";
-import { useContext, useState } from "react";
+import React, { useContext, useState } from "react";
 import { XButton } from "../shared/x-button";
 
 import { ThemeContext } from "@/context/ThemeContext";
 import { formatDuration, formatRelativeTime } from "@/context/TimerContext";
-import { TimerLog } from "@/types/timer";
 import { withAlpha } from "@/utils/common-utils";
 import { TagList } from "@/components/ui/shared/tags/tag-list";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
+import { useTimerLogStore } from "@/stores/use-timerLog-store";
 interface TimerLogItemProps {
-  log: TimerLog;
-  onDelete: () => void;
-  onEdit: () => void;
+  logId: string;
+  onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
 }
 
-export default function TimerLogItem({
-  log,
-  onDelete,
-  onEdit,
-}: TimerLogItemProps) {
+function TimerLogItem({ logId, onDelete, onEdit }: TimerLogItemProps) {
   const { theme } = useContext(ThemeContext);
   const { categories } = useData();
+  const log = useTimerLogStore((state) => state.logsById[logId]);
   let logCategory;
   if (log.category) {
     logCategory = categories.find((c) => c.id === log.category);
@@ -37,6 +34,9 @@ export default function TimerLogItem({
   // startTime is now an ISO string — convert to Date only at display time
   const startedLabel = formatRelativeTime(log.startTime);
   const hasLaps = log.laps && log.laps.length > 0;
+
+  const handleDelete = () => onDelete(logId);
+  const handleEdit = () => onEdit(logId);
   return (
     <Card
       style={[
@@ -142,16 +142,18 @@ export default function TimerLogItem({
             )}
           </View>
           {isNotHome && (
-            <XButton icon="pencil-outline" mode="timer" onPress={onEdit} />
+            <XButton icon="pencil-outline" mode="timer" onPress={handleEdit} />
           )}
           {isNotHome && (
-            <XButton icon="trash-outline" mode="timer" onPress={onDelete} />
+            <XButton icon="trash-outline" mode="timer" onPress={handleDelete} />
           )}
         </View>
       </Card.Content>
     </Card>
   );
 }
+
+export default React.memo(TimerLogItem);
 
 const styles = StyleSheet.create({
   container: { marginVertical: 8, width: "100%", position: "relative" },

@@ -78,7 +78,6 @@ export const useEventForm = ({
 
   useEffect(() => {
     if (editingEvent) {
-      console.log("THIS ONE EVENTS")
       dispatch({
         type: "RESET",
         payload: {

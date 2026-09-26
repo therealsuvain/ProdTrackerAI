@@ -26,11 +26,12 @@ export const TimelineTaskRow = React.memo(function TimelineTaskRow({
   color,
   onToggle,
 }: TimelineTaskRowProps) {
-  const task = useTaskStore((state) => state.tasksById[taskId]);
+  const title = useTaskStore((state) => state.tasksById[taskId].title);
+  const completed = useTaskStore((state) => state.tasksById[taskId].completed);
+  const priority = useTaskStore((state) => state.tasksById[taskId].priority);
+  if (!title || !priority) return null;
 
-  if (!task) return null;
-
-  const priorityColor = getPriorityColor(task.priority);
+  const priorityColor = getPriorityColor(priority);
 
   return (
     <TouchableOpacity
@@ -47,19 +48,16 @@ export const TimelineTaskRow = React.memo(function TimelineTaskRow({
       onPress={() => onToggle(taskId)}
     >
       <View style={styles.blockHeader}>
-        <Checkbox
-          value={task.completed}
-          onValueChange={() => onToggle(taskId)}
-        />
+        <Checkbox value={completed} onValueChange={() => onToggle(taskId)} />
 
         <Text
           style={[
             styles.taskTitle,
-            task.completed && styles.completedTask,
+            completed && styles.completedTask,
             { color: "white" },
           ]}
         >
-          {task.title}
+          {title}
         </Text>
       </View>
     </TouchableOpacity>

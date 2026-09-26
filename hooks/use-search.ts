@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useData } from "./context-hooks/use-data"
 import { globalSearch, SearchResult } from "@/utils/search-utils";
-import { useLogs } from "./context-hooks/use-logs";
 import { useShallow } from "zustand/shallow";
 import { useTaskStore } from "@/stores/use-task-store";
 import { useHabitStore } from "@/stores/use-habit-store";
 import { useEventStore } from "@/stores/use-event-store";
+import { useTimerLogStore } from "@/stores/use-timerLog-store";
 
 export const useSearch = () => {
     const tasks = useTaskStore(
@@ -14,10 +14,12 @@ export const useSearch = () => {
     const events = useEventStore(
         useShallow((state) => Object.values(state.eventsById)),
     );
-    const { timerLogs } = useLogs();
     const habits = useHabitStore(
         useShallow((state) => Object.values(state.habitsById)),
     );
+    const timerLogs = useTimerLogStore(
+        useShallow((state) => Object.values(state.logsById)),
+    )
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
 

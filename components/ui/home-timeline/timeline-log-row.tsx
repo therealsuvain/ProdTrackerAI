@@ -14,6 +14,7 @@ export const TimelineLogRow = React.memo(function TimelineLogRow({
   id,
   color,
 }: TimelineLogRowProps) {
+  //TODO log labels and ehight kinda wonky duer to shart times
   const title = useTimerLogStore((state) => state.logsById[id].title);
   const startTime = useTimerLogStore((state) => state.logsById[id].startTime);
   const endTime = useTimerLogStore((state) => state.logsById[id].endTime);
@@ -26,7 +27,7 @@ export const TimelineLogRow = React.memo(function TimelineLogRow({
     : startHour + (duration ? duration / 3600 : 1);
 
   const top = startHour * HOUR_HEIGHT;
-  const height = (endHour - startHour) * HOUR_HEIGHT;
+  const height = Math.max((endHour - startHour) * HOUR_HEIGHT, 15);
   const startTimeLabel = new Date(startTime).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
@@ -40,7 +41,6 @@ export const TimelineLogRow = React.memo(function TimelineLogRow({
   const durationLabel = duration
     ? `${Math.floor(duration / 60)}m ${duration % 60}s`
     : null;
-
   return (
     <View
       key={id}
@@ -50,21 +50,21 @@ export const TimelineLogRow = React.memo(function TimelineLogRow({
           top,
           height,
           borderLeftColor: color,
-          backgroundColor: color + "50",
+          backgroundColor: color + "55",
         },
       ]}
     >
       <View style={styles.blockHeader}>
-        <Ionicons name="timer" size={14} color={color} />
+        <Ionicons name="timer" size={12} color={color} />
         <Text style={[styles.logTitle, { color: color }]} numberOfLines={1}>
           {title}
         </Text>
-        <Text style={[styles.logTime, { color: color + "50" }]}>
+        <Text style={[styles.logTime, { color: color }]}>
           {startTimeLabel}
           {endTimeLabel && ` - ${endTimeLabel}`}
         </Text>
         {durationLabel && (
-          <Text style={[styles.logDuration, { color: color + "50" }]}>
+          <Text style={[styles.logDuration, { color: color }]}>
             {durationLabel}
           </Text>
         )}
@@ -79,17 +79,16 @@ const styles = StyleSheet.create({
     left: 8,
     right: 8,
     borderRadius: 8,
-    padding: 8,
+    padding: 1,
     borderLeftWidth: 4,
   },
   logTitle: {
-    fontSize: 13,
+    fontSize: 10,
     fontWeight: "500",
     marginLeft: 6,
-    flex: 1,
   },
   logTime: {
-    fontSize: 11,
+    fontSize: 10,
     marginLeft: 20,
   },
   logDuration: {
@@ -100,6 +99,6 @@ const styles = StyleSheet.create({
   blockHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
+    flex: 1,
   },
 });

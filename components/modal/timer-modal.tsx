@@ -7,14 +7,13 @@ import { formatDuration } from "@/context/TimerContext";
 import { withAlpha } from "@/utils/common-utils";
 import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
 import { TagsAndCategorySection } from "../ui/shared/tags-and-categories-addon";
-import { log_softmax } from "@huggingface/transformers";
 
 //!COMMENT ed out code is for duration editing
 interface Props {
   visible: boolean;
   log: TimerLog;
   onDismiss: () => void;
-  onSave: (updated: TimerLog) => void;
+  onSave: (log: TimerLog) => Promise<void>;
 }
 
 // ─── Duration parsing helpers ─────────────────────────────────────────────────

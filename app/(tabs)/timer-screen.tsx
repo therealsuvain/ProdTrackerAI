@@ -26,7 +26,6 @@ import {
   DbErrorToast,
   useDbErrorToast,
 } from "@/components/shared/db-error-toast";
-import { useLogs } from "@/hooks/context-hooks/use-logs";
 import { useHaptics } from "@/hooks/use-haptics";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { Category } from "@/types/category";
@@ -34,6 +33,12 @@ import { CategoryBadge } from "@/components/ui/shared/categories/category-badge"
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 import { ConfirmDialog } from "@/components/shared/dialog-system/ConfirmDialog";
+import { timerLogStats, useTimerLogStore } from "@/stores/use-timerLog-store";
+import { useShallow } from "zustand/shallow";
+import {
+  deleteLogWithEffects,
+  editLogWithEffects,
+} from "@/utils/Data-services/timerlog-services/log-actions";
 // Note : Timescreen is the only component where value prop is used for the TextInput instead of defaultValue
 // Note ContinuedFromAbove: default Value only takes input once, then doesnt update, the reason its works in other places is because
 // Note ContinuedFromAbove: the modals re-render everytime, so default value gets feeded the latest state value and it looks ok,
@@ -42,7 +47,9 @@ import { ConfirmDialog } from "@/components/shared/dialog-system/ConfirmDialog";
 function TimerScreenInner() {
   const { theme, isDarkMode } = useContext(ThemeContext);
   const { trackMetric } = useData();
-  const { timerLogs, removeLog, editLog } = useLogs();
+  const timerLogs = useTimerLogStore(
+    useShallow((state) => Object.keys(state.logsById)),
+  );
   const [logToDelete, setLogToDelete] = useState<string | null>(null);
   const { categories } = useData();
   //const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
@@ -68,7 +75,7 @@ function TimerScreenInner() {
   const [editingLog, setEditingLog] = useState<TimerLog>();
   const { toastError, showToast, dismissToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
-  const { todayTotal, weekTotal, topCategory } = useMemo(() => {
+  /*   const { todayTotal, weekTotal, topCategory } = useMemo(() => {
     const todayISO = getTodayISO();
     const weekStartISO = getWeekStartISO();
 
@@ -99,8 +106,7 @@ function TimerScreenInner() {
     }
     return { todayTotal, weekTotal, topCategory };
   }, [timerLogs]);
-  const ITEMS_PER_PAGE = 15;
-  const [currentPage, setCurrentPage] = useState(1);
+ 
   // ── Last-used category suggestion ────────────────────────────────────────
   // Find the most recently saved log that has a category — show as a
   // one-tap suggestion chip so the user doesn't have to retype it.
@@ -109,14 +115,25 @@ function TimerScreenInner() {
       if (timerLogs[i].category) return timerLogs[i].category!;
     }
     return null;
-  }, [timerLogs]);
+  }, [timerLogs]); */
 
+  const ITEMS_PER_PAGE = 15;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const { todayTotal, weekTotal, topCategoryId } = useTimerLogStore(
+    useShallow((state) => {
+      return timerLogStats(state);
+    }),
+  );
+  var topCategory = null;
+  if (topCategoryId) {
+    topCategory = categories.find((c) => c.id === topCategoryId);
+  }
   const handleDelete = async () => {
     if (!logToDelete) return;
     const id = logToDelete;
     try {
-      trackMetric(["logsDeleted"], 1);
-      await removeLog(id);
+      await deleteLogWithEffects(id);
       triggerHaptic();
       setLogToDelete(null);
     } catch {
@@ -125,10 +142,14 @@ function TimerScreenInner() {
     }
   };
 
-  const handleEdit = async (updated: TimerLog) => {
-    trackMetric(["logsEdited"], 1);
-    await editLog(updated);
-  };
+  const handleEditViaModal = useCallback(
+    async (log: TimerLog) => {
+      setModalVisible(false);
+      setEditingLog(undefined);
+      await editLogWithEffects(log);
+    },
+    [editLogWithEffects],
+  );
 
   const showModal = (log: TimerLog) => {
     setEditingLog(log);
@@ -150,6 +171,32 @@ function TimerScreenInner() {
   const timerBaseColor = isDarkMode
     ? theme.timerBase
     : theme.timerBaseLightModeOnly;
+
+  const handleEditRow = useCallback(
+    (id: string) => {
+      const log = useTimerLogStore.getState().logsById[id];
+      if (log) showModal(log);
+    },
+    [showModal],
+  );
+
+  const handleDeleteRow = useCallback((id: string) => {
+    setLogToDelete(id);
+  }, []);
+
+  const keyExtractor = useCallback((id: string) => id, []);
+
+  const renderTimerLog = useCallback(
+    ({ item: id }: { item: string }) => (
+      <TimerLogItem
+        logId={id}
+        onDelete={handleDeleteRow}
+        onEdit={handleEditRow}
+      />
+    ),
+    [handleEditRow, handleDeleteRow],
+  );
+
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
       <Ionicons name="timer" size={60} color={timerBaseColor} />
@@ -345,7 +392,7 @@ function TimerScreenInner() {
 
       <FlatList
         data={displayedLogs}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         style={{ width: "95%" }}
         showsVerticalScrollIndicator={false}
         onEndReached={handleLoadMore}
@@ -353,13 +400,7 @@ function TimerScreenInner() {
         initialNumToRender={15} // How many items to render in the exact first batch
         maxToRenderPerBatch={15} // Limits the amount rendered per scroll chunk to keep JS thread fast
         windowSize={5} // (Default is 21) Lowering this saves RAM by unmounting views far off-screen
-        renderItem={({ item }) => (
-          <TimerLogItem
-            log={item}
-            onDelete={() => setLogToDelete(item.id)}
-            onEdit={() => showModal(item)}
-          />
-        )}
+        renderItem={renderTimerLog}
         ListEmptyComponent={EmptyState}
         ListFooterComponent={() => {
           if (displayedLogs.length >= timerLogs.length) return null;
@@ -380,11 +421,7 @@ function TimerScreenInner() {
               setModalVisible(false);
               setEditingLog(undefined);
             }}
-            onSave={(updated) => {
-              handleEdit(updated);
-              setModalVisible(false);
-              setEditingLog(undefined);
-            }}
+            onSave={handleEditViaModal}
           />
         )}
       </Portal>

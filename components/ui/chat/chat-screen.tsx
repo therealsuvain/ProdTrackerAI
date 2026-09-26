@@ -23,7 +23,6 @@ import {
 import { ThemeContext } from "@/context/ThemeContext";
 import { useChat } from "@/hooks/context-hooks/use-chat";
 import { useData } from "@/hooks/context-hooks/use-data";
-import { useEvents } from "@/hooks/context-hooks/use-events";
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { useTaskStore } from "@/stores/use-task-store";
 
@@ -61,7 +60,6 @@ import { LoadingBubble } from "@/components/shared/loading-indicators/message-bu
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
-import { useLogs } from "@/hooks/context-hooks/use-logs";
 import {
   addTaskWithEffects,
   batchMutateTasksWithEffects,
@@ -78,6 +76,16 @@ import {
   deleteHabitWithEffects,
   editHabitWithEffects,
 } from "@/utils/Data-services/habit-services/habit-actions";
+import { useEventStore } from "@/stores/use-event-store";
+import {
+  addEventWithEffects,
+  batchMutateEventsWithEffects,
+  batchRestoreEventsWithEffects,
+  deleteEventOccurrenceWithEffects,
+  deleteEventWithEffects,
+  editEventWithEffects,
+} from "@/utils/Data-services/event-services/event-actions";
+import { useTimerLogStore } from "@/stores/use-timerLog-store";
 //import { LoadingBubble } from "./loading-bubble-split-flap-opt";
 
 interface Props {
@@ -97,7 +105,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const headerHeight = useHeaderHeight();
   const { theme } = useContext(ThemeContext);
   const { setTitle, start, stop } = useTimer();
-  const { timerLogs } = useLogs();
   const navigation = useNavigation();
   const { isLoading, startRecording, stopRecording, transcript, error } =
     useVoiceInput({});
@@ -142,15 +149,13 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const habits = useHabitStore(
     useShallow((state) => Object.values(state.habitsById)),
   );
-  const {
-    events,
-    addEvent,
-    editEvent,
-    removeEvent,
-    deleteEventOccurrence,
-    batchMutateEvents,
-    batchRestoreEvents,
-  } = useEvents();
+
+  const events = useEventStore(
+    useShallow((state) => Object.values(state.eventsById)),
+  );
+  const timerLogs = useTimerLogStore(
+    useShallow((state) => Object.values(state.logsById)),
+  );
   const { toastError, showToast, dismissToast } = useDbErrorToast();
   const [isThinking, setIsThinking] = useState(false);
   const flatListRef = useRef<FlatList>(null);
@@ -175,12 +180,12 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     batchMutateHabits: batchMutateHabitsWithEffects,
     batchRestoreHabits: batchRestoreHabitsWithEffects,
     events,
-    addEvent,
-    editEvent,
-    removeEvent,
-    deleteEventOccurrence,
-    batchMutateEvents,
-    batchRestoreEvents,
+    addEvent: addEventWithEffects,
+    editEvent: editEventWithEffects,
+    removeEvent: deleteEventWithEffects,
+    deleteEventOccurrence: deleteEventOccurrenceWithEffects,
+    batchMutateEvents: batchMutateEventsWithEffects,
+    batchRestoreEvents: batchRestoreEventsWithEffects,
     categories,
     addCategory,
     updateUserCategory,

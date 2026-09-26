@@ -14,18 +14,23 @@ export const TimelineEventRow = React.memo(function TimelineEventRow({
   id,
   color,
 }: TimelineEventRowProps) {
-  const event = useEventStore((state) => state.eventsById[id]);
-  if (!event) return null;
-  const eventStartTime = new Date(event.startTime);
-  const eventEndTime = new Date(event.endTime);
+  const title = useEventStore((state) => state.eventsById[id].title);
+  const description = useEventStore(
+    (state) => state.eventsById[id].description,
+  );
+  const startTime = useEventStore((state) => state.eventsById[id].startTime);
+  const endTime = useEventStore((state) => state.eventsById[id].endTime);
+  if (!title || !startTime) return null;
+  const eventStartTime = new Date(startTime);
+  const eventEndTime = new Date(endTime);
   const startHour =
     eventStartTime.getHours() + eventStartTime.getMinutes() / 60;
-  const endHour = event.endTime
+  const endHour = endTime
     ? eventEndTime.getHours() + eventEndTime.getMinutes() / 60
     : startHour + 1;
 
   const top = startHour * HOUR_HEIGHT;
-  const height = (endHour - startHour) * HOUR_HEIGHT;
+  const height = Math.max((endHour - startHour) * HOUR_HEIGHT, 40);
   const startTimeLabel = `${eventStartTime.getHours()}:${eventStartTime
     .getMinutes()
     .toString()
@@ -38,7 +43,7 @@ export const TimelineEventRow = React.memo(function TimelineEventRow({
     : undefined;
   return (
     <TouchableOpacity
-      key={event.id}
+      key={id}
       style={[
         styles.eventBlock,
         {
@@ -50,23 +55,31 @@ export const TimelineEventRow = React.memo(function TimelineEventRow({
       ]}
       onPress={() => {}}
     >
-      <View>
+      <View style={{ flex: 1 }}>
         <View style={styles.blockHeader}>
           <Ionicons name="calendar" size={14} color={"#ffffff"} />
           <Text
             style={[styles.blockTitle, { color: "#ffffff" }]}
             numberOfLines={1}
           >
-            {event.title}
+            {title}
+          </Text>
+          <Text
+            style={[styles.blockTime, { color: "#ffffff" }]}
+            numberOfLines={1}
+          >
+            {startTimeLabel}
+            {endTimeLabel && ` - ${endTimeLabel}`}
           </Text>
         </View>
-        <Text
-          style={[styles.blockTime, { color: "#ffffff" + "50" }]}
-          numberOfLines={1}
-        >
-          {startTimeLabel}
-          {endTimeLabel && ` - ${endTimeLabel}`}
-        </Text>
+        {description && (
+          <Text
+            style={[styles.eventDescription, { color: "#ffffff" + "75" }]}
+            numberOfLines={1}
+          >
+            {description}
+          </Text>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -94,5 +107,8 @@ const styles = StyleSheet.create({
   },
   blockTime: {
     fontSize: 11,
+  },
+  eventDescription: {
+    fontSize: 10,
   },
 });

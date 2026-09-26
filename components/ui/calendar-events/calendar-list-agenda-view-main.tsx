@@ -16,16 +16,21 @@ import {
   DateData,
 } from "react-native-calendars";
 import EventItem from "./event-item";
+import {
+  getEventIdsForDate,
+  selectedDateEventIds,
+  useEventStore,
+} from "@/stores/use-event-store";
+import { useShallow } from "zustand/shallow";
 
 interface CalendarListAgendaAltProps {
-  events: CalendarEvent[];
   onDateSelect: (date: Date) => void;
   selectedDate: Date;
-  onEventSelect?: (event: CalendarEvent) => void;
+  onEventSelect?: (id: string) => void;
   onDelete?: (id: string, date: string) => void;
 }
 
-const MemoizedEventItem = memo(
+/* const MemoizedEventItem = memo(
   ({
     event,
     //showEdit,
@@ -41,11 +46,38 @@ const MemoizedEventItem = memo(
       <EventItem event={event} onEdit={onEdit} onDelete={onDelete} />
     </View>
   ),
-);
+); */
+
+const MemoizedEventItem = React.memo(function MemoizedEventItem({
+  eventId,
+  occurrence,
+  onEdit,
+  onDelete,
+}: {
+  eventId: string;
+  occurrence: string;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string, date: string) => void;
+}) {
+  const handleEdit = useCallback(() => onEdit?.(eventId), [eventId, onEdit]);
+  const handleDelete = useCallback(
+    () => onDelete?.(eventId, occurrence),
+    [eventId, onDelete, occurrence],
+  );
+  return (
+    <View style={styles.itemContainer}>
+      <EventItem
+        id={eventId}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        occurrence={occurrence}
+      />
+    </View>
+  );
+});
 
 // TODOOptim Optimize maybe
-export default function CalendarListAgendaMain({
-  events,
+export default React.memo(function CalendarListAgendaMain({
   onDateSelect,
   selectedDate,
   onEventSelect,
@@ -53,16 +85,29 @@ export default function CalendarListAgendaMain({
 }: CalendarListAgendaAltProps) {
   const { theme } = useContext(ThemeContext);
   const [items, setItems] = useState<AgendaSchedule>({});
-
-  //const seenEventIds = useRef<Set<string>>(new Set());
-
   // Convert timestamp to date string
   const timeToString = (time: number) => {
     const date = new Date(time);
     return date.toISOString().split("T")[0];
   };
 
-  const getEventsForSingleDay = useCallback(
+  const eventKeysSignature = useEventStore(
+    useShallow((state) => Object.keys(state.eventsById).sort().join(",")),
+  );
+  const eventOccurrenceSignature = useEventStore(
+    useShallow((state) =>
+      Object.values(state.eventsById)
+        .map((e) => `${e.id}:${e.deletedOccurrences?.length ?? 0}`)
+        .join(","),
+    ),
+  );
+  /*
+  !const eventIds = useEventStore(
+    !useShallow((state) => {
+      !return selectedDateEventIds(state, selectedDate);
+    }),
+  ); */
+  /*   const getEventsForSingleDay = useCallback(
     (todayDateString: string, allEvents: any[]) => {
       const dayEvents = allEvents.filter((event) => {
         const eventStartDate = new Date(event.startDate);
@@ -108,6 +153,25 @@ export default function CalendarListAgendaMain({
       return [];
     },
     [],
+  ); */
+  const buildEntriesForDay = useCallback(
+    (dateString: string): AgendaEntry[] => {
+      const eventsById = useEventStore.getState().eventsById;
+      const eventIds = getEventIdsForDate(
+        Object.values(eventsById),
+        dateString,
+      );
+      return eventIds.map((id) => ({
+        name: "", // event title now read reactively inside MemoizedEventItem; not needed here
+        height: 40,
+        day: dateString,
+        eventId: id,
+        occurrence: dateString,
+      })) as unknown as AgendaEntry[];
+    },
+    [
+      /* eventIds */
+    ],
   );
 
   const loadItems = useCallback(
@@ -124,23 +188,19 @@ export default function CalendarListAgendaMain({
           //console.log("strTime", strTime)
           // Only load if we haven't already
           if (!newItems[strTime]) {
-            newItems[strTime] = getEventsForSingleDay(strTime, events);
+            //!newItems[strTime] = getEventsForSingleDay(strTime, events);
+            newItems[strTime] = buildEntriesForDay(strTime);
             itemsWereAdded = true; // Mark that we're adding new days
           }
         }
 
         // If we didn't add any new date keys, return the *previous* state
         // This is crucial to stop the infinite loop
-        if (!itemsWereAdded) {
-          return prevItems;
-        }
-
         // Otherwise, return the new object
-        //console.log(newItems);
-        return newItems;
+        return itemsWereAdded ? newItems : prevItems;
       });
     },
-    [events, getEventsForSingleDay, timeToString],
+    [buildEntriesForDay],
   ); // Only depend on `events`
 
   useEffect(() => {
@@ -155,7 +215,7 @@ export default function CalendarListAgendaMain({
     };
     loadItems(dateData);
     //console.log(events.filter((e) => e.title === "ThirdEvent")[0].category);
-  }, [events, loadItems]);
+  }, [loadItems]);
 
   useEffect(() => {
     setItems((prevItems) => {
@@ -171,20 +231,23 @@ export default function CalendarListAgendaMain({
       // 3. Force recalculate events ONLY for the loaded dates
       // We do NOT use the "if (!newItems)" check here. We overwrite.
       loadedDates.forEach((strTime) => {
-        newItems[strTime] = getEventsForSingleDay(strTime, events);
+        newItems[strTime] = buildEntriesForDay(strTime); //getEventsForSingleDay(strTime, events);
       });
 
       // 4. Return new object reference
       return newItems;
     });
-  }, [events, getEventsForSingleDay]);
+  }, [
+    eventOccurrenceSignature /* eventIds */,
+    buildEntriesForDay /* getEventsForSingleDay */,
+  ]);
 
   // set list so that only fist occurence of event renders with edit button
 
   const renderItem = (reservation: AgendaEntry, isFirst: boolean) => {
-    const event = (reservation as any).event as CalendarEvent;
-    const occurence = (reservation as any).occurence;
-    if (!event) {
+    const eventId = (reservation as any).eventId as string | undefined;
+    const occurrence = (reservation as any).occurrence as string;
+    if (!eventId) {
       return null;
     }
     /*  const showEdit = !seenEventIds.current.has(event.id);
@@ -192,10 +255,11 @@ export default function CalendarListAgendaMain({
 
     return (
       <MemoizedEventItem
-        event={event}
+        eventId={eventId}
         //showEdit={showEdit}
-        onEdit={() => onEventSelect?.(event)}
-        onDelete={() => onDelete?.(event.id, occurence)}
+        occurrence={occurrence}
+        onEdit={() => onEventSelect?.(eventId)}
+        onDelete={() => onDelete?.(eventId, occurrence)}
       />
     );
   };
@@ -210,10 +274,12 @@ export default function CalendarListAgendaMain({
     );
   };
 
-  const rowHasChanged = (r1: AgendaEntry, r2: AgendaEntry) => {
+  /*  const rowHasChanged = (r1: AgendaEntry, r2: AgendaEntry) => {
     return JSON.stringify(r1) !== JSON.stringify(r2);
-  };
-
+  }; */
+  const rowHasChanged = (r1: AgendaEntry, r2: AgendaEntry) =>
+    (r1 as any).eventId !== (r2 as any).eventId ||
+    (r1 as any).occurrence !== (r2 as any).occurrence;
   const selectedStr = selectedDate.toISOString().split("T")[0];
 
   return (
@@ -225,11 +291,13 @@ export default function CalendarListAgendaMain({
         renderItem={renderItem}
         renderEmptyDate={renderEmptyDate}
         rowHasChanged={rowHasChanged}
+        /* renderKnob={() => <View style={styles.knob} />} */
         onDayPress={(day) => onDateSelect(new Date(day.timestamp))}
         onDayChange={(day) => onDateSelect(new Date(day.timestamp))}
+        hideExtraDays={true}
         theme={{
-          agendaDayTextColor: theme.eventBase,
-          agendaDayNumColor: theme.eventBase,
+          agendaDayTextColor: theme.whiteBase,
+          agendaDayNumColor: theme.whiteBase,
           agendaTodayColor: theme.eventBase,
           agendaKnobColor: theme.eventBase,
           selectedDayBackgroundColor: theme.eventBase,
@@ -240,22 +308,53 @@ export default function CalendarListAgendaMain({
           dayTextColor: theme.whiteBase,
           monthTextColor: theme.whiteBase,
           textDisabledColor: theme.greyBaseSecondary,
+          reservationsBackgroundColor: theme.background,
+          /*  stylesheet: {
+            agenda: {
+              main: {
+                backgroundColor: "green",
+              },
+              list: {
+                backgroundColor: "green",
+              },
+            },
+          }, */
         }}
         showClosingKnob={true}
       />
+      {/* <View
+        pointerEvents="none"
+        style={[
+          styles.calendarBottomMask,
+          { backgroundColor: theme.eventDarkSecondary },
+        ]}
+      /> */}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  /*   calendarBottomMask: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 6,
+    bottom: 0,
+  }, */
   itemContainer: {
     marginRight: 10,
     marginTop: 1,
     marginLeft: 10,
   },
+  /* knob: {
+    backgroundColor: "white",
+    width: "10%",
+    height: 5,
+    borderRadius: 2,
+  }, */
   emptyDate: {
     height: 15,
     flex: 1,

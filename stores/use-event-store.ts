@@ -65,9 +65,10 @@ export const selectedDateEventIds = (
     return Object.values(state.eventsById)
         .filter((event) => {
             const eventStartDatePart = event.startDate.split("T")[0];
+
             const dayOfWeek = new Date(eventStartDatePart).getDay();
             //TODOX Fix below ??
-            const eventEndDatePart = event.endDate ? event.endDate.split("T")[0] : eventStartDatePart;
+            const eventEndDatePart = event.endDate ? event.endDate.split("T")[0] : '5000-12-31';
             //const eventStartDateString = eventStartDate.toDateString();
 
             if (event.deletedOccurrences?.includes(dateIso)) return false;
@@ -91,6 +92,68 @@ export const selectedDateEventIds = (
         })
         .map((event) => event.id);
 }
+export const doesEventOccurOnDate = (event: CalendarEvent, dateString: string): boolean => {
+    const eventStartDateString = event.startDate.split("T")[0];
+    const eventEndDateString = event.endDate?.split("T")[0];
+
+    if (dateString < eventStartDateString) return false;
+    if (eventEndDateString && dateString > eventEndDateString) return false;
+    if (event.deletedOccurrences?.includes(dateString)) return false;
+
+    if (event.recurrence === "none" || !event.recurrence) {
+        return eventStartDateString === dateString;
+    }
+    if (event.recurrence === "daily") return true;
+    if (event.recurrence === "weekly") {
+        return new Date(dateString).getDay() === new Date(event.startDate).getDay();
+    }
+    return false;
+};
+
+export const sortEventsByTime = (
+    filtered: CalendarEvent[]
+): CalendarEvent[] => {
+    return [...filtered].sort(
+        (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    );
+};
+
+export const getEventsForDate = (events: CalendarEvent[], date: Date): CalendarEvent[] => {
+    const dateString = date.toISOString().split("T")[0];
+    return sortEventsByTime(events.filter((event) => doesEventOccurOnDate(event, dateString)));
+};
+
+export const getEventIdsForDate = (events: CalendarEvent[], dateString: string): string[] => {
+    return events
+        .filter((event) => doesEventOccurOnDate(event, dateString))
+        .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+        .map((event) => event.id);
+};
+
+
+
+export const isSingleOccurrence = (id: string) => {
+    const event = useEventStore.getState().eventsById[id];
+    if (event.recurrence === "none") return true;
+    if (!event.endDate) return false;
+    const start = new Date(event.startDate.split("T")[0]);
+    const end = new Date(event.endDate.split("T")[0]);
+    const dayDiff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+    let totalOccurrences = 0;
+    if (event.recurrence === "daily") {
+        totalOccurrences = dayDiff + 1;
+    } else if (event.recurrence === "weekly") {
+        totalOccurrences = Math.floor(dayDiff / 7) + 1;
+    }
+    // fallback safety
+    else {
+        totalOccurrences = 1;
+    }
+    const deletedOcurrencesCount = event.deletedOccurrences?.length || 0;
+    const remainingOccurrences = totalOccurrences - deletedOcurrencesCount;
+    return remainingOccurrences === 1;
+};
+
 export const useEventStore = create<EventStoreState>((set, get) => {
     const pendingOpByEventId = new Map<string, symbol>();
 

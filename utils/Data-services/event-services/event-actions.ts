@@ -69,7 +69,7 @@ export async function addEventWithEffects(event: CalendarEvent, actor: 'user' | 
     } else if (startSeconds >= NINE_PM || endSeconds <= SIX_AM) {
         metricsArr.push("eventsOvernight");
     }
-    metricsEventBus.emit("metric:track", { keys: metricsArr, amount: 1, actor: "user" });
+    metricsEventBus.emit("metric:track", { keys: metricsArr, amount: 1, actor });
 }
 
 export async function editEventWithEffects(event: CalendarEvent, actor: 'user' | 'ai' = 'user'): Promise<void> {
@@ -84,15 +84,47 @@ export async function editEventWithEffects(event: CalendarEvent, actor: 'user' |
     }
 
     await useEventStore.getState().editEvent(event);
-    metricsEventBus.emit("metric:track", { keys: ["eventsEdited"], amount: 1, actor: "user" });
+    metricsEventBus.emit("metric:track", { keys: ["eventsEdited"], amount: 1, actor });
 }
 
 export async function deleteEventWithEffects(id: string, actor: 'user' | 'ai' = 'user'): Promise<void> {
     await useEventStore.getState().removeEvent(id);
+    metricsEventBus.emit("metric:track", { keys: ["eventsDeleted"], amount: 1, actor });
 }
 
-export async function deleteAllEventsWithEffects(): Promise<void> {
+export async function deleteEventOccurrenceWithEffects(
+    eventId: string,
+    date: string,
+    all: boolean,
+    actor: 'user' | 'ai' = "user",
+): Promise<void> {
+    const event = useEventStore.getState().eventsById[eventId];
+    if (!event) return;
+    if (all) {
+        if (event.notificationIds?.length) {
+            await Promise.all(event.notificationIds.map((n) => cancelReminder(n.id)));
+        }
+        await useEventStore.getState().removeEvent(eventId);
+        metricsEventBus.emit("metric:track", { keys: ["eventsDeleted"], amount: 1, actor });
+        return;
+    }
+
+    const notifId = event.notificationIds?.find((n) => n.date === date)?.id;
+    if (notifId) {
+        await cancelReminder(notifId);
+    }
+
+    await useEventStore.getState().editEvent({
+        ...event,
+        deletedOccurrences: [...(event.deletedOccurrences || []), date],
+        notificationIds: event.notificationIds?.filter((n) => n.date !== date),
+    });
+}
+
+export async function deleteAllEventsWithEffects(actor: 'user' | 'ai' = "user"): Promise<void> {
+    const deletedEventsCount = Object.keys(useEventStore.getState().eventsById).length;
     await useEventStore.getState().removeEvents();
+    metricsEventBus.emit("metric:track", { keys: ["eventsDeleted"], amount: deletedEventsCount, actor });
 }
 
 export function reassignEventCategoryWithEffects(oldCategoryId: string, newCategoryId: string): void {
@@ -122,31 +154,3 @@ export async function refreshEventsWithEffects(): Promise<Record<string, Calenda
     return useEventStore.getState().refreshEvents();
 }
 
-export async function deleteEventOccurrenceWithEffects(
-    eventId: string,
-    date: string,
-    all: boolean,
-): Promise<void> {
-    const event = useEventStore.getState().eventsById[eventId];
-    if (!event) return;
-
-    if (all) {
-        if (event.notificationIds?.length) {
-            await Promise.all(event.notificationIds.map((n) => cancelReminder(n.id)));
-        }
-        await useEventStore.getState().removeEvent(eventId);
-        metricsEventBus.emit("metric:track", { keys: ["eventsDeleted"], amount: 1, actor: "user" });
-        return;
-    }
-
-    const notifId = event.notificationIds?.find((n) => n.date === date)?.id;
-    if (notifId) {
-        await cancelReminder(notifId);
-    }
-
-    await useEventStore.getState().editEvent({
-        ...event,
-        deletedOccurrences: [...(event.deletedOccurrences || []), date],
-        notificationIds: event.notificationIds?.filter((n) => n.date !== date),
-    });
-}

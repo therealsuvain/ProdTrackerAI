@@ -56,7 +56,7 @@ export const TimelineHabits = React.memo(function TimelineHabits({
           </View>
           <ScrollView
             horizontal
-            showsHorizontalScrollIndicator={false}
+            showsHorizontalScrollIndicator={true}
             style={styles.habitScroll}
           >
             {positions.map((position) => (

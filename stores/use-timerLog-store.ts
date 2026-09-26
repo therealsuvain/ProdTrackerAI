@@ -10,6 +10,7 @@ import {
     updateTimerLog,
 } from "@/db/repositories/timer-log-repository";
 import { TimerLog } from "@/types/timer";
+import { getTodayISO, getWeekStartISO } from "@/utils/common-utils";
 
 type LogStoreState = {
     logsById: Record<string, TimerLog>;
@@ -42,6 +43,42 @@ export const selectedDateLogIds = (state: LogStoreState, date: string): string[]
         .filter((log) => log.startTime.split("T")[0] === date)
         .map((log) => log.id);
 };
+
+export const timerLogStats = (state: LogStoreState) => {
+    const logs = Object.values(state.logsById);
+    const todayISO = getTodayISO();
+    const weekStartISO = getWeekStartISO();
+
+    let todayTotal = 0;
+    let weekTotal = 0;
+    const categoryTotals: Record<string, number> = {};
+    for (const log of logs) {
+        if (!log.duration) continue;
+        const logDate = log.startTime.split("T")[0];
+        if (logDate === todayISO) todayTotal += log.duration;
+        if (logDate >= weekStartISO) {
+            weekTotal += log.duration;
+            if (log.category) {
+                categoryTotals[log.category] =
+                    (categoryTotals[log.category] ?? 0) + log.duration;
+            }
+        }
+    }
+
+    // Top category this week by total time
+    const topCategoryId =
+        Object.entries(categoryTotals).sort(([, a], [, b]) => b - a)[0]?.[0] ?? null;
+    return { todayTotal, weekTotal, topCategoryId };
+}
+
+
+export const lastLogCategory = (state: LogStoreState) => {
+    const logs = Object.values(state.logsById);
+    for (let i = logs.length - 1; i >= 0; i--) {
+        if (logs[i].category) return logs[i].category!;
+    }
+    return undefined
+}
 export const useTimerLogStore = create<LogStoreState>((set, get) => {
     const pendingOpByLogId = new Map<string, symbol>();
 
@@ -86,7 +123,7 @@ export const useTimerLogStore = create<LogStoreState>((set, get) => {
         addLog: async (log) => {
             await applyOptimisticMutation(
                 [log.id],
-                (logsById) => (logsById[log.id] ? logsById : { ...logsById, [log.id]: log }),
+                (logsById) => (logsById[log.id] ? logsById : { [log.id]: log, ...logsById }),
                 () => insertTimerLog(log),
             );
         },

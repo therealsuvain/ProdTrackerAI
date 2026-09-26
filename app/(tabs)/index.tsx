@@ -23,8 +23,6 @@ import { SearchResults } from "@/components/ui/search-results";
 import TaskItem from "@/components/ui/tasks/task-item";
 import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
 import { ThemeContext } from "@/context/ThemeContext";
-import { useEvents } from "@/hooks/context-hooks/use-events";
-import { useLogs } from "@/hooks/context-hooks/use-logs";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useSearch } from "@/hooks/use-search";
 import { selectedDateTaskIds, useTaskStore } from "@/stores/use-task-store";
@@ -36,6 +34,8 @@ import { useIsFocused } from "@react-navigation/native";
 import { toggleTaskWithEffects } from "@/utils/Data-services/task-services/task-actions";
 import { checkInHabitWithEffects } from "@/utils/Data-services/habit-services/habit-actions";
 import { useHabitStore } from "@/stores/use-habit-store";
+import { useTimerLogStore } from "@/stores/use-timerLog-store";
+import { useEventStore } from "@/stores/use-event-store";
 
 const EMPTY_IDS: string[] = [];
 
@@ -44,8 +44,6 @@ function HomeScreenInner() {
   const { theme } = useContext(ThemeContext);
   const { showToast } = useDbErrorToast();
   const isFocused = useIsFocused();
-  const { events } = useEvents();
-  const { timerLogs } = useLogs();
   const [searchVisible, setSearchVisible] = useState(false);
   const { query, performSearch, results } = useSearch();
   const [aiVisible, setAiVisible] = useState(false);
@@ -66,15 +64,32 @@ function HomeScreenInner() {
     }),
   );
 
-  let upcomingEvents = events.slice(0, 3);
   let activeHabits = useHabitStore(
     useShallow((state) => {
       if (!isFocused) return EMPTY_IDS;
       return Object.values(state.habitsById).map((habit) => habit.id);
     }),
   ).slice(0, 3);
-  /* let activeHabits: string[] = []; */
-  let recentLogs = timerLogs.slice(0, 3);
+
+  let upcomingEvents = useEventStore(
+    useShallow((state) => {
+      if (!isFocused) return EMPTY_IDS;
+
+      return Object.values(state.eventsById)
+        .map((event) => event.id)
+        .slice(0, 3);
+    }),
+  );
+
+  let recentLogs = useTimerLogStore(
+    useShallow((state) => {
+      if (!isFocused) return EMPTY_IDS;
+      return Object.values(state.logsById)
+        .map((log) => log.id)
+        .slice(0, 3);
+    }),
+  );
+
   // Launch anim values
   /* 
   const todayFlap = useFlapAnimation({
@@ -238,8 +253,8 @@ function HomeScreenInner() {
             Upcoming Events
           </Text>
           {upcomingEvents.length ? (
-            upcomingEvents.map((event) => (
-              <EventItem key={event.id} event={event}></EventItem>
+            upcomingEvents.map((eventId) => (
+              <EventItem key={eventId} id={eventId}></EventItem>
             ))
           ) : (
             <Text style={{ color: theme.eventBase }}>No Upcoming Events</Text>
@@ -271,8 +286,8 @@ function HomeScreenInner() {
           {recentLogs.length ? (
             recentLogs.map((log) => (
               <TimerLogItem
-                key={log.id}
-                log={log}
+                key={log}
+                logId={log}
                 onDelete={() => {}}
                 onEdit={() => {}}
               />
@@ -331,18 +346,6 @@ function HomeScreenInner() {
               />
             </Modal>
           </Portal>
-          {/* <AIVoiceModal
-            visible={aiVisible}
-            onDismiss={() => setAiVisible(false)}
-            IntentProcessor={processCommand}
-          /> */}
-
-          {/* {!isLoading && (
-            <IntentConfirmationModal
-              intent={intent}
-              onConfirm={confirmExecute}
-            />
-          )} */}
         </ScrollView>
       ) : (
         <View
@@ -410,8 +413,6 @@ function HomeScreenInner() {
           </View>
 
           <UnifiedTimeline
-            events={events}
-            timerLogs={timerLogs}
             selectedDate={selectedDate}
             onTaskToggle={toggleTaskCompleted}
             onHabitCheckIn={handleHabitUpdate}

@@ -1,12 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useContext, useState } from "react";
+import React, { useCallback, useContext, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { FAB, Portal } from "react-native-paper";
 
 import ViewSwitcher from "@/components/ui/calendar-events/view-switcher-event";
 import { useCalendarState } from "@/hooks/context-hooks/use-calendar-state";
 import { useEventForm } from "@/hooks/use-forms/use-event-form";
-import { useEvents } from "@/hooks/context-hooks/use-events";
 import { CalendarEvent } from "@/types/calendar";
 
 import {
@@ -31,18 +30,18 @@ import {
   editEventWithEffects,
   deleteEventOccurrenceWithEffects,
 } from "@/utils/Data-services/event-services/event-actions";
+import { useEventStore } from "@/stores/use-event-store";
 
 // TODOX - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {
   const { theme } = useContext(ThemeContext);
-  const { events } = useEvents();
   const {
     currentView,
     setCurrentView,
     selectedDate,
     setSelectedDate,
     filteredEvents,
-  } = useCalendarState(events);
+  } = useCalendarState();
   const [visible, setVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
@@ -95,8 +94,8 @@ function CalendarScreenInner() {
     return remainingOccurrences === 1;
   };
 
-  const handleDelete = (id: string, date: string) => {
-    const event = events.find((e: CalendarEvent) => e.id === id);
+  const handleDelete = useCallback((id: string, date: string) => {
+    const event = useEventStore.getState().eventsById[id];
     if (!event) return;
     const isSingleOccurrence = isSingleOccurrenceHelper(event);
     const buttons: DialogAction[] = [];
@@ -139,41 +138,50 @@ function CalendarScreenInner() {
       },
     );
     setDeleteEventDialogActions(buttons);
-  };
+  }, []);
+
+  const handleEditRow = useCallback(
+    (id: string) => {
+      const event = useEventStore.getState().eventsById[id];
+      if (event) showModal(event);
+    },
+    [showModal],
+  );
+
+  const handleDateSelect = useCallback((date: Date) => {
+    setSelectedDate(date);
+  }, []);
   return (
     <>
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View
+        style={[styles.container, { backgroundColor: theme.eventDarkPrimary }]}
+      >
         <Pressable
           style={[styles.header, { backgroundColor: theme.eventBase }]}
           onPress={() => setSelectedDate(new Date())}
         >
-          <Ionicons
-            size={40}
-            name="calendar"
-            color={theme.modalDarkPrimary}
-          ></Ionicons>
+          <Ionicons size={32} name="today" color={theme.whiteBase}></Ionicons>
         </Pressable>
         <Text style={[styles.date, { color: theme.text }]}>
           {selectedDate.toDateString()}
         </Text>
       </View>
+
       <ViewSwitcher currentView={currentView} onChange={setCurrentView} />
+
       {currentView === "month" ? (
         <CalendarListAgendaMain
           //key={Object.keys(events).length}
-          events={[...events]}
           selectedDate={selectedDate}
-          onDateSelect={(date: Date) => {
-            setSelectedDate(date);
-          }}
-          onEventSelect={showModal}
+          onDateSelect={handleDateSelect}
+          onEventSelect={handleEditRow}
           onDelete={handleDelete}
         />
       ) : (
         <Timeline
-          events={filteredEvents}
+          eventIds={filteredEvents}
           selectedDate={selectedDate}
-          onEventSelect={showModal}
+          onEventSelect={handleEditRow}
           onDelete={handleDelete}
         />
       )}
@@ -227,6 +235,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   container: { flexDirection: "row", alignItems: "center" },
+  viewSwitcher: {},
   date: { fontSize: 30 },
   fab: {
     position: "absolute",

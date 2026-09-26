@@ -8,27 +8,36 @@ import { XButton } from "../shared/x-button";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { TagList } from "../shared/tags/tag-list";
-import { useEvents } from "@/hooks/context-hooks/use-events";
+import { useEventStore } from "@/stores/use-event-store";
 
 interface EventItemProps {
-  event: CalendarEvent;
+  id: string;
   onEdit?: () => void;
   onDelete?: () => void;
+  occurrence?: string;
 }
 
-export default function EventItem({ event, onEdit, onDelete }: EventItemProps) {
+export default function EventItem({
+  id,
+  onEdit,
+  onDelete,
+  occurrence,
+}: EventItemProps) {
   const { theme } = useContext(ThemeContext);
   const route = useRoute();
   const { categories } = useData();
-  const { events } = useEvents();
 
   //  Note : We are getting a local copy of the event from the array here insipte of we having already
   // having the same object. This is because the events are being rendered in agenda component from RNC
   // due to heavy cahcing under the hood of agenda, it doesnt udpate the rendered eventItem after updationg for cases whe4re the item is rendered anywhere but
   // alongside the date header on the left. This local copy forces the event item iteself to re-render without the
   // the agenda components list to detect a change
-  const eventLocal = events.find((e) => e.id === event.id);
-  if (!eventLocal) return null; // deleted
+  const eventLocal = useEventStore((state) => state.eventsById[id]);
+  if (
+    !eventLocal /*  ||
+    (occurrence && eventLocal.deletedOccurrences?.includes(occurrence)) */
+  )
+    return null; // deleted
   let eventCategory;
   if (eventLocal.category) {
     eventCategory = categories.find((c) => c.id === eventLocal.category);

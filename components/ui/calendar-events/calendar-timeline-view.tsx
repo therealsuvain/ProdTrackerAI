@@ -8,20 +8,22 @@ import {
 } from "react-native";
 import { CalendarEvent } from "@/types/calendar";
 import { ThemeContext } from "@/context/ThemeContext";
+import { useEventStore } from "@/stores/use-event-store";
+import { TimelineEventRow } from "../home-timeline/timeline-event-row";
 
 interface TimelineProps {
-  events: CalendarEvent[];
-  onEventSelect?: (event: CalendarEvent) => void;
+  eventIds: string[];
+  onEventSelect?: (id: string) => void;
   onDelete?: (id: string, date: string) => void;
   selectedDate: Date;
 }
-
+//TODO old code had partial logic for seperate UI for timed events vs all day events, even though there is no definition of all day event
 const HOUR_HEIGHT = 80;
 const TIMELINE_START = 0; // 00:00
 const TIMELINE_END = 24; // 24:00
 
 export default function Timeline({
-  events,
+  eventIds,
   onEventSelect,
   onDelete,
   selectedDate,
@@ -29,7 +31,7 @@ export default function Timeline({
   const { theme } = useContext(ThemeContext);
   const scrollViewRef = useRef<ScrollView>(null);
   // Separate all-day events and timed events
-  const { timedEvents } = useMemo(() => {
+  /*   const { timedEvents } = useMemo(() => {
     const timed: CalendarEvent[] = [];
 
     events.forEach((event) => {
@@ -41,7 +43,8 @@ export default function Timeline({
   // Sort timed events by start time
   const sortedTimedEvents = useMemo(() => {
     return [...timedEvents].sort(
-      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+      (a, b) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
     );
   }, [timedEvents]);
 
@@ -49,7 +52,9 @@ export default function Timeline({
   const eventPositions = useMemo(() => {
     return sortedTimedEvents.map((event) => {
       const startHour = new Date(event.startTime).getHours();
-      const endHour = event.endTime ? new Date(event.endTime).getHours() : startHour + 1; // Default 1 hour if no end time
+      const endHour = event.endTime
+        ? new Date(event.endTime).getHours()
+        : startHour + 1; // Default 1 hour if no end time
 
       return {
         event,
@@ -57,10 +62,10 @@ export default function Timeline({
         height: Math.max((endHour - startHour) * HOUR_HEIGHT, 40), // Minimum height
       };
     });
-  }, [sortedTimedEvents]);
+  }, [sortedTimedEvents]); */
 
   // Scroll to current time or first event on mount
-  useEffect(() => {
+  /*   useEffect(() => {
     const now = new Date();
     const isToday = now.toDateString() === selectedDate.toDateString();
 
@@ -79,7 +84,33 @@ export default function Timeline({
         });
       }
     }, 100);
-  }, [selectedDate, eventPositions]);
+  }, [selectedDate, eventPositions]); */
+  const firstEvent = eventIds[0];
+  const firstEventStart = useEventStore(
+    (state) => state.eventsById[firstEvent].startTime,
+  );
+  useEffect(() => {
+    const now = new Date();
+    const isToday = now.toDateString() === selectedDate.toDateString();
+
+    setTimeout(() => {
+      if (isToday) {
+        const currentHour = now.getHours();
+        const scrollOffset = currentHour * HOUR_HEIGHT - 100;
+        scrollViewRef.current?.scrollTo({
+          y: Math.max(0, scrollOffset),
+          animated: true,
+        });
+      } else if (eventIds.length > 0) {
+        const scrollOffset =
+          new Date(firstEventStart).getHours() * HOUR_HEIGHT - 100;
+        scrollViewRef.current?.scrollTo({
+          y: Math.max(0, scrollOffset),
+          animated: true,
+        });
+      }
+    }, 100);
+  }, [selectedDate, eventIds]);
 
   const renderTimeSlots = () => {
     const hours = [];
@@ -93,14 +124,16 @@ export default function Timeline({
             { borderBottomColor: theme.greyBaseSecondary },
           ]}
         >
-          <Text style={[styles.timeText,{color:theme.greyBasePrimary}]}>{String(i).padStart(2, "0")}:00</Text>
-        </View>
+          <Text style={[styles.timeText, { color: theme.greyBasePrimary }]}>
+            {String(i).padStart(2, "0")}:00
+          </Text>
+        </View>,
       );
     }
     return hours;
   };
 
-  const renderEvents = () => {
+  /*   const renderEvents = () => {
     return eventPositions.map(({ event, top, height }) => (
       <TouchableOpacity
         key={event.id}
@@ -119,10 +152,16 @@ export default function Timeline({
           <View
             style={{ flexDirection: "row", justifyContent: "space-between" }}
           >
-            <Text style={[styles.eventTitle,{color:theme.whiteBase}]} numberOfLines={2}>
+            <Text
+              style={[styles.eventTitle, { color: theme.whiteBase }]}
+              numberOfLines={2}
+            >
               {event.title}
             </Text>
-            <Text style={[styles.eventTime,{color:theme.whiteBaseTrans}]} numberOfLines={1}>
+            <Text
+              style={[styles.eventTime, { color: theme.whiteBaseTrans }]}
+              numberOfLines={1}
+            >
               {new Date(event.startTime).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -135,16 +174,19 @@ export default function Timeline({
             </Text>
           </View>
           {event.description && (
-            <Text style={[styles.eventDescription,{color:theme.whiteBaseTrans}]} numberOfLines={1}>
+            <Text
+              style={[styles.eventDescription, { color: theme.whiteBaseTrans }]}
+              numberOfLines={1}
+            >
               {event.description}
             </Text>
           )}
         </View>
       </TouchableOpacity>
     ));
-  };
+  }; */
 
-  const hasEvents = events.length > 0;
+  const hasEvents = eventIds.length > 0;
 
   const date = selectedDate.toISOString().split("T")[0];
 
@@ -166,7 +208,10 @@ export default function Timeline({
           <View
             style={[
               styles.timeColumn,
-              { borderRightColor: theme.greyBaseSecondary, backgroundColor:theme.greyTimeline },
+              {
+                borderRightColor: theme.greyBaseSecondary,
+                backgroundColor: theme.greyTimeline,
+              },
             ]}
           >
             {renderTimeSlots()}
@@ -182,14 +227,19 @@ export default function Timeline({
                   style={[
                     styles.timeSlot,
                     styles.gridLine,
-                    {borderBottomColor:theme.greyBaseSecondary}
-                    
+                    { borderBottomColor: theme.greyBaseSecondary },
                   ]}
                 />
-              )
+              ),
             )}
 
-            {renderEvents()}
+            {eventIds.map((eventId) => (
+              <TimelineEventRow
+                key={eventId}
+                id={eventId}
+                color={theme.eventBase}
+              />
+            ))}
 
             {!hasEvents && (
               <View style={styles.noEventsContainer}>
@@ -210,7 +260,7 @@ export default function Timeline({
   );
 }
 
-const getCategoryColor = (category?: string): string => {
+/* const getCategoryColor = (category?: string): string => {
   // Generate random shade of red (R: 200-255, G: 0-100, B: 0-100)
   const red = Math.floor(Math.random() * 56) + 200; // 200-255
   const green = Math.floor(Math.random() * 100); // 0-100
@@ -226,7 +276,7 @@ const getCategoryColor = (category?: string): string => {
       .padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`,
   };
   return colorMap[category || "default"] || colorMap.default;
-};
+}; */
 
 const styles = StyleSheet.create({
   container: {
