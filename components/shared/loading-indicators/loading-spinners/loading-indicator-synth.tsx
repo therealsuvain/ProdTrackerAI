@@ -66,16 +66,16 @@ export const LoadingIndicatorSynth = () => {
 
 const styles = StyleSheet.create({
   container: {
-    height: 24,
+    height: 75, //24,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
   },
   pill: {
-    width: 3,
-    height: 16, // Base height before scale multiplier
-    backgroundColor: "#2C3E50",
+    width: 10, //3,
+    height: 64, //16, // Base height before scale multiplier
+    backgroundColor: "#fafafd",
     borderRadius: 2,
     marginHorizontal: 1.5,
   },

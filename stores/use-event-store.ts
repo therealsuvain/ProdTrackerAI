@@ -14,10 +14,18 @@ import { CalendarEvent } from "@/types/calendar";
 
 type EventValues = Partial<CalendarEvent>;
 
+type AgendaChange = {
+    revision: number;
+    eventIds: string[];
+    invalidateAll: boolean;
+};
+
 type EventStoreState = {
     eventsById: Record<string, CalendarEvent>;
     loaded: boolean;
     refreshing: boolean;
+    agendaChange: AgendaChange;
+    acknowledgeAgendaChange: (revision: number) => void;
 
     addEvent: (event: CalendarEvent) => Promise<void>;
     editEvent: (event: CalendarEvent) => Promise<void>;
@@ -34,6 +42,8 @@ type EventStoreState = {
 
     refreshEvents: () => Promise<Record<string, CalendarEvent>>;
 };
+
+
 
 const emptyEventsById = (): Record<string, CalendarEvent> => ({});
 
@@ -54,6 +64,60 @@ function updateEventById(
     if (next === current) return eventsById;
     return { ...eventsById, [id]: next };
 }
+
+const sameStringArray = (a: string[] = [], b: string[] = []) => {
+    if (a.length !== b.length) return false;
+
+    const aSet = new Set(a);
+    if (aSet.size !== b.length) return false;
+
+    return b.every((value) => aSet.has(value));
+};
+
+const affectsAgenda = (
+    previous: CalendarEvent | undefined,
+    next: CalendarEvent | undefined,
+): boolean => {
+    if (!previous || !next) {
+        // Added or removed event.
+        return true;
+    }
+
+    // These properties affect:
+    // - whether the event occurs on a date
+    // - which dates it occurs on
+    // - ordering within a date
+    return (
+        previous.startDate !== next.startDate ||
+        previous.endDate !== next.endDate ||
+        previous.recurrence !== next.recurrence ||
+        previous.startTime !== next.startTime ||
+        !sameStringArray(
+            previous.deletedOccurrences,
+            next.deletedOccurrences,
+        )
+    );
+};
+
+const getAgendaChangedIds = (
+    previous: Record<string, CalendarEvent>,
+    next: Record<string, CalendarEvent>,
+): string[] => {
+    const ids = new Set<string>();
+
+    const allIds = new Set([
+        ...Object.keys(previous),
+        ...Object.keys(next),
+    ]);
+
+    for (const id of allIds) {
+        if (affectsAgenda(previous[id], next[id])) {
+            ids.add(id);
+        }
+    }
+
+    return [...ids];
+};
 
 
 export const selectedDateEventIds = (
@@ -161,12 +225,23 @@ export const useEventStore = create<EventStoreState>((set, get) => {
         affectedIds: string[],
         optimisticUpdate: (eventsById: Record<string, CalendarEvent>) => Record<string, CalendarEvent>,
         dbWrite: () => Promise<unknown>,
+        agendaAffectedIds: string[] = [],
     ): Promise<void> => {
         const opId = Symbol();
         for (const id of affectedIds) pendingOpByEventId.set(id, opId);
 
         const previousById = get().eventsById;
-        set((state) => ({ eventsById: optimisticUpdate(state.eventsById) }));
+        set((state) => ({
+            eventsById: optimisticUpdate(state.eventsById),
+            ...(agendaAffectedIds.length > 0
+                ? {
+                    agendaChange: mergeAgendaChange(
+                        state.agendaChange,
+                        agendaAffectedIds,
+                    ),
+                }
+                : {})
+        }));
 
         try {
             await dbWrite();
@@ -180,7 +255,16 @@ export const useEventStore = create<EventStoreState>((set, get) => {
                     else delete next[id];
                     rolledBackAny = true;
                 }
-                return rolledBackAny ? { eventsById: next } : state;
+                return rolledBackAny ? {
+                    eventsById: next, ...(agendaAffectedIds.length > 0
+                        ? {
+                            agendaChange: mergeAgendaChange(
+                                state.agendaChange,
+                                agendaAffectedIds,
+                            ),
+                        }
+                        : {}),
+                } : state;
             });
             throw error;
         } finally {
@@ -190,10 +274,27 @@ export const useEventStore = create<EventStoreState>((set, get) => {
         }
     };
 
+    const mergeAgendaChange = (
+        current: AgendaChange,
+        eventIds: string[],
+        invalidateAll = false,
+    ): AgendaChange => ({
+        revision: current.revision + 1,
+        eventIds: invalidateAll
+            ? []
+            : [...new Set([...current.eventIds, ...eventIds])],
+        invalidateAll: current.invalidateAll || invalidateAll,
+    });
+
     return {
         eventsById: emptyEventsById(),
         loaded: false,
         refreshing: false,
+        agendaChange: {
+            revision: 0,
+            eventIds: [],
+            invalidateAll: false,
+        },
 
         addEvent: async (event) => {
             await applyOptimisticMutation(
@@ -201,15 +302,21 @@ export const useEventStore = create<EventStoreState>((set, get) => {
                 (eventsById) =>
                     eventsById[event.id] ? eventsById : { ...eventsById, [event.id]: event },
                 () => insertCalendarEvent(event),
+                [event.id],
             );
         },
 
         editEvent: async (event) => {
+            const previous = get().eventsById[event.id];
+
+            const agendaChanged =
+                !!previous && affectsAgenda(previous, event);
             await applyOptimisticMutation(
                 [event.id],
                 (eventsById) =>
                     eventsById[event.id] ? { ...eventsById, [event.id]: event } : eventsById,
                 () => updateCalendarEvent(event),
+                agendaChanged ? [event.id] : [],
             );
         },
 
@@ -223,14 +330,39 @@ export const useEventStore = create<EventStoreState>((set, get) => {
                     return next;
                 },
                 () => deleteCalendarEvent(id),
+                [id],
             );
         },
 
         removeEvents: async () => {
             await deleteAllCalendarEvents();
-            set({ eventsById: emptyEventsById() });
+            /* set({ eventsById: emptyEventsById() }); */
+            set((state) => ({
+                eventsById: emptyEventsById(),
+                agendaChange: mergeAgendaChange(
+                    state.agendaChange,
+                    [],
+                    true,
+                ),
+            }));
         },
 
+        acknowledgeAgendaChange: (revision) => {
+            set((state) => {
+                if (state.agendaChange.revision !== revision) {
+                    // A newer mutation arrived. Don't clear it.
+                    return state;
+                }
+
+                return {
+                    agendaChange: {
+                        revision: state.agendaChange.revision,
+                        eventIds: [],
+                        invalidateAll: false,
+                    },
+                };
+            });
+        },
         reassignEventCategoryLocal: (oldCategoryId, newCategoryId) => {
             set((state) => {
                 let changed = false;
@@ -267,7 +399,12 @@ export const useEventStore = create<EventStoreState>((set, get) => {
             if (eventsToMutate.length === 0) return;
             const idsToMutate = eventsToMutate.map((e) => e.id);
             const updatedAt = new Date().toISOString();
-
+            const agendaFieldsChanged =
+                "startDate" in newValues ||
+                "endDate" in newValues ||
+                "recurrence" in newValues ||
+                "deletedOccurrences" in newValues ||
+                "startTime" in newValues;
             await applyOptimisticMutation(
                 idsToMutate,
                 (eventsById) => {
@@ -280,6 +417,7 @@ export const useEventStore = create<EventStoreState>((set, get) => {
                     return next;
                 },
                 () => batchUpdateEvents(eventsToMutate, newValues),
+                agendaFieldsChanged ? idsToMutate : [],
             );
         },
 
@@ -299,14 +437,34 @@ export const useEventStore = create<EventStoreState>((set, get) => {
                     return next;
                 },
                 () => batchRestore(originalEvents),
+                idsToRestore,
             );
         },
 
         refreshEvents: async () => {
             set({ refreshing: true });
             try {
+                const previousEvents = get().eventsById;
                 const loadedEvents = await getAllCalendarEvents();
-                set({ eventsById: normalizeEvents(loadedEvents), loaded: true });
+                const nextEvents = normalizeEvents(loadedEvents);
+
+                const agendaChangedIds = getAgendaChangedIds(
+                    previousEvents,
+                    nextEvents,
+                );
+                set((state) => ({
+                    eventsById: nextEvents,
+                    loaded: true,
+
+                    ...(agendaChangedIds.length > 0
+                        ? {
+                            agendaChange: mergeAgendaChange(
+                                state.agendaChange,
+                                agendaChangedIds,
+                            ),
+                        }
+                        : {}),
+                }));
                 return get().eventsById;
             } finally {
                 set({ refreshing: false });

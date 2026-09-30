@@ -8,7 +8,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 
-export const LoadingIndicatorNC = () => {
+export const LoadingIndicatorNC = ({ size = 4 }: { size: number }) => {
   // Shared values for independent physics
   const rotationOuter = useSharedValue(0);
   const rotationInner = useSharedValue(0);
@@ -55,16 +55,37 @@ export const LoadingIndicatorNC = () => {
   return (
     <View style={styles.container}>
       {/* The Solid Core */}
-      <View style={styles.core} />
+      <View
+        style={[
+          styles.core,
+          { width: size, height: size, borderRadius: size / 2 },
+        ]}
+      />
 
       {/* The Inner Segmented Ring */}
       <Animated.View
-        style={[styles.ringBase, styles.innerRing, innerRingStyle]}
+        style={[
+          styles.ringBase,
+          styles.innerRing,
+          innerRingStyle,
+          {
+            width: size * 2,
+            height: size * 2,
+          },
+        ]}
       />
 
       {/* The Outer Segmented Ring */}
       <Animated.View
-        style={[styles.ringBase, styles.outerRing, outerRingStyle]}
+        style={[
+          styles.ringBase,
+          styles.outerRing,
+          outerRingStyle,
+          {
+            width: size * 3.5,
+            height: size * 3.5,
+          },
+        ]}
       />
     </View>
   );
@@ -92,15 +113,15 @@ const styles = StyleSheet.create({
     borderColor: "transparent", // Hide the main border
   },
   innerRing: {
-    width: 14,
-    height: 14,
+    /* width: 14,
+    height: 14, */
     // Creating the "segments" by only coloring two sides of the border
     borderTopColor: "#7F8C8D",
     borderBottomColor: "#7F8C8D",
   },
   outerRing: {
-    width: 20,
-    height: 20,
+    /* width: 20,
+    height: 20, */
     borderLeftColor: "#2C3E50",
     borderRightColor: "#2C3E50",
   },

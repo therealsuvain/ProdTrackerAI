@@ -10,7 +10,15 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 
-const SonarRing = ({ delay }: { delay: number }) => {
+const SonarRing = ({
+  delay,
+  coreColor,
+  coreSize,
+}: {
+  delay: number;
+  coreColor: string;
+  coreSize: number;
+}) => {
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -36,19 +44,48 @@ const SonarRing = ({ delay }: { delay: number }) => {
     };
   });
 
-  return <Animated.View style={[styles.ring, animatedStyle]} />;
+  return (
+    <Animated.View
+      style={[
+        styles.ring,
+        animatedStyle,
+        {
+          width: coreSize * 2,
+          height: coreSize * 2,
+          borderRadius: coreSize,
+          borderColor: coreColor + "66",
+        },
+      ]}
+    />
+  );
 };
 
-export const LoadingIndicatorSonar = () => {
+export const LoadingIndicatorSonar = ({
+  coreColor,
+  coreSize,
+}: {
+  coreColor: string;
+  coreSize: number;
+}) => {
   return (
     <View style={styles.container}>
       {/* The solid center pinging origin */}
-      <View style={styles.core} />
+      <View
+        style={[
+          styles.core,
+          {
+            backgroundColor: coreColor,
+            width: coreSize,
+            height: coreSize,
+            borderRadius: coreSize / 2,
+          },
+        ]}
+      />
 
       {/* 3 expanding shockwaves, staggered by 600ms each */}
-      <SonarRing delay={0} />
-      <SonarRing delay={600} />
-      <SonarRing delay={1200} />
+      <SonarRing delay={0} coreColor={coreColor} coreSize={coreSize} />
+      <SonarRing delay={600} coreColor={coreColor} coreSize={coreSize} />
+      <SonarRing delay={1200} coreColor={coreColor} coreSize={coreSize} />
     </View>
   );
 };
@@ -62,18 +99,18 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   core: {
-    width: 6,
+    /*     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#2C3E50",
+    backgroundColor: "#2C3E50", */
     position: "absolute",
     zIndex: 10, // Keeps the core sharp and on top
   },
   ring: {
     position: "absolute",
-    width: 12,
+    /*     width: 12,
     height: 12,
-    borderRadius: 6, // Perfect circle
-    borderColor: "#34495E",
+    borderRadius: 6, // Perfect circle 
+    borderColor: "#34495E",*/
   },
 });

@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import React, { useCallback, useContext, useMemo, useState } from "react";
 import Animated from "react-native-reanimated";
 import {
@@ -36,6 +36,8 @@ import { checkInHabitWithEffects } from "@/utils/Data-services/habit-services/ha
 import { useHabitStore } from "@/stores/use-habit-store";
 import { useTimerLogStore } from "@/stores/use-timerLog-store";
 import { useEventStore } from "@/stores/use-event-store";
+import { useSync } from "@/context/SyncContext";
+import LoadingIndicator from "@/components/shared/loading-indicator";
 
 const EMPTY_IDS: string[] = [];
 
@@ -51,6 +53,7 @@ function HomeScreenInner() {
   const [viewMode, setViewMode] = useState<"overview" | "timeline">("overview");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const todayDate = useMemo(() => getTodayISO(), [isFocused]);
+  const { isSyncing } = useSync();
   const isSelectedDateToday = useMemo(
     () => selectedDate.toDateString() === todayDate,
     [selectedDate, todayDate],
@@ -137,9 +140,11 @@ function HomeScreenInner() {
     [checkInHabitWithEffects],
   );
   //DebugAuthProbe();
+  //if (isSyncing) return <LoadingIndicator />;
   return (
     <Provider>
-      {/* {(isLoading || isProcessing) && <LoadingIndicator />} */}
+      {isSyncing && <LoadingIndicator />}
+
       <View style={{ backgroundColor: theme.background }}>
         <SegmentedButtons
           value={viewMode}

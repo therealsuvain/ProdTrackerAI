@@ -31,6 +31,7 @@ import {
   deleteEventOccurrenceWithEffects,
 } from "@/utils/Data-services/event-services/event-actions";
 import { useEventStore } from "@/stores/use-event-store";
+import { EventDetailsHost } from "@/components/ui/calendar-events/event-details-host";
 
 // TODOX - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {
@@ -154,7 +155,10 @@ function CalendarScreenInner() {
   return (
     <>
       <View
-        style={[styles.container, { backgroundColor: theme.eventDarkPrimary }]}
+        style={[
+          styles.container,
+          { backgroundColor: theme.eventDarkSecondary },
+        ]}
       >
         <Pressable
           style={[styles.header, { backgroundColor: theme.eventBase }]}
@@ -211,6 +215,7 @@ function CalendarScreenInner() {
           actions={deleteEventDialogActions}
         />
       )}
+      <EventDetailsHost onEdit={handleEditRow} onDelete={handleDelete} />
     </>
   );
 }
@@ -227,16 +232,16 @@ export default function CalendarScreen() {
 }
 const styles = StyleSheet.create({
   header: {
-    borderRadius: 30,
-    width: 60,
-    height: 60,
+    borderRadius: 24,
+    width: 48,
+    height: 48,
     margin: 8,
     justifyContent: "center",
     alignItems: "center",
   },
   container: { flexDirection: "row", alignItems: "center" },
   viewSwitcher: {},
-  date: { fontSize: 30 },
+  date: { fontSize: 20 },
   fab: {
     position: "absolute",
     margin: 16,

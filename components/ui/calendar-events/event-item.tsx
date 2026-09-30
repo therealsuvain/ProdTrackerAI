@@ -2,7 +2,7 @@ import { ThemeContext } from "@/context/ThemeContext";
 import { CalendarEvent } from "@/types/calendar";
 import { useRoute } from "@react-navigation/native";
 import { useContext } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { Card } from "react-native-paper";
 import { XButton } from "../shared/x-button";
 import { useData } from "@/hooks/context-hooks/use-data";
@@ -15,6 +15,7 @@ interface EventItemProps {
   onEdit?: () => void;
   onDelete?: () => void;
   occurrence?: string;
+  variant?: "default" | "detail";
 }
 
 export default function EventItem({
@@ -22,28 +23,22 @@ export default function EventItem({
   onEdit,
   onDelete,
   occurrence,
+  variant = "default",
 }: EventItemProps) {
   const { theme } = useContext(ThemeContext);
   const route = useRoute();
   const { categories } = useData();
+  const isDetail = variant === "detail";
 
-  //  Note : We are getting a local copy of the event from the array here insipte of we having already
-  // having the same object. This is because the events are being rendered in agenda component from RNC
-  // due to heavy cahcing under the hood of agenda, it doesnt udpate the rendered eventItem after updationg for cases whe4re the item is rendered anywhere but
-  // alongside the date header on the left. This local copy forces the event item iteself to re-render without the
-  // the agenda components list to detect a change
   const eventLocal = useEventStore((state) => state.eventsById[id]);
-  if (
-    !eventLocal /*  ||
-    (occurrence && eventLocal.deletedOccurrences?.includes(occurrence)) */
-  )
-    return null; // deleted
-  let eventCategory;
-  if (eventLocal.category) {
-    eventCategory = categories.find((c) => c.id === eventLocal.category);
-  }
+  if (!eventLocal) return null;
+
+  const eventCategory = eventLocal.category
+    ? categories.find((category) => category.id === eventLocal.category)
+    : undefined;
 
   const isNotHome = route.name !== "index";
+  const showDetailedTime = isDetail || !isNotHome;
   const isOverNight =
     new Date(eventLocal.startTime).toLocaleTimeString(undefined, {
       hour12: false,
@@ -51,59 +46,116 @@ export default function EventItem({
     new Date(eventLocal.endTime).toLocaleTimeString(undefined, {
       hour12: false,
     });
-  //   console.log(new Date(event.startTime).toLocaleTimeString(undefined,{hour12: false}) )
-  //   console.log( new Date(event.endTime).toLocaleTimeString(undefined,{hour12: false}))
+
+  const dateLabel =
+    isDetail && occurrence
+      ? new Date(`${occurrence}T12:00:00`).toLocaleDateString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : undefined;
+
+  const cardStyle: StyleProp<ViewStyle>[] = [
+    isDetail ? styles.detailCard : styles.card,
+    { backgroundColor: theme.eventDarkPrimary },
+    !isNotHome && !isDetail && { borderRadius: 0 },
+  ];
+
   return (
-    <Card
-      style={[
-        styles.card,
-        { backgroundColor: theme.eventDarkPrimary },
-        !isNotHome && { borderRadius: 0 },
-      ]}
-    >
-      <Card.Content style={styles.content}>
-        <View style={styles.textContainer}>
-          <View style={styles.titleRow}>
+    <Card style={cardStyle}>
+      <Card.Content style={isDetail ? styles.detailContent : styles.content}>
+        {/* <View style={styles.textContainer}> */}
+        {isDetail && (
+          <View style={styles.detailHeader}>
+            <View style={styles.detailCategoryRow}>
+              {eventCategory && (
+                <CategoryBadge category={eventCategory} variant="iconOnly" />
+              )}
+              <View style={[styles.detailHeaderText]}>
+                <Text
+                  style={[styles.detailTitleText, { color: theme.whiteBase }]}
+                  numberOfLines={2}
+                >
+                  {eventLocal.title}
+                </Text>
+                {dateLabel && (
+                  <Text
+                    style={[styles.dateText, { color: theme.greyBasePrimary }]}
+                  >
+                    {dateLabel}
+                  </Text>
+                )}
+              </View>
+            </View>
+            {(onEdit || onDelete) && (
+              <View style={styles.buttonContainer}>
+                {onEdit && (
+                  <XButton
+                    icon="pencil-outline"
+                    mode="calendar"
+                    onPress={onEdit}
+                  />
+                )}
+                {onDelete && (
+                  <XButton
+                    icon="trash-outline"
+                    mode="calendar"
+                    onPress={onDelete}
+                  />
+                )}
+              </View>
+            )}
+          </View>
+        )}
+        {/* </View> */}
+        <View style={[styles.titleRow, isDetail && styles.detailTitleRow]}>
+          {!isDetail && (
             <Text style={[styles.titleText, { color: theme.whiteBase }]}>
               {eventLocal.title}
             </Text>
-            {eventCategory && (
-              <CategoryBadge category={eventCategory} variant="iconOnly" />
-            )}
-            {isOverNight && (
-              <Text style={[styles.overnightText, { color: theme.whiteBase }]}>
-                {"- Over Night"}
-              </Text>
-            )}
-          </View>
-          {eventLocal.description && (
-            <Text style={[styles.descriptionText]}>
-              {eventLocal.description}
-            </Text>
           )}
-          {!isNotHome && (
-            <Text style={{ color: theme.whiteBase }}>
-              Start:{new Date(eventLocal.startTime).toLocaleTimeString()}
-            </Text>
+          {!isDetail && eventCategory && (
+            <CategoryBadge category={eventCategory} variant="iconOnly" />
           )}
-          {!isNotHome && (
-            <Text style={{ color: theme.whiteBase }}>
-              End:{new Date(eventLocal.endTime).toLocaleTimeString()}
+          {isOverNight && (
+            <Text style={[styles.overnightText, { color: theme.whiteBase }]}>
+              {"- Over Night"}
             </Text>
-          )}
-          {eventLocal.tags && (
-            <TagList
-              tags={eventLocal.tags}
-              holeColor={theme.eventDarkPrimary}
-            />
           )}
         </View>
-        <View style={styles.buttonContainer}>
-          {onEdit && (
-            <XButton icon="pencil-outline" mode="calendar" onPress={onEdit} />
+        <View style={styles.detailBody}>
+          {eventLocal.description && (
+            <View>
+              <Text
+                style={[
+                  styles.descriptionText,
+                  isDetail && styles.detailDescriptionText,
+                  { color: isDetail ? theme.whiteBase : "grey" },
+                ]}
+              >
+                {eventLocal.description}
+              </Text>
+            </View>
           )}
-          {onDelete && (
-            <XButton icon="trash-outline" mode="calendar" onPress={onDelete} />
+          {showDetailedTime && (
+            <View style={isDetail ? styles.detailTimeContainer : undefined}>
+              <Text style={{ color: theme.whiteBase }}>
+                Start: {new Date(eventLocal.startTime).toLocaleTimeString()}
+              </Text>
+              <Text style={{ color: theme.whiteBase }}>
+                End: {new Date(eventLocal.endTime).toLocaleTimeString()}
+              </Text>
+            </View>
+          )}
+          {eventLocal.tags && (
+            <View>
+              <TagList
+                tags={eventLocal.tags}
+                holeColor={theme.eventDarkPrimary}
+              />
+            </View>
           )}
         </View>
       </Card.Content>
@@ -113,19 +165,78 @@ export default function EventItem({
 
 const styles = StyleSheet.create({
   card: { marginVertical: 8 },
-  textContainer: { flexWrap: "wrap", flex: 1, flexDirection: "column" },
-  titleRow: { flexDirection: "row", gap: 5, alignItems: "center" },
-  titleText: { fontSize: 16 },
-  overnightText: { fontSize: 11, fontStyle: "italic" },
-  content: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  detailCard: {
+    marginVertical: 0,
+    borderRadius: 24,
   },
+  content: {
+    /* flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between", */
+  },
+  detailHeader: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  detailContent: {
+    /*    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    paddingVertical: 22,
+    paddingHorizontal: 20, */
+  },
+  textContainer: { flexWrap: "wrap", flex: 1, flexDirection: "row" },
+
+  titleRow: { flexDirection: "row", gap: 5, alignItems: "center" },
+
+  titleText: { fontSize: 16 },
+  detailTitleRow: {
+    marginBottom: 0,
+  },
+  detailTitleText: {
+    fontSize: 21,
+    fontWeight: "600",
+  },
+  dateText: {
+    fontSize: 13,
+    marginTop: 3,
+  },
+  detailCategoryRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    flex: 1,
+    minWidth: 0,
+    marginBottom: 14,
+  },
+  detailHeaderText: {
+    flex: 1,
+    minWidth: 0,
+    marginLeft: 8,
+  },
+  overnightText: { fontSize: 11, fontStyle: "italic" },
   buttonContainer: {
     flexDirection: "row",
-    marginLeft: 8,
-    position: "relative",
+    flexShrink: 0,
+    marginLeft: 12,
   },
-  descriptionText: { fontSize: 12, fontStyle: "italic", color: "grey" },
+  descriptionText: {
+    fontSize: 12,
+    fontStyle: "italic",
+    color: "grey",
+  },
+  detailDescriptionText: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  detailTimeContainer: {
+    gap: 3,
+    marginBottom: 12,
+  },
+
+  detailBody: {
+    width: "100%",
+    minWidth: 0,
+  },
 });

@@ -27,8 +27,9 @@ export default function ViewSwitcher({
             checkedColor: theme.eventBase,
             style: {
               backgroundColor: theme.eventDarkSecondary,
-              borderWidth: 0.75,
-              borderColor: theme.eventDarkPrimary,
+              borderWidth: 0.5,
+              borderLeftWidth: 0,
+              borderColor: theme.eventBase,
             },
             showSelectedCheck: true,
           },
@@ -39,8 +40,9 @@ export default function ViewSwitcher({
             checkedColor: theme.eventBase,
             style: {
               backgroundColor: theme.eventDarkSecondary,
-              borderWidth: 0.75,
-              borderColor: theme.eventDarkPrimary,
+              borderWidth: 0.5,
+              borderRightWidth: 0,
+              borderColor: theme.eventBase,
             },
             showSelectedCheck: true,
           },

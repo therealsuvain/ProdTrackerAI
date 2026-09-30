@@ -17,17 +17,17 @@ import {
 } from "react-native-calendars";
 import EventItem from "./event-item";
 import {
+  doesEventOccurOnDate,
   getEventIdsForDate,
   selectedDateEventIds,
   useEventStore,
 } from "@/stores/use-event-store";
 import { useShallow } from "zustand/shallow";
+import { EventPill } from "./event-pill";
 
 interface CalendarListAgendaAltProps {
   onDateSelect: (date: Date) => void;
   selectedDate: Date;
-  onEventSelect?: (id: string) => void;
-  onDelete?: (id: string, date: string) => void;
 }
 
 /* const MemoizedEventItem = memo(
@@ -48,7 +48,7 @@ interface CalendarListAgendaAltProps {
   ),
 ); */
 
-const MemoizedEventItem = React.memo(function MemoizedEventItem({
+/* const MemoizedEventItem = React.memo(function MemoizedEventItem({
   eventId,
   occurrence,
   onEdit,
@@ -74,14 +74,33 @@ const MemoizedEventItem = React.memo(function MemoizedEventItem({
       />
     </View>
   );
-});
+}); */
 
+type EventAgendaEntry = AgendaEntry & {
+  eventIds: string[];
+  eventIdsKey: string;
+  occurrence: string;
+};
+
+const MemoizedEventPills = React.memo(function MemoizedEventPills({
+  eventIds,
+  occurrence,
+}: {
+  eventIds: string[];
+  occurrence: string;
+}) {
+  return (
+    <View style={styles.pillContainer}>
+      {eventIds.map((eventId) => (
+        <EventPill key={eventId} id={eventId} occurrence={occurrence} />
+      ))}
+    </View>
+  );
+});
 // TODOOptim Optimize maybe
 export default React.memo(function CalendarListAgendaMain({
   onDateSelect,
   selectedDate,
-  onEventSelect,
-  onDelete,
 }: CalendarListAgendaAltProps) {
   const { theme } = useContext(ThemeContext);
   const [items, setItems] = useState<AgendaSchedule>({});
@@ -91,7 +110,7 @@ export default React.memo(function CalendarListAgendaMain({
     return date.toISOString().split("T")[0];
   };
 
-  const eventKeysSignature = useEventStore(
+  /*   const eventKeysSignature = useEventStore(
     useShallow((state) => Object.keys(state.eventsById).sort().join(",")),
   );
   const eventOccurrenceSignature = useEventStore(
@@ -100,7 +119,9 @@ export default React.memo(function CalendarListAgendaMain({
         .map((e) => `${e.id}:${e.deletedOccurrences?.length ?? 0}`)
         .join(","),
     ),
-  );
+  ); */
+
+  const agendaRevision = useEventStore((state) => state.agendaChange.revision);
   /*
   !const eventIds = useEventStore(
     !useShallow((state) => {
@@ -154,7 +175,7 @@ export default React.memo(function CalendarListAgendaMain({
     },
     [],
   ); */
-  const buildEntriesForDay = useCallback(
+  /*   const buildEntriesForDay = useCallback(
     (dateString: string): AgendaEntry[] => {
       const eventsById = useEventStore.getState().eventsById;
       const eventIds = getEventIdsForDate(
@@ -170,10 +191,32 @@ export default React.memo(function CalendarListAgendaMain({
       })) as unknown as AgendaEntry[];
     },
     [
-      /* eventIds */
+      
     ],
-  );
+  ); */
+  const buildEntriesForDay = useCallback(
+    (dateString: string): EventAgendaEntry[] => {
+      const eventsById = useEventStore.getState().eventsById;
+      const eventIds = getEventIdsForDate(
+        Object.values(eventsById),
+        dateString,
+      );
 
+      if (eventIds.length === 0) return [];
+
+      return [
+        {
+          name: "",
+          height: 30,
+          day: dateString,
+          eventIds,
+          eventIdsKey: eventIds.join("|"),
+          occurrence: dateString,
+        },
+      ];
+    },
+    [],
+  );
   const loadItems = useCallback(
     (day: DateData) => {
       // We must use the functional form of setItems to prevent an infinite loop
@@ -203,6 +246,35 @@ export default React.memo(function CalendarListAgendaMain({
     [buildEntriesForDay],
   ); // Only depend on `events`
 
+  const renderDay = useCallback(
+    (day: DateData | undefined) => {
+      if (!day) return <View style={styles.dayColumn} />;
+      const dayStr = day as unknown as string;
+      const dayStrDate = new Date(dayStr);
+
+      return (
+        <View
+          style={[
+            styles.dayColumn,
+            {
+              borderRightColor: theme.greyBasePrimary,
+              borderBottomColor: theme.greyBasePrimary,
+            },
+          ]}
+        >
+          <Text style={[styles.dayNumber, { color: theme.whiteBase }]}>
+            {dayStrDate.getDate()}
+          </Text>
+
+          <Text style={[styles.dayName, { color: theme.whiteBase }]}>
+            {dayStrDate.toLocaleString("en-US", { weekday: "short" })}
+          </Text>
+        </View>
+      );
+    },
+    [theme],
+  );
+
   useEffect(() => {
     const today = new Date();
     const timestamp = today.getTime();
@@ -218,6 +290,11 @@ export default React.memo(function CalendarListAgendaMain({
   }, [loadItems]);
 
   useEffect(() => {
+    const change = useEventStore.getState().agendaChange;
+
+    if (change.revision !== agendaRevision) return;
+
+    const eventsById = useEventStore.getState().eventsById;
     setItems((prevItems) => {
       // 1. Get all dates currently loaded in the calendar
       const loadedDates = Object.keys(prevItems);
@@ -226,32 +303,60 @@ export default React.memo(function CalendarListAgendaMain({
       if (loadedDates.length === 0) return prevItems;
 
       // 2. Create a shallow copy
-      const newItems = { ...prevItems };
+      const nextItems = { ...prevItems };
 
       // 3. Force recalculate events ONLY for the loaded dates
       // We do NOT use the "if (!newItems)" check here. We overwrite.
-      loadedDates.forEach((strTime) => {
-        newItems[strTime] = buildEntriesForDay(strTime); //getEventsForSingleDay(strTime, events);
-      });
+      let changed = false;
 
-      // 4. Return new object reference
-      return newItems;
+      if (change.invalidateAll) {
+        for (const dateString of loadedDates) {
+          nextItems[dateString] = buildEntriesForDay(dateString);
+        }
+
+        changed = true;
+      } else {
+        for (const dateString of loadedDates) {
+          const previousEntries =
+            (prevItems[dateString] as EventAgendaEntry[] | undefined) ?? [];
+
+          const previousIds = new Set(
+            previousEntries.flatMap((entry) => entry.eventIds ?? []),
+          );
+
+          const dateAffected = change.eventIds.some((id) => {
+            // Event used to occur on this date.
+            if (previousIds.has(id)) return true;
+
+            // Event now occurs on this date.
+            const currentEvent = eventsById[id];
+
+            return (
+              !!currentEvent && doesEventOccurOnDate(currentEvent, dateString)
+            );
+          });
+
+          if (dateAffected) {
+            nextItems[dateString] = buildEntriesForDay(dateString);
+            changed = true;
+          }
+        }
+      }
+
+      return changed ? nextItems : prevItems;
     });
-  }, [
-    eventOccurrenceSignature /* eventIds */,
-    buildEntriesForDay /* getEventsForSingleDay */,
-  ]);
+
+    useEventStore.getState().acknowledgeAgendaChange(agendaRevision);
+  }, [agendaRevision, buildEntriesForDay]);
 
   // set list so that only fist occurence of event renders with edit button
 
-  const renderItem = (reservation: AgendaEntry, isFirst: boolean) => {
+  /*   const renderItem = (reservation: AgendaEntry, isFirst: boolean) => {
     const eventId = (reservation as any).eventId as string | undefined;
     const occurrence = (reservation as any).occurrence as string;
     if (!eventId) {
       return null;
     }
-    /*  const showEdit = !seenEventIds.current.has(event.id);
-    if (showEdit) seenEventIds.current.add(event.id); */
 
     return (
       <MemoizedEventItem
@@ -261,6 +366,24 @@ export default React.memo(function CalendarListAgendaMain({
         onEdit={() => onEventSelect?.(eventId)}
         onDelete={() => onDelete?.(eventId, occurrence)}
       />
+    );
+  }; */
+
+  const renderItem = (reservation: AgendaEntry) => {
+    const item = reservation as EventAgendaEntry;
+
+    return (
+      <View
+        style={[
+          styles.itemContainer,
+          { borderBottomColor: theme.greyBasePrimary },
+        ]}
+      >
+        <MemoizedEventPills
+          eventIds={item.eventIds}
+          occurrence={item.occurrence}
+        />
+      </View>
     );
   };
 
@@ -274,12 +397,12 @@ export default React.memo(function CalendarListAgendaMain({
     );
   };
 
-  /*  const rowHasChanged = (r1: AgendaEntry, r2: AgendaEntry) => {
-    return JSON.stringify(r1) !== JSON.stringify(r2);
-  }; */
-  const rowHasChanged = (r1: AgendaEntry, r2: AgendaEntry) =>
-    (r1 as any).eventId !== (r2 as any).eventId ||
-    (r1 as any).occurrence !== (r2 as any).occurrence;
+  const rowHasChanged = (r1: AgendaEntry, r2: AgendaEntry) => {
+    const a = r1 as EventAgendaEntry;
+    const b = r2 as EventAgendaEntry;
+
+    return a.eventIdsKey !== b.eventIdsKey || a.occurrence !== b.occurrence;
+  };
   const selectedStr = selectedDate.toISOString().split("T")[0];
 
   return (
@@ -292,6 +415,7 @@ export default React.memo(function CalendarListAgendaMain({
         renderEmptyDate={renderEmptyDate}
         rowHasChanged={rowHasChanged}
         /* renderKnob={() => <View style={styles.knob} />} */
+        renderDay={renderDay}
         onDayPress={(day) => onDateSelect(new Date(day.timestamp))}
         onDayChange={(day) => onDateSelect(new Date(day.timestamp))}
         hideExtraDays={true}
@@ -307,7 +431,7 @@ export default React.memo(function CalendarListAgendaMain({
           textSectionTitleColor: theme.whiteBase,
           dayTextColor: theme.whiteBase,
           monthTextColor: theme.whiteBase,
-          textDisabledColor: theme.greyBaseSecondary,
+          textDisabledColor: theme.greyBasePrimary,
           reservationsBackgroundColor: theme.background,
           /*  stylesheet: {
             agenda: {
@@ -344,10 +468,19 @@ const styles = StyleSheet.create({
     height: 6,
     bottom: 0,
   }, */
-  itemContainer: {
+  /*   itemContainer: {
     marginRight: 10,
     marginTop: 1,
     marginLeft: 10,
+  }, */
+  itemContainer: {
+    flex: 1,
+    minWidth: 0,
+    paddingTop: 6,
+    paddingLeft: 6,
+    paddingRight: 1,
+    paddingBottom: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   /* knob: {
     backgroundColor: "white",
@@ -364,5 +497,37 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
+  },
+  pillContainer: {
+    width: "100%",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    alignContent: "flex-start",
+    columnGap: 2,
+    rowGap: 2,
+  },
+
+  dayColumn: {
+    width: 78,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingTop: 6,
+    paddingLeft: 10,
+    paddingRight: 10,
+    paddingBottom: 6,
+    borderRightWidth: 0.8, //StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderStyle: "dashed",
+  },
+
+  dayNumber: {
+    fontSize: 36,
+    lineHeight: 46,
+  },
+
+  dayName: {
+    fontSize: 14,
+    lineHeight: 19,
   },
 });
