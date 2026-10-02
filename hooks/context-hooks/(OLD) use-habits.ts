@@ -1,4 +1,4 @@
-import { useContext } from "react";
+/* import { useContext } from "react";
 import { HabitContext } from "@/context/HabitContext";
 
 export const useHabits = () => {
@@ -7,4 +7,4 @@ export const useHabits = () => {
         throw new Error("useHabits must be used within a HabitProvider");
     }
     return context;
-}
+} */

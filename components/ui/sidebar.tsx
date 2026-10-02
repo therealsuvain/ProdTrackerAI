@@ -7,7 +7,6 @@ import { Avatar } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { useAuth } from "@/context/AuthContext";
-import { useSettings } from "@/context/SettingsContext";
 import { AvatarPickerModal } from "@/components/ui/avatar/avatar-picker-modal";
 import { getAvatarSource, AvatarId } from "@/constants/avatars";
 import { SyncStatusIndicator } from "@/components/ui/shared/sync-status-indicator";
@@ -15,6 +14,8 @@ import { SyncResolutionModal } from "@/components/shared/dialog-system/SyncResol
 import { usePendingNotificationsStore } from "@/utils/Account-utils/pending-notification-store";
 import { PaywallGate } from "@/components/ui/paywall/paywall-gate";
 import { useSync } from "@/context/SyncContext";
+import { updateSettingWithEffects } from "@/utils/Data-services/settings-services/settings-actions";
+import { useSettingsStore } from "@/stores/use-settings-store";
 
 export const Sidebar = (props: any) => {
   const { theme } = useTheme();
@@ -27,16 +28,15 @@ export const Sidebar = (props: any) => {
   // NOTE: avatarId storage location is a decision for you — see explanation
   // below the code. This assumes a SettingsContext exposing avatarId +
   // a setter, matching your existing context conventions.
-  const { settings, updateSetting } = useSettings();
   const [avatarPickerVisible, setAvatarPickerVisible] = useState(false);
-
+  const avatarId = useSettingsStore((s) => s.settings.avatarId.id);
   const displayName = isAnonymous ? "Guest" : (userEmail ?? "Guest");
   const displayTagline = isAnonymous
     ? "Using ProdTracker without an account"
     : "Stay Productive";
 
   const handleAvatarSelection = (avatarId: AvatarId) => {
-    updateSetting("avatarId", {
+    updateSettingWithEffects("avatarId", {
       id: avatarId,
       updatedAt: new Date().toISOString(),
     });
@@ -61,7 +61,7 @@ export const Sidebar = (props: any) => {
             disabled={!authLoaded}
           >
             <Image
-              source={getAvatarSource(settings.avatarId.id)}
+              source={getAvatarSource(avatarId)}
               style={styles.avatarImage}
             />
           </TouchableOpacity>
@@ -176,7 +176,7 @@ export const Sidebar = (props: any) => {
         </View>
         <AvatarPickerModal
           visible={avatarPickerVisible}
-          currentAvatarId={(settings.avatarId.id as AvatarId) ?? "avatar_1"}
+          currentAvatarId={(avatarId as AvatarId) ?? "avatar_1"}
           onSelect={handleAvatarSelection}
           onClose={() => setAvatarPickerVisible(false)}
         />

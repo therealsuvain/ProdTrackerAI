@@ -13,16 +13,29 @@ export type CheckInOutcome =
     | "not_a_target_day"
     | "habit_not_found";
 
-export async function addHabitWithEffects(habit: Habit, actor: 'user' | 'ai' = 'user'): Promise<void> {
+export async function addHabitWithEffects(habit: Habit, actor: 'user' | 'ai' = 'user', mode: 'regular' | 'undo' = "regular"): Promise<void> {
     if (habit.reminder) {
         const notificationId = await scheduleReminderHabits(habit);
         habit.notificationId = notificationId;
     }
     await useHabitStore.getState().addHabit(habit);
-    metricsEventBus.emit("metric:track", { keys: ["habitsAdded"], amount: 1, actor });
+
+    if (habit.frequency === "daily")
+        metricsEventBus.emit("metric:track", { keys: ["habitsAdded", "habitsWithDailyGoals"], amount: 1, actor });
+    else
+        metricsEventBus.emit("metric:track", { keys: ["habitsAdded", "habitsWithWeeklyGoals"], amount: 1, actor });
+
+    if (mode === 'undo') {
+        if (habit.streak < habit.goal && history.length === 0) {
+            metricsEventBus.emit("metric:track", { keys: ["habitsDeleted", "habitsAbandoned"], amount: -1, actor });
+        }
+        else {
+            metricsEventBus.emit("metric:track", { keys: ["habitsDeleted"], amount: -1, actor });
+        }
+    }
 }
 
-export async function editHabitWithEffects(habit: Habit, actor: 'user' | 'ai' = 'user'): Promise<void> {
+export async function editHabitWithEffects(habit: Habit, actor: 'user' | 'ai' = 'user', mode: 'regular' | 'undo' = "regular"): Promise<void> {
 
     const oldHabit = useHabitStore.getState().habitsById[habit.id];
 
@@ -37,9 +50,12 @@ export async function editHabitWithEffects(habit: Habit, actor: 'user' | 'ai' = 
 
     await useHabitStore.getState().editHabit(habit);
     metricsEventBus.emit("metric:track", { keys: ["habitsEdited"], amount: 1, actor });
+    if (mode === 'undo') {
+        metricsEventBus.emit("metric:track", { keys: ["habitsEdited"], amount: -1, actor });
+    }
 }
 
-export async function deleteHabitWithEffects(id: string, actor: 'user' | 'ai' = 'user'): Promise<void> {
+export async function deleteHabitWithEffects(id: string, actor: 'user' | 'ai' = 'user', mode: 'regular' | 'undo' = "regular"): Promise<void> {
     const habit = useHabitStore.getState().habitsById[id];
     if (!habit) throw new Error(`Habit ${id} not found`);
     if (habit.notificationId) {
@@ -52,9 +68,16 @@ export async function deleteHabitWithEffects(id: string, actor: 'user' | 'ai' = 
     else {
         metricsEventBus.emit("metric:track", { keys: ["habitsDeleted"], amount: 1, actor });
     }
+
+    if (mode === 'undo') {
+        if (habit.frequency === "daily")
+            metricsEventBus.emit("metric:track", { keys: ["habitsAdded", "habitsWithDailyGoals"], amount: -1, actor });
+        else
+            metricsEventBus.emit("metric:track", { keys: ["habitsAdded", "habitsWithWeeklyGoals"], amount: -1, actor });
+    }
 }
 
-export async function deleteAllHabitsWithEffects(actor: 'user' | 'ai' = "user"): Promise<void> {
+export async function deleteAllHabitsWithEffects(actor: 'user' | 'ai' = "user", mode: 'regular' | 'undo' = "regular"): Promise<void> {
     const DeletedHabits = Object.values(useHabitStore.getState().habitsById);
     const noOfDeletedHabits = DeletedHabits.length;
     await useHabitStore.getState().removeHabits();
@@ -68,7 +91,7 @@ export async function deleteAllHabitsWithEffects(actor: 'user' | 'ai' = "user"):
 }
 
 
-export async function checkInHabitWithEffects(id: string): Promise<CheckInOutcome> {
+export async function checkInHabitWithEffects(id: string, actor: 'user' | 'ai' = 'user', mode: 'regular' | 'undo' = "regular"): Promise<CheckInOutcome> {
     const habit = useHabitStore.getState().habitsById[id];
     if (!habit) return "habit_not_found";
 
@@ -109,10 +132,10 @@ export async function checkInHabitWithEffects(id: string): Promise<CheckInOutcom
         metrics.push("habitsFrozen");
     }
 
-    metricsEventBus.emit("metric:track", { keys: metrics, amount: 1, actor: "user" });
+    metricsEventBus.emit("metric:track", { keys: metrics, amount: 1, actor });
 
     if (result.status === "goal_reached") {
-        metricsEventBus.emit("metric:track", { keys: ["habitsGoalsCompleted"], amount: 1 });
+        metricsEventBus.emit("metric:track", { keys: ["habitsGoalsCompleted"], amount: 1, actor });
         return "goal_reached";
     }
     return "success";

@@ -17,9 +17,10 @@ import {
   hasAnyUnsyncedData,
   hasAnyMeaningfulUnsyncedData,
 } from "@/utils/Account-utils/unsynced-local-data";
-import { useSettings } from "./SettingsContext";
 import { getRecoverySnapshotSummary } from "@/db/repositories/sync-repository";
 import { useWorkspaceSyncModeStore } from "@/utils/Account-utils/workspace-sync-mode-store";
+import { useSettingsStore } from "@/stores/use-settings-store";
+import { updateSettingWithEffects } from "@/utils/Data-services/settings-services/settings-actions";
 
 export type MergeChoice = "merge" | "discard";
 
@@ -59,7 +60,6 @@ export default function AuthProvider({
   const { dispatchError } = useData();
   const [session, setSession] = useState<Session | null>(null);
   const [authLoaded, setAuthLoaded] = useState(false);
-  const { settings, updateSetting } = useSettings();
   const { confirm, showDialog, hideDialog } = useDialog();
   const pendingTransitionRef = useRef<PendingAccountTransition | null>(null);
   // ── Bootstrap: every install gets an identity, signed up or not ──────────
@@ -132,15 +132,17 @@ export default function AuthProvider({
         .single();
 
       if (!profileError && profile?.avatar_id) {
-        const localAvatarId = settings.avatarId?.id;
-        const localAvatarUpdatedAt = settings.avatarId?.updatedAt;
+        const localAvatarId = useSettingsStore((s) => s.settings.avatarId.id);
+        const localAvatarUpdatedAt = useSettingsStore(
+          (s) => s.settings.avatarId.updatedAt,
+        );
         const cloudUpdatedAt = new Date(
           profile.avatar_updated_at ?? 0,
         ).getTime();
         const localUpdatedAt = new Date(localAvatarUpdatedAt ?? 0).getTime(); // from your Settings store
 
         if (cloudUpdatedAt > localUpdatedAt) {
-          updateSetting("avatarId", {
+          updateSettingWithEffects("avatarId", {
             id: profile.avatar_id,
             updatedAt: profile.avatar_updated_at,
           }); // cloud wins — update local

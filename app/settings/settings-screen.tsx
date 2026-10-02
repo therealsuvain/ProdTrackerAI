@@ -5,9 +5,8 @@ import { Searchbar } from "react-native-paper";
 
 import { SettingsGroup } from "@/components/ui/settings/settings-group";
 import { SettingsRow } from "@/components/ui/settings/settings-row";
-import { useSettings } from "@/context/SettingsContext";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
-import { SettingsSection } from "@/types/settings-ui";
+import { SettingItem, SettingsSection } from "@/types/settings-ui";
 import SettingsSkeleton from "@/components/shared/loading-indicators/screen-loaders/settings-skeleton";
 import { useSync } from "@/context/SyncContext";
 import { getRecoverySnapshotSummary } from "@/db/repositories/sync-repository";
@@ -18,6 +17,11 @@ import {
   getWorkspaceSyncMode,
   useWorkspaceSyncModeStore,
 } from "@/utils/Account-utils/workspace-sync-mode-store";
+import {
+  resetSettingsWithEffects,
+  updateSettingWithEffects,
+} from "@/utils/Data-services/settings-services/settings-actions";
+import { useSettingsStore } from "@/stores/use-settings-store";
 
 // This is our Configuration map. Adding a new setting is as easy as adding a line here.
 
@@ -186,8 +190,8 @@ const SETTINGS_LAYOUT: SettingsSection[] = [
 ];
 
 export default function SettingsScreen() {
-  const { theme, isDarkMode } = useTheme();
-  const { settings, updateSetting, resetSettings, isLoading } = useSettings();
+  const { theme, preference, toggleTheme, setThemeToSystemTheme } = useTheme();
+  const settings = useSettingsStore((state) => state.settings);
   const {
     restoreFromRecovery,
     mergeRecoveryWithCloud,
@@ -205,7 +209,13 @@ export default function SettingsScreen() {
     if (id === "autoCloudSync") {
       setAutoSyncEnabled(newValue);
     }
-    updateSetting(id as any, newValue);
+    if (id === "isDarkMode") {
+      toggleTheme();
+    }
+    if (id === "isSystemTheme") {
+      setThemeToSystemTheme();
+    }
+    updateSettingWithEffects(id as any, newValue);
   };
 
   const handleRestore = async () => {
@@ -215,9 +225,9 @@ export default function SettingsScreen() {
     await restoreFromRecovery(summary.id);
   };
 
-  if (isLoading) {
+  /*   if (isLoading) {
     return <SettingsSkeleton isDark={isDarkMode} />; // Or your existing <LoadingIndicator />
-  }
+  } */
   const handlePress = (id: string, type: string, href?: string) => {
     if (href) {
       router.push(href as any);
@@ -239,6 +249,10 @@ export default function SettingsScreen() {
       //resetSettings();
     }
   };
+  const visibleItems = (items: SettingItem[]) =>
+    preference === "system"
+      ? items.filter((i) => i.id !== "isDarkMode")
+      : items;
 
   useEffect(() => {
     setFilteredSections(filterSettings(SETTINGS_LAYOUT, searchQuery));
@@ -260,14 +274,14 @@ export default function SettingsScreen() {
       >
         {filteredSections.map((section, sectionIndex) => (
           <SettingsGroup key={sectionIndex} title={section.title}>
-            {section.data.map((item, itemIndex) => (
+            {visibleItems(section.data).map((item, itemIndex, arr) => (
               <SettingsRow
                 key={item.id}
                 item={item}
                 value={settings[item.id as keyof typeof settings] as any}
                 onToggle={handleToggle}
                 onPress={handlePress}
-                isLast={itemIndex === section.data.length - 1}
+                isLast={itemIndex === arr.length - 1}
               />
             ))}
           </SettingsGroup>
@@ -283,7 +297,7 @@ export default function SettingsScreen() {
           confirmVariant="destructive"
           onCancel={() => setConfirmDialogVisible(false)}
           onConfirm={() => {
-            resetSettings();
+            resetSettingsWithEffects();
             setConfirmDialogVisible(false);
           }}
         />

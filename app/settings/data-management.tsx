@@ -4,7 +4,6 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import { SettingsGroup } from "@/components/ui/settings/settings-group";
 import { SettingsRow } from "@/components/ui/settings/settings-row";
-import { useChat } from "@/hooks/context-hooks/use-chat";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { SettingItem } from "@/types/settings-ui";
@@ -72,7 +71,7 @@ export default function DataManagementScreen() {
   // We bring in the setters from your DataContext to clear the UI state instantly
   //const { setTasks, setHabits, setEvents, setTimerLogs, setMessages } = useData();-
   const { resetMetrics, resetAchievements } = useData();
-  const { removeMessages, messageCount } = useChat();
+  //const { removeMessages, messageCount } = useChat();
   // Unified Modal State
   const [modalVisible, setModalVisible] = useState(false);
   const [modalConfig, setModalConfig] = useState({

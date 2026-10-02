@@ -2,6 +2,9 @@ import { cancelReminder, scheduleReminderEvents, scheduleReminderHabits, schedul
 import { AIActionContext, AIHandler } from '@/types/ai-handler';
 import { InverseAction } from '@/types/ai-undo-stack';
 import { GlobalMetricKey } from '@/types/metrics';
+import { addEventWithEffects, batchRestoreEventsWithEffects, deleteEventWithEffects, editEventWithEffects } from '@/utils/Data-services/event-services/event-actions';
+import { addHabitWithEffects, batchRestoreHabitsWithEffects, deleteHabitWithEffects, editHabitWithEffects } from '@/utils/Data-services/habit-services/habit-actions';
+import { addTaskWithEffects, batchRestoreTasksWithEffects, deleteTaskWithEffects, editTaskWithEffects } from '@/utils/Data-services/task-services/task-actions';
 import storageMMKV from '@/utils/Storage-Utils/mmkv-instance'
 import { STORAGE_KEYS } from '@/utils/Storage-Utils/storage-keys'
 
@@ -18,7 +21,7 @@ const pruneUndoStack = (stack: InverseAction[]): InverseAction[] => {
 const persistStackToDisk = () => {
     try {
         const serialized = JSON.stringify(undoStack);
-       storageMMKV.set(STORAGE_KEYS.AI_UNDO_STACK, serialized);
+        storageMMKV.set(STORAGE_KEYS.AI_UNDO_STACK, serialized);
     } catch (error) {
         console.error("AI Memory Write-Behind Failed:", error);
     }
@@ -27,7 +30,7 @@ const persistStackToDisk = () => {
 export const AIActionMemory = {
     init: () => {
         try {
-            const stored =storageMMKV.getString(STORAGE_KEYS.AI_UNDO_STACK);
+            const stored = storageMMKV.getString(STORAGE_KEYS.AI_UNDO_STACK);
             if (stored) {
                 undoStack = JSON.parse(stored);
             }
@@ -97,15 +100,16 @@ export const RevertLastActionHandler: AIHandler = {
                 }
                 switch (lastAction.type) {
                     case 'DELETE_TASK':
-                        if (lastAction.payload.task.notificationId) {
-                            await cancelReminder(lastAction.payload.task.notificationId);
-                        }
-                        await context.removeTask(lastAction.payload.task.id);
-                        context.trackMetric(["tasksAdded"], -1);
-                        context.trackMetric(["tasksAdded"], -1,'ai');
+                        /*  if (lastAction.payload.task.notificationId) {
+                             await cancelReminder(lastAction.payload.task.notificationId);
+                         }
+                         await context.removeTask(lastAction.payload.task.id);
+                         context.trackMetric(["tasksAdded"], -1);
+                         context.trackMetric(["tasksAdded"], -1,'ai'); */
+                        await deleteTaskWithEffects(lastAction.payload.task.id, 'ai', 'undo');
                         break;
                     case 'ADD_DELETED_TASK':
-                        if (lastAction.payload.task.notificationId) {
+                        /* if (lastAction.payload.task.notificationId) {
                             lastAction.payload.task.notificationId = await scheduleReminderTasks(lastAction.payload.task);
                         }
                         await context.addTask(lastAction.payload.task);
@@ -115,110 +119,118 @@ export const RevertLastActionHandler: AIHandler = {
                         else
                             {context.trackMetric(["tasksDeleted", "tasksAbandoned"], -1);
                                 context.trackMetric(["tasksDeleted", "tasksAbandoned"], -1, 'ai');
-                            }
+                            } */
+                        await addTaskWithEffects(lastAction.payload.task, 'ai', 'undo');
                         break;
                     case 'REVERT_UPDATE_TASK':
-                        if (lastAction.payload.task.notificationId) {
-                            await cancelReminder(lastAction.payload.task.notificationId);
-                            lastAction.payload.task.notificationId = await scheduleReminderTasks(lastAction.payload.task);
-                        }
-                        context.trackMetric(["tasksEdited"], -1);
-                        context.trackMetric(["tasksEdited"], -1,'ai');
-                        await context.editTask(lastAction.payload.task);
+                        /*  if (lastAction.payload.task.notificationId) {
+                             await cancelReminder(lastAction.payload.task.notificationId);
+                             lastAction.payload.task.notificationId = await scheduleReminderTasks(lastAction.payload.task);
+                         }
+                         context.trackMetric(["tasksEdited"], -1);
+                         context.trackMetric(["tasksEdited"], -1,'ai');
+                         await context.editTask(lastAction.payload.task); */
+                        await editTaskWithEffects(lastAction.payload.task, 'ai', 'undo');
                         break;
                     case 'BATCH_REVERT_TASKS':
-                        await context.batchRestoreTasks(lastAction.payload.originalTasks);
+                        /* await context.batchRestoreTasks(lastAction.payload.originalTasks); */
+                        await batchRestoreTasksWithEffects(lastAction.payload.originalTasks);
                         break;
                     case 'DELETE_HABIT':
-                        if (lastAction.payload.habit.notificationId) {
+                        /* if (lastAction.payload.habit.notificationId) {
                             await cancelReminder(lastAction.payload.habit.notificationId);
                         }
                         await context.removeHabit(lastAction.payload.habit.id);
                         if (lastAction.payload.habit.frequency === 'daily') {
                             context.trackMetric(["habitsAdded", "habitsWithDailyGoals"], -1);
-                            context.trackMetric(["habitsAdded", "habitsWithDailyGoals"], -1,'ai');
+                            context.trackMetric(["habitsAdded", "habitsWithDailyGoals"], -1, 'ai');
                         }
                         else {
                             context.trackMetric(["habitsAdded", "habitsWithWeeklyGoals"], -1);
-                            context.trackMetric(["habitsAdded", "habitsWithWeeklyGoals"], -1,'ai');
-                        }
+                            context.trackMetric(["habitsAdded", "habitsWithWeeklyGoals"], -1, 'ai');
+                        } */
+                        await deleteHabitWithEffects(lastAction.payload.habit.id, 'ai', 'undo');
 
                         break;
                     case 'ADD_DELETED_HABIT':
-                        if (lastAction.payload.habit.notificationId) {
+                        /* if (lastAction.payload.habit.notificationId) {
                             await cancelReminder(lastAction.payload.habit.notificationId);
                             lastAction.payload.habit.notificationId = await scheduleReminderHabits(lastAction.payload.habit);
                         }
                         await context.addHabit(lastAction.payload.habit);
                         if (lastAction.payload.habit.streak < lastAction.payload.habit.goal && lastAction.payload.habit.history.length === 0) {
                             context.trackMetric(["habitsDeleted", "habitsAbandoned"], -1);
-                            context.trackMetric(["habitsDeleted", "habitsAbandoned"], -1,'ai');
+                            context.trackMetric(["habitsDeleted", "habitsAbandoned"], -1, 'ai');
                         }
                         else {
-                            context.trackMetric(["habitsDeleted"], -1,'ai');
+                            context.trackMetric(["habitsDeleted"], -1, 'ai');
                             context.trackMetric(["habitsDeleted"], -1);
-                        }
+                        } */
+                        await addHabitWithEffects(lastAction.payload.habit, 'ai', 'undo');
                         break;
                     case 'REVERT_UPDATE_HABIT':
                         //TODO missing logic for metric updation in case of undoing habit checking and freezing
-                        if (lastAction.payload.habit.notificationId) {
+                        /* if (lastAction.payload.habit.notificationId) {
                             lastAction.payload.habit.notificationId = await scheduleReminderHabits(lastAction.payload.habit);
                         }
                         context.trackMetric(["habitsEdited"], -1);
-                        context.trackMetric(["habitsEdited"], -1,'ai');
-                        await context.editHabit(lastAction.payload.habit);
+                        context.trackMetric(["habitsEdited"], -1, 'ai');
+                        await context.editHabit(lastAction.payload.habit); */
+                        await editHabitWithEffects(lastAction.payload.habit, 'ai', 'undo');
                         break;
                     case 'BATCH_REVERT_HABITS':
-                        await context.batchRestoreHabits(lastAction.payload.originalHabits);
+                        /* await context.batchRestoreHabits(lastAction.payload.originalHabits); */
+                        await batchRestoreHabitsWithEffects(lastAction.payload.originalHabits);
                         break;
                     case 'DELETE_EVENT':
-                        if (lastAction.payload.event.notificationIds?.length) {
-                            const cancelPromises = lastAction.payload.event.notificationIds.map((n) =>
-                                cancelReminder(n.id)
-                            );
-                            await Promise.all(cancelPromises);
-                        }
-                        await context.removeEvent(lastAction.payload.event.id);
-                        const metricsArr: GlobalMetricKey[] = []
-                        if (lastAction.payload.event.recurrence === 'daily' && lastAction.payload.event.endDate) {
-                            metricsArr.push("eventsDaily")
-                        }
-                        else if (lastAction.payload.event.recurrence === 'weekly' && lastAction.payload.event.endDate) {
-                            metricsArr.push("eventsWeekly")
-                        }
-                        else if (lastAction.payload.event.recurrence === 'none') {
-                            metricsArr.push("eventsSingleton")
-                        }
-                        else {
-                            metricsArr.push("eventsInfinite")
-                        }
-                        const start = new Date(lastAction.payload.event.startTime);
-                        const end = new Date(lastAction.payload.event.endTime);
-
-                        const startSeconds =
-                        start.getHours() * 3600 + start.getMinutes() * 60 + start.getSeconds();
-
-                        const endSeconds =
-                        end.getHours() * 3600 + end.getMinutes() * 60 + end.getSeconds();
-
-                        const SIX_AM = 6 * 3600;
-                        const NINE_AM = 9 * 3600;
-                        const NINE_PM = 21 * 3600;
-                        const END_OF_DAY = 23 * 3600 + 59 * 60 + 59;
-
-                        if (startSeconds >= SIX_AM && endSeconds <= NINE_AM) {
-                        metricsArr.push("eventsEarlymorning");
-                        } else if (startSeconds >= NINE_PM && endSeconds <= END_OF_DAY) {
-                        metricsArr.push("eventsLatenight");
-                        } else if (startSeconds >= NINE_PM || endSeconds <= SIX_AM) {
-                        metricsArr.push("eventsOvernight");
-                        }
-                        metricsArr.push("eventsAdded")
-                        context.trackMetric(metricsArr, -1);
-                        context.trackMetric(metricsArr, -1, 'ai');
+                        /*  if (lastAction.payload.event.notificationIds?.length) {
+                             const cancelPromises = lastAction.payload.event.notificationIds.map((n) =>
+                                 cancelReminder(n.id)
+                             );
+                             await Promise.all(cancelPromises);
+                         }
+                         await context.removeEvent(lastAction.payload.event.id);
+                         const metricsArr: GlobalMetricKey[] = []
+                         if (lastAction.payload.event.recurrence === 'daily' && lastAction.payload.event.endDate) {
+                             metricsArr.push("eventsDaily")
+                         }
+                         else if (lastAction.payload.event.recurrence === 'weekly' && lastAction.payload.event.endDate) {
+                             metricsArr.push("eventsWeekly")
+                         }
+                         else if (lastAction.payload.event.recurrence === 'none') {
+                             metricsArr.push("eventsSingleton")
+                         }
+                         else {
+                             metricsArr.push("eventsInfinite")
+                         }
+                         const start = new Date(lastAction.payload.event.startTime);
+                         const end = new Date(lastAction.payload.event.endTime);
+ 
+                         const startSeconds =
+                             start.getHours() * 3600 + start.getMinutes() * 60 + start.getSeconds();
+ 
+                         const endSeconds =
+                             end.getHours() * 3600 + end.getMinutes() * 60 + end.getSeconds();
+ 
+                         const SIX_AM = 6 * 3600;
+                         const NINE_AM = 9 * 3600;
+                         const NINE_PM = 21 * 3600;
+                         const END_OF_DAY = 23 * 3600 + 59 * 60 + 59;
+ 
+                         if (startSeconds >= SIX_AM && endSeconds <= NINE_AM) {
+                             metricsArr.push("eventsEarlymorning");
+                         } else if (startSeconds >= NINE_PM && endSeconds <= END_OF_DAY) {
+                             metricsArr.push("eventsLatenight");
+                         } else if (startSeconds >= NINE_PM || endSeconds <= SIX_AM) {
+                             metricsArr.push("eventsOvernight");
+                         }
+                         metricsArr.push("eventsAdded")
+                         context.trackMetric(metricsArr, -1);
+                         context.trackMetric(metricsArr, -1, 'ai'); */
+                        await deleteEventWithEffects(lastAction.payload.event.id, 'ai', 'undo');
                         break;
                     case 'ADD_DELETED_EVENT':
-                        if (lastAction.payload.event.reminder) {
+                        /* if (lastAction.payload.event.reminder) {
                             try {
                                 lastAction.payload.event.notificationIds = await scheduleReminderEvents(lastAction.payload.event);
                             } catch (error) {
@@ -228,10 +240,11 @@ export const RevertLastActionHandler: AIHandler = {
                         }
                         await context.addEvent(lastAction.payload.event);
                         context.trackMetric(["eventsDeleted"], -1);
-                        context.trackMetric(["eventsDeleted"], -1,'ai');
+                        context.trackMetric(["eventsDeleted"], -1, 'ai'); */
+                        await addEventWithEffects(lastAction.payload.event, 'ai', 'undo');
                         break;
                     case 'REVERT_UPDATE_EVENT':
-                        if (lastAction.payload.event.notificationIds?.length) {
+                        /* if (lastAction.payload.event.notificationIds?.length) {
                             const cancelPromises = lastAction.payload.event.notificationIds.map((n) =>
                                 cancelReminder(n.id)
                             );
@@ -239,11 +252,12 @@ export const RevertLastActionHandler: AIHandler = {
                             lastAction.payload.event.notificationIds = await scheduleReminderEvents(lastAction.payload.event);
                         }
                         context.trackMetric(["eventsEdited"], -1);
-                        context.trackMetric(["eventsEdited"], -1,'ai');
-                        await context.editEvent(lastAction.payload.event);
+                        context.trackMetric(["eventsEdited"], -1, 'ai');
+                        await context.editEvent(lastAction.payload.event); */
+                        await editEventWithEffects(lastAction.payload.event, 'ai', 'undo');
                         break;
                     case 'BATCH_REVERT_EVENTS':
-                        await context.batchRestoreEvents(lastAction.payload.originalEvents);
+                        await batchRestoreEventsWithEffects(lastAction.payload.originalEvents);
                         break;
                     case 'DELETE_TAG':
                         for (const tag of lastAction.payload.tags) {
@@ -255,7 +269,7 @@ export const RevertLastActionHandler: AIHandler = {
                         break;
                     case 'REVERT_UPDATE_TAG':
                         context.trackMetric(["tagsEdited"], -1);
-                        context.trackMetric(["tagsEdited"], -1,'ai');
+                        context.trackMetric(["tagsEdited"], -1, 'ai');
                         await context.updateUserTag(lastAction.payload.tag);
                         break;
                     case 'DELETE_CATEGORY':
@@ -266,7 +280,7 @@ export const RevertLastActionHandler: AIHandler = {
                         break;
                     case 'REVERT_UPDATE_CATEGORY':
                         context.trackMetric(["categoriesEdited"], -1);
-                        context.trackMetric(["categoriesEdited"], -1,'ai');
+                        context.trackMetric(["categoriesEdited"], -1, 'ai');
                         await context.updateUserCategory(lastAction.payload.category);
                         break;
                     default:

@@ -6,28 +6,40 @@ import { resolveIdsFromNames } from "./tags-and-categories-handlers";
 import { AIActionMemory } from "./ai-action-undo-handlers";
 import { fastCosineSimilarity, generateEmbedding } from "@/utils/embedding-engine";
 import { Task } from "@/types/task";
+import { addTaskWithEffects, batchMutateTasksWithEffects, deleteTaskWithEffects, editTaskWithEffects, toggleTaskWithEffects } from "@/utils/Data-services/task-services/task-actions";
+import { useTaskStore } from "@/stores/use-task-store";
+
+function findTaskByShortId(shortId: string): Task | undefined {
+  return Object.values(useTaskStore.getState().tasksById).find(
+    (t) => t.id.slice(0, 8) === shortId,
+  );
+}
+function allTasks(): Task[] {
+  return Object.values(useTaskStore.getState().tasksById);
+}
 
 export const AddTaskHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     // 1. Use your existing factory to create a consistent Task object
     const newTask = await createTask(params);
 
     // 2. Handle notifications if a reminder was parsed
-    if (newTask.reminder) {
-      try {
-        newTask.notificationId = await scheduleReminderTasks(newTask);
-      } catch (error) {
-        console.warn("Failed to schedule notification:", error);
-        return { status: "partial_success", reason: "Failed to schedule notification", task: newTask };
-      }
-    }
+    /*    if (newTask.reminder) {
+         try {
+           newTask.notificationId = await scheduleReminderTasks(newTask);
+         } catch (error) {
+           console.warn("Failed to schedule notification:", error);
+           return { status: "partial_success", reason: "Failed to schedule notification", task: newTask };
+         }
+       } */
 
     // 3. Update the global state via the context
     //context.setTasks((prev) => [...prev, newTask]);
     AIActionMemory.push({ type: "DELETE_TASK", payload: { task: newTask }, timestamp: Date.now() });
-    await context.addTask(newTask);
-    context.trackMetric(["tasksAdded"], 1);
-    context.trackMetric(["tasksAdded"], 1,'ai');
+    //await context.addTask(newTask);
+    await addTaskWithEffects(newTask, 'ai');
+    /* context.trackMetric(["tasksAdded"], 1);
+    context.trackMetric(["tasksAdded"], 1, 'ai'); */
     console.log(`AI Action: Added task "${newTask.title}"`);
     const { id, embedding, ...rest } = newTask;
     return { status: "success", task: { id: id.slice(0, 8), ...rest } }
@@ -35,8 +47,8 @@ export const AddTaskHandler: AIHandler = {
 };
 
 export const EditTaskHandler: AIHandler = {
-  execute: async (params, context) => {
-    const oldTask = context.tasks.find((t) => t.id.slice(0, 8) === params.id.slice(0, 8));
+  execute: async (params) => {
+    const oldTask = findTaskByShortId(params.id);
     if (!oldTask) {
       throw new Error("Task not found");
     }
@@ -50,65 +62,65 @@ export const EditTaskHandler: AIHandler = {
       currentTags = currentTags.filter(id => !params.removeTagIds.includes(id));
     }
     const updatedTask = await createTask({ ...oldTask, ...params, tags: currentTags, id: oldTask.id })
-    if (updatedTask.reminder) {
-      try {
-        if (updatedTask.notificationId) {
-          await cancelReminder(updatedTask.notificationId);
-        }
-        updatedTask.notificationId = await scheduleReminderTasks(updatedTask);
-      } catch (error) {
-        console.warn("Failed to schedule notification:", error);
-        return { status: "partial_success", reason: "Failed to schedule notification", task: updatedTask };
-      }
-    }
+    /*     if (updatedTask.reminder) {
+          try {
+            if (updatedTask.notificationId) {
+              await cancelReminder(updatedTask.notificationId);
+            }
+            updatedTask.notificationId = await scheduleReminderTasks(updatedTask);
+          } catch (error) {
+            console.warn("Failed to schedule notification:", error);
+            return { status: "partial_success", reason: "Failed to schedule notification", task: updatedTask };
+          }
+        } */
     /* context.setTasks((prev) =>
       prev.map((t) => (t.id.slice(0, 8) === params.id ? updatedTask : t))
     ); */
     AIActionMemory.push({ type: 'REVERT_UPDATE_TASK', payload: { task: oldTask }, timestamp: Date.now() });
-    context.trackMetric(["tasksEdited"], 1);
-    context.trackMetric(["tasksEdited"], 1,'ai');
-    await context.editTask(updatedTask);
+    /* context.trackMetric(["tasksEdited"], 1);
+    context.trackMetric(["tasksEdited"], 1, 'ai'); */
+    await editTaskWithEffects(updatedTask, 'ai');
     const { id, embedding, ...rest } = updatedTask;
     return { status: "success", task: { id: id.slice(0, 8), ...rest } }
   }
 };
 
 export const DeleteTaskHandler: AIHandler = {
-  execute: async (params, context) => {
-    const oldTask = context.tasks.find((t) => t.id.slice(0, 8) === params.id);
+  execute: async (params) => {
+    const oldTask = findTaskByShortId(params.id);
     if (!oldTask) {
       throw new Error("Task not found");
     }
-    if (oldTask.notificationId) {
-      await cancelReminder(oldTask.notificationId);
-    }
+
+    await deleteTaskWithEffects(oldTask.id, 'ai');
     AIActionMemory.push({ type: 'ADD_DELETED_TASK', payload: { task: oldTask }, timestamp: Date.now() });
-    await context.removeTask(oldTask.id);
-    if (oldTask.completed) {
-      context.trackMetric(["tasksDeleted"], 1);
-      context.trackMetric(["tasksDeleted"], 1, 'ai');
-    } else {
-      context.trackMetric(["tasksDeleted", "tasksAbandoned"], 1);
-      context.trackMetric(["tasksDeleted", "tasksAbandoned"], 1 , 'ai');
-    }
+    /*     await context.removeTask(oldTask.id);
+        if (oldTask.completed) {
+          context.trackMetric(["tasksDeleted"], 1);
+          context.trackMetric(["tasksDeleted"], 1, 'ai');
+        } else {
+          context.trackMetric(["tasksDeleted", "tasksAbandoned"], 1);
+          context.trackMetric(["tasksDeleted", "tasksAbandoned"], 1, 'ai');
+        } */
     const { id, title } = oldTask;
     return { status: "success", task: { id: id.slice(0, 8), title } }
   }
 };
 
 export const CompleteTaskHandler: AIHandler = {
-  execute: async (params, context) => {
-    const oldTask = context.tasks.find((t) => t.id.slice(0, 8) === params.id);
+  execute: async (params) => {
+    const oldTask = findTaskByShortId(params.id);
     if (!oldTask) {
       throw new Error("Task not found");
     }
-    if (oldTask.notificationId) {
-      await cancelReminder(oldTask.notificationId);
-    }
+    /*     if (oldTask.notificationId) {
+          await cancelReminder(oldTask.notificationId);
+        } */
+    await toggleTaskWithEffects(oldTask.id, 'ai');
     AIActionMemory.push({ type: 'REVERT_UPDATE_TASK', payload: { task: oldTask }, timestamp: Date.now() });
-    await context.toggleTask(oldTask.id);
-    context.trackMetric(["tasksCompleted"], 1);
-    context.trackMetric(["tasksCompleted"], 1, 'ai');
+    /*     await context.toggleTask(oldTask.id);
+        context.trackMetric(["tasksCompleted"], 1);
+        context.trackMetric(["tasksCompleted"], 1, 'ai'); */
     const { id, title } = oldTask;
     return { status: "success", task: { id: id.slice(0, 8), title } }
   }
@@ -119,7 +131,7 @@ export const BatchMutateTasksHandler: AIHandler = {
     const { searchFilters, mutationPayload } = params;
     const cateogryId = searchFilters.categoryName ? resolveIdsFromNames(searchFilters.categoryName, context.categories)[0] : undefined;
     // 1. O(N) Hard Filtering
-    let targets = (context.tasks || []).filter((task: Task) => {
+    let targets = (allTasks() || []).filter((task: Task) => {
       const currentStatus = task.completed ? "completed" : new Date(task.dueDate) < new Date() ? "overdue" : "pending";
       if (searchFilters.status && searchFilters.status !== "all" && currentStatus !== searchFilters.status) return false;
       if (searchFilters.priority && searchFilters.priority !== "all" && task.priority !== searchFilters.priority) return false;
@@ -153,7 +165,8 @@ export const BatchMutateTasksHandler: AIHandler = {
       mutationPayload.category = newCateogryId;
     }
     try {
-      await context.batchMutateTasks(targets, mutationPayload);
+      await batchMutateTasksWithEffects(targets, mutationPayload);
+      //await context.batchMutateTasks(targets, mutationPayload);
       return { output: `Successfully batch updated ${targets.length} tasks.` };
     } catch (error) {
       return { error: "Database transaction failed. All partial updates were automatically rolled back." };
@@ -167,7 +180,7 @@ export const QueryTasksHandler: AIHandler = {
       tagNames } = args;
 
     if (specificTaskId) {
-      const targetTask = context.tasks.find((t: any) => t.id.slice(0, 8) === specificTaskId);
+      const targetTask = findTaskByShortId(specificTaskId);
       if (!targetTask) return { error: "Task not found in database." };
 
       return {
@@ -182,7 +195,7 @@ export const QueryTasksHandler: AIHandler = {
           status: targetTask.completed ? "completed" : "pending",
           rem: targetTask.reminder ? 1 : 0,
           rd: targetTask.reminderDate || "",
-          cd: targetTask.completedDate || "",
+          cd: targetTask.completedAt || "",
           ct: targetTask.createdAt,
           ut: targetTask.updatedAt
         }
@@ -191,7 +204,7 @@ export const QueryTasksHandler: AIHandler = {
     const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, context.categories)[0] : undefined;
     const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, context.tags) : [];
     console.log("FOund tags and cat ids", targetTagIds, targetCategoryId);
-    let filtered = [...context.tasks];
+    let filtered = allTasks() || [];
     const now = new Date();
     const startOfToday = new Date(now.setHours(0, 0, 0, 0));
     const endOfToday = new Date(now.setHours(23, 59, 59, 999));
@@ -256,7 +269,7 @@ export const QueryTasksHandler: AIHandler = {
         cat: t.category,
         rem: t.reminder ? 1 : 0,
         rd: t.reminderDate,
-        cd: t.completedDate,
+        cd: t.completedAt,
         ct: t.createdAt,
         ut: t.updatedAt,
         status: t.completed ? "completed" : new Date(t.dueDate) < startOfToday ? "overdue" : "pending",

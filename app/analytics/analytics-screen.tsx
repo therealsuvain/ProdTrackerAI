@@ -24,7 +24,6 @@ import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { AnalyticsBentoGrid } from "@/components/ui/analytics/charts-layout/bento-grid";
 import { useCallback, useRef, useState } from "react";
-import { useChat } from "@/hooks/context-hooks/use-chat";
 import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { AnalyticsSkeleton } from "@/components/shared/loading-indicators/screen-loaders/analytics-skeleton";
@@ -37,6 +36,7 @@ import { useShallow } from "zustand/shallow";
 import { useHabitStore } from "@/stores/use-habit-store";
 import { useEventStore } from "@/stores/use-event-store";
 import { useTimerLogStore } from "@/stores/use-timerLog-store";
+import { useChatStore } from "@/stores/use-chat-store";
 
 function AnalyticsScreenInner() {
   const { activeWidgets, toggleWidget, reorderWidgets, resetLayout } =
@@ -54,7 +54,7 @@ function AnalyticsScreenInner() {
     useShallow((state) => Object.values(state.logsById)),
   );
   const { tags, categories, appMetrics } = useData();
-  const { messages } = useChat();
+  const messages = useChatStore(useShallow((state) => state.messages));
   const { theme } = useTheme();
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollY = useSharedValue(0);

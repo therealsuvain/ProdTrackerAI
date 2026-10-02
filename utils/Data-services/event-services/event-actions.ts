@@ -32,7 +32,7 @@ const cancelAllRemniders = async (notifications: { date: string; id: string }[])
     notifications?.forEach((n) => cancelReminder(n.id));
 };
 
-export async function addEventWithEffects(event: CalendarEvent, actor: 'user' | 'ai' = 'user'): Promise<void> {
+export async function addEventWithEffects(event: CalendarEvent, actor: 'user' | 'ai' = 'user', mode: 'regular' | 'undo' = "regular"): Promise<void> {
     if (event.reminder) {
         const notificationIds = await scheduleReminderEvents(event);
         event.notificationIds = notificationIds
@@ -70,9 +70,13 @@ export async function addEventWithEffects(event: CalendarEvent, actor: 'user' | 
         metricsArr.push("eventsOvernight");
     }
     metricsEventBus.emit("metric:track", { keys: metricsArr, amount: 1, actor });
+
+    if (mode === 'undo') {
+        metricsEventBus.emit("metric:track", { keys: ["eventsDeleted"], amount: -1, actor });
+    }
 }
 
-export async function editEventWithEffects(event: CalendarEvent, actor: 'user' | 'ai' = 'user'): Promise<void> {
+export async function editEventWithEffects(event: CalendarEvent, actor: 'user' | 'ai' = 'user', mode: 'regular' | 'undo' = "regular"): Promise<void> {
     const oldEvent = useEventStore.getState().eventsById[event.id];
 
     // If both had reminders ON and time was edited
@@ -85,11 +89,55 @@ export async function editEventWithEffects(event: CalendarEvent, actor: 'user' |
 
     await useEventStore.getState().editEvent(event);
     metricsEventBus.emit("metric:track", { keys: ["eventsEdited"], amount: 1, actor });
+    if (mode) {
+        metricsEventBus.emit("metric:track", { keys: ["eventsEdited"], amount: -1, actor });
+    }
 }
 
-export async function deleteEventWithEffects(id: string, actor: 'user' | 'ai' = 'user'): Promise<void> {
+export async function deleteEventWithEffects(id: string, actor: 'user' | 'ai' = 'user', mode: 'regular' | 'undo' = "regular"): Promise<void> {
+    const event = useEventStore.getState().eventsById[id];
+    if (!event) throw new Error(`Event ${id} not found`);
+
+    if (event.notificationIds) await cancelAllRemniders(event.notificationIds);
+
     await useEventStore.getState().removeEvent(id);
+
     metricsEventBus.emit("metric:track", { keys: ["eventsDeleted"], amount: 1, actor });
+
+    if (mode === 'undo') {
+        const metricsArr: GlobalMetricKey[] = ["eventsAdded"];
+        if (event.recurrence === "daily" && event.endDate) {
+            metricsArr.push("eventsDaily");
+        } else if (event.recurrence === "weekly" && event.endDate) {
+            metricsArr.push("eventsWeekly");
+        } else if (event.recurrence === "none") {
+            metricsArr.push("eventsSingleton");
+        } else {
+            metricsArr.push("eventsInfinite");
+        }
+        const start = new Date(event.startTime);
+        const end = new Date(event.endTime);
+
+        const startSeconds =
+            start.getHours() * 3600 + start.getMinutes() * 60 + start.getSeconds();
+
+        const endSeconds =
+            end.getHours() * 3600 + end.getMinutes() * 60 + end.getSeconds();
+
+        const SIX_AM = 6 * 3600;
+        const NINE_AM = 9 * 3600;
+        const NINE_PM = 21 * 3600;
+        const END_OF_DAY = 23 * 3600 + 59 * 60 + 59;
+
+        if (startSeconds >= SIX_AM && endSeconds <= NINE_AM) {
+            metricsArr.push("eventsEarlymorning");
+        } else if (startSeconds >= NINE_PM && endSeconds <= END_OF_DAY) {
+            metricsArr.push("eventsLatenight");
+        } else if (startSeconds >= NINE_PM || endSeconds <= SIX_AM) {
+            metricsArr.push("eventsOvernight");
+        }
+        metricsEventBus.emit("metric:track", { keys: metricsArr, amount: -1, actor });
+    }
 }
 
 export async function deleteEventOccurrenceWithEffects(
@@ -97,6 +145,7 @@ export async function deleteEventOccurrenceWithEffects(
     date: string,
     all: boolean,
     actor: 'user' | 'ai' = "user",
+    mode: 'regular' | 'undo' = "regular"
 ): Promise<void> {
     const event = useEventStore.getState().eventsById[eventId];
     if (!event) return;
@@ -121,7 +170,7 @@ export async function deleteEventOccurrenceWithEffects(
     });
 }
 
-export async function deleteAllEventsWithEffects(actor: 'user' | 'ai' = "user"): Promise<void> {
+export async function deleteAllEventsWithEffects(actor: 'user' | 'ai' = "user", mode: 'regular' | 'undo' = "regular"): Promise<void> {
     const deletedEventsCount = Object.keys(useEventStore.getState().eventsById).length;
     await useEventStore.getState().removeEvents();
     metricsEventBus.emit("metric:track", { keys: ["eventsDeleted"], amount: deletedEventsCount, actor });

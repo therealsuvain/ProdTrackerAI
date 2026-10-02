@@ -7,22 +7,33 @@ import { AIActionMemory } from "./ai-action-undo-handlers";
 import { fastCosineSimilarity, generateEmbedding } from "@/utils/embedding-engine";
 import { GlobalMetricKey } from "@/types/metrics";
 import { CalendarEvent } from "@/types/calendar";
+import { addEventWithEffects, batchMutateEventsWithEffects, deleteEventOccurrenceWithEffects, deleteEventWithEffects, editEventWithEffects } from "@/utils/Data-services/event-services/event-actions";
+import { useEventStore } from "@/stores/use-event-store";
 
-//! 59567 Port for qbitorent
+function findEventByShortId(shortId: string): CalendarEvent | undefined {
+  return Object.values(useEventStore.getState().eventsById).find(
+    (e) => e.id.slice(0, 8) === shortId,
+  );
+}
+function allEvents(): CalendarEvent[] {
+  return Object.values(useEventStore.getState().eventsById);
+}
+
+
 export const AddEventHandler: AIHandler = {
   execute: async (params, context) => {
-    const newEvent : CalendarEvent= await createEvent(params);
-    if (newEvent.reminder) {
-      try {
-        newEvent.notificationIds = await scheduleReminderEvents(newEvent);
-      } catch (error) {
-        console.warn("Failed to schedule event notifications:", error);
-        return { status: "partial_success", reason: "Failed to schedule notification", event: newEvent };
-      }
-    }
-    //!  Undo Stack Push
+    const newEvent: CalendarEvent = await createEvent(params);
+    /*  if (newEvent.reminder) {
+       try {
+         newEvent.notificationIds = await scheduleReminderEvents(newEvent);
+       } catch (error) {
+         console.warn("Failed to schedule event notifications:", error);
+         return { status: "partial_success", reason: "Failed to schedule notification", event: newEvent };
+       }
+     }
+     //!  Undo Stack Push */
     AIActionMemory.push({ type: 'DELETE_EVENT', payload: { event: newEvent }, timestamp: Date.now() })
-    const metricsArr: GlobalMetricKey[] = []
+    /* const metricsArr: GlobalMetricKey[] = []
     if (newEvent.recurrence === 'daily' && newEvent.endDate) {
       metricsArr.push("eventsDaily")
     }
@@ -52,7 +63,8 @@ export const AddEventHandler: AIHandler = {
     metricsArr.push("eventsAdded")
     context.trackMetric(metricsArr, 1);
     context.trackMetric(metricsArr, 1 ,'ai');
-    await context.addEvent(newEvent);
+    await context.addEvent(newEvent); */
+    await addEventWithEffects(newEvent, 'ai');
     console.log(`AI Action: Added event "${newEvent.title}"`);
     const { id, embedding, ...rest } = newEvent;
     return { status: "success", event: { id: id.slice(0, 8), ...rest } };
@@ -62,7 +74,7 @@ export const AddEventHandler: AIHandler = {
 
 export const EditEventHandler: AIHandler = {
   execute: async (params, context) => {
-    const oldEvent = context.events.find((e) => e.id.slice(0, 8) === params.id)
+    const oldEvent = findEventByShortId(params.id);
     if (!oldEvent) throw new Error("Event not found");
     let currentTags = Array.isArray(oldEvent.tags) ? [...oldEvent.tags] : [];
 
@@ -74,36 +86,38 @@ export const EditEventHandler: AIHandler = {
       currentTags = currentTags.filter(id => !params.removeTagIds.includes(id));
     }
     const updatedEvent = await createEvent({ ...oldEvent, ...params, tags: currentTags, id: oldEvent.id })
-    if (updatedEvent.reminder) {
-      try {
-        if (oldEvent.notificationIds?.length) {
-          const cancelPromises = oldEvent.notificationIds.map((n) =>
-            cancelReminder(n.id)
-          );
-          await Promise.all(cancelPromises);
-        }
-        updatedEvent.notificationIds = await scheduleReminderEvents(updatedEvent);
-      } catch (error) {
-        console.warn("Failed to schedule event notifications:", error);
-        return { status: "partial_success", reason: "Failed to schedule notifications", event: updatedEvent };
-      }
-    }
+    /*  if (updatedEvent.reminder) {
+       try {
+         if (oldEvent.notificationIds?.length) {
+           const cancelPromises = oldEvent.notificationIds.map((n) =>
+             cancelReminder(n.id)
+           );
+           await Promise.all(cancelPromises);
+         }
+         updatedEvent.notificationIds = await scheduleReminderEvents(updatedEvent);
+       } catch (error) {
+         console.warn("Failed to schedule event notifications:", error);
+         return { status: "partial_success", reason: "Failed to schedule notifications", event: updatedEvent };
+       }
+     } */
     //!  Undo Stack Push
     AIActionMemory.push({ type: "REVERT_UPDATE_EVENT", payload: { event: oldEvent }, timestamp: Date.now() })
-    context.trackMetric(["eventsEdited"], 1);
+    /* context.trackMetric(["eventsEdited"], 1);
     context.trackMetric(["eventsEdited"], 1, 'ai');
-    await context.editEvent(updatedEvent);
+    await context.editEvent(updatedEvent); */
+    await editEventWithEffects(updatedEvent, 'ai');
     const { id, embedding, ...rest } = updatedEvent;
     return { status: "success", event: { id: id.slice(0, 8), ...rest } };
   }
 };
 export const DeleteEventSingleOccurrenceHandler: AIHandler = {
   execute: async (params, context) => {
-    const oldEvent = context.events.find((e) => e.id.slice(0, 8) === params.id)
+    const oldEvent = findEventByShortId(params.id);
     if (!oldEvent) throw new Error("Event not found");
     //!  Undo Stack Push
     AIActionMemory.push({ type: "REVERT_UPDATE_EVENT", payload: { event: oldEvent }, timestamp: Date.now() })
-    await context.deleteEventOccurrence(oldEvent.id, params.date, false);
+    /* await context.deleteEventOccurrence(oldEvent.id, params.date, false); */
+    await deleteEventOccurrenceWithEffects(oldEvent.id, params.date, false);
     const { id, title } = oldEvent;
     return { status: "success", event: { id: id.slice(0, 8), title } };
   }
@@ -111,19 +125,20 @@ export const DeleteEventSingleOccurrenceHandler: AIHandler = {
 
 export const DeleteEventHandler: AIHandler = {
   execute: async (params, context) => {
-    const oldEvent = context.events.find((e) => e.id.slice(0, 8) === params.id)
+    const oldEvent = findEventByShortId(params.id);
     if (!oldEvent) throw new Error("Event not found");
-    if (oldEvent.notificationIds?.length) {
-      const cancelPromises = oldEvent.notificationIds.map((n) =>
-        cancelReminder(n.id)
-      );
-      await Promise.all(cancelPromises);
-    }
+    /*     if (oldEvent.notificationIds?.length) {
+          const cancelPromises = oldEvent.notificationIds.map((n) =>
+            cancelReminder(n.id)
+          );
+          await Promise.all(cancelPromises);
+        } */
     //!  Undo Stack Push
     AIActionMemory.push({ type: "ADD_DELETED_EVENT", payload: { event: oldEvent }, timestamp: Date.now() })
-    context.trackMetric(["eventsDeleted"], 1);
+    /* context.trackMetric(["eventsDeleted"], 1);
     context.trackMetric(["eventsDeleted"], 1, 'ai');
-    await context.removeEvent(oldEvent.id);
+    await context.removeEvent(oldEvent.id); */
+    await deleteEventWithEffects(oldEvent.id, 'ai');
     const { id, title } = oldEvent;
     return { status: "success", event: { id: id.slice(0, 8), title } };
   }
@@ -141,7 +156,7 @@ export const BatchMutateEventsHandler: AIHandler = {
     const { rangeStart, rangeEnd } = getTimeRangeHelper(searchFilters.timeRange);
     const cateogryId = searchFilters.categoryName ? resolveIdsFromNames(searchFilters.categoryName, context.categories)[0] : undefined;
     // 1. O(N) Hard Filtering
-    let targets = (context.events || []).filter((event: any) => {
+    let targets = (allEvents() || []).filter((event: any) => {
 
       if (searchFilters.timeRange && searchFilters.timeRange !== "all" && outOfTimeRange(event, rangeStart, rangeEnd)) return false;
       if (searchFilters.recurrence && searchFilters.recurrence !== "all" && event.recurrence !== searchFilters.recurrence) return false;
@@ -174,7 +189,7 @@ export const BatchMutateEventsHandler: AIHandler = {
     }
     // 4. Execute Atomic Update
     try {
-      await context.batchMutateEvents(targets, mutationPayload);
+      await batchMutateEventsWithEffects(targets, mutationPayload);
       return { output: `Successfully batch updated ${targets.length} events.` };
     } catch (error) {
       return { error: "Database transaction failed. All partial updates were automatically rolled back." };
@@ -191,12 +206,14 @@ export const QueryEventsHandler: AIHandler = {
 
     // DEEP DIVE: If AI asks about a specific event (e.g., "How many yoga classes left?")
     if (specificEventId) {
-      const targetEvent = context.events.find((e: any) => e.id.slice(0, 8) === specificEventId);
+      const targetEvent = findEventByShortId(specificEventId);
       if (!targetEvent) return { error: "Event not found" };
 
       // Calculate Remaining Instances natively
       let instancesLeft = 0;
-      const end = new Date(targetEvent.endDate);
+
+      //TODO
+      const end = targetEvent.endDate ? new Date(targetEvent.endDate) : new Date("Jan 1, 2999");
 
       if (end >= now) {
         if (targetEvent.recurrence === 'none') instancesLeft = 1;
@@ -235,7 +252,7 @@ export const QueryEventsHandler: AIHandler = {
     const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, context.categories)[0] : undefined;
     const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, context.tags) : [];
     // GENERAL QUERY (Time Ranges and Time of Day)
-    let filtered = [...(context.events || [])];
+    let filtered = [...(allEvents() || [])];
     const startOfToday = new Date(now.setHours(0, 0, 0, 0));
     if (targetCategoryId) {
       filtered = filtered.filter(e => e.category === targetCategoryId);

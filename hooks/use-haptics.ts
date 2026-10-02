@@ -1,10 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import { useCallback } from 'react';
-import { useSettings } from '../context/SettingsContext';
+import { useSettingsStore } from '@/stores/use-settings-store';
 
 
 export const useHaptics = () => {
-  const { settings } = useSettings();
+  const hapticsEnabled = useSettingsStore((s) => s.settings.hapticsEnabled)
 
   const triggerHaptic = useCallback(
     async (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Soft) => {
@@ -13,7 +13,7 @@ export const useHaptics = () => {
         case
       } */
       // The engine silently intercepts the call and does nothing if the user disabled it
-      if (settings.hapticsEnabled) {
+      if (hapticsEnabled) {
         try {
           //Note impactAsync doesnt work with my phone with Android 10, custom One Plus OS - Oxygen OS
           await Haptics.impactAsync(style);
@@ -27,7 +27,7 @@ export const useHaptics = () => {
         }
       }
     },
-    [settings.hapticsEnabled]
+    [hapticsEnabled]
   );
 
   return { triggerHaptic };

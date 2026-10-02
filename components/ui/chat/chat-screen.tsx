@@ -21,7 +21,6 @@ import {
   useDbErrorToast,
 } from "@/components/shared/db-error-toast";
 import { ThemeContext } from "@/context/ThemeContext";
-import { useChat } from "@/hooks/context-hooks/use-chat";
 import { useData } from "@/hooks/context-hooks/use-data";
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { useTaskStore } from "@/stores/use-task-store";
@@ -86,6 +85,16 @@ import {
   editEventWithEffects,
 } from "@/utils/Data-services/event-services/event-actions";
 import { useTimerLogStore } from "@/stores/use-timerLog-store";
+import {
+  addMessageWithEffects,
+  cancelActionMessageWithEffects,
+  confirmActionMessageWithEffects,
+  getImmediateContextWithEffects,
+  getMoreContextWithEffects,
+  removeIndividualActionWithEffects,
+  updateActionArgsWithEffects,
+} from "@/utils/Data-services/chat-services/chat-actions";
+import { useChatStore } from "@/stores/use-chat-store";
 //import { LoadingBubble } from "./loading-bubble-split-flap-opt";
 
 interface Props {
@@ -99,7 +108,6 @@ interface Props {
  * TODO : update Ui when all pending actions are removed, so pendingActions is empty
  * TODO : 'STATE_SYNC_RESOLVED" and text like this visible in chat, these are LLM response for interal state correction only shouldnt be output to user's chat-screen
  */
-const EXPIRY_THRESHOLD_MS = 30 * 60 * 1000; // 30 Minutes
 
 export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const headerHeight = useHeaderHeight();
@@ -108,14 +116,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const navigation = useNavigation();
   const { isLoading, startRecording, stopRecording, transcript, error } =
     useVoiceInput({});
-  const {
-    messages,
-    setMessages,
-    addMessage,
-    editMessage,
-    getImmediateContext,
-    getMoreContext,
-  } = useChat();
+  const messages = useChatStore(useShallow((state) => state.messages));
   const {
     trackMetric,
     categories,
@@ -134,15 +135,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     reassignDeletedCategory,
     reassignDeletedTag,
   } = useData();
-  /*   const {
-    tasks,
-    addTask,
-    editTask,
-    removeTask,
-    toggleTask,
-    batchMutateTasks,
-    batchRestoreTasks,
-  } = useTasks(); */
+
   const tasks = useTaskStore(
     useShallow((state) => Object.values(state.tasksById)),
   );
@@ -161,31 +154,11 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const flatListRef = useRef<FlatList>(null);
   const audioSource = require("@/assets/audio/record.wav");
   const messageRef = useRef<Message[]>([]);
-  const actionExpirationTimers = useRef<
+  /*   const actionExpirationTimers = useRef<
     Map<string, ReturnType<typeof setTimeout>>
-  >(new Map());
+  >(new Map()); */
   const player = usePlaySound(audioSource);
   const curatedContext = {
-    tasks,
-    addTask: addTaskWithEffects,
-    editTask: editTaskWithEffects,
-    removeTask: deleteTaskWithEffects,
-    toggleTask: toggleTaskWithEffects,
-    batchMutateTasks: batchMutateTasksWithEffects,
-    batchRestoreTasks: batchRestoreTasksWithEffects,
-    habits,
-    addHabit: addHabitWithEffects,
-    editHabit: editHabitWithEffects,
-    removeHabit: deleteHabitWithEffects,
-    batchMutateHabits: batchMutateHabitsWithEffects,
-    batchRestoreHabits: batchRestoreHabitsWithEffects,
-    events,
-    addEvent: addEventWithEffects,
-    editEvent: editEventWithEffects,
-    removeEvent: deleteEventWithEffects,
-    deleteEventOccurrence: deleteEventOccurrenceWithEffects,
-    batchMutateEvents: batchMutateEventsWithEffects,
-    batchRestoreEvents: batchRestoreEventsWithEffects,
     categories,
     addCategory,
     updateUserCategory,
@@ -198,8 +171,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     updateUserTag,
     deleteUserTag,
     getTagUsageForAll,
-    getImmediateContext,
-    getMoreContext,
     trackMetric,
     timerLogs,
     reassignDeletedCategory,
@@ -208,8 +179,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   };
   const chatItems = useMemo(() => injectDaySeparators(messages), [messages]);
   const [agentProgress, setAgentProgress] = useState<string | null>(null);
-  //const chatItems = injectDaySeparators(messages);
-  //console.log(chatItems.map((m) => m.id));
+
   useEffect(() => {
     // Add the event listener when the component mounts or when isPortalOpen changes
     const backButtonListener = BackHandler.addEventListener(
@@ -247,9 +217,12 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     stopRecording();
   };
 
-  const removeIndividualAction = (messageId: string, actionIndex: number) => {
+  const removeIndividualAction = async (
+    messageId: string,
+    actionIndex: number,
+  ) => {
     //TODOX check this
-    setMessages((prev) =>
+    /*  setMessages((prev) =>
       prev.map((m) => {
         if (m.id === messageId && m.pendingActions) {
           const updatedActions = [...m.pendingActions];
@@ -260,7 +233,8 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         }
         return m;
       }),
-    );
+    ); */
+    await removeIndividualActionWithEffects(messageId, actionIndex);
   };
 
   const enrichAction = (call: any) => {
@@ -372,7 +346,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       timestamp: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    await addMessage(userMsg);
+    await addMessageWithEffects(userMsg);
     setAgentProgress(getRandomProgressText(AgentPersona.WAKING_UP));
     setIsThinking(true);
 
@@ -405,24 +379,18 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         timestamp: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      //console.log("AI MSG:", aiMsg);
-      if (aiMsg.type === "action") {
-        //console.log("YES TYPE IS ACTION");
-        //const msgTime = new Date(aiMsg.timestamp).getTime();
-        //const expiresAt = msgTime + EXPIRY_THRESHOLD_MS;
-        //const expiresIn = EXPIRY_THRESHOLD_MS;
+
+      /*       if (aiMsg.type === "action") {
         const timer = setTimeout(() => {
           markActionExpired(aiMsg.id);
           actionExpirationTimers.current.delete(aiMsg.id);
           console.log(`Timer set for ${aiMsg.id}:`, EXPIRY_THRESHOLD_MS);
         }, EXPIRY_THRESHOLD_MS);
         actionExpirationTimers.current.set(aiMsg.id, timer);
-      }
+      } */
 
       console.log("AI msg:", aiMsg);
-      await addMessage(aiMsg);
-      //setMessages((prev) => [aiMsg, ...prev]);
-      trackMetric(["chatMessagesSent"], 1);
+      await addMessageWithEffects(aiMsg);
     } catch (err) {
       // Handle error UI
     } finally {
@@ -431,7 +399,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     }
   };
 
-  const markActionExpired = async (messageId: string) => {
+  /*   const markActionExpired = async (messageId: string) => {
     console.log("markActionExpired", messageId, new Date().getTime());
     const expiredMessage = messageRef.current.find((m) => m.id === messageId);
     if (
@@ -442,17 +410,17 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     )
       return;
     console.log("PASSED");
-    await editMessage({
+    await editMessageWithEffects({
       ...expiredMessage,
       isExpired: true,
       text: "This action has expired. Please try again.",
     });
     await trackMetric(["chatActionsExpired"], 1);
-  };
+  }; */
   // 2. Handle Action Confirmation (Hardcoded Success Message)
   const handleConfirmAction = async (msgId: string, actions: any[]) => {
     // A. Disable buttons in that bubble
-    const message = messages.find((m) => m.id === msgId);
+    /*    const message = messages.find((m) => m.id === msgId);
     if (!message || !message.pendingActions || message.isExpired) return;
     const t = actionExpirationTimers.current.get(message.id);
     if (t) {
@@ -460,8 +428,8 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       actionExpirationTimers.current.delete(message.id);
     }
     const confirmedMessage = messages.find((m) => m.id === msgId);
-    if (!confirmedMessage) return;
-    await editMessage({ ...confirmedMessage, isConfirmed: true });
+    if (!confirmedMessage) return; */
+    await confirmActionMessageWithEffects(msgId);
 
     try {
       // B. Run the background logic
@@ -485,15 +453,14 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         timestamp: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      await addMessage(successMsg);
-      trackMetric(["chatActionsConfirmed"], 1);
+      await addMessageWithEffects(successMsg);
     } catch (err) {}
   };
 
   const handleCancelAction = async (msgId: string) => {
-    const canclledMessage = messages.find((m) => m.id === msgId);
-    if (!canclledMessage) return;
-    await editMessage({ ...canclledMessage, isConfirmed: true });
+    /*  const canclledMessage = messages.find((m) => m.id === msgId);
+    if (!canclledMessage) return; */
+    await cancelActionMessageWithEffects(msgId);
 
     const cancelMsg: Message = {
       id: Date.now().toString(),
@@ -503,8 +470,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       timestamp: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    await addMessage(cancelMsg);
-    trackMetric(["chatActionsCancelled"], 1);
+    await addMessageWithEffects(cancelMsg);
   };
 
   // chat-screen.tsx
@@ -515,7 +481,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     updatedArgs: any,
   ) => {
     // 1. Find the target message in your current 'messages' state
-    const targetMessage = messages.find((m) => m.id === messageId);
+    /* const targetMessage = messages.find((m) => m.id === messageId);
 
     if (!targetMessage || !targetMessage.pendingActions) {
       console.warn(
@@ -537,8 +503,8 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       pendingActions: newActions,
     };
 
-    // 4. Dispatch through your DAO layer for optimistic UI + SQLite persistence
-    await editMessage(updatedMessage);
+    // 4. Dispatch through your DAO layer for optimistic UI + SQLite persistence */
+    await updateActionArgsWithEffects(messageId, actionIndex, updatedArgs);
   };
 
   const EmptyState = () => (

@@ -3,18 +3,15 @@ import glyphMap from "@expo/vector-icons/build/vendor/react-native-vector-icons/
 import React, { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Switch, TouchableRipple } from "react-native-paper";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  cancelAnimation,
-} from "react-native-reanimated";
 
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { SettingItem } from "@/types/settings-ui";
 import { WidgetRegistry } from "@/components/ui/settings/widgets/registry";
 import { useSync } from "@/context/SyncContext";
+import {
+  ManualSyncIcon,
+  RestoreSyncIcon,
+} from "./widgets/spinning-refresh-icon";
 
 interface SettingsRowProps {
   item: SettingItem;
@@ -31,12 +28,8 @@ export const SettingsRow = ({
   onPress,
   isLast,
 }: SettingsRowProps) => {
-  const { theme, preference } = useTheme();
-  const rotationMaunalSync = useSharedValue(0);
-  const rotationRestoreSync = useSharedValue(0);
-  const { isSyncing, isReplacingWorkspace } = useSync();
+  const { theme } = useTheme();
 
-  if (preference === "system" && item.id === "isDarkMode") return null;
   const renderRightElement = () => {
     //console.log(item.id, value);
     switch (item.type) {
@@ -64,63 +57,17 @@ export const SettingsRow = ({
         return <Ionicons name="chevron-forward" size={30} color={theme.text} />;
 
       case "action":
-        if (item.id === "manualSyncEnabled" || item.id === "restoreRecovery") {
-          return (
-            <Animated.View
-              style={
-                item.id === "manualSyncEnabled"
-                  ? rotateManualStyle
-                  : rotateRestoreStyle
-              }
-            >
-              <Ionicons
-                name="refresh-circle-outline"
-                size={30}
-                color={theme.text}
-              />
-            </Animated.View>
-          );
-        }
+        if (item.id === "manualSyncEnabled")
+          return <ManualSyncIcon color={theme.text} />;
+        if (item.id === "restoreRecovery")
+          return <RestoreSyncIcon color={theme.text} />;
+
         return null;
 
       default:
         return null;
     }
   };
-
-  useEffect(() => {
-    if (isSyncing) {
-      rotationMaunalSync.value = withRepeat(
-        withTiming(360, { duration: 1000 }),
-        -1,
-        false,
-      );
-    } else {
-      cancelAnimation(rotationMaunalSync);
-      rotationMaunalSync.value = 0;
-    }
-  }, [isSyncing]);
-
-  useEffect(() => {
-    if (isReplacingWorkspace) {
-      rotationRestoreSync.value = withRepeat(
-        withTiming(360, { duration: 1000 }),
-        -1,
-        false,
-      );
-    } else {
-      cancelAnimation(rotationRestoreSync);
-      rotationRestoreSync.value = 0;
-    }
-  }, [isReplacingWorkspace]);
-
-  const rotateManualStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotationMaunalSync.value}deg` }],
-  }));
-
-  const rotateRestoreStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotationRestoreSync.value}deg` }],
-  }));
 
   const renderIcon = () => {
     if (item.icon in Ionicons.glyphMap) {

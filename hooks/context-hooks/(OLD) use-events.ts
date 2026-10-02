@@ -1,4 +1,4 @@
-import { useContext } from "react";
+/* import { useContext } from "react";
 import { EventContext } from "@/context/EventContext";
 
 export const useEvents = () => {
@@ -7,4 +7,4 @@ export const useEvents = () => {
         throw new Error("useEvents must be used within a EventProvider");
     }
     return context;
-}
+} */

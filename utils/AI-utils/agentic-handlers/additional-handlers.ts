@@ -1,14 +1,29 @@
 import { AIHandler } from "@/types/ai-handler";
 import { fastCosineSimilarity, generateEmbedding } from '@/utils/embedding-engine';
 import { resolveIdsFromNames } from "./tags-and-categories-handlers";
+import { Task } from "@/types/task";
+import { useTaskStore } from "@/stores/use-task-store";
+import { useHabitStore } from "@/stores/use-habit-store";
+import { Habit } from "@/types/habits";
+import { getImmediateContextWithEffects, getMoreContextWithEffects } from "@/utils/Data-services/chat-services/chat-actions";
+
+function allTasks(): Task[] {
+  return Object.values(useTaskStore.getState().tasksById);
+}
+
+function allHabits(): Habit[] {
+  return Object.values(useHabitStore.getState().habitsById);
+}
 
 
 export const getProductivityStats: AIHandler = {
-  execute: async (params, context) => {
-    const completed = context.tasks.filter((t: any) => t.completed).length;
-    const total = context.tasks.length;
-    const topHabit = context.habits.reduce((prev: any, current: any) =>
-      (prev.streak > current.streak) ? prev : current, context.habits[0] || {}
+  execute: async () => {
+    const tasks = allTasks();
+    const completed = tasks.filter((t: any) => t.completed).length;
+    const total = tasks.length;
+    const habits = allHabits();
+    const topHabit = habits.reduce((prev: any, current: any) =>
+      (prev.streak > current.streak) ? prev : current, habits[0] || {}
     );
     return {
       completionRate: `${((completed / (total || 1)) * 100).toFixed(0)}%`,
@@ -20,21 +35,23 @@ export const getProductivityStats: AIHandler = {
 
 }
 export const getImmediateContext: AIHandler = {
-  execute: async (params, context) => {
+  execute: async () => {
     console.log("[Memory] Fetching short-term context...");
-    const result = await context.getImmediateContext();
+    const result = await getImmediateContextWithEffects();
+    //console.log("[Memory] Short-term context:", result);
     return { output: result };
   }
 }
 
 export const searchHistoricalActions: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     console.log(`[Memory] Searching long-term context for: ${params.keywords}`);
-    const result = await context.getMoreContext({
+    const result = getMoreContextWithEffects({
       keywords: params.keywords,
       daysBack: params.daysBack,
       actionTypeOnly: params.actionTypeOnly
     });
+    //console.log("[Memory] Long-term context:", result);
     return { output: result };
   }
 }

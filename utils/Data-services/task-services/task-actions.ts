@@ -13,7 +13,7 @@ import {
  * from a component if the completion should count toward metrics.
  */
 
-export async function addTaskWithEffects(task: Task, actor: 'user' | 'ai' = "user"): Promise<void> {
+export async function addTaskWithEffects(task: Task, actor: 'user' | 'ai' = "user", mode: 'regular' | 'undo' = "regular"): Promise<void> {
   if (task.reminder) {
     const notificationId = await scheduleReminderTasks(task);
     task.notificationId = notificationId;
@@ -24,9 +24,21 @@ export async function addTaskWithEffects(task: Task, actor: 'user' | 'ai' = "use
     amount: 1,
     actor,
   });
+
+  if (mode === 'undo') {
+    if (task.completed) {
+      metricsEventBus.emit("metric:track", { keys: ["tasksDeleted"], amount: -1 });
+    } else {
+      metricsEventBus.emit("metric:track", {
+        keys: ["tasksDeleted", "tasksAbandoned"],
+        amount: -1,
+        actor,
+      });
+    }
+  }
 }
 
-export async function editTaskWithEffects(task: Task, actor: 'user' | 'ai' = "user"): Promise<void> {
+export async function editTaskWithEffects(task: Task, actor: 'user' | 'ai' = "user", mode: 'regular' | 'undo' = "regular"): Promise<void> {
   const oldTask = useTaskStore.getState().tasksById[task.id];
   if (!oldTask) throw new Error(`Task ${task.id} not found`);
 
@@ -46,9 +58,17 @@ export async function editTaskWithEffects(task: Task, actor: 'user' | 'ai' = "us
     amount: 1,
     actor,
   });
+
+  if (mode === 'undo') {
+    metricsEventBus.emit("metric:track", {
+      keys: ["tasksEdited"],
+      amount: -1,
+      actor,
+    });
+  }
 }
 
-export async function deleteTaskWithEffects(id: string, actor: 'user' | 'ai' = "user"): Promise<void> {
+export async function deleteTaskWithEffects(id: string, actor: 'user' | 'ai' = "user", mode: 'regular' | 'undo' = "regular"): Promise<void> {
   const task = useTaskStore.getState().tasksById[id];
   if (!task) throw new Error(`Task ${id} not found`);
   await useTaskStore.getState().removeTask(id);
@@ -66,9 +86,17 @@ export async function deleteTaskWithEffects(id: string, actor: 'user' | 'ai' = "
       actor,
     });
   }
+
+  if (mode === 'undo') {
+    metricsEventBus.emit("metric:track", {
+      keys: ["tasksAdded"],
+      amount: -1,
+      actor,
+    });
+  }
 }
 
-export async function deleteAllTasksWithEffects(actor: 'user' | 'ai' = "user"): Promise<void> {
+export async function deleteAllTasksWithEffects(actor: 'user' | 'ai' = "user", mode: 'regular' | 'undo' = "regular"): Promise<void> {
   const DeletedTasks = Object.values(useTaskStore.getState().tasksById);
   const noOfDeletedTasks = DeletedTasks.length;
   await useTaskStore.getState().removeTasks();
@@ -81,7 +109,7 @@ export async function deleteAllTasksWithEffects(actor: 'user' | 'ai' = "user"): 
   metricsEventBus.emit("metric:track", { keys: ["tasksAbandoned"], amount: noOfAbandonedTasks, actor });
 
 }
-export async function toggleTaskWithEffects(id: string, actor: 'user' | 'ai' = "user"): Promise<void> {
+export async function toggleTaskWithEffects(id: string, actor: 'user' | 'ai' = "user", mode: 'regular' | 'undo' = "regular"): Promise<void> {
   const task = useTaskStore.getState().tasksById[id];
   if (!task) throw new Error(`Task ${id} not found`);
 

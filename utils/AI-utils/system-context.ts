@@ -4,6 +4,9 @@ import { Habit } from '@/types/habits';
 import { Task } from '@/types/task';
 import { Tag } from '@/types/tag';
 import { Category } from '@/types/category';
+import { useTaskStore } from '@/stores/use-task-store';
+import { useHabitStore } from '@/stores/use-habit-store';
+import { useEventStore } from '@/stores/use-event-store';
 
 /**
  * Generates a string representing the current date and time context.
@@ -12,7 +15,7 @@ let lastState = {
     tk: [] as any[],
     hb: [] as any[],
     ev: [] as any[],
-    cat: [] as any[], 
+    cat: [] as any[],
     tag: [] as any[],
 };
 
@@ -62,7 +65,7 @@ const serializeHabits = (habits: Habit[]) => {
             f: h.streakFreezes,
             ldc: h.history.length > 0 ? h.history[h.history.length - 1] : '-',
             cat: h.category ? h.category.slice(0, 8) : '-',
-        tg: h.tags?.length ? h.tags.map(id => id.slice(0, 8)).join('|') : '-',
+            tg: h.tags?.length ? h.tags.map(id => id.slice(0, 8)).join('|') : '-',
         }))
 
 
@@ -97,9 +100,9 @@ const calculateDiff = (current: any[], last: any[]) => {
 };
 
 export const getAppStatusSnapshot = (context: any) => {
-    const currTk = serializeTasks(context.tasks);
-    const currHb = serializeHabits(context.habits);
-    const currEv = serializeEvents(context.events);
+    const currTk = serializeTasks(Object.values(useTaskStore.getState().tasksById));
+    const currHb = serializeHabits(Object.values(useHabitStore.getState().habitsById));
+    const currEv = serializeEvents(Object.values(useEventStore.getState().eventsById));
     const currCat = serializeCategories(context.categories);
     const currTag = serializeTags(context.tags);
 
@@ -110,7 +113,7 @@ export const getAppStatusSnapshot = (context: any) => {
     const catDiff = calculateDiff(currCat, lastState.cat);
     const tagDiff = calculateDiff(currTag, lastState.tag);
     const isFirstTime = lastState.tk.length === 0 && lastState.hb.length === 0 && lastState.ev.length === 0;
-    lastState = { tk: currTk, hb: currHb, ev: currEv , cat: currCat, tag: currTag};
+    lastState = { tk: currTk, hb: currHb, ev: currEv, cat: currCat, tag: currTag };
     if (isFirstTime) {
         return `${getTemporalContext()},
 

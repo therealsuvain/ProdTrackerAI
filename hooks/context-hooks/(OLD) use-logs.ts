@@ -1,4 +1,4 @@
-import { useContext } from "react";
+/* import { useContext } from "react";
 import { LogContext } from "@/context/LogContext";
 
 export const useLogs = () => {
@@ -7,4 +7,4 @@ export const useLogs = () => {
         throw new Error("useLogs must be used within a LogProvider");
     }
     return context;
-}
+} */

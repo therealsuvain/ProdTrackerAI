@@ -6,21 +6,34 @@ import { createHabit } from "../../model-factory-utils";
 import { resolveIdsFromNames } from "./tags-and-categories-handlers";
 import { AIActionMemory } from "./ai-action-undo-handlers";
 import { fastCosineSimilarity, generateEmbedding } from "@/utils/embedding-engine";
+import { useHabitStore } from "@/stores/use-habit-store";
+import { addHabitWithEffects, batchMutateHabitsWithEffects, checkInHabitWithEffects, deleteHabitWithEffects, editHabitWithEffects, freezeHabitWithEffects } from "@/utils/Data-services/habit-services/habit-actions";
+
+
+function findHabitByShortId(shortId: string): Habit | undefined {
+  return Object.values(useHabitStore.getState().habitsById).find(
+    (h) => h.id.slice(0, 8) === shortId,
+  );
+}
+function allHabits(): Habit[] {
+  return Object.values(useHabitStore.getState().habitsById);
+}
 
 export const AddHabitHandler: AIHandler = {
   execute: async (params, context) => {
-    const newHabit : Habit= await createHabit(params);
-    if (newHabit.reminder) {
-      try {
-        newHabit.notificationId = await scheduleReminderHabits(newHabit);
-      } catch (error) {
-        console.warn("Failed to schedule habit notifications:", error);
-        return { status: "partial_success", reason: "Failed to schedule notification", task: newHabit };
-      }
-    }
+    const newHabit: Habit = await createHabit(params);
+    /*  if (newHabit.reminder) {
+       try {
+         newHabit.notificationId = await scheduleReminderHabits(newHabit);
+       } catch (error) {
+         console.warn("Failed to schedule habit notifications:", error);
+         return { status: "partial_success", reason: "Failed to schedule notification", task: newHabit };
+       }
+     } */
     //!  Undo Stack Push
     AIActionMemory.push({ type: 'DELETE_HABIT', payload: { habit: newHabit }, timestamp: Date.now() })
-    context.addHabit(newHabit);
+    await addHabitWithEffects(newHabit, 'ai');
+    /* context.addHabit(newHabit);
     if (newHabit.frequency === 'daily') {
                             context.trackMetric(["habitsAdded", "habitsWithDailyGoals"], 1);
                             context.trackMetric(["habitsAdded", "habitsWithDailyGoals"], 1,'ai');
@@ -28,7 +41,7 @@ export const AddHabitHandler: AIHandler = {
                         else {
                             context.trackMetric(["habitsAdded", "habitsWithWeeklyGoals"], 1);
                             context.trackMetric(["habitsAdded", "habitsWithWeeklyGoals"], 1,'ai');
-                        }
+                        } */
     console.log(`AI Action: Added Habit "${newHabit.title}"`);
     const { id, embedding, ...rest } = newHabit;
     return { status: "success", habit: { id: id.slice(0, 8), ...rest } };
@@ -38,7 +51,7 @@ export const AddHabitHandler: AIHandler = {
 
 export const EditHabitHandler: AIHandler = {
   execute: async (params, context) => {
-    const oldHabit = context.habits.find((t) => t.id.slice(0, 8) === params.id);
+    const oldHabit = findHabitByShortId(params.id);
     if (!oldHabit) {
       throw new Error("Habit not found");
     }
@@ -52,20 +65,21 @@ export const EditHabitHandler: AIHandler = {
       currentTags = currentTags.filter(id => !params.removeTagIds.includes(id));
     }
     const newHabit = await createHabit({ ...oldHabit, ...params, tags: currentTags, id: oldHabit.id });
-    if (newHabit.reminder) {
-      try {
-        if (newHabit.notificationId) await cancelReminder(newHabit.notificationId);
-        newHabit.notificationId = await scheduleReminderHabits(newHabit);
-      } catch (error) {
-        console.warn("Failed to schedule habit notifications:", error);
-        return { status: "partial_success", reason: "Failed to schedule notification", task: newHabit };
-      }
-    }
+    /*  if (newHabit.reminder) {
+       try {
+         if (newHabit.notificationId) await cancelReminder(newHabit.notificationId);
+         newHabit.notificationId = await scheduleReminderHabits(newHabit);
+       } catch (error) {
+         console.warn("Failed to schedule habit notifications:", error);
+         return { status: "partial_success", reason: "Failed to schedule notification", task: newHabit };
+       }
+     } */
     //!  Undo Stack Push
     AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit }, timestamp: Date.now() });
-    context.trackMetric(["habitsEdited"], 1);
+    /* context.trackMetric(["habitsEdited"], 1);
     context.trackMetric(["habitsEdited"], 1, 'ai');
-    await context.editHabit(newHabit);
+    await context.editHabit(newHabit); */
+    await editHabitWithEffects(newHabit, 'ai');
     const { id, embedding, ...rest } = newHabit;
     return { status: "success", habit: { id: id.slice(0, 8), ...rest } };
   }
@@ -73,18 +87,19 @@ export const EditHabitHandler: AIHandler = {
 
 export const DeleteHabitHandler: AIHandler = {
   execute: async (params, context) => {
-    const oldHabit = context.habits.find((t) => t.id.slice(0, 8) === params.id);
+    const oldHabit = findHabitByShortId(params.id);
     if (!oldHabit) {
       throw new Error("Task not found");
     }
-    if (oldHabit.notificationId) {
-      await cancelReminder(oldHabit.notificationId);
-    }
+    /*  if (oldHabit.notificationId) {
+       await cancelReminder(oldHabit.notificationId);
+     } */
     //!  Undo Stack Push
     AIActionMemory.push({ type: 'ADD_DELETED_HABIT', payload: { habit: oldHabit }, timestamp: Date.now() });
-    await context.removeHabit(oldHabit.id);
+    /* await context.removeHabit(oldHabit.id);
     context.trackMetric(["habitsDeleted"], 1);
-    context.trackMetric(["habitsDeleted"], 1,'ai');
+    context.trackMetric(["habitsDeleted"], 1,'ai'); */
+    await deleteHabitWithEffects(oldHabit.id, 'ai');
     const { id, title } = oldHabit;
     return { status: "success", habit: { id: id.slice(0, 8), title } };
   }
@@ -92,34 +107,35 @@ export const DeleteHabitHandler: AIHandler = {
 
 export const CheckInHabitHandler: AIHandler = {
   execute: async (params, context) => {
-    const oldHabit = context.habits.find((h) => h.id.slice(0, 8) === params.id);
+    const oldHabit = findHabitByShortId(params.id);
     if (!oldHabit) throw new Error("Habit not found");
-    const result = checkInHabit(oldHabit);
-    if (result.status === "denied")
-      return { status: "denied", reason: result.reason }
+    const result = await checkInHabitWithEffects(oldHabit.id);
+    if (result !== "success" && result !== "goal_reached")
+      return { status: "denied", reason: result }
     //!  Undo Stack Push
     AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit }, timestamp: Date.now() });
-    await context.editHabit(result.habit);
-    context.trackMetric(["habitsCheckedIn"], 1);
-    context.trackMetric(["habitsCheckedIn"], 1,'ai');
-    const { id, title } = result.habit;
+
+    /*  await context.editHabit(result.habit);
+     context.trackMetric(["habitsCheckedIn"], 1);
+     context.trackMetric(["habitsCheckedIn"], 1,'ai'); */
+    const { id, title } = oldHabit;
     return { status: "success", habit: { id: id.slice(0, 8), title } };
   }
 };
 
 export const FreezeHabitHandler: AIHandler = {
   execute: async (params, context) => {
-    const oldHabit = context.habits.find((h) => h.id.slice(0, 8) === params.id);
+    const oldHabit = findHabitByShortId(params.id);
     if (!oldHabit) throw new Error("Habit not found");
-    const result = freezeHabit(oldHabit);
-    if (result.status === "denied")
-      return { status: "denied", reason: result.reason }
+    const result = await freezeHabitWithEffects(oldHabit.id);
+    if (result !== "success")
+      return { status: "denied", reason: result }
     //!  Undo Stack Push
     AIActionMemory.push({ type: 'REVERT_UPDATE_HABIT', payload: { habit: oldHabit }, timestamp: Date.now() });
-    await context.editHabit(result.habit);
-    context.trackMetric(["habitsFrozen"], 1);
-    context.trackMetric(["habitsFrozen"], 1 ,'ai');
-    const { id, title } = result.habit;
+    /*    await context.editHabit(result.habit);
+       context.trackMetric(["habitsFrozen"], 1);
+       context.trackMetric(["habitsFrozen"], 1, 'ai'); */
+    const { id, title } = oldHabit;
     return { status: "success", habit: { id: id.slice(0, 8), title } };
   }
 }
@@ -146,7 +162,7 @@ export const BatchMutateHabitsHandler: AIHandler = {
     const { searchFilters, mutationPayload } = params;
     const cateogryId = searchFilters.categoryName ? resolveIdsFromNames(searchFilters.categoryName, context.categories)[0] : undefined;
     // 1. O(N) Hard Filtering
-    let targets = (context.habits || []).filter((habit: any) => {
+    let targets = (allHabits() || []).filter((habit: any) => {
       const currentStatus = getHabitStatus(habit);
       if (searchFilters.status && searchFilters.status !== "all" && currentStatus !== searchFilters.status) return false;
       if (searchFilters.frequency && searchFilters.frequency !== "all" && habit.frequency !== searchFilters.frequency) return false;
@@ -179,7 +195,7 @@ export const BatchMutateHabitsHandler: AIHandler = {
     }
     // 4. Execute Atomic Update
     try {
-      await context.batchMutateHabits(targets, mutationPayload);
+      await batchMutateHabitsWithEffects(targets, mutationPayload);
       return { output: `Successfully batch updated ${targets.length} habits.` };
     } catch (error) {
       return { error: "Database transaction failed. All partial updates were automatically rolled back." };
@@ -202,7 +218,7 @@ export const QueryHabitsHandler: AIHandler = {
 
     // DEEP DIVE: Specific Habit
     if (specificHabitId) {
-      const targetHabit = context.habits.find((h: Habit) => h.id.slice(0, 8) === specificHabitId);
+      const targetHabit = findHabitByShortId(specificHabitId);
       if (!targetHabit) return { error: "Habit not found in database." };
 
       return {
@@ -231,7 +247,7 @@ export const QueryHabitsHandler: AIHandler = {
     }
     const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, context.categories)[0] : undefined;
     const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, context.tags) : [];
-    let filtered = [...(context.habits || [])];
+    let filtered = [...(allHabits() || [])];
 
     if (targetCategoryId) {
       filtered = filtered.filter(h => h.category === targetCategoryId);
