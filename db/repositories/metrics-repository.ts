@@ -669,11 +669,18 @@ export async function mutateMetricInDb(
 
         if (key in dailyColumnMap) {
             const dailyKey = key as DailyMetricKey;
-            dailyInsert[dailyKey] = Math.max(0, amount);
-            dailyUpdate[dailyKey] = sql`MAX(0, COALESCE(${dailyMetrics[dailyKey]}, 0) + ${amount})`;
+            if (dailyKey === 'habitsStreakMaxDaily' || dailyKey === 'habitsStreakMaxWeekly') {
+                dailyInsert[dailyKey] = Math.max(0, amount);
+                dailyUpdate[dailyKey] = sql`MAX(COALESCE(${dailyMetrics[dailyKey]}, 0) ,${amount})`;
+            }
+            else {
+                dailyInsert[dailyKey] = Math.max(0, amount);
+                dailyUpdate[dailyKey] = sql`MAX(0, COALESCE(${dailyMetrics[dailyKey]}, 0) + ${amount})`;
+            }
             hasDailyUpdates = true;
         }
     }
+
     globalUpdate['updatedAt'] = new Date().toISOString();
     globalUpdateAI['updatedAt'] = new Date().toISOString();
 
@@ -692,8 +699,14 @@ export async function mutateMetricInDb(
         }
 
         const dailyKeyAI = key as DailyMetricKey;
-        dailyInsertAI[dailyKeyAI] = Math.max(0, amount);
-        dailyUpdateAI[dailyKeyAI] = sql`MAX(0, COALESCE(${dailyMetricsAI[dailyKeyAI]}, 0) + ${amount})`;
+        if (dailyKeyAI === 'habitsStreakMaxDaily' || dailyKeyAI === 'habitsStreakMaxWeekly') {
+            dailyInsertAI[dailyKeyAI] = Math.max(0, amount);
+            dailyUpdateAI[dailyKeyAI] = sql`MAX(COALESCE(${dailyMetricsAI[dailyKeyAI]}, 0) ,${amount})`;
+        }
+        else {
+            dailyInsertAI[dailyKeyAI] = Math.max(0, amount);
+            dailyUpdateAI[dailyKeyAI] = sql`MAX(0, COALESCE(${dailyMetricsAI[dailyKeyAI]}, 0) + ${amount})`;
+        }
         hasDailyUpdatesAI = true;
     }
 

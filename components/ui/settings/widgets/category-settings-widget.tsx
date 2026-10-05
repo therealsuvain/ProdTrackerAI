@@ -4,15 +4,19 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryCreator } from "@/components/ui/shared/categories/category-creation-view"; // Adjust path as needed
 import { Category } from "@/types/category";
+import { addCategoryWithEffects } from "@/utils/Data-services/taxonomy-services/category-actions";
+import {
+  selectCategoryList,
+  useCategoryStore,
+} from "@/stores/use-category-store";
+import { useShallow } from "zustand/shallow";
 
 export const CategorySettingsWidget = () => {
   const { theme } = useContext(ThemeContext);
-  const { categories, addCategory } = useData(); // Or wherever your DAO/Context lives
   const router = useRouter();
-
+  const categories = useCategoryStore(useShallow(selectCategoryList));
   const [isCreating, setIsCreating] = useState(false);
 
   // 1. Fetch Top 7 Categories
@@ -27,9 +31,7 @@ export const CategorySettingsWidget = () => {
     icon: string,
   ) => {
     // Call your actual DAO insertion here
-    if (addCategory) {
-      await addCategory({ name, color, icon } as Category);
-    }
+    await addCategoryWithEffects({ name, color, icon } as Category);
     setIsCreating(false);
   };
 

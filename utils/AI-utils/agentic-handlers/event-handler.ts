@@ -9,6 +9,8 @@ import { GlobalMetricKey } from "@/types/metrics";
 import { CalendarEvent } from "@/types/calendar";
 import { addEventWithEffects, batchMutateEventsWithEffects, deleteEventOccurrenceWithEffects, deleteEventWithEffects, editEventWithEffects } from "@/utils/Data-services/event-services/event-actions";
 import { useEventStore } from "@/stores/use-event-store";
+import { getCategoryList } from "@/stores/use-category-store";
+import { getTagList } from "@/stores/use-tag-store";
 
 function findEventByShortId(shortId: string): CalendarEvent | undefined {
   return Object.values(useEventStore.getState().eventsById).find(
@@ -21,7 +23,7 @@ function allEvents(): CalendarEvent[] {
 
 
 export const AddEventHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const newEvent: CalendarEvent = await createEvent(params);
     /*  if (newEvent.reminder) {
        try {
@@ -73,7 +75,7 @@ export const AddEventHandler: AIHandler = {
 }
 
 export const EditEventHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const oldEvent = findEventByShortId(params.id);
     if (!oldEvent) throw new Error("Event not found");
     let currentTags = Array.isArray(oldEvent.tags) ? [...oldEvent.tags] : [];
@@ -111,7 +113,7 @@ export const EditEventHandler: AIHandler = {
   }
 };
 export const DeleteEventSingleOccurrenceHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const oldEvent = findEventByShortId(params.id);
     if (!oldEvent) throw new Error("Event not found");
     //!  Undo Stack Push
@@ -124,7 +126,7 @@ export const DeleteEventSingleOccurrenceHandler: AIHandler = {
 };
 
 export const DeleteEventHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const oldEvent = findEventByShortId(params.id);
     if (!oldEvent) throw new Error("Event not found");
     /*     if (oldEvent.notificationIds?.length) {
@@ -151,10 +153,11 @@ const outOfTimeRange = (event: any, rangeStart: Date | null, rangeEnd: Date | nu
   return eventStart < rangeStart || (eventEnd ?? eventStart) > rangeEnd ? true : false
 }
 export const BatchMutateEventsHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const { searchFilters, mutationPayload } = params;
     const { rangeStart, rangeEnd } = getTimeRangeHelper(searchFilters.timeRange);
-    const cateogryId = searchFilters.categoryName ? resolveIdsFromNames(searchFilters.categoryName, context.categories)[0] : undefined;
+    const categories = getCategoryList();
+    const cateogryId = searchFilters.categoryName ? resolveIdsFromNames(searchFilters.categoryName, categories)[0] : undefined;
     // 1. O(N) Hard Filtering
     let targets = (allEvents() || []).filter((event: any) => {
 
@@ -183,7 +186,7 @@ export const BatchMutateEventsHandler: AIHandler = {
       type: 'BATCH_REVERT_EVENTS',
       payload: { originalEvents: targets }, timestamp: Date.now()
     });
-    const newCateogryId = mutationPayload.category ? resolveIdsFromNames(mutationPayload.category, context.categories)[0] : undefined;
+    const newCateogryId = mutationPayload.category ? resolveIdsFromNames(mutationPayload.category, categories)[0] : undefined;
     if (newCateogryId) {
       mutationPayload.category = newCateogryId;
     }
@@ -199,7 +202,7 @@ export const BatchMutateEventsHandler: AIHandler = {
 
 
 export const QueryEventsHandler: AIHandler = {
-  execute: async (args: any, context: any) => {
+  execute: async (args: any) => {
     const { timeRange = "today", timeOfDay = "all", specificEventId, categoryName,
       tagNames } = args;
     const now = new Date();
@@ -249,8 +252,11 @@ export const QueryEventsHandler: AIHandler = {
         }
       };
     }
-    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, context.categories)[0] : undefined;
-    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, context.tags) : [];
+
+    const categories = getCategoryList();
+    const tags = getTagList();
+    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, categories)[0] : undefined;
+    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, tags) : [];
     // GENERAL QUERY (Time Ranges and Time of Day)
     let filtered = [...(allEvents() || [])];
     const startOfToday = new Date(now.setHours(0, 0, 0, 0));

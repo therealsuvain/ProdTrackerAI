@@ -18,20 +18,20 @@ export function SearchResults({ results, onItemPress }: SearchResultsProps) {
       renderItem={({ item }) => (
         <TouchableOpacity onPress={() => onItemPress(item)}>
           {item.type === "task" && (
-            <TaskItem task={item.item as any} onToggleComplete={() => {}} />
+            <TaskItem id={item.item.id as any} onToggleComplete={() => {}} />
           )}
-          {item.type === "event" && <EventItem event={item.item as any} />}
+          {item.type === "event" && <EventItem id={item.item as any} />}
           {item.type === "habit" && (
             <HabitItem
-              habit={item.item as any}
-              onUpdate={() => 0}
+              id={item.item as any}
+              onCheckin={async (id) => undefined}
               onDelete={() => 0}
               onEdit={() => 0}
             />
           )}
           {item.type === "log" && (
             <TimerLogItem
-              log={item.item as any}
+              logId={item.item as any}
               onDelete={() => {}}
               onEdit={() => {}}
             />

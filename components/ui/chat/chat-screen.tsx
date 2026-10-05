@@ -21,7 +21,6 @@ import {
   useDbErrorToast,
 } from "@/components/shared/db-error-toast";
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { useTaskStore } from "@/stores/use-task-store";
 
@@ -95,6 +94,10 @@ import {
   updateActionArgsWithEffects,
 } from "@/utils/Data-services/chat-services/chat-actions";
 import { useChatStore } from "@/stores/use-chat-store";
+import {
+  selectCategoryList,
+  useCategoryStore,
+} from "@/stores/use-category-store";
 //import { LoadingBubble } from "./loading-bubble-split-flap-opt";
 
 interface Props {
@@ -117,24 +120,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const { isLoading, startRecording, stopRecording, transcript, error } =
     useVoiceInput({});
   const messages = useChatStore(useShallow((state) => state.messages));
-  const {
-    trackMetric,
-    categories,
-    addCategory,
-    updateUserCategory,
-    incrementCategoryUsage,
-    deleteUserCategory,
-    getCategoryUsageForAll,
-    tags,
-    addTags,
-    incrementTagUsage,
-    updateUserTag,
-    deleteUserTag,
-    getTagUsageForAll,
-    getItemIdsForTagLocal,
-    reassignDeletedCategory,
-    reassignDeletedTag,
-  } = useData();
 
   const tasks = useTaskStore(
     useShallow((state) => Object.values(state.tasksById)),
@@ -149,6 +134,8 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const timerLogs = useTimerLogStore(
     useShallow((state) => Object.values(state.logsById)),
   );
+
+  const categories = useCategoryStore(useShallow(selectCategoryList));
   const { toastError, showToast, dismissToast } = useDbErrorToast();
   const [isThinking, setIsThinking] = useState(false);
   const flatListRef = useRef<FlatList>(null);
@@ -158,25 +145,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
     Map<string, ReturnType<typeof setTimeout>>
   >(new Map()); */
   const player = usePlaySound(audioSource);
-  const curatedContext = {
-    categories,
-    addCategory,
-    updateUserCategory,
-    incrementCategoryUsage,
-    deleteUserCategory,
-    getCategoryUsageForAll,
-    tags,
-    addTags,
-    incrementTagUsage,
-    updateUserTag,
-    deleteUserTag,
-    getTagUsageForAll,
-    trackMetric,
-    timerLogs,
-    reassignDeletedCategory,
-    reassignDeletedTag,
-    getItemIdsForTagLocal,
-  };
   const chatItems = useMemo(() => injectDaySeparators(messages), [messages]);
   const [agentProgress, setAgentProgress] = useState<string | null>(null);
 
@@ -354,7 +322,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       const { response, calls } = await processCommandAgentic(
         text,
         {
-          ...curatedContext,
           setTitle,
           start,
           stop,
@@ -436,7 +403,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       const response = await agenticExecutor(
         actions,
         {
-          ...curatedContext,
           setTitle,
           start,
           stop,

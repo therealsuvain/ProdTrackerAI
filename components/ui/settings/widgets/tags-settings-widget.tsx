@@ -4,12 +4,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/context-hooks/use-data"; // Adjust to your context
 import { TagBadge } from "../../shared/tags/tag-badge";
+import { selectTagList, useTagStore } from "@/stores/use-tag-store";
+import { useShallow } from "zustand/shallow";
 
 export const TagSettingsWidget = () => {
   const { theme } = useContext(ThemeContext);
-  const { tags } = useData();
+  const tags = useTagStore(useShallow(selectTagList));
 
   // 1. Fetch Top Tags (e.g., top 14 to ensure we have enough for 2 rows)
   const topTags = useMemo(() => {

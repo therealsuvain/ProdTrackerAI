@@ -156,6 +156,7 @@ export const useTaskStore = create<TaskStoreState>((set, get) => {
     },
 
     editTask: async (task) => {
+      //console.log(JSON.stringify(task));
       await applyOptimisticMutation(
         [task.id],
         (tasksById) =>

@@ -26,6 +26,7 @@ import m0021 from './0021_peaceful_lady_mastermind.sql';
 import m0022 from './0022_melodic_scream.sql';
 import m0023 from './0023_aberrant_jetstream.sql';
 import m0024 from './0024_new_blink.sql';
+import m0025 from './0025_redundant_bloodstorm.sql';
 
   export default {
     journal,
@@ -54,7 +55,8 @@ m0020,
 m0021,
 m0022,
 m0023,
-m0024
+m0024,
+m0025
     }
   }
   

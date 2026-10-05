@@ -1,11 +1,11 @@
 import { CategoryBadge } from "../shared/categories/category-badge";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { useEventStore } from "@/stores/use-event-store";
 import { useEventDetailsUiStore } from "./event-details-ui-store";
 import { ThemeContext } from "@/context/ThemeContext";
 import React, { useCallback, useContext, useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useShallow } from "zustand/shallow";
+import { useCategoryStore } from "@/stores/use-category-store";
 
 interface EventPillProps {
   id: string;
@@ -17,7 +17,6 @@ export const EventPill = React.memo(function EventPill({
   occurrence,
 }: EventPillProps) {
   const { theme } = useContext(ThemeContext);
-  const { categories } = useData();
   const pillRef = useRef<View>(null);
 
   const { title, categoryId } = useEventStore(
@@ -31,7 +30,7 @@ export const EventPill = React.memo(function EventPill({
   );
 
   const category = categoryId
-    ? categories.find((item) => item.id === categoryId)
+    ? useCategoryStore((s) => s.categoriesById[categoryId])
     : undefined;
 
   const handlePress = useCallback(() => {

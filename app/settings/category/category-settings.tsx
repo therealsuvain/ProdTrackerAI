@@ -11,7 +11,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
 import { CategoryEditModal } from "@/components/ui/shared/categories/category-edit-modal";
 import { CategoryCreator } from "@/components/ui/shared/categories/category-creation-view";
@@ -24,20 +23,23 @@ import { reassignTaskCategoryWithEffects } from "@/utils/Data-services/task-serv
 import { reassignHabitCategoryWithEffects } from "@/utils/Data-services/habit-services/habit-actions";
 import { reassignEventCategoryWithEffects } from "@/utils/Data-services/event-services/event-actions";
 import { reassignLogCategoryWithEffects } from "@/utils/Data-services/timerlog-services/log-actions";
+import {
+  selectCategoryList,
+  useCategoryStore,
+} from "@/stores/use-category-store";
+import { useShallow } from "zustand/shallow";
+import {
+  deleteCategoryWithEffects,
+  editCategoryWithEffects,
+  getCategoryUsageForAll,
+} from "@/utils/Data-services/taxonomy-services/category-actions";
 
 // We will build this in Step 3. Importing it now as a placeholder.
 // import { CategoryAnalyticsModal } from '@/components/settings/category-analytics-modal';
 
 export default function CategoriesSettingsScreen() {
   const { theme } = useContext(ThemeContext);
-  const {
-    categories,
-    updateUserCategory,
-    deleteUserCategory,
-    getCategoryUsageForAll,
-    trackMetric,
-  } = useData();
-
+  const categories = useCategoryStore(useShallow(selectCategoryList));
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -101,12 +103,11 @@ export default function CategoriesSettingsScreen() {
     id: string,
     fallbackId?: string | null,
   ) => {
-    trackMetric(["categoriesDeleted"], 1);
     if (fallbackId === undefined) {
-      await deleteUserCategory(id);
+      await deleteCategoryWithEffects(id);
       return;
     }
-    await deleteUserCategory(id, fallbackId);
+    await deleteCategoryWithEffects(id, fallbackId);
   };
 
   const showEmptyCategoryDeleteDialog = (id: string) => {
@@ -166,8 +167,7 @@ export default function CategoriesSettingsScreen() {
 
   const executeReassignment = async (fallbackId: string) => {
     if (!categoryToDelete) return;
-    trackMetric(["categoriesDeleted"], 1);
-    await deleteUserCategory(categoryToDelete, fallbackId);
+    await deleteCategoryWithEffects(categoryToDelete, fallbackId);
     reassignTaskCategoryWithEffects(categoryToDelete, fallbackId);
     reassignEventCategoryWithEffects(categoryToDelete, fallbackId);
     reassignHabitCategoryWithEffects(categoryToDelete, fallbackId);
@@ -250,19 +250,20 @@ export default function CategoriesSettingsScreen() {
       </ScrollView>
 
       {/* 5. The Analytics Modal Placeholder (Step 3) */}
-      <CategoryEditModal
-        categoryId={selectedCategoryId!}
-        onClose={() => setSelectedCategoryId(null)}
-        onEdit={handleEdit}
-        onDelete={handleDeleteRequest}
-      />
+      {selectedCategoryId && (
+        <CategoryEditModal
+          categoryId={selectedCategoryId}
+          onClose={() => setSelectedCategoryId(null)}
+          onEdit={handleEdit}
+          onDelete={handleDeleteRequest}
+        />
+      )}
       {categoryToEdit && editData && (
         <CategoryCreator
           isCreating={true}
           onClose={() => setCategoryToEdit(null)}
           onCreateCategory={async (name, color, icon) => {
-            trackMetric(["categoriesEdited"], 1);
-            await updateUserCategory({ ...editData, name, color, icon });
+            await editCategoryWithEffects({ ...editData, name, color, icon });
             setCategoryToEdit(null);
           }}
           editingCategory={editData}

@@ -1,11 +1,11 @@
 import { useChatStore } from "@/stores/use-chat-store";
 import { Message } from "@/types/chat";
-import { metricsEventBus } from "@/utils/Analytics/metrics-event-bus";
+import { trackMetric } from "../analytics-services/metric-actions";
 
 export async function addMessageWithEffects(message: Message): Promise<void> {
     await useChatStore.getState().addMessage(message);
     if (message.sender === "user")
-        metricsEventBus.emit("metric:track", { keys: ["chatMessagesSent"], amount: 1 });
+        trackMetric(["chatMessagesSent"], 1, 'ai');
 }
 
 export async function editMessageWithEffects(message: Message): Promise<void> {
@@ -51,7 +51,7 @@ export async function confirmActionMessageWithEffects(messageId: string): Promis
     const message = useChatStore.getState().messages.find((m) => m.id === messageId);
     if (!message || !message.pendingActions || message.isExpired) return;
     await useChatStore.getState().editMessage({ ...message, isConfirmed: true });
-    metricsEventBus.emit("metric:track", { keys: ["chatActionsConfirmed"], amount: 1 });
+    trackMetric(["chatActionsConfirmed"], 1, 'ai');
 }
 
 /**
@@ -63,7 +63,7 @@ export async function cancelActionMessageWithEffects(messageId: string): Promise
     const message = useChatStore.getState().messages.find((m) => m.id === messageId);
     if (!message) return;
     await useChatStore.getState().editMessage({ ...message, isConfirmed: true });
-    metricsEventBus.emit("metric:track", { keys: ["chatActionsCancelled"], amount: 1 });
+    trackMetric(["chatActionsCancelled"], 1, 'ai');
 }
 
 /**

@@ -1,5 +1,8 @@
 import { AIHandler } from "@/types/ai-handler";
 import { resolveIdsFromNames } from "./tags-and-categories-handlers";
+import { useTimerLogStore } from "@/stores/use-timerLog-store";
+import { getCategoryList } from "@/stores/use-category-store";
+import { getTagList } from "@/stores/use-tag-store";
 
 export const StartTimerHandler: AIHandler = {
   execute: async (params, context) => {
@@ -21,13 +24,13 @@ export const StopTimerHandler: AIHandler = {
 };
 
 export const QueryTimerLogsHandler: AIHandler = {
-  execute: async (args: any, context: any) => {
+  execute: async (args: any) => {
     const { minDurationMinutes, maxDurationMinutes, sortBy = "newest_first", specificLogId, categoryName,
       tagNames } = args;
-
+    const timerLogs = Object.values(useTimerLogStore.getState().logsById);
     // DEEP DIVE: Specific Timer Log
     if (specificLogId) {
-      const targetLog = context.timerLogs.find((l: any) => l.id === specificLogId);
+      const targetLog = timerLogs.find((l: any) => l.id === specificLogId);
       if (!targetLog) return { error: "Timer log not found in database." };
 
       return {
@@ -39,9 +42,11 @@ export const QueryTimerLogsHandler: AIHandler = {
         durationSeconds: targetLog.duration || 0
       };
     }
-    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, context.categories)[0] : undefined;
-    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, context.tags) : [];
-    let filtered = [...(context.timerLogs || [])];
+    const categories = getCategoryList();
+    const tags = getTagList();
+    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, categories)[0] : undefined;
+    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, tags) : [];
+    let filtered = [...(timerLogs || [])];
     if (targetCategoryId) {
       filtered = filtered.filter(t => t.category === targetCategoryId);
     }

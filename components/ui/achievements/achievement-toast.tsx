@@ -150,6 +150,7 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: "center",
     pointerEvents: "auto", // Allows touches to pass through the empty space around the toast
+    zIndex: 9999,
   },
   container: {
     flexDirection: "row",

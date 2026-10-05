@@ -181,7 +181,7 @@ export const useHabitForm = ({
         : state.goal,
       goalCompletions: state.goalCompletions || [],
       category: state.category,
-      tags: state.tags,
+      tags: tagIds,
       createdAt: editingHabit ? editingHabit.createdAt : state.createdAt,
       updatedAt: state.updatedAt,
       notificationId: editingHabit ? editingHabit.notificationId : undefined,
@@ -200,9 +200,9 @@ export const useHabitForm = ({
       newHabit.notificationId = notifId;
     } */
 
-    if (tagIds.length > 0) {
-      newHabit.tags = tagIds
-    }
+    /*  if (tagIds.length > 0) {
+       newHabit.tags = tagIds
+     } */
 
     if (editingHabit) {
       await editHabit(newHabit);

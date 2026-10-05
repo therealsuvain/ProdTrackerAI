@@ -5,6 +5,8 @@ import { GlobalMetricKey } from '@/types/metrics';
 import { addEventWithEffects, batchRestoreEventsWithEffects, deleteEventWithEffects, editEventWithEffects } from '@/utils/Data-services/event-services/event-actions';
 import { addHabitWithEffects, batchRestoreHabitsWithEffects, deleteHabitWithEffects, editHabitWithEffects } from '@/utils/Data-services/habit-services/habit-actions';
 import { addTaskWithEffects, batchRestoreTasksWithEffects, deleteTaskWithEffects, editTaskWithEffects } from '@/utils/Data-services/task-services/task-actions';
+import { deleteCategoryWithEffects, editCategoryWithEffects, reassignDeletedCategoryWithEffects } from '@/utils/Data-services/taxonomy-services/category-actions';
+import { deleteTagWithEffects, editTagWithEffects, reassignDeletedTagWithEffects } from '@/utils/Data-services/taxonomy-services/tag-actions';
 import storageMMKV from '@/utils/Storage-Utils/mmkv-instance'
 import { STORAGE_KEYS } from '@/utils/Storage-Utils/storage-keys'
 
@@ -261,27 +263,29 @@ export const RevertLastActionHandler: AIHandler = {
                         break;
                     case 'DELETE_TAG':
                         for (const tag of lastAction.payload.tags) {
-                            await context.deleteUserTag(tag.id);
+                            await deleteTagWithEffects(tag.id, null, 'ai', 'undo');
                         }
                         break;
                     case 'ADD_DELETED_TAG':
-                        await context.reassignDeletedTag(lastAction.payload.tag, lastAction.payload.oldFallbackID, lastAction.payload.originalItems);
+                        await reassignDeletedTagWithEffects(lastAction.payload.tag, lastAction.payload.oldFallbackID, lastAction.payload.originalItems);
                         break;
                     case 'REVERT_UPDATE_TAG':
-                        context.trackMetric(["tagsEdited"], -1);
+                        /* context.trackMetric(["tagsEdited"], -1);
                         context.trackMetric(["tagsEdited"], -1, 'ai');
-                        await context.updateUserTag(lastAction.payload.tag);
+                        await context.updateUserTag(lastAction.payload.tag); */
+                        await editTagWithEffects(lastAction.payload.tag, 'ai', 'undo');
                         break;
                     case 'DELETE_CATEGORY':
-                        await context.deleteUserCategory(lastAction.payload.category.id);
+                        await deleteCategoryWithEffects(lastAction.payload.category.id, null, 'ai', 'undo');
                         break;
                     case 'ADD_DELETED_CATEGORY':
-                        await context.reassignDeletedCategory(lastAction.payload.category, lastAction.payload.oldFallbackID, lastAction.payload.originalItems);
+                        await reassignDeletedCategoryWithEffects(lastAction.payload.category, lastAction.payload.oldFallbackID, lastAction.payload.originalItems);
                         break;
                     case 'REVERT_UPDATE_CATEGORY':
-                        context.trackMetric(["categoriesEdited"], -1);
-                        context.trackMetric(["categoriesEdited"], -1, 'ai');
-                        await context.updateUserCategory(lastAction.payload.category);
+                        /*  context.trackMetric(["categoriesEdited"], -1);
+                         context.trackMetric(["categoriesEdited"], -1, 'ai');
+                         await context.updateUserCategory(lastAction.payload.category); */
+                        await editCategoryWithEffects(lastAction.payload.category, 'ai', 'undo');
                         break;
                     default:
                         console.warn("Unhandled inverse action type:", (lastAction as any).type);

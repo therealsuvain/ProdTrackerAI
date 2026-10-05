@@ -10,7 +10,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/context-hooks/use-data";
+import { getCategoryUsageForAll } from "@/utils/Data-services/taxonomy-services/category-actions";
+import { useCategoryStore } from "@/stores/use-category-store";
 // import { getCategoryUsageStats } from '@/db/repositories/category-repository';
 
 interface CategoryAnalyticsModalProps {
@@ -27,7 +28,6 @@ export const CategoryEditModal = ({
   onDelete,
 }: CategoryAnalyticsModalProps) => {
   const { theme } = useContext(ThemeContext);
-  const { categories, getCategoryUsageForAll } = useData();
 
   const [stats, setStats] = useState({
     tasks: 0,
@@ -38,7 +38,9 @@ export const CategoryEditModal = ({
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  const category = categories.find((c) => c.id === categoryId);
+  const category = useCategoryStore((state) =>
+    categoryId ? state.categoriesById[categoryId] : null,
+  );
 
   useEffect(() => {
     const fetchStats = async () => {

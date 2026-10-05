@@ -4,7 +4,6 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { ConfirmationModal } from "@/components/modal/confirmation-modal";
 import { SettingsGroup } from "@/components/ui/settings/settings-group";
 import { SettingsRow } from "@/components/ui/settings/settings-row";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { SettingItem } from "@/types/settings-ui";
 import { clearStorage } from "@/utils/storage-utils"; // Make sure clearStorage is exported
@@ -24,6 +23,10 @@ import {
   deleteAllLogsWithEffects,
   logCountWithEffects,
 } from "@/utils/Data-services/timerlog-services/log-actions";
+import {
+  resetAchievementsWithEffects,
+  resetMetricsWithEffects,
+} from "@/utils/Data-services/analytics-services/metric-actions";
 
 //TODOOptim 110 : add loading indicator for dark mode atleast
 const DATA_SETTINGS: SettingItem[] = [
@@ -69,8 +72,6 @@ const DATA_SETTINGS: SettingItem[] = [
 export default function DataManagementScreen() {
   const { theme } = useTheme();
   // We bring in the setters from your DataContext to clear the UI state instantly
-  //const { setTasks, setHabits, setEvents, setTimerLogs, setMessages } = useData();-
-  const { resetMetrics, resetAchievements } = useData();
   //const { removeMessages, messageCount } = useChat();
   // Unified Modal State
   const [modalVisible, setModalVisible] = useState(false);
@@ -172,7 +173,7 @@ export default function DataManagementScreen() {
           false,
           "achievements",
           async () => {
-            await resetAchievements();
+            await resetAchievementsWithEffects();
             setModalVisible(false);
           },
         );
@@ -186,8 +187,8 @@ export default function DataManagementScreen() {
           "All_Data",
           async () => {
             await clearStorage();
-            await resetMetrics();
-            await resetAchievements();
+            await resetMetricsWithEffects();
+            await resetAchievementsWithEffects();
             await deleteAllTasksWithEffects();
             await deleteAllHabitsWithEffects();
             await deleteAllEventsWithEffects();

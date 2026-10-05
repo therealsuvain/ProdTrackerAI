@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { getAppStatusSnapshot } from './system-context';
 
 export const generateSystemPrompt = (context: any, userTranscript?: string) => {
-  const environment = getAppStatusSnapshot(context);
+  const environment = getAppStatusSnapshot();
   const today = new Date();
   const todayISO = format(today, 'yyyy-MM-dd');
   const todayHuman = format(today, 'MMMM do yyyy, h:mm a');

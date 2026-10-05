@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { randomUUID } from "expo-crypto";
-import { useData } from "@/hooks/context-hooks/use-data"; // Adjust path as needed
+import { addCategoryWithEffects, deleteCategoryWithEffects, incrementCategoryUsageWithEffects } from "@/utils/Data-services/taxonomy-services/category-actions";
+import { selectTagList, useTagStore } from "@/stores/use-tag-store";
+import { useShallow } from "zustand/shallow";
+import { addTagsWithEffects } from "@/utils/Data-services/taxonomy-services/tag-actions";
+import { selectCategoryList, useCategoryStore } from "@/stores/use-category-store";
+import { or } from "drizzle-orm";
 
 interface UseTagsAndCategoriesProps {
   visible: boolean;
@@ -9,22 +14,15 @@ interface UseTagsAndCategoriesProps {
   updateField?: (field: string, value: any) => void;
 }
 
+//TODO check if categories and tags full arrays needed to passed from here to minor components, or if minor components itself can just sub to these directly , will this improve performance in any way
 export function useTagsAndCategories({ visible, initialTags, initialCategory, updateField }: UseTagsAndCategoriesProps) {
-  const {
-    tags,
-    addTags,
-    categories,
-    addCategory,
-    incrementCategoryUsage,
-    deleteUserCategory,
-  } = useData();
 
   // Local State
   const [category, setCategory] = useState<string | null>(null);
-  const {trackMetric} = useData();
   const [sessionCatIds, setSessionCatIds] = useState<Set<string>>(new Set<string>());
   const [tagNames, setTagNames] = useState<string[]>([]);
-
+  const tags = useTagStore(useShallow(selectTagList));
+  const categories = useCategoryStore(useShallow(selectCategoryList));
   // Refs for Diffing
   const originalTagIdsRef = useRef<string[]>([]);
   const originalCategoryRef = useRef<string | null>(null);
@@ -58,7 +56,7 @@ export function useTagsAndCategories({ visible, initialTags, initialCategory, up
 
   const handleCreateCategory = async (name: string, color: string, icon: string) => {
     const id = randomUUID();
-    await addCategory({ id, name, color, icon });
+    await addCategoryWithEffects({ id, name, color, icon });
     setSessionCatIds((prev) => new Set(prev).add(id));
     setCategory(id);
     if (updateField) { updateField("category", id); } // Sync parent form
@@ -74,10 +72,9 @@ export function useTagsAndCategories({ visible, initialTags, initialCategory, up
       setCategory(null);
       if (updateField) { updateField("category", null) };
     }
-    trackMetric(["categoriesAdded"], -1);
-    await deleteUserCategory(draftId);
+    await deleteCategoryWithEffects(draftId, null, "user", "undo");
   };
-
+  // console.log(tagNames)
   // The Master Save Function (Diffing Logic)
   const processMetadataOnSave = async (currentFormCategory: string | null): Promise<string[]> => {
     let finalIds: string[] = [];
@@ -89,21 +86,21 @@ export function useTagsAndCategories({ visible, initialTags, initialCategory, up
 
       const newNames = tagNames.filter((name) => !originalNames.includes(name));
       const existingNames = tagNames.filter((name) => originalNames.includes(name));
-
+      console.log("newNames", newNames, "existingNames", existingNames, "eoGNames", originalNames);
       const existingIds = existingNames
         .map((name) => tags.find((t) => t.name === name)?.id)
         .filter(Boolean) as string[];
 
-      const newIds = newNames.length > 0 ? await addTags(newNames.map(name => ({ id: randomUUID(), name }))) : [];
+      const newIds = newNames.length > 0 ? await addTagsWithEffects(newNames.map(name => ({ id: randomUUID(), name }))) : [];
       finalIds = [...existingIds, ...newIds];
     } else {
       finalIds = tagNames.length > 0
-        ? await addTags(tagNames.map(name => ({ id: randomUUID(), name })))
+        ? await addTagsWithEffects(tagNames.map(name => ({ id: randomUUID(), name })))
         : [];
     }
 
     if (currentFormCategory !== originalCategoryRef.current && currentFormCategory) {
-      await incrementCategoryUsage(currentFormCategory);
+      await incrementCategoryUsageWithEffects(currentFormCategory);
     }
 
     return finalIds;

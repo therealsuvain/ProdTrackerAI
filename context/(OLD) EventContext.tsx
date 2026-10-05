@@ -49,7 +49,7 @@ export const EventContext = createContext<EventContextType | undefined>(
 );
 
 export default function EventProvider({ children }: { children: ReactNode }) {
-  const { dispatchError, dBloaded } = useData();
+  const { dispatchError /*  dBloaded  */ } = useData();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -242,10 +242,10 @@ export default function EventProvider({ children }: { children: ReactNode }) {
     }
   }, [dispatchError]);
 
-  useEffect(() => {
+  /*   useEffect(() => {
     if (!dBloaded) return;
     refreshEvents();
-  }, [dBloaded]);
+  }, [dBloaded]); */
 
   return (
     <EventContext.Provider

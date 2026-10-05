@@ -22,7 +22,6 @@ const EMPTY_TIMELINE_DATA = {
 };
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { CalendarEvent } from "@/types/calendar";
 import { Ionicons } from "@expo/vector-icons";
 import { selectedDateTaskIds, useTaskStore } from "@/stores/use-task-store";
@@ -69,7 +68,6 @@ export default function UnifiedTimeline({
   onDeleteEvent,
 }: UnifiedTimelineProps) {
   const { theme } = useContext(ThemeContext);
-  const { trackMetric } = useData();
   const isFocused = useIsFocused();
   const scrollViewRef = useRef<ScrollView>(null);
   const selectedDateStr = useMemo(

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useData } from "./context-hooks/use-data"
 import { globalSearch, SearchResult } from "@/utils/search-utils";
 import { useShallow } from "zustand/shallow";
 import { useTaskStore } from "@/stores/use-task-store";

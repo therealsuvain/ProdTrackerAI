@@ -8,9 +8,9 @@ import { ThemeContext } from "@/context/ThemeContext";
 import { formatDuration, formatRelativeTime } from "@/context/TimerContext";
 import { withAlpha } from "@/utils/common-utils";
 import { TagList } from "@/components/ui/shared/tags/tag-list";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
 import { useTimerLogStore } from "@/stores/use-timerLog-store";
+import { useCategoryStore } from "@/stores/use-category-store";
 interface TimerLogItemProps {
   logId: string;
   onDelete: (id: string) => void;
@@ -19,11 +19,12 @@ interface TimerLogItemProps {
 
 function TimerLogItem({ logId, onDelete, onEdit }: TimerLogItemProps) {
   const { theme } = useContext(ThemeContext);
-  const { categories } = useData();
   const log = useTimerLogStore((state) => state.logsById[logId]);
   let logCategory;
   if (log.category) {
-    logCategory = categories.find((c) => c.id === log.category);
+    logCategory = useCategoryStore((state) =>
+      log.category ? state.categoriesById[log.category] : null,
+    );
   }
   const route = useRoute();
   const isNotHome = route.name !== "index";
@@ -37,6 +38,7 @@ function TimerLogItem({ logId, onDelete, onEdit }: TimerLogItemProps) {
 
   const handleDelete = () => onDelete(logId);
   const handleEdit = () => onEdit(logId);
+
   return (
     <Card
       style={[

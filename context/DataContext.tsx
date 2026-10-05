@@ -76,24 +76,24 @@ import { metricsEventBus } from "@/utils/Analytics/metrics-event-bus";
 
 // TODOX if achievemnt unlokec while a modal is open eg. goalCompletionModal , the achievement toast is behind overlay, bring to the top instead
 interface DataContextType {
-  resolveItemId: <T extends { id: string }>(
+  /*  resolveItemId: <T extends { id: string }>(
     shortOrFullId: string,
     items: T[],
-  ) => string | null;
-  unlockedAchievements: AchievementBadge[];
+  ) => string | null; */
+  /* unlockedAchievements: AchievementBadge[]; */
   error: {
     message: string;
     type?: "warning" | "fatal";
   } | null;
   dispatchError: (err: Error | string, type: "warning" | "fatal") => void;
   clearError: () => void;
-  dBloaded: boolean;
-  appMetrics: AppMetrics;
+  /* dBloaded: boolean; */
+  /* appMetrics: AppMetrics;
   achievementMetrics: AchievementMetrics;
   trackMetric: (key: GlobalMetricKey[], amount: number) => void;
   resetMetrics: () => Promise<void>;
-  resetAchievements: () => Promise<void>;
-  tags: Tag[];
+  resetAchievements: () => Promise<void>; */
+  /*   tags: Tag[];
   addTags: (tagsPayload: { id: string; name: string }[]) => Promise<string[]>;
   incrementTagUsage: (id: string) => Promise<void>;
   updateUserTag: (tag: Tag) => Promise<void>;
@@ -120,8 +120,8 @@ interface DataContextType {
     fallbackId: string | null,
     originalItems: Record<string, string[]>,
   ) => Promise<void>;
-  getItemIdsForTagLocal: (id: string) => Promise<Record<string, string[]>>;
-  refreshTagsCatsAchievements: () => Promise<void>;
+  getItemIdsForTagLocal: (id: string) => Promise<Record<string, string[]>>; */
+  /* refreshTagsCatsAchievements: () => Promise<void>; */
 }
 
 export const DataContext = createContext<DataContextType | undefined>(
@@ -132,7 +132,7 @@ export const DataContext = createContext<DataContextType | undefined>(
 const USE_DUMMY_DATA = false;
 
 export default function DataProvider({ children }: { children: ReactNode }) {
-  const [appMetrics, setAppMetrics] = useState<AppMetrics>(DefaultMetrics);
+  /*  const [appMetrics, setAppMetrics] = useState<AppMetrics>(DefaultMetrics);
   const [achievementMetrics, setAchievementMetrics] =
     useState<AchievementMetrics>(DefaultMetrics["global"]);
   const [unlockedAchievements, setUnlockedAchievements] = useState<
@@ -143,15 +143,14 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   // Ref for appMetric snapshot during Optimistic update
   const appMetricsRef = useRef(appMetrics);
   const unlockedAchievementsRef = useRef<AchievementBadge[]>([]);
-  const [activeBadge, setActiveBadge] = useState<AchievementBadge | null>(null);
-  const [dBloaded, setDBLoaded] = useState(false);
+  const [activeBadge, setActiveBadge] = useState<AchievementBadge | null>(null); */
+  /*  const [dBloaded, setDBLoaded] = useState(false); */
   const [error, setError] = useState<{
     message: string;
     type?: "warning" | "fatal";
   } | null>(null);
-  const toastQueueRef = useRef<AchievementBadge[]>([]);
-  const isToastingRef = useRef(false);
-  useDrizzleStudio(sqlite);
+  /* const toastQueueRef = useRef<AchievementBadge[]>([]);
+  const isToastingRef = useRef(false); */
 
   const dispatchError = useCallback(
     (err: Error | string, type: "warning" | "fatal" = "warning") => {
@@ -167,10 +166,10 @@ export default function DataProvider({ children }: { children: ReactNode }) {
 
   const clearError = useCallback(() => setError(null), []);
 
-  const audioSource = require("@/assets/audio/achievement-unlocked.mp3");
-  const audioPlayer = usePlaySound(audioSource);
+  /* onst audioSource = require("@/assets/audio/achievement-unlocked.mp3");
+  const audioPlayer = usePlaySound(audioSource); */
 
-  const resolveItemId = useCallback(
+  /*  const resolveItemId = useCallback(
     <T extends { id: string }>(
       shortOrFullId: string,
       items: T[],
@@ -183,8 +182,8 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       return shortOrFullId;
     },
     [],
-  );
-
+  ); */
+  /* 
   const optimisticUnlockedAchievementMutation = useCallback(
     async (
       optimisticUpdate: (prev: AchievementBadge[]) => AchievementBadge[],
@@ -210,9 +209,9 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       }
     },
     [],
-  );
+  ); */
 
-  const optimisticTagMutation = useCallback(
+  /*   const optimisticTagMutation = useCallback(
     async (
       optimisticUpdate: (prev: Tag[]) => Tag[],
       dbWrite: () => Promise<void> | Promise<Tag>,
@@ -261,8 +260,8 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       }
     },
     [],
-  );
-
+  ); */
+  /* 
   const addUnlockedAchievement = useCallback(
     async (achievement: AchievementBadge): Promise<void> => {
       unlockedAchievementsRef.current = [
@@ -292,9 +291,9 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   const unlockedAchievementCount = useCallback(async (): Promise<number> => {
     const result = await countUnlockedAchievements();
     return result ?? 0;
-  }, []);
+  }, []); */
 
-  const addTags = useCallback(
+  /*   const addTags = useCallback(
     async (
       tagsPayload: { id: string; name: string }[],
       isFromAI?: boolean,
@@ -499,7 +498,7 @@ export default function DataProvider({ children }: { children: ReactNode }) {
                 ? { ...c, count: c.count + deletedCount } // Add the counts safely
                 : c,
             );
-          /* prev.filter((category) => category.id !== id) */
+          // prev.filter((category) => category.id !== id) 
         },
         () => deleteCategorySafely(id, fallbackId),
       );
@@ -521,9 +520,9 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       );
     },
     [],
-  );
+  ); */
 
-  const processToastQueue = useCallback(() => {
+  /* const processToastQueue = useCallback(() => {
     // If already playing a badge, or queue is empty, do nothing.
     if (isToastingRef.current || toastQueueRef.current.length === 0) return;
 
@@ -543,9 +542,9 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         }, 500); // 500ms gap between consecutive badges
       }, 6000); // 6s display duration
     }
-  }, []);
+  }, []); */
 
-  useEffect(() => {
+  /*   useEffect(() => {
     const handleMetricTrack = async ({
       keys,
       amount,
@@ -667,52 +666,52 @@ export default function DataProvider({ children }: { children: ReactNode }) {
     return () => {
       metricsEventBus.off("metric:track", handleMetricTrack);
     };
-  }, [processToastQueue]);
+  }, [processToastQueue]); */
 
   // Your trackMetric function becomes just a mitt emit!
-  const trackMetric = useCallback(
+  /*  const trackMetric = useCallback(
     (keys: GlobalMetricKey[], amount: number, actor?: "user" | "ai") => {
       metricsEventBus.emit("metric:track", { keys, amount, actor });
     },
     [],
-  );
+  ); */
 
   // Initialize and load data
-  const refreshTagsCatsAchievements = useCallback(async () => {
-    try {
-      await seedCategoriesIfEmpty();
-      let loadedMetrics = await loadAppMetricsFromDb();
-      let loadedAchievementMetrics = await loadAchievementMetrics();
-      let loadedUnlockedAchievements = await getAllUnlockedAchievements();
-      let loadedTags = await getAllTags();
-      let loadedCategories = await getAllCategories();
-      await AIActionMemory.init();
-      setAppMetrics(loadedMetrics);
-      setAchievementMetrics(loadedAchievementMetrics);
-      setUnlockedAchievements(loadedUnlockedAchievements);
-      setTags(loadedTags);
-      setCategories(loadedCategories);
-    } catch (err) {
-      console.error("[DataContext] Failed to initialise database:", err);
-      dispatchError(
-        `Failed to initialise database: ${err instanceof Error ? err.message : String(err)}`,
-        "fatal",
-      );
-    } finally {
-      // mark that initial load finished so save effects don't overwrite storage during startup
-      setDBLoaded(true);
-    }
-  }, [dispatchError]);
+  // const refreshTagsCatsAchievements = useCallback(async () => {
+  //   try {
+  //     /* await seedCategoriesIfEmpty();
+  //     let loadedMetrics = await loadAppMetricsFromDb();
+  //     let loadedAchievementMetrics = await loadAchievementMetrics();
+  //     let loadedUnlockedAchievements = await getAllUnlockedAchievements();
+  //     let loadedTags = await getAllTags();
+  //     let loadedCategories = await getAllCategories(); */
+  //     /*  await AIActionMemory.init(); */
+  //     /*  setAppMetrics(loadedMetrics);
+  //     setAchievementMetrics(loadedAchievementMetrics);
+  //     setUnlockedAchievements(loadedUnlockedAchievements);
+  //     setTags(loadedTags);
+  //     setCategories(loadedCategories); */
+  //   } catch (err) {
+  //     console.error("[DataContext] Failed to initialise database:", err);
+  //     dispatchError(
+  //       `Failed to initialise database: ${err instanceof Error ? err.message : String(err)}`,
+  //       "fatal",
+  //     );
+  //   } finally {
+  //     // mark that initial load finished so save effects don't overwrite storage during startup
+  //     /* setDBLoaded(true); */
+  //   }
+  // }, [dispatchError]);
 
-  const transactionalAppMutation = useCallback(
+  /*   const transactionalAppMutation = useCallback(
     async (dbWrite: () => Promise<void>): Promise<void> => {
       try {
         await dbWrite();
         await Promise.all([
-          /* refreshTasks(),
-          refreshHabits(),
-          refreshEvents(),
-          refreshLogs(), */
+          // refreshTasks(),
+          // refreshHabits(),
+          // refreshEvents(),
+          // refreshLogs(),
           refreshTagsCatsAchievements(),
         ]);
       } catch (err) {
@@ -722,15 +721,15 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       }
     },
     [
-      /* refreshTasks,
-      refreshHabits,
-      refreshEvents,
-      refreshLogs, */
+      // refreshTasks,
+      // refreshHabits,
+      // refreshEvents,
+      // refreshLogs,
       refreshTagsCatsAchievements,
     ],
-  );
+  ); */
 
-  const reassignDeletedCategory = useCallback(
+  /*   const reassignDeletedCategory = useCallback(
     async (
       category: Category,
       fallbackId: string | null,
@@ -754,9 +753,9 @@ export default function DataProvider({ children }: { children: ReactNode }) {
       );
     },
     [transactionalAppMutation],
-  );
+  ); */
 
-  const getDateRangeArray = (start: string, end: string): string[] => {
+  /*  const getDateRangeArray = (start: string, end: string): string[] => {
     const dates: string[] = [];
     const cur = new Date(start);
     const last = new Date(end);
@@ -799,23 +798,23 @@ export default function DataProvider({ children }: { children: ReactNode }) {
   // Keep ref in sync whenever state changes
   useEffect(() => {
     unlockedAchievementsRef.current = unlockedAchievements;
-  }, [unlockedAchievements]);
+  }, [unlockedAchievements]); */
 
   return (
     <DataContext.Provider
       value={{
-        resolveItemId,
-        unlockedAchievements,
+        /*  resolveItemId, */
+        /*  unlockedAchievements, */
         error,
         dispatchError,
         clearError,
-        dBloaded,
-        appMetrics,
+        /*   dBloaded, */
+        /*         appMetrics,
         achievementMetrics,
         trackMetric,
         resetMetrics,
-        resetAchievements,
-        tags,
+        resetAchievements, */
+        /*         tags,
         addTags,
         incrementTagUsage,
         updateUserTag,
@@ -829,12 +828,12 @@ export default function DataProvider({ children }: { children: ReactNode }) {
         getCategoryUsageForAll,
         reassignDeletedTag,
         reassignDeletedCategory,
-        getItemIdsForTagLocal,
-        refreshTagsCatsAchievements,
+        getItemIdsForTagLocal, */
+        /* refreshTagsCatsAchievements, */
       }}
     >
       {children}
-      <AchievementToast badge={activeBadge} />
+      {/* <AchievementToast badge={activeBadge} /> */}
     </DataContext.Provider>
   );
 }

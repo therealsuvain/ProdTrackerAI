@@ -7,6 +7,8 @@ import { Category } from '@/types/category';
 import { useTaskStore } from '@/stores/use-task-store';
 import { useHabitStore } from '@/stores/use-habit-store';
 import { useEventStore } from '@/stores/use-event-store';
+import { getCategoryList } from '@/stores/use-category-store';
+import { getTagList } from '@/stores/use-tag-store';
 
 /**
  * Generates a string representing the current date and time context.
@@ -99,12 +101,12 @@ const calculateDiff = (current: any[], last: any[]) => {
     return { a: added, u: updated, r: removedIds };
 };
 
-export const getAppStatusSnapshot = (context: any) => {
+export const getAppStatusSnapshot = () => {
     const currTk = serializeTasks(Object.values(useTaskStore.getState().tasksById));
     const currHb = serializeHabits(Object.values(useHabitStore.getState().habitsById));
     const currEv = serializeEvents(Object.values(useEventStore.getState().eventsById));
-    const currCat = serializeCategories(context.categories);
-    const currTag = serializeTags(context.tags);
+    const currCat = serializeCategories(getCategoryList());
+    const currTag = serializeTags(getTagList());
 
     // Calculate Diffs
     const tkDiff = calculateDiff(currTk, lastState.tk);

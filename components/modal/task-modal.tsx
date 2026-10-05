@@ -14,11 +14,9 @@ import {
 import { CategorySelector } from "../ui/shared/categories/category-selector";
 import { Category } from "@/types/category";
 import { randomUUID } from "expo-crypto";
-import { useData } from "@/hooks/use-data";
  */
 import { TagsAndCategorySection } from "@/components/ui/shared/tags-and-categories-addon";
 import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
-import { useData } from "@/hooks/context-hooks/use-data";
 
 interface Props {
   visible: boolean;
@@ -38,7 +36,7 @@ export default function TaskModal({
   isNew,
 }: Props) {
   const { theme } = useContext(ThemeContext);
-
+  //console.log(state.tags);
   const tagsAndCategoryEditor = useTagsAndCategories({
     visible,
     initialTags: state.tags,

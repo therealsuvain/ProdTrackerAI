@@ -10,7 +10,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/context-hooks/use-data";
+import { useTagStore } from "@/stores/use-tag-store";
+import { getTagUsageForAll } from "@/utils/Data-services/taxonomy-services/tag-actions";
 
 interface TagAnalyticsModalProps {
   tagId: string;
@@ -26,7 +27,6 @@ export const TagAnalyticsModal = ({
   onDelete,
 }: TagAnalyticsModalProps) => {
   const { theme } = useContext(ThemeContext);
-  const { tags, getTagUsageForAll } = useData();
 
   const [stats, setStats] = useState({
     tasks: 0,
@@ -37,7 +37,7 @@ export const TagAnalyticsModal = ({
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  const tag = tags.find((t) => t.id === tagId);
+  const tag = useTagStore((state) => state.tagsById[tagId]);
 
   useEffect(() => {
     const fetchStats = async () => {

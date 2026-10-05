@@ -1,4 +1,3 @@
-import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { TouchableOpacity, StyleSheet } from "react-native";
 import "react-native-reanimated";
@@ -23,6 +22,7 @@ import NotificationRescheduleModal from "@/components/modal/notificaiton-resched
 import * as SplashScreen from "expo-splash-screen";
 import { initDatabase } from "@/db";
 import { hydrateLocalWorkspace } from "@/utils/Data-services/local-workspace-bootstrap";
+import { AchievementToastHost } from "@/utils/Data-services/analytics-services/achievement-toast-host";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -79,6 +79,7 @@ export default function RootLayout() {
                     <TimerProvider>
                       <SyncProvider>
                         <NotificationRescheduleModal />
+                        <AchievementToastHost />
                         <Drawer
                           drawerContent={(props) => <Sidebar {...props} />}
                           screenOptions={{

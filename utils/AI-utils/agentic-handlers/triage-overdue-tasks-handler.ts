@@ -3,6 +3,12 @@ import { AIHandler } from '@/types/ai-handler';
 import { AIActionMemory } from './ai-action-undo-handlers';
 import { DailyCapacity } from '@/types/agent-state';
 import { exceuteTriageOverdueNode } from "../agentic-DAG-nodes/handler-specific-nodes/node-t1-triage-overdue";
+import { Task } from '@/types/task';
+import { useTaskStore } from '@/stores/use-task-store';
+import { Habit } from '@/types/habits';
+import { useHabitStore } from '@/stores/use-habit-store';
+import { useEventStore } from '@/stores/use-event-store';
+import { editTaskWithEffects } from '@/utils/Data-services/task-services/task-actions';
 
 const WORKING_DAY_START_MINUTES = 9 * 60;  // 9:00 AM
 const WORKING_DAY_END_MINUTES = 21 * 60;   // 9:00 PM
@@ -16,6 +22,17 @@ const timeToMinutes = (timeStr: string): number => {
     return (hours * 60) + minutes;
 };
 
+function allTasks(): Task[] {
+    return Object.values(useTaskStore.getState().tasksById);
+}
+
+function allHabits(): Habit[] {
+    return Object.values(useHabitStore.getState().habitsById);
+}
+
+function allEvents(): CalendarEvent[] {
+    return Object.values(useEventStore.getState().eventsById);
+}
 /**
  * SOTA: Interval Merging Algorithm to extract true free capacity
  */
@@ -76,7 +93,7 @@ export const TriageOverdueHandler: AIHandler = {
         const now = new Date();
 
         // 1. Gather Overdue Tasks
-        const overdueTasks = (context.tasks || []).filter((t: any) =>
+        const overdueTasks = (allTasks() || []).filter((t: any) =>
             t.status === 'pending' && new Date(t.dueDate) < now
         );
 
@@ -92,7 +109,7 @@ export const TriageOverdueHandler: AIHandler = {
         });
 
         // 3. Calculate Whitespace Capacity
-        const capacityMap = calculateDailyCapacity(context.events || [], targetDates);
+        const capacityMap = calculateDailyCapacity(allEvents() || [], targetDates);
 
         // 4. Sub-Agent LLM Call (Semantic Complexity Estimation)
         // We force the LLM to output a strict JSON mapping of taskId -> newDate
@@ -107,15 +124,16 @@ export const TriageOverdueHandler: AIHandler = {
             // 5. Memory State (Undo Stack)
             AIActionMemory.push({
                 type: 'BATCH_REVERT_TASKS',
-                payload: { originalTasks: structuredClone(overdueTasks) }
+                payload: { originalTasks: structuredClone(overdueTasks) },
+                timestamp: Date.now()
             });
 
             // 6. Execute atomic DB mutations based on the Sub-Agent's mapping
             // Group by date to minimize DB transactions
             const updatePromises = assignments.map((assignment: any) => {
-                const task = context.tasks.filter(t => t.id === assignment.taskId)[0];
+                const task = allTasks().filter(t => t.id === assignment.taskId)[0];
                 task.dueDate = assignment.newDate;
-                context.editTask(task)
+                editTaskWithEffects(task)
             });
             await Promise.all(updatePromises);
 

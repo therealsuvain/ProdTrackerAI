@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, Pressable, Dimensions } from "react-native";
 import { Portal } from "react-native-paper";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { AppMetrics } from "@/types/metrics"; // adjust path to your metrics type
+import { DailyMetricsWithAI } from "@/types/metrics"; // adjust path to your metrics type
 
 interface HabitHeatmapProps {
-  metrics: AppMetrics;
+  metrics: {
+    [daily: string]: DailyMetricsWithAI;
+  };
 }
 
 // ─── Grid constants ───────────────────────────────────────────────────────────
@@ -85,9 +87,13 @@ export default function HabitHeatmap({ metrics }: HabitHeatmapProps) {
       Array.from({ length: COLS }, (_, col) => {
         const daysAgo = (COLS - 1 - col) * ROWS + (ROWS - 1 - row);
         const iso = getISO(daysAgo);
-        const day = metrics.daily[iso];
+        const day = metrics[iso];
         // Treat freezes as check-ins per your spec
-        const count = (day?.habitsCheckedIn ?? 0) + (day?.habitsFrozen ?? 0);
+        const count =
+          (day?.habitsCheckedIn ?? 0) +
+          (day?.habitsFrozen ?? 0) +
+          (day?.aiMetrics?.habitsCheckedIn ?? 0) +
+          (day?.aiMetrics?.habitsFrozen ?? 0);
 
         if (count > maxCount) maxCount = count;
         if (count > 0) {
@@ -100,7 +106,7 @@ export default function HabitHeatmap({ metrics }: HabitHeatmapProps) {
     );
 
     return { cells, maxCount, totalCheckins, activeDays };
-  }, [metrics.daily]);
+  }, [metrics]);
 
   useEffect(() => {
     if (!tooltip) return;
@@ -135,7 +141,7 @@ export default function HabitHeatmap({ metrics }: HabitHeatmapProps) {
           <View
             style={{
               position: "absolute",
-              top: tooltip.y ,
+              top: tooltip.y,
               left: tooltip.x,
               backgroundColor:
                 tooltip.opacity > 0

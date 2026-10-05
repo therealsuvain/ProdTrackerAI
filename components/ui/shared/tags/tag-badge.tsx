@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/context-hooks/use-data";
+import { useTagStore } from "@/stores/use-tag-store";
 
 interface TagProps {
   tagId?: string;
@@ -17,10 +17,9 @@ export const TagBadge = ({
   mode = "small",
 }: TagProps) => {
   const { theme } = useContext(ThemeContext);
-  const { tags } = useData();
   let label;
   if (tagId) {
-    const tag = tags.find((t) => t.id === tagId);
+    const tag = useTagStore((state) => (tagId ? state.tagsById[tagId] : null));
     if (tag) {
       label = tag.name;
     } else {

@@ -4,6 +4,7 @@ import { getEventsForDate } from "@/utils/event-utils";
 import { selectedDateEventIds, useEventStore } from "@/stores/use-event-store";
 import { useShallow } from "zustand/shallow";
 
+//TODO maybve remove this by directly having it in calendar-screen of event-store
 export const useCalendarState = () => {
   const [currentView, setCurrentView] = useState<'day' | 'month'>('month');
   let today = new Date()

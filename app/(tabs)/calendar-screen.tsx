@@ -178,8 +178,8 @@ function CalendarScreenInner() {
           //key={Object.keys(events).length}
           selectedDate={selectedDate}
           onDateSelect={handleDateSelect}
-          onEventSelect={handleEditRow}
-          onDelete={handleDelete}
+          /* onEventSelect={handleEditRow}
+          onDelete={handleDelete} */
         />
       ) : (
         <Timeline

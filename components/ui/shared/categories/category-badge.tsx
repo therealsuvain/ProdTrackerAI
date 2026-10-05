@@ -3,8 +3,8 @@ import { View, Text, StyleSheet } from "react-native";
 import { ThemeContext } from "@/context/ThemeContext";
 import { CategoryRow } from "@/db/schema";
 import { Ionicons } from "@expo/vector-icons";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { Category } from "@/types/category";
+import { useCategoryStore } from "@/stores/use-category-store";
 
 export type CategoryBadgeVariant = "default" | "iconOnly";
 interface CategoryBadgeProps {
@@ -19,13 +19,16 @@ export const CategoryBadge = ({
   variant = "default",
 }: CategoryBadgeProps) => {
   const { theme } = useContext(ThemeContext);
-  const { categories } = useData();
+
+  const categoryId = category?.id;
+
+  const storeIcon = useCategoryStore((state) =>
+    categoryId ? state.categoriesById[categoryId]?.icon : undefined,
+  );
 
   if (!category) return null;
-  if (!category.icon) {
-    category.icon =
-      categories.find((c: any) => c.id === category.id)?.icon || "";
-  }
+  const icon = storeIcon ?? category.icon ?? "";
+
   const height = size === "small" ? 24 : size === "medium" ? 32 : 48;
   const fontSize = size === "small" ? 12 : size === "medium" ? 14 : 18;
 
@@ -42,7 +45,7 @@ export const CategoryBadge = ({
         ]}
       >
         <Ionicons
-          name={category.icon as keyof typeof Ionicons.glyphMap}
+          name={icon as keyof typeof Ionicons.glyphMap}
           size={12}
           color={category.color}
         />

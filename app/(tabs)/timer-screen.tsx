@@ -27,7 +27,6 @@ import {
   useDbErrorToast,
 } from "@/components/shared/db-error-toast";
 import { useHaptics } from "@/hooks/use-haptics";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { Category } from "@/types/category";
 import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
 import { useScreenReady } from "@/hooks/use-screen-ready";
@@ -39,6 +38,10 @@ import {
   deleteLogWithEffects,
   editLogWithEffects,
 } from "@/utils/Data-services/timerlog-services/log-actions";
+import {
+  selectCategoryList,
+  useCategoryStore,
+} from "@/stores/use-category-store";
 // Note : Timescreen is the only component where value prop is used for the TextInput instead of defaultValue
 // Note ContinuedFromAbove: default Value only takes input once, then doesnt update, the reason its works in other places is because
 // Note ContinuedFromAbove: the modals re-render everytime, so default value gets feeded the latest state value and it looks ok,
@@ -46,12 +49,11 @@ import {
 
 function TimerScreenInner() {
   const { theme, isDarkMode } = useContext(ThemeContext);
-  const { trackMetric } = useData();
   const timerLogs = useTimerLogStore(
     useShallow((state) => Object.keys(state.logsById)),
   );
   const [logToDelete, setLogToDelete] = useState<string | null>(null);
-  const { categories } = useData();
+  const categories = useCategoryStore(useShallow(selectCategoryList));
   //const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
   const {
     time,

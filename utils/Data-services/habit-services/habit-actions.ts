@@ -1,6 +1,6 @@
 import { useHabitStore } from "@/stores/use-habit-store";
 import { checkInHabit, freezeHabit, restartHabitAfterGoal } from "@/utils/habit-utils";
-import { metricsEventBus } from "@/utils/Analytics/metrics-event-bus";
+import { trackMetric } from "../analytics-services/metric-actions";
 import { GlobalMetricKey } from "@/types/metrics";
 import { Habit } from "@/types/habits";
 import { cancelReminder, scheduleReminderHabits } from "@/hooks/use-notifications";
@@ -20,17 +20,19 @@ export async function addHabitWithEffects(habit: Habit, actor: 'user' | 'ai' = '
     }
     await useHabitStore.getState().addHabit(habit);
 
-    if (habit.frequency === "daily")
-        metricsEventBus.emit("metric:track", { keys: ["habitsAdded", "habitsWithDailyGoals"], amount: 1, actor });
-    else
-        metricsEventBus.emit("metric:track", { keys: ["habitsAdded", "habitsWithWeeklyGoals"], amount: 1, actor });
+    if (habit.frequency === "daily") {
+        trackMetric(["habitsAdded", "habitsWithDailyGoals"], 1, actor);
+    }
+    else {
+        trackMetric(["habitsAdded", "habitsWithWeeklyGoals"], 1, actor);
+    }
 
     if (mode === 'undo') {
         if (habit.streak < habit.goal && history.length === 0) {
-            metricsEventBus.emit("metric:track", { keys: ["habitsDeleted", "habitsAbandoned"], amount: -1, actor });
+            trackMetric(["habitsDeleted", "habitsAbandoned"], -1, actor);
         }
         else {
-            metricsEventBus.emit("metric:track", { keys: ["habitsDeleted"], amount: -1, actor });
+            trackMetric(["habitsDeleted"], -1, actor);
         }
     }
 }
@@ -49,9 +51,9 @@ export async function editHabitWithEffects(habit: Habit, actor: 'user' | 'ai' = 
     }
 
     await useHabitStore.getState().editHabit(habit);
-    metricsEventBus.emit("metric:track", { keys: ["habitsEdited"], amount: 1, actor });
+    trackMetric(["habitsEdited"], 1, actor);
     if (mode === 'undo') {
-        metricsEventBus.emit("metric:track", { keys: ["habitsEdited"], amount: -1, actor });
+        trackMetric(["habitsEdited"], -1, actor);
     }
 }
 
@@ -63,30 +65,33 @@ export async function deleteHabitWithEffects(id: string, actor: 'user' | 'ai' = 
     }
     await useHabitStore.getState().removeHabit(id);
     if (habit.streak < habit.goal && history.length === 0) {
-        metricsEventBus.emit("metric:track", { keys: ["habitsDeleted", "habitsAbandoned"], amount: 1, actor });
+        trackMetric(["habitsDeleted", "habitsAbandoned"], 1, actor);
     }
     else {
-        metricsEventBus.emit("metric:track", { keys: ["habitsDeleted"], amount: 1, actor });
+        trackMetric(["habitsDeleted"], 1, actor);
     }
 
     if (mode === 'undo') {
-        if (habit.frequency === "daily")
-            metricsEventBus.emit("metric:track", { keys: ["habitsAdded", "habitsWithDailyGoals"], amount: -1, actor });
-        else
-            metricsEventBus.emit("metric:track", { keys: ["habitsAdded", "habitsWithWeeklyGoals"], amount: -1, actor });
+        if (habit.frequency === "daily") {
+            trackMetric(["habitsAdded", "habitsWithDailyGoals"], -1, actor);
+        } else {
+            trackMetric(["habitsAdded", "habitsWithWeeklyGoals"], -1, actor);
+        }
     }
+
 }
+
 
 export async function deleteAllHabitsWithEffects(actor: 'user' | 'ai' = "user", mode: 'regular' | 'undo' = "regular"): Promise<void> {
     const DeletedHabits = Object.values(useHabitStore.getState().habitsById);
     const noOfDeletedHabits = DeletedHabits.length;
     await useHabitStore.getState().removeHabits();
-    metricsEventBus.emit("metric:track", { keys: ["habitsDeleted"], amount: noOfDeletedHabits, actor });
+    trackMetric(["habitsDeleted"], noOfDeletedHabits, actor);
     let noOfAbandonedHabits = 0;
     for (const habit of DeletedHabits) {
         if (habit.streak < habit.goal && history.length === 0) { noOfAbandonedHabits += 1; }
     }
-    metricsEventBus.emit("metric:track", { keys: ["habitsAbandoned"], amount: noOfAbandonedHabits, actor });
+    trackMetric(["habitsAbandoned"], noOfAbandonedHabits, actor);
 
 }
 
@@ -117,10 +122,9 @@ export async function checkInHabitWithEffects(id: string, actor: 'user' | 'ai' =
         metrics.push("habitsCheckedInAfter10pm");
 
     if (habitBefore.streak < result.habit.streak) {
-        metricsEventBus.emit("metric:track", {
-            keys: result.habit.frequency === "daily" ? ["habitsStreakMaxDaily"] : ["habitsStreakMaxWeekly"],
-            amount: result.habit.streak,
-        });
+        trackMetric(result.habit.frequency === "daily" ? ["habitsStreakMaxDaily"] : ["habitsStreakMaxWeekly"],
+            result.habit.streak, actor
+        );
     }
 
     if (
@@ -132,16 +136,16 @@ export async function checkInHabitWithEffects(id: string, actor: 'user' | 'ai' =
         metrics.push("habitsFrozen");
     }
 
-    metricsEventBus.emit("metric:track", { keys: metrics, amount: 1, actor });
+    trackMetric(metrics, 1, actor);
 
     if (result.status === "goal_reached") {
-        metricsEventBus.emit("metric:track", { keys: ["habitsGoalsCompleted"], amount: 1, actor });
+        trackMetric(["habitsGoalsCompleted"], 1, actor);
         return "goal_reached";
     }
     return "success";
 }
 
-export async function freezeHabitWithEffects(id: string): Promise<"success" | "already_frozen" | "no_freezes_left" | "not_a_target_day" | "already_checked_in" | "habit_not_found"> {
+export async function freezeHabitWithEffects(id: string, actor: 'user' | 'ai' = 'user'): Promise<"success" | "already_frozen" | "no_freezes_left" | "not_a_target_day" | "already_checked_in" | "habit_not_found"> {
     const habit = useHabitStore.getState().habitsById[id];
     if (!habit) return "habit_not_found";
 
@@ -149,7 +153,10 @@ export async function freezeHabitWithEffects(id: string): Promise<"success" | "a
     if (result.status === "denied") return result.reason;
 
     await useHabitStore.getState().editHabit(result.habit);
-    metricsEventBus.emit("metric:track", { keys: ["habitsFrozen"], amount: 1 });
+
+    trackMetric(["habitsFrozen"], 1, actor);
+
+
     return "success";
 }
 
@@ -158,7 +165,9 @@ export async function restartHabitWithEffects(habit: Habit, actor: 'user' | 'ai'
     if (!oldHabit) throw new Error(`Habit ${habit.id} not found`);
     const result = restartHabitAfterGoal(habit, oldHabit.goal);
     await useHabitStore.getState().editHabit(result);
-    metricsEventBus.emit("metric:track", { keys: ["habitGoalsRestarted"], amount: 1 });
+
+    trackMetric(["habitGoalsRestarted"], 1, actor);
+
 }
 
 export function setHabitOrderWithEffects(habits: string[]): void {

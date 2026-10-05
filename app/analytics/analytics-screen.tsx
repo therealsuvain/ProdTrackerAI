@@ -21,7 +21,6 @@ import { useDashboardLayout } from "@/components/ui/analytics/charts-prefs";
 import { LayoutManagerFAB } from "@/components/ui/analytics/charts-FAB";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 
-import { useData } from "@/hooks/context-hooks/use-data";
 import { AnalyticsBentoGrid } from "@/components/ui/analytics/charts-layout/bento-grid";
 import { useCallback, useRef, useState } from "react";
 import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
@@ -37,6 +36,12 @@ import { useHabitStore } from "@/stores/use-habit-store";
 import { useEventStore } from "@/stores/use-event-store";
 import { useTimerLogStore } from "@/stores/use-timerLog-store";
 import { useChatStore } from "@/stores/use-chat-store";
+import { selectTagList, useTagStore } from "@/stores/use-tag-store";
+import {
+  selectCategoryList,
+  useCategoryStore,
+} from "@/stores/use-category-store";
+import { useDailyMetrics, useMetricStore } from "@/stores/use-metrics-store";
 
 function AnalyticsScreenInner() {
   const { activeWidgets, toggleWidget, reorderWidgets, resetLayout } =
@@ -53,8 +58,16 @@ function AnalyticsScreenInner() {
   const logs = useTimerLogStore(
     useShallow((state) => Object.values(state.logsById)),
   );
-  const { tags, categories, appMetrics } = useData();
+  const tags = useTagStore(useShallow(selectTagList));
+  const categoires = useCategoryStore(useShallow(selectCategoryList));
+
   const messages = useChatStore(useShallow((state) => state.messages));
+  const globalMetric = useMetricStore((s) => s.global);
+  const dailyMetric = useDailyMetrics();
+  const finalMetricSet = {
+    global: { ...globalMetric },
+    daily: { ...dailyMetric },
+  };
   const { theme } = useTheme();
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollY = useSharedValue(0);

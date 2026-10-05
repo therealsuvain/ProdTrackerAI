@@ -8,6 +8,8 @@ import { fastCosineSimilarity, generateEmbedding } from "@/utils/embedding-engin
 import { Task } from "@/types/task";
 import { addTaskWithEffects, batchMutateTasksWithEffects, deleteTaskWithEffects, editTaskWithEffects, toggleTaskWithEffects } from "@/utils/Data-services/task-services/task-actions";
 import { useTaskStore } from "@/stores/use-task-store";
+import { getCategoryList } from "@/stores/use-category-store";
+import { getTagList } from "@/stores/use-tag-store";
 
 function findTaskByShortId(shortId: string): Task | undefined {
   return Object.values(useTaskStore.getState().tasksById).find(
@@ -127,9 +129,10 @@ export const CompleteTaskHandler: AIHandler = {
 };
 
 export const BatchMutateTasksHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const { searchFilters, mutationPayload } = params;
-    const cateogryId = searchFilters.categoryName ? resolveIdsFromNames(searchFilters.categoryName, context.categories)[0] : undefined;
+    const categories = getCategoryList();
+    const cateogryId = searchFilters.categoryName ? resolveIdsFromNames(searchFilters.categoryName, categories)[0] : undefined;
     // 1. O(N) Hard Filtering
     let targets = (allTasks() || []).filter((task: Task) => {
       const currentStatus = task.completed ? "completed" : new Date(task.dueDate) < new Date() ? "overdue" : "pending";
@@ -160,7 +163,7 @@ export const BatchMutateTasksHandler: AIHandler = {
     });
 
     // 4. Execute Atomic Update
-    const newCateogryId = mutationPayload.category ? resolveIdsFromNames(mutationPayload.category, context.categories)[0] : undefined;
+    const newCateogryId = mutationPayload.category ? resolveIdsFromNames(mutationPayload.category, categories)[0] : undefined;
     if (newCateogryId) {
       mutationPayload.category = newCateogryId;
     }
@@ -175,7 +178,7 @@ export const BatchMutateTasksHandler: AIHandler = {
 };
 
 export const QueryTasksHandler: AIHandler = {
-  execute: async (args: any, context: any) => {
+  execute: async (args: any) => {
     const { status = "all", priority = "all", timeRange = "all", sortBy = "newest_first", specificTaskId, categoryName,
       tagNames } = args;
 
@@ -201,8 +204,10 @@ export const QueryTasksHandler: AIHandler = {
         }
       };
     }
-    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, context.categories)[0] : undefined;
-    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, context.tags) : [];
+    const categories = getCategoryList();
+    const tags = getTagList();
+    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, categories)[0] : undefined;
+    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, tags) : [];
     console.log("FOund tags and cat ids", targetTagIds, targetCategoryId);
     let filtered = allTasks() || [];
     const now = new Date();

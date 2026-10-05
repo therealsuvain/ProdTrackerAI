@@ -10,7 +10,7 @@ import {
     searchHistoricalActions,
 } from "@/db/repositories/chat-message-repository";
 import { Message } from "@/types/chat";
-import { metricsEventBus } from "@/utils/Analytics/metrics-event-bus";
+import { trackMetric } from "@/utils/Data-services/analytics-services/metric-actions";
 
 const EXPIRY_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -70,7 +70,7 @@ async function expireMessageWithEffects(messageId: string): Promise<void> {
         isExpired: true,
         text: "This action has expired. Please try again.",
     });
-    metricsEventBus.emit("metric:track", { keys: ["chatActionsExpired"], amount: 1 });
+    trackMetric(["chatActionsExpired"], 1, 'ai');
 }
 
 function scheduleExpiry(message: Message): void {

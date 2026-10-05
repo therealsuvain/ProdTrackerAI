@@ -5,11 +5,32 @@ import Fuse from "fuse.js";
 import { AIActionMemory } from "./ai-action-undo-handlers";
 import { Category } from "@/types/category";
 import { Tag } from "@/types/tag";
+import { getCategoryList } from "@/stores/use-category-store";
+import { getTagList } from "@/stores/use-tag-store";
+
+import {
+  addCategoryWithEffects,
+  deleteCategoryWithEffects,
+  editCategoryWithEffects
+} from "@/utils/Data-services/taxonomy-services/category-actions";
+
+import {
+  addTagsWithEffects,
+  deleteTagWithEffects,
+  editTagWithEffects
+} from "@/utils/Data-services/taxonomy-services/tag-actions";
+
+import { ZodNull } from "zod";
+import { useTimerLogStore } from "@/stores/use-timerLog-store";
+import { useEventStore } from "@/stores/use-event-store";
+import { useHabitStore } from "@/stores/use-habit-store";
+import { useTaskStore } from "@/stores/use-task-store";
 
 // 1. Pre-compute the Icon Dictionary for Fuse
 // Extracting all valid icon names from the glyphMap
 const VALID_ICONS = Object.keys(Ionicons.glyphMap);
-
+const categories = getCategoryList();
+const tags = getTagList();
 // Create a Fuse instance for Icons (threshold 0.4 allows for decent fuzziness)
 const iconFuse = new Fuse(VALID_ICONS, {
   includeScore: true,
@@ -35,7 +56,7 @@ export const resolveIcon = (proposedConcept?: string): string => {
  * Allows the AI to dynamically look up UUIDs without relying on the system prompt memory.
  */
 export const SearchTaxonomyHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const { type = "both" } = params;
 
     const rawInput = params.queries || params.query;
@@ -59,10 +80,10 @@ export const SearchTaxonomyHandler: AIHandler = {
     let tagFuse: Fuse<any> | null = null;
 
     if (type === "category" || type === "both") {
-      categoryFuse = new Fuse(context.categories, fuseOptions);
+      categoryFuse = new Fuse(categories, fuseOptions);
     }
     if (type === "tag" || type === "both") {
-      tagFuse = new Fuse(context.tags, fuseOptions);
+      tagFuse = new Fuse(tags, fuseOptions);
     }
 
     // We will return a map where the key is the user's query, 
@@ -98,7 +119,7 @@ export const SearchTaxonomyHandler: AIHandler = {
  * Includes the "Icon Fallback Array" to prevent UI crashes from AI hallucinations.
  */
 export const AddCategoryHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     // 1. Check the AI's proposed icons against the actual Ionicons library
     const finalIcon = resolveIcon(params.proposedIconConcept);
 
@@ -113,7 +134,7 @@ export const AddCategoryHandler: AIHandler = {
       payload: { category: { id, name: params.name, color: finalColor, icon: finalIcon } as Category },
       timestamp: Date.now()
     });
-    await context.addCategory({ id, name: params.name, color: finalColor, icon: finalIcon }, true);
+    await addCategoryWithEffects({ id, name: params.name, color: finalColor, icon: finalIcon }, 'ai');
 
 
     // Return the newly created ID so the AI can immediately chain it to an addTask call!
@@ -122,8 +143,8 @@ export const AddCategoryHandler: AIHandler = {
 };
 
 export const EditCategoryHandler: AIHandler = {
-  execute: async (params, context) => {
-    const existingCategory = context.categories.find((c: any) => c.id === params.id);
+  execute: async (params) => {
+    const existingCategory = categories.find((c: any) => c.id === params.id);
     if (!existingCategory) throw new Error("Category not found");
 
     let finalIcon = params.proposedIconConcept
@@ -142,29 +163,28 @@ export const EditCategoryHandler: AIHandler = {
       payload: { category: existingCategory },
       timestamp: Date.now()
     });
-
-    if (context.updateUserCategory) {
-      context.trackMetric(["categoriesEdited"], 1);
-      context.trackMetric(["categoriesEdited"], 1, 'ai');
-      await context.updateUserCategory(updatedCategory);
-    }
+    await editCategoryWithEffects(updatedCategory, 'ai');
 
     return { status: "success", category: updatedCategory };
   },
 };
 
 export const DeleteCategoryHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const { id, fallbackCategoryId } = params;
-    const existingCategory = context.categories.find((c: any) => c.id !== id);
+    const existingCategory = categories.find((c: any) => c.id !== id);
     if (!existingCategory) {
       throw new Error(`Invariant violated: Category ${id} not found.`);
     }
-    const itemsWithCategory : Record<string, string[]> = {};
-    itemsWithCategory["tasks"] = context.tasks.filter((t: any) => t.category === id).map((t: any) => t.id);
-    itemsWithCategory["events"] = context.events.filter((e: any) => e.category === id).map((e: any) => e.id);
-    itemsWithCategory["habits"] = context.habits.filter((h: any) => h.category === id).map((h: any) => h.id);
-    itemsWithCategory["logs"] = context.timerLogs.filter((l: any) => l.categoryId === id).map((l: any) => l.id);
+    const itemsWithCategory: Record<string, string[]> = {};
+    const tasks = Object.values(useTaskStore.getState().tasksById);
+    const habits = Object.values(useHabitStore.getState().habitsById);
+    const events = Object.values(useEventStore.getState().eventsById);
+    const timerLogs = Object.values(useTimerLogStore.getState().logsById);
+    itemsWithCategory["tasks"] = tasks.filter((t: any) => t.category === id).map((t: any) => t.id);
+    itemsWithCategory["events"] = events.filter((e: any) => e.category === id).map((e: any) => e.id);
+    itemsWithCategory["habits"] = habits.filter((h: any) => h.category === id).map((h: any) => h.id);
+    itemsWithCategory["logs"] = timerLogs.filter((l: any) => l.categoryId === id).map((l: any) => l.id);
 
     AIActionMemory.push({
       type: 'ADD_DELETED_CATEGORY',
@@ -172,11 +192,12 @@ export const DeleteCategoryHandler: AIHandler = {
       timestamp: Date.now()
     });
 
-    if (context.deleteUserCategory) {
+    /* if (context.deleteUserCategory) {
       context.trackMetric(["categoriesDeleted"], 1);
       context.trackMetric(["categoriesDeleted"], 1, 'ai');
       await context.deleteUserCategory(id, fallbackCategoryId || null);
-    }
+    } */
+    await deleteCategoryWithEffects(id, fallbackCategoryId, 'ai');
 
     return { status: "success", message: `Category ${id} deleted safely.` };
   },
@@ -186,7 +207,7 @@ export const DeleteCategoryHandler: AIHandler = {
  * 3. TAG MANAGEMENT TOOLS
  */
 export const AddTagHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const { names } = params;
 
     if (!names || !Array.isArray(names) || names.length === 0) {
@@ -202,56 +223,57 @@ export const AddTagHandler: AIHandler = {
       payload: { tags: newlyCreatedTags as Tag[] },
       timestamp: Date.now()
     })
-    await context.addTags(newlyCreatedTags, true);
+    await addTagsWithEffects(newlyCreatedTags, 'ai');
 
-  
+
     // Return the new ID so the AI can use it in tool chaining
     return { status: "success", tag: newlyCreatedTags };
   },
 };
 
 export const EditTagHandler: AIHandler = {
-  execute: async (params, context) => {
-    const existingTag = context.tags.find((t: any) => t.id === params.id);
+  execute: async (params) => {
+    const existingTag = tags.find((t: any) => t.id === params.id);
     if (!existingTag) throw new Error("Tag not found");
 
     const updatedTag = {
       ...existingTag,
       name: params.name,
     };
-   AIActionMemory.push({
-     type: 'REVERT_UPDATE_TAG',
-     payload: { tag: existingTag },
-     timestamp: Date.now()
-   })
-    if (context.updateUserTag) {
-      context.trackMetric(["tagsEdited"], 1);
-      context.trackMetric(["tagsEdited"], 1,'ai');
-      await context.updateUserTag(updatedTag);
-    }
-
+    AIActionMemory.push({
+      type: 'REVERT_UPDATE_TAG',
+      payload: { tag: existingTag },
+      timestamp: Date.now()
+    })
+    /*  if (context.updateUserTag) {
+       context.trackMetric(["tagsEdited"], 1);
+       context.trackMetric(["tagsEdited"], 1, 'ai');
+       await context.updateUserTag(updatedTag);
+     } */
+    await editTagWithEffects(updatedTag, 'ai');
     return { status: "success", tag: updatedTag };
   },
 };
 
 export const DeleteTagHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const { id, fallbackTagId } = params;
 
-    if (context.deleteUserTag) {
+    /* if (context.deleteUserTag) {
       await context.deleteUserTag(id, fallbackTagId || null, true);
-    }
-   
+    } */
+    await deleteTagWithEffects(id, fallbackTagId || ZodNull, 'ai');
+
     return { status: "success", message: `Tag ${id} deleted safely.` };
   },
 };
 
 export const GetTaxonomyStatsHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const { type, scope, specificId } = params;
 
     // Select the target array
-    const targetData = type === "category" ? context.categories : context.tags;
+    const targetData = type === "category" ? categories : tags;
 
     if (scope === "specific") {
       if (!specificId) throw new Error("specificId is required for scope 'specific'");

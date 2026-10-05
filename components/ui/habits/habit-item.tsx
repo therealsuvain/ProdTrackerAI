@@ -11,12 +11,12 @@ import { XButton } from "../shared/x-button";
 import { HabitStats } from "./habit-stats";
 import { TargetDaysRow } from "./habit-target-days";
 import { useHabitDeniedFeedback } from "./habit-denied-feedback-util";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { TagList } from "../shared/tags/tag-list";
 import { useHabitStore } from "@/stores/use-habit-store";
 import { CheckInOutcome } from "@/utils/Data-services/habit-services/habit-actions";
 import { isFrozen } from "@/utils/habit-utils";
+import { useCategoryStore } from "@/stores/use-category-store";
 
 interface HabitItemProps {
   id: string;
@@ -70,17 +70,16 @@ function HabitItem({
   onGoalReached,
 }: HabitItemProps) {
   const { theme } = useContext(ThemeContext);
-  const { categories } = useData();
   const habit = useHabitStore((state) => state.habitsById[id]);
-  if (!habit) return null;
+
   const route = useRoute();
   const isNotHome = route.name !== "index";
   const { playDeniedFeedback, animatedStyle } = useHabitDeniedFeedback();
   const progress = habit.goal ? habit.streak / habit.goal : 0;
-  let habitCategory;
-  if (habit.category) {
-    habitCategory = categories.find((c) => c.id === habit.category);
-  }
+  const habitCategory = useCategoryStore((state) =>
+    habit.category ? state.categoriesById[habit.category] : undefined,
+  );
+
   const handleEditing = useCallback(() => {
     if (habit.pendingStreakResetAfter) {
       playDeniedFeedback();
@@ -124,7 +123,7 @@ function HabitItem({
   }, [onFreeze]);
 
   const frozen = useMemo(() => isFrozen(habit), [habit]);
-
+  if (!habit) return null;
   return (
     <AnimatedCard
       style={[

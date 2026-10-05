@@ -136,17 +136,17 @@ export const useTaskForm = ({
       notificationId: editingTask ? editingTask.notificationId : undefined,
       priority: state.priority as Task["priority"],
       completed: editingTask ? editingTask.completed : false,
-      tags: state.tags,
+      tags: tagIds,
       createdAt: editingTask ? editingTask.createdAt : state.createdAt,
       updatedAt: state.updatedAt,
       embedding: state.embedding || await generateEmbedding(state.title, false)
     };
 
-  /*   if (editingTask && editingTask.reminder) {
-      console.log("TASK FORM NOtif: cancelled old:1 new:0")
-      if (editingTask.notificationId)
-        await cancelReminder(editingTask.notificationId)
-    } */
+    /*   if (editingTask && editingTask.reminder) {
+        console.log("TASK FORM NOtif: cancelled old:1 new:0")
+        if (editingTask.notificationId)
+          await cancelReminder(editingTask.notificationId)
+      } */
     /* 
         if(editingTask && editingTask.reminderDate && newTask.reminderDate 
           && new Date(editingTask.reminderDate).toTimeString()!== new Date(newTask.reminderDate).toTimeString()){
@@ -155,15 +155,15 @@ export const useTaskForm = ({
           await cancelReminder(editingTask.notificationId)
         } */
 
-   /*  if (newTask.reminder) {
-      console.log("TASK FORM NOtif: scheduled")
-      const notifId = await scheduleReminderTasks(newTask);
-      newTask.notificationId = notifId;
-    } */
+    /*  if (newTask.reminder) {
+       console.log("TASK FORM NOtif: scheduled")
+       const notifId = await scheduleReminderTasks(newTask);
+       newTask.notificationId = notifId;
+     } */
 
-    if (tagIds.length > 0) {
-      newTask.tags = tagIds
-    }
+    /*  if (tagIds.length > 0) {
+       newTask.tags = tagIds
+     } */
     //console.log("TAGS of TASK", newTask.tags, state.tags);
     if (editingTask) {
       /*       const {newTagsDiff, commonTags} = tagsDiff(newTask.tags, editingTask.tags);

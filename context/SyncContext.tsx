@@ -31,7 +31,6 @@ import { getAllTasks } from "@/db/repositories/task-repository";
 import { getAllHabits } from "@/db/repositories/habit-repository";
 import { getAllCalendarEvents } from "@/db/repositories/event-repository";
 import { useTaskStore } from "@/stores/use-task-store";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { loadSettings } from "@/utils/storage-utils";
 import { Task } from "@/types/task";
 import { Habit } from "@/types/habits";
@@ -45,6 +44,9 @@ import { useHabitStore } from "@/stores/use-habit-store";
 import { runHabitMaintenanceOncePerDay } from "@/utils/Data-services/habit-services/habit-maintenance";
 import { useEventStore } from "@/stores/use-event-store";
 import { useTimerLogStore } from "@/stores/use-timerLog-store";
+import { useCategoryStore } from "@/stores/use-category-store";
+import { useTagStore } from "@/stores/use-tag-store";
+import { useAchievementStore } from "@/stores/use-achievement-store";
 
 type SyncContextValue = {
   isSyncing: boolean;
@@ -97,7 +99,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   } | null>(null);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [isSignInSyncCompleted, setSignInSyncCompleted] = useState(0);
-  const { refreshTagsCatsAchievements } = useData();
   // Inside SyncProvider — add this effect
   const prevUserIdRef = useRef<string | null>(null);
   const wasSignedOutRef = useRef<boolean>(true);
@@ -107,13 +108,15 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const refreshAllLocalState = useCallback(async () => {
     await Promise.all([
-      refreshTagsCatsAchievements(),
       useTaskStore.getState().refreshTasks(),
       useHabitStore.getState().refreshHabits(),
       useEventStore.getState().refreshEvents(),
       useTimerLogStore.getState().refreshLogs(),
+      useCategoryStore.getState().refreshCategories(),
+      useTagStore.getState().refreshTags(),
+      useAchievementStore.getState().refreshAchievements(),
     ]);
-  }, [refreshTagsCatsAchievements]);
+  }, []);
 
   const mode = useWorkspaceSyncModeStore((state) => state.mode);
   const setWorkspaceSyncMode = useWorkspaceSyncModeStore(

@@ -17,16 +17,22 @@ class AnalyticsEngine {
         metricsEventBus.on('metric:track', this.handleTrackEvent);
     }
 
-   /**
-   * The listener for the UI events
-   */
+    /**
+    * The listener for the UI events
+    */
     private handleTrackEvent = ({ keys, amount, actor = 'user' }: { keys: GlobalMetricKey[], amount: number, actor?: 'user' | 'ai' }) => {
         if (keys.length === 0 || amount === 0) return;
 
         // 1. Update the in-memory queue
         keys.forEach((key) => {
-            this.pendingMetrics[key] = (this.pendingMetrics[key] || 0) + amount;
-            if (actor === 'ai') this.pendingAiMetrics[key] = (this.pendingAiMetrics[key] || 0) + amount;
+            if (key === 'habitsStreakMaxDaily' || key === 'habitsStreakMaxWeekly') {
+                this.pendingMetrics[key] = Math.max((this.pendingMetrics[key] || 0), amount);
+                if (actor === 'ai') this.pendingAiMetrics[key] = Math.max((this.pendingAiMetrics[key] || 0), amount);
+            }
+            else {
+                this.pendingMetrics[key] = (this.pendingMetrics[key] || 0) + amount;
+                if (actor === 'ai') this.pendingAiMetrics[key] = (this.pendingAiMetrics[key] || 0) + amount;
+            }
             console.log(`[AnalyticsEngine] ${actor} tracked ${actor === 'ai' ? this.pendingAiMetrics[key] : this.pendingMetrics[key]} ${key}`);
         });
 

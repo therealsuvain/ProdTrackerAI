@@ -5,10 +5,10 @@ import { useContext } from "react";
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { Card } from "react-native-paper";
 import { XButton } from "../shared/x-button";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { TagList } from "../shared/tags/tag-list";
 import { useEventStore } from "@/stores/use-event-store";
+import { useCategoryStore } from "@/stores/use-category-store";
 
 interface EventItemProps {
   id: string;
@@ -27,15 +27,14 @@ export default function EventItem({
 }: EventItemProps) {
   const { theme } = useContext(ThemeContext);
   const route = useRoute();
-  const { categories } = useData();
   const isDetail = variant === "detail";
 
   const eventLocal = useEventStore((state) => state.eventsById[id]);
-  if (!eventLocal) return null;
+  const categoryId = eventLocal?.category;
 
-  const eventCategory = eventLocal.category
-    ? categories.find((category) => category.id === eventLocal.category)
-    : undefined;
+  const eventCategory = useCategoryStore((state) =>
+    categoryId ? state.categoriesById[categoryId] : undefined,
+  );
 
   const isNotHome = route.name !== "index";
   const showDetailedTime = isDetail || !isNotHome;
@@ -62,7 +61,7 @@ export default function EventItem({
     { backgroundColor: theme.eventDarkPrimary },
     !isNotHome && !isDetail && { borderRadius: 0 },
   ];
-
+  if (!eventLocal) return null;
   return (
     <Card style={cardStyle}>
       <Card.Content style={isDetail ? styles.detailContent : styles.content}>

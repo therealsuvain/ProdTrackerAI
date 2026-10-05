@@ -31,6 +31,7 @@
 - TODO : If task is marked complete then notification is cancelled in the AI handler, but not in the task item logic, also if task is then marked incomplete, then a new notificaiton is not scheduled, R&D how it should be ideally
 - TODO : CAtch high demand errors nad return a suitable response, catch any other possibel errors too
 - TODO : task due date, event startdate and end date are just in (YYYY-MM-DD) format, convert to ISO 8601 format
+- TODO : Duplicate category names are allowed to entered and submitted which casues error, NEED TO FIX
 
 # Fixes Severity : Medium
 

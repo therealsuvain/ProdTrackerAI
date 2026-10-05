@@ -5,9 +5,9 @@ import { useRoute } from "@react-navigation/native";
 import React, { useCallback, useContext, useMemo } from "react";
 import { ThemeContext } from "@/context/ThemeContext";
 import { TagList } from "../shared/tags/tag-list";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { useTaskStore } from "@/stores/use-task-store";
+import { useCategoryStore } from "@/stores/use-category-store";
 
 interface TaskItemProps {
   id: string;
@@ -20,17 +20,15 @@ function TaskItem({ id, onToggleComplete, onEdit, onDelete }: TaskItemProps) {
   const { theme } = useContext(ThemeContext);
   const task = useTaskStore((state) => state.tasksById[id]);
 
-  if (!task) return null;
-  const { categories } = useData();
   const priorityColor = {
     low: theme.success,
     medium: theme.habitBase,
     high: theme.eventBase,
   }[task.priority];
-  let taskCategory;
-  if (task.category) {
-    taskCategory = categories.find((c) => c.id === task.category);
-  }
+  const taskCategory = useCategoryStore((state) =>
+    task.category ? state.categoriesById[task.category] : null,
+  );
+
   const route = useRoute();
   const isNotHome = route.name !== "index";
 
@@ -46,6 +44,7 @@ function TaskItem({ id, onToggleComplete, onEdit, onDelete }: TaskItemProps) {
     [task.id, onDelete],
   );
   // Edit and Delete buttons are bad, need changes
+  if (!task) return null;
   return (
     <Card
       style={[

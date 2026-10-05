@@ -29,7 +29,7 @@ export interface AIActionContext {
   removeHabit: (id: string, actor?: 'user' | 'ai') => Promise<void>;
   batchMutateHabits: (habitsToMutate: Habit[], newValues: any) => Promise<void>;
   batchRestoreHabits: (originalHabits: Habit[]) => Promise<void>; */
-  categories: Category[];
+  /* categories: Category[];
   addCategory: (categoryPayload: { id: string, name: string, color: string, icon: string }, isFromAI?: boolean) => Promise<string>;
   incrementCategoryUsage: (id: string) => Promise<void>;
   updateUserCategory: (category: Category) => Promise<void>;
@@ -43,15 +43,15 @@ export interface AIActionContext {
   deleteUserTag: (id: string, fallbackId?: string | null, isFromAI?: boolean) => Promise<void>;
   getTagUsageForAll: (id: string) => Promise<any>;
   reassignDeletedTag: (tag: Tag, fallbackId: string | null, originalItems: Record<string, string[]>) => Promise<void>;
-  getItemIdsForTagLocal: (tagId: string) => Promise<Record<string, string[]>>;
+  getItemIdsForTagLocal: (tagId: string) => Promise<Record<string, string[]>>; */
   /*   getImmediateContext: () => Promise<any>;
     getMoreContext: (args: any) => Promise<any>; */
-  timerLogs: TimerLog[];
+  /* timerLogs: TimerLog[]; */
   setTitle: (title: string) => void;
   start: () => void;
   stop: () => void;
   navigation: any;
-  trackMetric: (key: GlobalMetricKey[], amount: number, actor?: "user" | "ai") => void;
+  /* trackMetric: (key: GlobalMetricKey[], amount: number, actor?: "user" | "ai") => void; */
   // Add other state setters as needed (Timer, Navigation, etc.)
 }
 

@@ -6,6 +6,10 @@ import { useTaskStore } from "@/stores/use-task-store";
 import { useHabitStore } from "@/stores/use-habit-store";
 import { Habit } from "@/types/habits";
 import { getImmediateContextWithEffects, getMoreContextWithEffects } from "@/utils/Data-services/chat-services/chat-actions";
+import { getCategoryList } from "@/stores/use-category-store";
+import { getTagList } from "@/stores/use-tag-store";
+import { useEventStore } from "@/stores/use-event-store";
+import { CalendarEvent } from "@/types/calendar";
 
 function allTasks(): Task[] {
   return Object.values(useTaskStore.getState().tasksById);
@@ -15,6 +19,9 @@ function allHabits(): Habit[] {
   return Object.values(useHabitStore.getState().habitsById);
 }
 
+function allEvents(): CalendarEvent[] {
+  return Object.values(useEventStore.getState().eventsById);
+}
 
 export const getProductivityStats: AIHandler = {
   execute: async () => {
@@ -36,7 +43,7 @@ export const getProductivityStats: AIHandler = {
 }
 export const getImmediateContext: AIHandler = {
   execute: async () => {
-    console.log("[Memory] Fetching short-term context...");
+    console.log("[Memory] Fetching short-term history");
     const result = await getImmediateContextWithEffects();
     //console.log("[Memory] Short-term context:", result);
     return { output: result };
@@ -59,11 +66,13 @@ export const searchHistoricalActions: AIHandler = {
 // This is kinda gay and bad, but I am really tired and bored of fixing shit again and again
 // Just end it my man
 export const SearchItemsHandler: AIHandler = {
-  execute: async (args: { query: string, type: string, categoryName?: string, tagNames?: string[] }, context: any) => {
+  execute: async (args: { query: string, type: string, categoryName?: string, tagNames?: string[] }) => {
     const { query, type = 'all', categoryName, tagNames } = args;
     console.log(`🧠 AI is semantically searching for: "${query}"`);
-    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, context.categories)[0] : undefined;
-    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, context.tags) : [];
+    const categories = getCategoryList();
+    const tags = getTagList();
+    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, categories)[0] : undefined;
+    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, tags) : [];
     // 1. Generate the Query Vector (Passing 'true' for RETRIEVAL_QUERY)
     const queryVector = await generateEmbedding(query, true);
 
@@ -74,9 +83,9 @@ export const SearchItemsHandler: AIHandler = {
 
     // 2. Flatten all context data into a single searchable array
     let allItems = [
-      ...(context.tasks || []).map((t: any) => ({ ...t, type: 'task' })),
-      ...(context.habits || []).map((h: any) => ({ ...h, type: 'habit' })),
-      ...(context.events || []).map((e: any) => ({ ...e, type: 'event' })),
+      ...(allTasks() || []).map((t: any) => ({ ...t, type: 'task' })),
+      ...(allHabits() || []).map((h: any) => ({ ...h, type: 'habit' })),
+      ...(allEvents() || []).map((e: any) => ({ ...e, type: 'event' })),
     ];
 
     if (targetCategoryId) {

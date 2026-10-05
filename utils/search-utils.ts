@@ -14,31 +14,31 @@ export const globalSearch = (
     events: CalendarEvent[],
     habits: Habit[],
     logs: TimerLog[],
-) : SearchResult[] =>{
+): SearchResult[] => {
     const lowerQuery = query.toLowerCase();
     const results: SearchResult[] = [];
 
-    tasks.forEach( task => {
-        if(task.title.toLowerCase().includes(lowerQuery)|| (task.description?.toLowerCase().includes(lowerQuery))){
-            results.push({type:'task', item:task})
+    tasks.forEach(task => {
+        if (task.title.toLowerCase().includes(lowerQuery) || (task.description?.toLowerCase().includes(lowerQuery))) {
+            results.push({ type: 'task', item: task })
         }
     })
 
-    events.forEach( event => {
-        if(event.title.toLowerCase().includes(lowerQuery)|| (event.description?.toLowerCase().includes(lowerQuery))){
-            results.push({type:'event', item:event})
+    events.forEach(event => {
+        if (event.title.toLowerCase().includes(lowerQuery) || (event.description?.toLowerCase().includes(lowerQuery))) {
+            results.push({ type: 'event', item: event })
         }
     })
 
-    habits.forEach( habit => {
-        if(habit.title.toLowerCase().includes(lowerQuery)){
-            results.push({type:'habit', item:habit})
+    habits.forEach(habit => {
+        if (habit.title.toLowerCase().includes(lowerQuery)) {
+            results.push({ type: 'habit', item: habit })
         }
     })
 
-    logs.forEach( log => {
-        if(log.title.toLowerCase().includes(lowerQuery)){
-            results.push({type:'log', item:log})
+    logs.forEach(log => {
+        if (log.title.toLowerCase().includes(lowerQuery)) {
+            results.push({ type: 'log', item: log })
         }
     })
 

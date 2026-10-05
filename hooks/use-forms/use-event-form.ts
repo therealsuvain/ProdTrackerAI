@@ -162,7 +162,7 @@ export const useEventForm = ({
       deletedOccurrences: state.deletedOccurrences,
       category: state.category,
       notificationIds: state.notificationIds,
-      tags: state.tags,
+      tags: tagsIds,
       createdAt: editingEvent ? editingEvent.createdAt : new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       embedding: state.embedding || await generateEmbedding(state.title, false)
@@ -171,9 +171,9 @@ export const useEventForm = ({
 
 
 
-    if (tagsIds.length > 0) {
-      newEvent.tags = tagsIds
-    }
+    /*     if (tagsIds.length > 0) {
+          newEvent.tags = tagsIds
+        } */
     if (editingEvent) {
       editEvent(newEvent);
       resetEditingEvent();

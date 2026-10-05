@@ -1,7 +1,6 @@
 import { View, StyleSheet, FlatList, Text } from "react-native";
 import { useContext, useState, useCallback } from "react";
 import { FAB, Portal, Searchbar } from "react-native-paper";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { Habit } from "@/types/habits";
 
 import HabitItem from "@/components/ui/habits/habit-item";
@@ -32,11 +31,11 @@ import {
 } from "@/utils/Data-services/habit-services/habit-actions";
 import { useHabitStore } from "@/stores/use-habit-store";
 import { useShallow } from "zustand/shallow";
+import { useDailyMetrics } from "@/stores/use-metrics-store";
 
 function HabitsScreenInner() {
   const { theme, isDarkMode } = useContext(ThemeContext);
-  const { appMetrics } = useData();
-
+  const dailyMetrics = useDailyMetrics();
   const [searchQuery, setSearchQuery] = useState("");
   const [visible, setVisible] = useState(false);
   const [visibleInEditMode, setVisibleInEditMode] = useState(false);
@@ -219,7 +218,7 @@ function HabitsScreenInner() {
           showsVerticalScrollIndicator={false}
           keyExtractor={keyExtractor}
           ListHeaderComponent={
-            appMetrics && <HabitHeatmap metrics={appMetrics} />
+            dailyMetrics && <HabitHeatmap metrics={dailyMetrics} />
           }
           renderItem={renderHabit}
           ListEmptyComponent={EmptyState}

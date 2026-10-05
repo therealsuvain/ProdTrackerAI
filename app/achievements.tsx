@@ -5,15 +5,26 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import AchievementBadge from "@/components/ui/achievements/achievement-badge";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { ALL_ACHIEVEMENTS } from "@/types/achievements-ui";
-import { useData } from "../hooks/context-hooks/use-data";
 import { AchievementBadge as BadgeType } from "../types/achievements";
+import {
+  selectUnlockedList,
+  useAchievementStore,
+} from "@/stores/use-achievement-store";
+import { useShallow } from "zustand/shallow";
+import { useMetricStore } from "@/stores/use-metrics-store";
 
 export default function AchievementsScreen() {
   const { theme } = useTheme();
   const { targetBadgeId } = useLocalSearchParams<{ targetBadgeId: string }>();
   const scrollViewRef = useRef<ScrollView>(null);
   const itemOffsets = useRef<Record<string, number>>({}); // The Offset Dictionary
-  const { unlockedAchievements, appMetrics, achievementMetrics } = useData();
+  const unlockedAchievements = useAchievementStore(
+    useShallow(selectUnlockedList),
+  );
+  const metricBasline = useAchievementStore((state) => state.baseline);
+  const metricGlobal = useMetricStore((state) => state.global);
+  console.log("metricGlobal", metricGlobal.tasksCompleted);
+  console.log("metricBasline", metricBasline.tasksCompleted);
   const [achievements, setAchievements] = useState(ALL_ACHIEVEMENTS);
 
   /*   useEffect(() => {
@@ -46,8 +57,10 @@ export default function AchievementsScreen() {
       let metricValue = 0;
       let baseLineValue = 0;
       if (def.metricTrigger !== "meta") {
-        metricValue = appMetrics?.global[def.metricTrigger] || 0;
-        baseLineValue = achievementMetrics[def.metricTrigger] || 0;
+        /* metricValue = appMetrics?.global[def.metricTrigger] || 0;
+        baseLineValue = achievementMetrics[def.metricTrigger] || 0; */
+        metricValue = metricGlobal[def.metricTrigger] || 0;
+        baseLineValue = metricBasline[def.metricTrigger] || 0;
       }
       const currentProgress =
         def.metricTrigger === "meta"
@@ -55,7 +68,7 @@ export default function AchievementsScreen() {
           : metricValue - baseLineValue;
       return { def, unlockedInfo, isUnlocked, currentProgress };
     });
-  }, [achievements, unlockedData, appMetrics, achievementMetrics]);
+  }, [achievements, unlockedData, metricGlobal, metricBasline]);
 
   useEffect(() => {
     if (targetBadgeId) {

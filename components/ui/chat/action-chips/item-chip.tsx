@@ -11,7 +11,6 @@ import { format } from "date-fns";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
-import { useData } from "@/hooks/context-hooks/use-data";
 import { CategoryBadge } from "../../shared/categories/category-badge";
 import { TagBadge } from "../../shared/tags/tag-badge";
 import { ActionChipProps } from "./chip-props";
@@ -19,6 +18,12 @@ import { TagSelectionModal } from "./taxonomy-selection-modals-for-chat/tag-sele
 import { CategorySelectionModal } from "./taxonomy-selection-modals-for-chat/category-selection-modal";
 import { EnumSelectionModal } from "./taxonomy-selection-modals-for-chat/enum-selection-modal";
 import { Category } from "@/types/category";
+import {
+  selectCategoryList,
+  useCategoryStore,
+} from "@/stores/use-category-store";
+import { useShallow } from "zustand/shallow";
+import { selectTagList, useTagStore } from "@/stores/use-tag-store";
 //TODO : Chat screen doesnt revert back in pos after keyboard opens via item chip or when picker is opened.
 // TODO: Preview for description or any other field , that I dont really add in development
 export const ItemChip = ({
@@ -30,10 +35,11 @@ export const ItemChip = ({
   const isReadOnly = isConfirmed || isExpired;
   const isEdit = action.name.toLowerCase().includes("edit");
   const args = action.args;
-  const { categories, tags: allTags } = useData();
   /*   if (args.title === "Running" || action.extraInfo?.title === "Running") {
     console.log(action);
   } */
+  const categories = useCategoryStore(useShallow(selectCategoryList));
+  const tags = useTagStore(useShallow(selectTagList));
   // Local UI States
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -402,7 +408,7 @@ export const ItemChip = ({
         }}
       />
       <TagSelectionModal
-        tags={allTags}
+        tags={tags}
         initialSelected={activeTags}
         visible={showTagModal}
         onClose={() => setShowTagModal(false)}

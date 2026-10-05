@@ -11,7 +11,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { TagAnalyticsModal } from "@/components/ui/shared/tags/tags-modal";
 import { TagBadge } from "@/components/ui/shared/tags/tag-badge";
 import { TagsDeleteModal } from "@/components/ui/shared/tags/tags-delete-modal";
@@ -24,13 +23,18 @@ import { reassignTaskTagWithEffects } from "@/utils/Data-services/task-services/
 import { reassignHabitTagWithEffects } from "@/utils/Data-services/habit-services/habit-actions";
 import { reassignEventTagWithEffects } from "@/utils/Data-services/event-services/event-actions";
 import { reassignLogTagWithEffects } from "@/utils/Data-services/timerlog-services/log-actions";
+import { selectTagList, useTagStore } from "@/stores/use-tag-store";
+import {
+  deleteTagWithEffects,
+  editTagWithEffects,
+  getTagUsageForAll,
+} from "@/utils/Data-services/taxonomy-services/tag-actions";
+import { useShallow } from "zustand/shallow";
 
 export default function TagsSettingsScreen() {
   const { theme } = useContext(ThemeContext);
-  const { tags, updateUserTag, deleteUserTag, getTagUsageForAll, trackMetric } =
-    useData();
   const router = useRouter();
-
+  const tags = useTagStore(useShallow(selectTagList));
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   const [tagToEdit, setTagToEdit] = useState<string | null>(null);
@@ -44,7 +48,7 @@ export default function TagsSettingsScreen() {
 
   // --- HANDLERS ---
   const handleEditRequest = (id: string) => {
-    const tag = tags.find((t) => t.id === id);
+    const tag = useTagStore.getState().tagsById[id];
     if (tag) {
       setEditNameValue(tag.name);
       setSelectedTagId(null); // Close analytics modal
@@ -54,11 +58,10 @@ export default function TagsSettingsScreen() {
 
   const handleSaveEdit = async () => {
     if (!tagToEdit || !editNameValue.trim()) return;
-    const existingTag = tags.find((t) => t.id === tagToEdit);
+    const existingTag = useTagStore.getState().tagsById[tagToEdit];
 
     if (existingTag) {
-      trackMetric(["tagsEdited"], 1);
-      await updateUserTag({ ...existingTag, name: editNameValue.trim() });
+      await editTagWithEffects({ ...existingTag, name: editNameValue.trim() });
     }
     setTagToEdit(null);
   };
@@ -86,7 +89,7 @@ export default function TagsSettingsScreen() {
           variant: "destructive",
           onPress: async () => {
             setDialog(null);
-            await deleteUserTag(id, null);
+            await deleteTagWithEffects(id, null);
           },
         },
         {
@@ -110,7 +113,7 @@ export default function TagsSettingsScreen() {
           variant: "destructive",
           onPress: async () => {
             setDialog(null);
-            await deleteUserTag(id, null);
+            await deleteTagWithEffects(id, null);
           },
         },
         {
@@ -132,7 +135,7 @@ export default function TagsSettingsScreen() {
 
   const executeReassignment = async (fallbackId: string) => {
     if (!tagToDelete) return;
-    await deleteUserTag(tagToDelete, fallbackId);
+    await deleteTagWithEffects(tagToDelete, fallbackId);
     reassignTaskTagWithEffects(tagToDelete, fallbackId);
     reassignHabitTagWithEffects(tagToDelete, fallbackId);
     reassignEventTagWithEffects(tagToDelete, fallbackId);

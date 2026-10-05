@@ -1,11 +1,10 @@
 import { useTaskStore } from "@/stores/use-task-store";
 import { Task } from "@/types/task";
-import { metricsEventBus } from "@/utils/Analytics/metrics-event-bus";
 import {
   cancelReminder,
   scheduleReminderTasks,
 } from "@/hooks/use-notifications";
-
+import { trackMetric } from "../analytics-services/metric-actions";
 /**
  * Single canonical entry point for "user completed/uncompleted a task."
  * Every UI surface (task screen, home, timeline, AI actions, notification
@@ -19,21 +18,13 @@ export async function addTaskWithEffects(task: Task, actor: 'user' | 'ai' = "use
     task.notificationId = notificationId;
   }
   await useTaskStore.getState().addTask(task);
-  metricsEventBus.emit("metric:track", {
-    keys: ["tasksAdded"],
-    amount: 1,
-    actor,
-  });
+  trackMetric(["tasksAdded"], 1, actor);
 
   if (mode === 'undo') {
     if (task.completed) {
-      metricsEventBus.emit("metric:track", { keys: ["tasksDeleted"], amount: -1 });
+      trackMetric(["tasksDeleted"], -1, actor);
     } else {
-      metricsEventBus.emit("metric:track", {
-        keys: ["tasksDeleted", "tasksAbandoned"],
-        amount: -1,
-        actor,
-      });
+      trackMetric(["tasksDeleted", "tasksAbandoned"], -1, actor);
     }
   }
 }
@@ -53,18 +44,9 @@ export async function editTaskWithEffects(task: Task, actor: 'user' | 'ai' = "us
   }
 
   await useTaskStore.getState().editTask(task);
-  metricsEventBus.emit("metric:track", {
-    keys: ["tasksEdited"],
-    amount: 1,
-    actor,
-  });
-
+  trackMetric(["tasksEdited"], 1, actor);
   if (mode === 'undo') {
-    metricsEventBus.emit("metric:track", {
-      keys: ["tasksEdited"],
-      amount: -1,
-      actor,
-    });
+    trackMetric(["tasksEdited"], -1, actor);
   }
 }
 
@@ -78,21 +60,14 @@ export async function deleteTaskWithEffects(id: string, actor: 'user' | 'ai' = "
   }
 
   if (task.completed) {
-    metricsEventBus.emit("metric:track", { keys: ["tasksDeleted"], amount: 1 });
+    trackMetric(["tasksDeleted"], 1, actor);
   } else {
-    metricsEventBus.emit("metric:track", {
-      keys: ["tasksDeleted", "tasksAbandoned"],
-      amount: 1,
-      actor,
-    });
+    trackMetric(["tasksDeleted", "tasksAbandoned"], 1, actor);
   }
 
+
   if (mode === 'undo') {
-    metricsEventBus.emit("metric:track", {
-      keys: ["tasksAdded"],
-      amount: -1,
-      actor,
-    });
+    trackMetric(["tasksAdded"], -1, actor);
   }
 }
 
@@ -100,13 +75,15 @@ export async function deleteAllTasksWithEffects(actor: 'user' | 'ai' = "user", m
   const DeletedTasks = Object.values(useTaskStore.getState().tasksById);
   const noOfDeletedTasks = DeletedTasks.length;
   await useTaskStore.getState().removeTasks();
-  metricsEventBus.emit("metric:track", { keys: ["tasksDeleted"], amount: noOfDeletedTasks, actor });
+  trackMetric(["tasksDeleted"], noOfDeletedTasks, actor);
+
   let noOfAbandonedTasks = 0;
   for (const task of DeletedTasks) {
     if (task.completed) continue;
     noOfAbandonedTasks += 1;
   }
-  metricsEventBus.emit("metric:track", { keys: ["tasksAbandoned"], amount: noOfAbandonedTasks, actor });
+  trackMetric(["tasksAbandoned"], noOfAbandonedTasks, actor);
+
 
 }
 export async function toggleTaskWithEffects(id: string, actor: 'user' | 'ai' = "user", mode: 'regular' | 'undo' = "regular"): Promise<void> {
@@ -121,11 +98,7 @@ export async function toggleTaskWithEffects(id: string, actor: 'user' | 'ai' = "
   // how long the underlying SQLite write takes.
   await useTaskStore.getState().toggleTask(id);
 
-  metricsEventBus.emit("metric:track", {
-    keys: ["tasksCompleted"],
-    amount: wasCompleted ? -1 : 1,
-    actor,
-  });
+  trackMetric(["tasksCompleted"], wasCompleted ? -1 : 1, actor);
 }
 
 export function setTaskOrderWithEffects(tasks: string[]): void {

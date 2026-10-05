@@ -8,6 +8,8 @@ import { AIActionMemory } from "./ai-action-undo-handlers";
 import { fastCosineSimilarity, generateEmbedding } from "@/utils/embedding-engine";
 import { useHabitStore } from "@/stores/use-habit-store";
 import { addHabitWithEffects, batchMutateHabitsWithEffects, checkInHabitWithEffects, deleteHabitWithEffects, editHabitWithEffects, freezeHabitWithEffects } from "@/utils/Data-services/habit-services/habit-actions";
+import { getCategoryList } from "@/stores/use-category-store";
+import { getTagList } from "@/stores/use-tag-store";
 
 
 function findHabitByShortId(shortId: string): Habit | undefined {
@@ -20,7 +22,7 @@ function allHabits(): Habit[] {
 }
 
 export const AddHabitHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const newHabit: Habit = await createHabit(params);
     /*  if (newHabit.reminder) {
        try {
@@ -50,7 +52,7 @@ export const AddHabitHandler: AIHandler = {
 }
 
 export const EditHabitHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const oldHabit = findHabitByShortId(params.id);
     if (!oldHabit) {
       throw new Error("Habit not found");
@@ -86,7 +88,7 @@ export const EditHabitHandler: AIHandler = {
 }
 
 export const DeleteHabitHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const oldHabit = findHabitByShortId(params.id);
     if (!oldHabit) {
       throw new Error("Task not found");
@@ -106,7 +108,7 @@ export const DeleteHabitHandler: AIHandler = {
 };
 
 export const CheckInHabitHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const oldHabit = findHabitByShortId(params.id);
     if (!oldHabit) throw new Error("Habit not found");
     const result = await checkInHabitWithEffects(oldHabit.id);
@@ -124,7 +126,7 @@ export const CheckInHabitHandler: AIHandler = {
 };
 
 export const FreezeHabitHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const oldHabit = findHabitByShortId(params.id);
     if (!oldHabit) throw new Error("Habit not found");
     const result = await freezeHabitWithEffects(oldHabit.id);
@@ -158,9 +160,10 @@ const getHabitStatus = (habit: Habit) => {
 }
 
 export const BatchMutateHabitsHandler: AIHandler = {
-  execute: async (params, context) => {
+  execute: async (params) => {
     const { searchFilters, mutationPayload } = params;
-    const cateogryId = searchFilters.categoryName ? resolveIdsFromNames(searchFilters.categoryName, context.categories)[0] : undefined;
+    const categories = getCategoryList();
+    const cateogryId = searchFilters.categoryName ? resolveIdsFromNames(searchFilters.categoryName, categories)[0] : undefined;
     // 1. O(N) Hard Filtering
     let targets = (allHabits() || []).filter((habit: any) => {
       const currentStatus = getHabitStatus(habit);
@@ -189,7 +192,7 @@ export const BatchMutateHabitsHandler: AIHandler = {
       type: 'BATCH_REVERT_HABITS',
       payload: { originalHabits: targets }, timestamp: Date.now()
     });
-    const newCateogryId = mutationPayload.category ? resolveIdsFromNames(mutationPayload.category, context.categories)[0] : undefined;
+    const newCateogryId = mutationPayload.category ? resolveIdsFromNames(mutationPayload.category, categories)[0] : undefined;
     if (newCateogryId) {
       mutationPayload.category = newCateogryId;
     }
@@ -212,7 +215,7 @@ const isToday = (dateString?: string) => {
 
 // --- 1. HABITS HANDLER ---
 export const QueryHabitsHandler: AIHandler = {
-  execute: async (args: any, context: any) => {
+  execute: async (args: any) => {
     const { frequency = "all", stateFilter = "all", sortBy = "none", specificHabitId, categoryName,
       tagNames } = args;
 
@@ -245,8 +248,10 @@ export const QueryHabitsHandler: AIHandler = {
         }
       };
     }
-    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, context.categories)[0] : undefined;
-    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, context.tags) : [];
+    const categories = getCategoryList();
+    const tags = getTagList();
+    const targetCategoryId = categoryName ? resolveIdsFromNames(categoryName, categories)[0] : undefined;
+    const targetTagIds = tagNames ? resolveIdsFromNames(tagNames, tags) : [];
     let filtered = [...(allHabits() || [])];
 
     if (targetCategoryId) {

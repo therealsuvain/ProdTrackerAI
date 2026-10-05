@@ -3,7 +3,7 @@ import { useEventStore } from "@/stores/use-event-store";
 import { cancelReminder, scheduleReminderEvents } from "@/hooks/use-notifications";
 import { CalendarEvent } from "@/types/calendar";
 import { GlobalMetricKey } from "@/types/metrics";
-import { metricsEventBus } from "@/utils/Analytics/metrics-event-bus";
+import { trackMetric } from "../analytics-services/metric-actions";
 
 const isTimeEdited = (oldEvent: CalendarEvent, newEvent: CalendarEvent) => {
     // If old event never had a reminder
@@ -69,10 +69,9 @@ export async function addEventWithEffects(event: CalendarEvent, actor: 'user' | 
     } else if (startSeconds >= NINE_PM || endSeconds <= SIX_AM) {
         metricsArr.push("eventsOvernight");
     }
-    metricsEventBus.emit("metric:track", { keys: metricsArr, amount: 1, actor });
-
+    trackMetric(metricsArr, 1, actor);
     if (mode === 'undo') {
-        metricsEventBus.emit("metric:track", { keys: ["eventsDeleted"], amount: -1, actor });
+        trackMetric(["eventsDeleted"], -1, actor);
     }
 }
 
@@ -88,9 +87,9 @@ export async function editEventWithEffects(event: CalendarEvent, actor: 'user' |
     }
 
     await useEventStore.getState().editEvent(event);
-    metricsEventBus.emit("metric:track", { keys: ["eventsEdited"], amount: 1, actor });
-    if (mode) {
-        metricsEventBus.emit("metric:track", { keys: ["eventsEdited"], amount: -1, actor });
+    trackMetric(["eventsEdited"], 1, actor);
+    if (mode === 'undo') {
+        trackMetric(["eventsEdited"], -1, actor);
     }
 }
 
@@ -102,7 +101,7 @@ export async function deleteEventWithEffects(id: string, actor: 'user' | 'ai' = 
 
     await useEventStore.getState().removeEvent(id);
 
-    metricsEventBus.emit("metric:track", { keys: ["eventsDeleted"], amount: 1, actor });
+    trackMetric(["eventsDeleted"], 1, actor);
 
     if (mode === 'undo') {
         const metricsArr: GlobalMetricKey[] = ["eventsAdded"];
@@ -136,7 +135,7 @@ export async function deleteEventWithEffects(id: string, actor: 'user' | 'ai' = 
         } else if (startSeconds >= NINE_PM || endSeconds <= SIX_AM) {
             metricsArr.push("eventsOvernight");
         }
-        metricsEventBus.emit("metric:track", { keys: metricsArr, amount: -1, actor });
+        trackMetric(metricsArr, -1, actor);
     }
 }
 
@@ -154,7 +153,7 @@ export async function deleteEventOccurrenceWithEffects(
             await Promise.all(event.notificationIds.map((n) => cancelReminder(n.id)));
         }
         await useEventStore.getState().removeEvent(eventId);
-        metricsEventBus.emit("metric:track", { keys: ["eventsDeleted"], amount: 1, actor });
+        trackMetric(["eventsDeleted"], 1, actor);
         return;
     }
 
@@ -173,7 +172,13 @@ export async function deleteEventOccurrenceWithEffects(
 export async function deleteAllEventsWithEffects(actor: 'user' | 'ai' = "user", mode: 'regular' | 'undo' = "regular"): Promise<void> {
     const deletedEventsCount = Object.keys(useEventStore.getState().eventsById).length;
     await useEventStore.getState().removeEvents();
-    metricsEventBus.emit("metric:track", { keys: ["eventsDeleted"], amount: deletedEventsCount, actor });
+    trackMetric(["eventsDeleted"], deletedEventsCount, actor);
+    /*     if (mode === 'undo') {
+            trackMetric(["eventsAdded"], -deletedEventsCount);
+            if (actor === 'ai') {
+                trackMetric(["eventsAdded"], -deletedEventsCount, 'ai');
+            }
+        } */
 }
 
 export function reassignEventCategoryWithEffects(oldCategoryId: string, newCategoryId: string): void {
