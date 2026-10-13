@@ -1,9 +1,10 @@
 import { eq, desc, sql, like, and, inArray, isNull } from "drizzle-orm";
-import { db, tags, categories, tasks, habits, calendarEvents, timerLogs, timerTags , taskTags, habitTags, eventTags} from "@/db";
+import { db, tags, categories, tasks, habits, calendarEvents, timerLogs, timerTags, taskTags, habitTags, eventTags } from "@/db";
 import type { Tag } from "@/types/tag";
 import type { Category } from "@/types/category";
 import { type TagRow, type TagInsert, type CategoryRow, type CategoryInsert } from "@/db/schema";
 import { DEFAULT_CATEGORIES } from '@/constants/default-categories';
+import { inputToLowerCaseAndTrim } from "@/utils/common-utils";
 
 
 
@@ -11,68 +12,72 @@ import { DEFAULT_CATEGORIES } from '@/constants/default-categories';
 
 /** DB row → application Tag. Called on every read. */
 function rowToTag(row: TagRow): Tag {
-    return {
-        id: row.id,
-        name: row.name,
-        count: row.count,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-    };
+  return {
+    id: row.id,
+    name: row.name,
+    normalizedName: row.normalizedName,
+    count: row.count,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
 }
 
 /** Application Tag → DB insert shape. Called on every write. */
 export function tagToInsert(tag: Tag): TagInsert {
-    const now = new Date().toISOString();
-    return {
-        id: tag.id,
-        name: tag.name,
-        count: tag.count ?? 0,
-        createdAt: tag.createdAt ?? now,
-        updatedAt: now, // always stamp updatedAt to now on any write
-    };
+  const now = new Date().toISOString();
+  return {
+    id: tag.id,
+    name: tag.name,
+    normalizedName: inputToLowerCaseAndTrim(tag.name),
+    count: tag.count ?? 0,
+    createdAt: tag.createdAt ?? now,
+    updatedAt: now, // always stamp updatedAt to now on any write
+  };
 }
 
 // ─── type converters — Categories ─────────────────────────────────────────────
 
 /** DB row → application Category. Called on every read. */
 function rowToCategory(row: CategoryRow): Category {
-    return {
-        id: row.id,
-        name: row.name,
-        color: row.color,
-        count: row.count,
-        icon: row.icon,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-        syncedAt: row.syncedAt ?? undefined,
-    };
+  return {
+    id: row.id,
+    name: row.name,
+    normalizedName: row.normalizedName,
+    color: row.color,
+    count: row.count,
+    icon: row.icon,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    syncedAt: row.syncedAt ?? undefined,
+  };
 }
 
 /** Application Category → DB insert shape. Called on every write. */
 export function categoryToInsert(category: Category): CategoryInsert {
-    const now = new Date().toISOString();
-    return {
-        id: category.id,
-        name: category.name,
-        color: category.color,
-        count: category.count ?? 0,
-        icon: category.icon,
-        createdAt: category.createdAt ?? now,
-        updatedAt: now, // always stamp updatedAt to now on any write
-        syncedAt: category.syncedAt ?? null,
-    };
+  const now = new Date().toISOString();
+  return {
+    id: category.id,
+    name: category.name,
+    normalizedName: inputToLowerCaseAndTrim(category.name),
+    color: category.color,
+    count: category.count ?? 0,
+    icon: category.icon,
+    createdAt: category.createdAt ?? now,
+    updatedAt: now, // always stamp updatedAt to now on any write
+    syncedAt: category.syncedAt ?? null,
+  };
 }
 
 // ─── Tags: read operations ────────────────────────────────────────────────────
 
 /** Load all tags ordered by usage count descending (most used first). */
 export async function getAllTags(): Promise<Tag[]> {
-    const rows = await db
-        .select()
-        .from(tags)
-        .where(isNull(tags.deletedAt))
-        .orderBy(desc(tags.count));
-    return rows.map(rowToTag);
+  const rows = await db
+    .select()
+    .from(tags)
+    .where(isNull(tags.deletedAt))
+    .orderBy(desc(tags.count));
+  return rows.map(rowToTag);
 }
 
 // ─── Tags: write operations ───────────────────────────────────────────────────
@@ -82,37 +87,59 @@ export async function getAllTags(): Promise<Tag[]> {
  * Throws on DB error — caller is responsible for catching and rolling back
  * optimistic UI state.
  */
-export async function insertTags(tagList: Tag[]): Promise<void> {
-    if (tagList.length === 0) return;
-    await db.transaction(async (tx) => {
-        for (const tag of tagList) {
-            await tx
-                .insert(tags)
-                .values(tagToInsert(tag))
-                .onConflictDoUpdate({
-                    target: tags.name, // Triggers when the unique 'name' already exists
-                    set: {
-                        count: sql`${tags.count} + 1`,
-                        updatedAt: new Date().toISOString(),
-                    }
-                }); // safe to re-run migration
-        }
-    });
+export async function insertTags(tagListNew: Tag[], tagListExisting: string[]): Promise<void> {
+  if (tagListNew.length === 0 && tagListExisting.length === 0) return;
+  const now = new Date().toISOString();
+  //console.log("insertTags", tagListNew, tagListExisting);
+  await db.transaction(async (tx) => {
+    if (tagListNew.length > 0) {
+      for (const tag of tagListNew) {
+
+        await tx
+          .insert(tags)
+          .values(tagToInsert(tag))
+
+      }
+      console.log("result");
+    }
+    if (tagListExisting.length > 0) {
+      for (const tag of tagListExisting) {
+
+        const result = await tx
+          .update(tags)
+          .set({
+            count: sql`${tags.count} + 1`,
+            updatedAt: now,
+          })
+          .where(eq(tags.id, tag));
+        console.log("result", result);
+      }
+    }
+  });
 }
 
+export async function getActiveTagByName(name: string) {
+  const row = await db
+    .select()
+    .from(tags)
+    .where(and(isNull(tags.deletedAt), eq(tags.normalizedName, inputToLowerCaseAndTrim(name))))
+    .limit(1);
+
+  return row[0]?.id ?? null;
+}
 /**
  * Update a tag's count field only.
  * More efficient than a full-row update since count is the only
  * field that changes during normal app usage.
  */
 export async function incrementTagCount(id: string): Promise<void> {
-    await db
-        .update(tags)
-        .set({
-            count: sql`${tags.count} + 1`,
-            updatedAt: new Date().toISOString(),
-        })
-        .where(eq(tags.id, id));
+  await db
+    .update(tags)
+    .set({
+      count: sql`${tags.count} + 1`,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(tags.id, id));
 }
 
 /**
@@ -121,15 +148,15 @@ export async function incrementTagCount(id: string): Promise<void> {
  * Throws on DB error.
  */
 export async function updateTag(tag: Tag): Promise<Tag> {
-    const insert = tagToInsert(tag);
-    await db
-        .update(tags)
-        .set({
-            ...insert,
-            updatedAt: new Date().toISOString(), // explicit — tagToInsert also sets it
-        })
-        .where(eq(tags.id, tag.id));
-    return rowToTag({ ...insert } as TagRow);
+  const insert = tagToInsert(tag);
+  await db
+    .update(tags)
+    .set({
+      ...insert,
+      updatedAt: new Date().toISOString(), // explicit — tagToInsert also sets it
+    })
+    .where(eq(tags.id, tag.id));
+  return rowToTag({ ...insert } as TagRow);
 }
 
 /**
@@ -137,16 +164,16 @@ export async function updateTag(tag: Tag): Promise<Tag> {
  * Throws on DB error.
  */
 export async function deleteTag(id: string): Promise<void> {
-    //await db.delete(tags).where(eq(tags.id, id));
-    const now = new Date().toISOString();
-    await db
-        .update(tags)
-        .set({
-            deletedAt: now,
-            updatedAt: now,
-            syncedAt: null,
-        })
-        .where(eq(tags.id, id));
+  //await db.delete(tags).where(eq(tags.id, id));
+  const now = new Date().toISOString();
+  await db
+    .update(tags)
+    .set({
+      deletedAt: now,
+      updatedAt: now,
+      syncedAt: null,
+    })
+    .where(eq(tags.id, id));
 }
 
 /**
@@ -156,7 +183,7 @@ export async function deleteTag(id: string): Promise<void> {
 
 export const deleteTagSafely = async (tagIdToDelete: string, fallbackTagId: string | null = null) => {
   await db.transaction(async (tx) => {
-    
+    console.log("deleteTagSafely", tagIdToDelete, fallbackTagId);
     if (fallbackTagId) {
       // --- 1. TASKS MIGRATION ---
       const tasksWithOldTag = await tx.select({ taskId: taskTags.taskId }).from(taskTags).where(eq(taskTags.tagId, tagIdToDelete));
@@ -193,23 +220,23 @@ export const deleteTagSafely = async (tagIdToDelete: string, fallbackTagId: stri
 
       // --- 5. UPDATE USAGE COUNT ---
       const [taskC, habitC, eventC, logC] = await Promise.all([
-    tx.select({ count: sql<number>`count(*)` }).from(taskTags).where(eq(taskTags.tagId, fallbackTagId)),
-    tx.select({ count: sql<number>`count(*)` }).from(habitTags).where(eq(habitTags.tagId, fallbackTagId)),
-    tx.select({ count: sql<number>`count(*)` }).from(eventTags).where(eq(eventTags.tagId, fallbackTagId)),
-    tx.select({ count: sql<number>`count(*)` }).from(timerTags).where(eq(timerTags.tagId, fallbackTagId)),
-  ]);
+        tx.select({ count: sql<number>`count(*)` }).from(taskTags).where(eq(taskTags.tagId, fallbackTagId)),
+        tx.select({ count: sql<number>`count(*)` }).from(habitTags).where(eq(habitTags.tagId, fallbackTagId)),
+        tx.select({ count: sql<number>`count(*)` }).from(eventTags).where(eq(eventTags.tagId, fallbackTagId)),
+        tx.select({ count: sql<number>`count(*)` }).from(timerTags).where(eq(timerTags.tagId, fallbackTagId)),
+      ]);
 
-  const trueTotal = taskC[0].count + habitC[0].count + eventC[0].count + logC[0].count;
+      const trueTotal = taskC[0].count + habitC[0].count + eventC[0].count + logC[0].count;
 
-  await tx.update(tags)
-    .set({ 
-      count: trueTotal,
-      updatedAt: new Date().toISOString() 
-    })
-    .where(eq(tags.id, fallbackTagId));
+      await tx.update(tags)
+        .set({
+          count: trueTotal,
+          updatedAt: new Date().toISOString()
+        })
+        .where(eq(tags.id, fallbackTagId));
     }
 
-    
+
 
     // --- 6. CLEANUP ---
     // Now that the fallback tags are safely duplicated across all items, wipe the old tag entirely.
@@ -225,7 +252,7 @@ export const deleteTagSafely = async (tagIdToDelete: string, fallbackTagId: stri
         deletedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         syncedAt: null,
-    })
+      })
       .where(eq(tags.id, tagIdToDelete));
 
   });
@@ -242,10 +269,30 @@ function removeTagId(jsonText: string | null, tagId: string): string {
   return JSON.stringify(arr.filter((id) => id !== tagId));
 }
 
-export  async function reassignAndAddBackTag(tagOriginal: Tag, tagToReassignFrom: string | null ,  originalItems : Record<string, string[]>) {
+export async function reassignAndAddBackTag(tagOriginal: Tag, tagToReassignFrom: string | null, originalItems: Record<string, string[]>) {
   await db.transaction(async (tx) => {
     const insert = tagToInsert(tagOriginal);
-    await tx.insert(tags).values(insert);
+    const existing = await db
+      .select()
+      .from(tags)
+      .where(eq(tags.normalizedName, insert.normalizedName))
+      .limit(1);
+
+    if (existing[0] && existing[0].id !== insert.id && existing[0].deletedAt === null) {
+      throw new Error("TAG_NAME_CONFLICT");
+    }
+    //await tx.insert(tags).values(insert);
+    await db
+      .update(tags)
+      .set({
+        name: insert.name,
+        normalizedName: insert.normalizedName,
+        count: insert.count,
+        updatedAt: new Date().toISOString(),
+        deletedAt: null,
+        syncedAt: null,
+      })
+      .where(eq(tags.id, insert.id));
 
     if (tagToReassignFrom) {
       const movedCount =
@@ -376,10 +423,10 @@ export  async function reassignAndAddBackTag(tagOriginal: Tag, tagToReassignFrom
 }
 
 export async function getItemIdsForTag(tagId: string) {
-  const tasks = await db.select({ id:taskTags.taskId }).from(taskTags).where(eq(taskTags.tagId, tagId));
-  const habits = await db.select({ id:habitTags.habitId }).from(habitTags).where(eq(habitTags.tagId, tagId));
-  const events = await db.select({ id:eventTags.eventId }).from(eventTags).where(eq(eventTags.tagId, tagId));
-  const logs = await db.select({ id:timerTags.logId }).from(timerTags).where(eq(timerTags.tagId, tagId));
+  const tasks = await db.select({ id: taskTags.taskId }).from(taskTags).where(eq(taskTags.tagId, tagId));
+  const habits = await db.select({ id: habitTags.habitId }).from(habitTags).where(eq(habitTags.tagId, tagId));
+  const events = await db.select({ id: eventTags.eventId }).from(eventTags).where(eq(eventTags.tagId, tagId));
+  const logs = await db.select({ id: timerTags.logId }).from(timerTags).where(eq(timerTags.tagId, tagId));
 
   return {
     tasks: tasks.map(t => t.id),
@@ -480,26 +527,26 @@ export async function getItemIdsForTag(tagId: string) {
 }; */
 
 export async function deleteAllTags(): Promise<number> {
-    const count = await countTags();
-    if (count === 0) return 0;
+  const count = await countTags();
+  if (count === 0) return 0;
 
-    //await db.delete(tags);
-    await db.update(tags).set({ 
-      updatedAt: new Date().toISOString(),
-      deletedAt: new Date().toISOString(),
-      syncedAt: null 
-    });
+  //await db.delete(tags);
+  await db.update(tags).set({
+    updatedAt: new Date().toISOString(),
+    deletedAt: new Date().toISOString(),
+    syncedAt: null
+  });
 
 
-    return count;
+  return count;
 }
 
 // ─── Tags: aggregate operations ───────────────────────────────────────────────
 
 /** Count all tag rows. */
 export async function countTags(): Promise<number> {
-    const result = await db.select({ id: tags.id }).from(tags).where(isNull(tags.deletedAt));
-    return result.length;
+  const result = await db.select({ id: tags.id }).from(tags).where(isNull(tags.deletedAt));
+  return result.length;
 }
 
 /**
@@ -529,24 +576,24 @@ export const getTagUsageStats = async (tagId: string) => {
 // ─── Categories: read operations ──────────────────────────────────────────────
 
 export async function seedCategoriesIfEmpty(): Promise<void> {
-    const existingCount = await db.select({ count: sql`COUNT(*)` }).from(categories);
+  const existingCount = await db.select({ count: sql`COUNT(*)` }).from(categories);
 
-    // Check if the table is empty
-    if (existingCount[0].count === 0) {
-        await db.insert(categories).values(DEFAULT_CATEGORIES);
-        console.log('Database seeded with default categories.');
-    }
+  // Check if the table is empty
+  if (existingCount[0].count === 0) {
+    await db.insert(categories).values(DEFAULT_CATEGORIES);
+    console.log('Database seeded with default categories.');
+  }
 
 
 }
 /** Load all categories ordered by usage count descending (most used first). */
 export async function getAllCategories(): Promise<Category[]> {
-    const rows = await db
-        .select()
-        .from(categories)
-        .where(isNull(categories.deletedAt))
-        .orderBy(desc(categories.count));
-    return rows.map(rowToCategory);
+  const rows = await db
+    .select()
+    .from(categories)
+    .where(isNull(categories.deletedAt))
+    .orderBy(desc(categories.count));
+  return rows.map(rowToCategory);
 }
 
 // ─── Categories: write operations ─────────────────────────────────────────────
@@ -557,17 +604,28 @@ export async function getAllCategories(): Promise<Category[]> {
  * optimistic UI state.
  */
 export async function insertCategory(category: Category): Promise<Category> {
-    const insert = categoryToInsert(category);
-    await db.insert(categories).values(insert).onConflictDoUpdate({
-        target: categories.name, // Triggers when the unique 'name' already exists
-        set: {
-            count: sql`${categories.count} + 1`,
-            updatedAt: new Date().toISOString(),
-        }
-    });;
-    // Return with the exact timestamps that were written
-    return rowToCategory({ ...insert } as CategoryRow);
+  const insert = categoryToInsert(category);
+  await db.insert(categories).values(insert)/* .onConflictDoUpdate({
+    target: categories.name, // Triggers when the unique 'name' already exists
+    set: {
+      count: sql`${categories.count} + 1`,
+      updatedAt: new Date().toISOString(),
+    }
+  });; */
+  // Return with the exact timestamps that were written
+  return rowToCategory({ ...insert } as CategoryRow);
 }
+
+export async function getActiveCategoryByName(name: string) {
+  const row = await db
+    .select()
+    .from(categories)
+    .where(and(isNull(categories.deletedAt), eq(categories.normalizedName, inputToLowerCaseAndTrim(name))))
+    .limit(1);
+
+  return row[0]?.id ?? null;
+}
+
 
 /**
  * Update a category's count and/or color fields only.
@@ -576,15 +634,15 @@ export async function insertCategory(category: Category): Promise<Category> {
  * Pass only the fields you want to change — undefined fields are left as-is.
  */
 export async function incrementCategoryCount(
-    id: string,
+  id: string,
 ): Promise<void> {
-    await db
-        .update(categories)
-        .set({
-            count: sql`${categories.count} + 1`,
-            updatedAt: new Date().toISOString(),
-        })
-        .where(eq(categories.id, id));
+  await db
+    .update(categories)
+    .set({
+      count: sql`${categories.count} + 1`,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(categories.id, id));
 }
 
 /* export async function updateCategoryColor(
@@ -605,15 +663,15 @@ export async function incrementCategoryCount(
  * Throws on DB error.
  */
 export async function updateCategory(category: Category): Promise<Category> {
-    const insert = categoryToInsert(category);
-    await db
-        .update(categories)
-        .set({
-            ...insert,
-            updatedAt: new Date().toISOString(), // explicit — categoryToInsert also sets it
-        })
-        .where(eq(categories.id, category.id));
-    return rowToCategory({ ...insert } as CategoryRow);
+  const insert = categoryToInsert(category);
+  await db
+    .update(categories)
+    .set({
+      ...insert,
+      updatedAt: new Date().toISOString(), // explicit — categoryToInsert also sets it
+    })
+    .where(eq(categories.id, category.id));
+  return rowToCategory({ ...insert } as CategoryRow);
 }
 
 /**
@@ -627,20 +685,20 @@ export const deleteCategorySafely = async (categoryIdToDelete: string, fallbackC
     if (fallbackCategoryId) {
 
       // 1. Fetch the count of the category we are about to delete
-  const [catToDelete] = await tx
-    .select({ count: categories.count })
-    .from(categories)
-    .where(eq(categories.id, categoryIdToDelete));
+      const [catToDelete] = await tx
+        .select({ count: categories.count })
+        .from(categories)
+        .where(eq(categories.id, categoryIdToDelete));
 
-  if (catToDelete) {
-    // 2. Add its count directly to the fallback category
-    await tx.update(categories)
-      .set({ 
-        count: sql`${categories.count} + ${catToDelete.count}`,
-        updatedAt: new Date().toISOString() 
-      })
-      .where(eq(categories.id, fallbackCategoryId));
-  }
+      if (catToDelete) {
+        // 2. Add its count directly to the fallback category
+        await tx.update(categories)
+          .set({
+            count: sql`${categories.count} + ${catToDelete.count}`,
+            updatedAt: new Date().toISOString()
+          })
+          .where(eq(categories.id, fallbackCategoryId));
+      }
 
       await tx.update(tasks).set({ category: fallbackCategoryId }).where(eq(tasks.category, categoryIdToDelete));
       await tx.update(habits).set({ category: fallbackCategoryId }).where(eq(habits.category, categoryIdToDelete));
@@ -664,28 +722,50 @@ export const deleteCategorySafely = async (categoryIdToDelete: string, fallbackC
   });
 };
 
-export async function reassignAndAddBackCategory(categoryOriginal: Category, categoryToReassignFrom: string|null, itemsToReassign: Record<string,string[]>): Promise<void> {
+export async function reassignAndAddBackCategory(categoryOriginal: Category, categoryToReassignFrom: string | null, itemsToReassign: Record<string, string[]>): Promise<void> {
   await db.transaction(async (tx) => {
-     const insert = categoryToInsert(categoryOriginal);
-     const ogCount = insert.count;
-     await tx.insert(categories).values(insert)
-     if (categoryToReassignFrom){
+    const insert = categoryToInsert(categoryOriginal);
+    const ogCount = insert.count;
+    const existing = await tx
+      .select()
+      .from(categories)
+      .where(eq(categories.normalizedName, insert.normalizedName))
+      .limit(1);
+
+    if (existing[0] && existing[0].id !== insert.id && existing[0].deletedAt === null) {
+      throw new Error("TAG_NAME_CONFLICT");
+    }
+
+    await tx
+      .update(categories)
+      .set({
+        name: insert.name,
+        normalizedName: insert.normalizedName,
+        count: insert.count,
+        updatedAt: new Date().toISOString(),
+        deletedAt: null,
+        syncedAt: null,
+      })
+      .where(eq(categories.id, insert.id));
+
+    //await tx.insert(categories).values(insert)
+    if (categoryToReassignFrom) {
       await tx.update(categories)
         .set({
-            count: sql`${categories.count} - ${ogCount}`,
+          count: sql`${categories.count} - ${ogCount}`,
         })
         .where(eq(categories.id, categoryToReassignFrom));
 
-      if(itemsToReassign['tasks'] && itemsToReassign['tasks'].length > 0 )
-      await tx.update(tasks).set({ category: categoryOriginal.id }).where(and(eq(tasks.category, categoryToReassignFrom),inArray(tasks.id, itemsToReassign['tasks'])));
-       if(itemsToReassign['habits'] && itemsToReassign['habits'].length > 0 )
-      await tx.update(habits).set({ category: categoryOriginal.id }).where(and(eq(habits.category, categoryToReassignFrom),inArray(habits.id, itemsToReassign['habits'])));
-     if(itemsToReassign['events'] && itemsToReassign['events'].length > 0 )
-      await tx.update(calendarEvents).set({ category: categoryOriginal.id }).where(and(eq(calendarEvents.category, categoryToReassignFrom),inArray(calendarEvents.id, itemsToReassign['events'])));
-     if(itemsToReassign['logs'] && itemsToReassign['logs'].length > 0 )
-      await tx.update(timerLogs).set({ category: categoryOriginal.id }).where(and(eq(timerLogs.category, categoryToReassignFrom),inArray(timerLogs.id, itemsToReassign['logs'])));
-    
-      }
+      if (itemsToReassign['tasks'] && itemsToReassign['tasks'].length > 0)
+        await tx.update(tasks).set({ category: categoryOriginal.id }).where(and(eq(tasks.category, categoryToReassignFrom), inArray(tasks.id, itemsToReassign['tasks'])));
+      if (itemsToReassign['habits'] && itemsToReassign['habits'].length > 0)
+        await tx.update(habits).set({ category: categoryOriginal.id }).where(and(eq(habits.category, categoryToReassignFrom), inArray(habits.id, itemsToReassign['habits'])));
+      if (itemsToReassign['events'] && itemsToReassign['events'].length > 0)
+        await tx.update(calendarEvents).set({ category: categoryOriginal.id }).where(and(eq(calendarEvents.category, categoryToReassignFrom), inArray(calendarEvents.id, itemsToReassign['events'])));
+      if (itemsToReassign['logs'] && itemsToReassign['logs'].length > 0)
+        await tx.update(timerLogs).set({ category: categoryOriginal.id }).where(and(eq(timerLogs.category, categoryToReassignFrom), inArray(timerLogs.id, itemsToReassign['logs'])));
+
+    }
   })
 }
 /**
@@ -693,11 +773,11 @@ export async function reassignAndAddBackCategory(categoryOriginal: Category, cat
  * Returns the number of categories deleted.
  */
 export async function deleteAllCategories(): Promise<number> {
-    const count = await countCategories();
-    if (count === 0) return 0;
+  const count = await countCategories();
+  if (count === 0) return 0;
 
-    //await db.delete(categories);
-    await db
+  //await db.delete(categories);
+  await db
     .update(categories)
     .set({
       deletedAt: new Date().toISOString(),
@@ -705,15 +785,15 @@ export async function deleteAllCategories(): Promise<number> {
       syncedAt: null,
     })
 
-    return count;
+  return count;
 }
 
 // ─── Categories: aggregate operations ─────────────────────────────────────────
 
 /** Count all category rows. */
 export async function countCategories(): Promise<number> {
-    const result = await db.select({ id: categories.id }).from(categories).where(isNull(categories.deletedAt));
-    return result.length;
+  const result = await db.select({ id: categories.id }).from(categories).where(isNull(categories.deletedAt));
+  return result.length;
 }
 
 /**
@@ -736,6 +816,366 @@ export const getCategoryUsage = async (categoryId: string) => {
     habits: habitCount[0].count,
     events: eventCount[0].count,
     logs: logCount[0].count, // logCount[0].count
-    total: taskCount[0].count + habitCount[0].count + eventCount[0].count  + logCount[0].count 
+    total: taskCount[0].count + habitCount[0].count + eventCount[0].count + logCount[0].count
   };
 };
+
+
+export async function mergeCategoryInTransaction(
+  tx: any,
+  winnerId: string,
+  loserId: string,
+  finalCount?: number,
+): Promise<void> {
+  if (winnerId === loserId) return;
+
+  const [winner] = await tx
+    .select()
+    .from(categories)
+    .where(eq(categories.id, winnerId))
+    .limit(1);
+
+  const [loser] = await tx
+    .select()
+    .from(categories)
+    .where(eq(categories.id, loserId))
+    .limit(1);
+
+  if (!winner) {
+    throw new Error(`Category merge failed: winner ${winnerId} not found`);
+  }
+
+  if (!loser) {
+    throw new Error(`Category merge failed: loser ${loserId} not found`);
+  }
+
+  const now = new Date().toISOString();
+
+  await tx
+    .update(tasks)
+    .set({ category: winnerId })
+    .where(eq(tasks.category, loserId));
+
+  await tx
+    .update(habits)
+    .set({ category: winnerId })
+    .where(eq(habits.category, loserId));
+
+  await tx
+    .update(calendarEvents)
+    .set({ category: winnerId })
+    .where(eq(calendarEvents.category, loserId));
+
+  await tx
+    .update(timerLogs)
+    .set({ category: winnerId })
+    .where(eq(timerLogs.category, loserId));
+
+  let count = finalCount;
+
+  if (count === undefined) {
+    const taskCount = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(tasks)
+      .where(eq(tasks.category, winnerId));
+
+    const habitCount = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(habits)
+      .where(eq(habits.category, winnerId));
+
+    const eventCount = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(calendarEvents)
+      .where(eq(calendarEvents.category, winnerId));
+
+    const logCount = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(timerLogs)
+      .where(eq(timerLogs.category, winnerId));
+
+    count =
+      Number(taskCount[0].count) +
+      Number(habitCount[0].count) +
+      Number(eventCount[0].count) +
+      Number(logCount[0].count);
+  }
+
+  await tx
+    .update(categories)
+    .set({
+      count,
+      updatedAt: now,
+      syncedAt: null,
+      mergedIntoId: null,
+    })
+    .where(eq(categories.id, winnerId));
+
+  await tx
+    .update(categories)
+    .set({
+      deletedAt: now,
+      updatedAt: now,
+      syncedAt: null,
+      mergedIntoId: winnerId,
+    })
+    .where(eq(categories.id, loserId));
+}
+
+export async function mergeCategories(
+  winnerId: string,
+  loserId: string,
+  finalCount?: number,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    await mergeCategoryInTransaction(
+      tx,
+      winnerId,
+      loserId,
+      finalCount,
+    );
+  });
+}
+
+async function rewriteTagJson(
+  tx: any,
+  table: any,
+  idColumn: any,
+  tagsColumn: any,
+  winnerId: string,
+  loserId: string,
+  now: string
+): Promise<void> {
+  const rows = await tx
+    .select({
+      id: idColumn,
+      tags: tagsColumn,
+    })
+    .from(table)
+    .where(like(tagsColumn, `%${loserId}%`));
+
+  for (const row of rows) {
+    const withoutLoser = removeTagId(row.tags, loserId);
+    const withWinner = addTagId(withoutLoser, winnerId);
+
+    await tx
+      .update(table)
+      .set({
+        tags: withWinner,
+        updatedAt: now,
+        syncedAt: null,
+      })
+      .where(eq(idColumn, row.id));
+  }
+}
+
+export async function mergeTagInTransaction(
+  tx: any,
+  winnerId: string,
+  loserId: string,
+  finalCount?: number,
+): Promise<void> {
+  console.log("mergeTagInTransaction", winnerId, loserId);
+  if (winnerId === loserId) return;
+
+  const [winner] = await tx
+    .select()
+    .from(tags)
+    .where(eq(tags.id, winnerId))
+    .limit(1);
+
+  const [loser] = await tx
+    .select()
+    .from(tags)
+    .where(eq(tags.id, loserId))
+    .limit(1);
+
+  if (!winner) {
+    throw new Error(`Tag merge failed: winner ${winnerId} not found`);
+  }
+
+  if (!loser) {
+    throw new Error(`Tag merge failed: loser ${loserId} not found`);
+  }
+
+  const now = new Date().toISOString();
+
+  // ─── JSON arrays ─────────────────────────────
+
+  await rewriteTagJson(
+    tx,
+    tasks,
+    tasks.id,
+    tasks.tags,
+    winnerId,
+    loserId,
+    now
+  );
+
+  await rewriteTagJson(
+    tx,
+    habits,
+    habits.id,
+    habits.tags,
+    winnerId,
+    loserId,
+    now
+  );
+
+  await rewriteTagJson(
+    tx,
+    calendarEvents,
+    calendarEvents.id,
+    calendarEvents.tags,
+    winnerId,
+    loserId,
+    now
+  );
+
+  await rewriteTagJson(
+    tx,
+    timerLogs,
+    timerLogs.id,
+    timerLogs.tags,
+    winnerId,
+    loserId,
+    now
+  );
+
+  // ─── Junction tables ─────────────────────────
+
+  await tx
+    .insert(taskTags)
+    .select(
+      tx
+        .select({
+          taskId: taskTags.taskId,
+          tagId: sql<string>`${winnerId}`,
+        })
+        .from(taskTags)
+        .where(eq(taskTags.tagId, loserId)),
+    )
+    .onConflictDoNothing();
+
+  await tx
+    .insert(habitTags)
+    .select(
+      tx
+        .select({
+          habitId: habitTags.habitId,
+          tagId: sql<string>`${winnerId}`,
+        })
+        .from(habitTags)
+        .where(eq(habitTags.tagId, loserId)),
+    )
+    .onConflictDoNothing();
+
+  await tx
+    .insert(eventTags)
+    .select(
+      tx
+        .select({
+          eventId: eventTags.eventId,
+          tagId: sql<string>`${winnerId}`,
+        })
+        .from(eventTags)
+        .where(eq(eventTags.tagId, loserId)),
+    )
+    .onConflictDoNothing();
+
+  await tx
+    .insert(timerTags)
+    .select(
+      tx
+        .select({
+          logId: timerTags.logId,
+          tagId: sql<string>`${winnerId}`,
+        })
+        .from(timerTags)
+        .where(eq(timerTags.tagId, loserId)),
+    )
+    .onConflictDoNothing();
+
+  await tx
+    .delete(taskTags)
+    .where(eq(taskTags.tagId, loserId));
+
+  await tx
+    .delete(habitTags)
+    .where(eq(habitTags.tagId, loserId));
+
+  await tx
+    .delete(eventTags)
+    .where(eq(eventTags.tagId, loserId));
+
+  await tx
+    .delete(timerTags)
+    .where(eq(timerTags.tagId, loserId));
+
+  // ─── Count ───────────────────────────────────
+
+  let count = finalCount;
+
+  if (count === undefined) {
+    const taskCount = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(taskTags)
+      .where(eq(taskTags.tagId, winnerId));
+
+    const habitCount = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(habitTags)
+      .where(eq(habitTags.tagId, winnerId));
+
+    const eventCount = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(eventTags)
+      .where(eq(eventTags.tagId, winnerId));
+
+    const logCount = await tx
+      .select({ count: sql<number>`count(*)` })
+      .from(timerTags)
+      .where(eq(timerTags.tagId, winnerId));
+
+    count =
+      Number(taskCount[0].count) +
+      Number(habitCount[0].count) +
+      Number(eventCount[0].count) +
+      Number(logCount[0].count);
+  }
+
+  await tx
+    .update(tags)
+    .set({
+      count,
+      updatedAt: now,
+      syncedAt: null,
+      mergedIntoId: null,
+    })
+    .where(eq(tags.id, winnerId));
+
+  await tx
+    .update(tags)
+    .set({
+      deletedAt: now,
+      updatedAt: now,
+      syncedAt: null,
+      mergedIntoId: winnerId,
+    })
+    .where(eq(tags.id, loserId));
+}
+
+export async function mergeTags(
+  winnerId: string,
+  loserId: string,
+  finalCount?: number,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    await mergeTagInTransaction(
+      tx,
+      winnerId,
+      loserId,
+      finalCount,
+    );
+  });
+}

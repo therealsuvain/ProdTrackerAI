@@ -13,10 +13,7 @@ import { withAlpha } from "@/utils/common-utils";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
-import {
-  DbErrorToast,
-  useDbErrorToast,
-} from "@/components/shared/db-error-toast";
+import { useDbErrorToast } from "@/components/shared/db-error-toast";
 import { useHaptics } from "@/hooks/use-haptics";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
@@ -42,7 +39,7 @@ function HabitsScreenInner() {
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [goalModalVisible, setGoalModalVisible] = useState(false);
   const [completedHabit, setCompletedHabit] = useState<Habit | null>(null);
-  const { toastError, showToast, dismissToast } = useDbErrorToast();
+  const { showToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
   const { state, updateField, onSubmit } = useHabitForm({
     addHabit: addHabitWithEffects,
@@ -236,7 +233,6 @@ function HabitsScreenInner() {
           onPress={() => showModal()}
         />
       </View>
-      <DbErrorToast error={toastError} onDismiss={dismissToast} />
       <Portal>
         <HabitModal
           visible={visible}
@@ -244,6 +240,7 @@ function HabitsScreenInner() {
           onDismiss={hideModal}
           state={state}
           updateField={updateField}
+          editingHabit={editingHabit}
           onSubmit={onSubmit}
         />
         {completedHabit && (

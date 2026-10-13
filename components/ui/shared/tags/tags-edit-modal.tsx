@@ -10,12 +10,13 @@ import {
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import { TagBadge } from "./tag-badge";
 import { text } from "drizzle-orm/gel-core";
+import { useState } from "react";
 
 interface TagsEditModalProps {
   tagToEdit: string;
   editNameValue: string;
   setEditNameValue: (value: string) => void;
-  onSave: () => void;
+  onSave: () => Promise<void>;
   onClose: () => void;
   mode?: "ai" | "settings";
 }
@@ -29,6 +30,23 @@ export const TagsEditModal = ({
 }: TagsEditModalProps) => {
   const { theme } = useTheme();
   const textColor = mode === "ai" ? theme.blackBase : theme.whiteBase;
+  const [localError, setLocalError] = useState<string | null>(null);
+  // TODO add a tag badge live preview here
+  const handleSave = async () => {
+    try {
+      await onSave();
+    } catch (err) {
+      if (err instanceof Error && err.message === "TAG_NAME_CONFLICT") {
+        setLocalError(
+          `A Tag with the name  ${editNameValue.trim().toLowerCase()} already exists.`,
+        );
+        return;
+      }
+      throw err;
+    }
+
+    onClose();
+  };
   return (
     <Modal visible={!!tagToEdit} animationType="fade" transparent={true}>
       <View style={styles.modalOverlay}>
@@ -69,6 +87,11 @@ export const TagsEditModal = ({
             placeholder="Tag Name..."
             placeholderTextColor={theme.greyBasePrimary}
           />
+          {localError && (
+            <Text style={{ color: theme.error, marginBottom: 6 }}>
+              {localError}
+            </Text>
+          )}
           <View style={{ flexDirection: "row", gap: 12 }}>
             <Pressable
               onPress={() => onClose()}
@@ -83,7 +106,7 @@ export const TagsEditModal = ({
               <Text style={{ color: theme.whiteBase }}>Cancel</Text>
             </Pressable>
             <Pressable
-              onPress={onSave}
+              onPress={handleSave}
               style={{
                 flex: 1,
                 padding: 14,

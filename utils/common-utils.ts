@@ -29,3 +29,5 @@ export const tagsDiff = (newTags?: string[], oldTags?: string[]) => {
 
   return { newTagsDiff, commonTags };
 };
+
+export const inputToLowerCaseAndTrim = (input: string) => input.toLowerCase().trim();

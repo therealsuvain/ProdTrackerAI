@@ -38,6 +38,8 @@ import { useTimerLogStore } from "@/stores/use-timerLog-store";
 import { useEventStore } from "@/stores/use-event-store";
 import { useSync } from "@/context/SyncContext";
 import LoadingIndicator from "@/components/shared/loading-indicator";
+import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
+import { sqlite } from "@/db";
 
 const EMPTY_IDS: string[] = [];
 

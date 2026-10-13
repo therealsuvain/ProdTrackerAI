@@ -11,7 +11,6 @@ import { Text } from "react-native";
 import type { Session } from "@supabase/supabase-js";
 
 import { supabase } from "@/utils/Account-utils/supabase-client";
-import { useData } from "@/hooks/context-hooks/use-data";
 import { useDialog } from "@/context/DialogContext";
 import {
   hasAnyUnsyncedData,
@@ -21,6 +20,7 @@ import { getRecoverySnapshotSummary } from "@/db/repositories/sync-repository";
 import { useWorkspaceSyncModeStore } from "@/utils/Account-utils/workspace-sync-mode-store";
 import { useSettingsStore } from "@/stores/use-settings-store";
 import { updateSettingWithEffects } from "@/utils/Data-services/settings-services/settings-actions";
+import { dispatchError } from "@/stores/use-error-store";
 
 export type MergeChoice = "merge" | "discard";
 
@@ -57,7 +57,6 @@ export default function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { dispatchError } = useData();
   const [session, setSession] = useState<Session | null>(null);
   const [authLoaded, setAuthLoaded] = useState(false);
   const { confirm, showDialog, hideDialog } = useDialog();

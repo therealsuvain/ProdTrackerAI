@@ -8,6 +8,7 @@ import {
     updateCategory,
 } from "@/db/repositories/tags-and-category-repository";
 import { Category } from "@/types/category";
+import { inputToLowerCaseAndTrim } from "@/utils/common-utils";
 
 type CategoryStoreState = {
     categoriesById: Record<string, Category>;
@@ -36,7 +37,7 @@ export const selectCategoryList = (state: {
     categoriesById: Record<string, Category>;
 }): Category[] =>
     Object.values(state.categoriesById).sort(
-        (a, b) => b.count - a.count || a.name.localeCompare(b.name),
+        (a, b) => b.count - a.count || a.normalizedName.localeCompare(b.normalizedName),
     );
 
 // For non-React callers (AI handlers etc.)
@@ -84,13 +85,15 @@ export const useCategoryStore = create<CategoryStoreState>((set, get) => {
         addCategory: async ({ id, name, color, icon }) => {
             // The DB has a unique index on name and its upsert would bump the existing
             // row's usage count, so a duplicate name resolves to the existing category.
-            const existing = Object.values(get().categoriesById).find((c) => c.name === name);
+            const normalizedName = inputToLowerCaseAndTrim(name);
+            const existing = Object.values(get().categoriesById).find((c) => c.normalizedName === normalizedName);
             if (existing) return { id: existing.id, created: false };
 
             const now = new Date().toISOString();
             const category: Category = {
                 id,
                 name,
+                normalizedName,
                 color,
                 icon,
                 count: 0,
@@ -126,7 +129,18 @@ export const useCategoryStore = create<CategoryStoreState>((set, get) => {
         editCategory: async (category) => {
             const existing = get().categoriesById[category.id];
             if (!existing) throw new Error(`Category ${category.id} not found`);
-            const merged: Category = { ...existing, ...category };
+            const normalizedName = inputToLowerCaseAndTrim(category.name);
+
+            const duplicate = Object.values(get().categoriesById).find(
+                (c) =>
+                    c.id !== category.id &&
+                    c.normalizedName === normalizedName,
+            );
+
+            if (duplicate) {
+                throw new Error("CATEGORY_NAME_CONFLICT");
+            }
+            const merged: Category = { ...existing, ...category, normalizedName };
             await applyOptimisticMutation(
                 [category.id],
                 (byId) => ({ ...byId, [category.id]: merged }),

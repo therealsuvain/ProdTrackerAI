@@ -1,6 +1,7 @@
 export interface Category {
     id: string
     name: string
+    normalizedName: string;
     color: string
     count: number
     icon: string

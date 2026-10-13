@@ -75,10 +75,26 @@ export const CategoryCreator = ({
     keyof typeof Ionicons.glyphMap
   >((editingCategory?.icon as keyof typeof Ionicons.glyphMap) || "briefcase"); // Default icon
   const [isIconPickerVisible, setIsIconPickerVisible] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleCreate = async () => {
     if (!newCategoryName.trim()) return;
-    await onCreateCategory(newCategoryName.trim(), selectedColor, selectedIcon);
+    try {
+      await onCreateCategory(
+        newCategoryName.trim(),
+        selectedColor,
+        selectedIcon,
+      );
+    } catch (err) {
+      if (err instanceof Error && err.message === "CATEGORY_NAME_CONFLICT") {
+        setLocalError(
+          `A Category with the name : ${newCategoryName.trim()} already exists.`,
+        );
+        return;
+      }
+      throw err;
+    }
+
     onClose();
     setNewCategoryName("");
     // Ideally, the parent context refetches the categories here,
@@ -172,6 +188,11 @@ export const CategoryCreator = ({
                 onChangeText={setNewCategoryName}
                 //autoFocus
               />
+              {localError && (
+                <Text style={{ color: theme.error, marginBottom: 6 }}>
+                  {localError}
+                </Text>
+              )}
               <View style={styles.iconRow}>
                 <Text
                   style={{

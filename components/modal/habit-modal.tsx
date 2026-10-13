@@ -12,6 +12,7 @@ import {
 import DaySelector from "../ui/habits/day-selector";
 import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
 import { TagsAndCategorySection } from "../ui/shared/tags-and-categories-addon";
+import { Habit } from "@/types/habits";
 
 interface Props {
   visible: boolean;
@@ -20,6 +21,7 @@ interface Props {
   state: any;
   updateField: (field: any, value: any) => void;
   onSubmit: (tagIDs: string[]) => Promise<void> | void;
+  editingHabit: Habit | null;
 }
 
 export default function HabitModal({
@@ -29,14 +31,15 @@ export default function HabitModal({
   state,
   updateField,
   onSubmit,
+  editingHabit,
 }: Props) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const { theme } = useContext(ThemeContext);
 
   const tagsAndCategoryEditor = useTagsAndCategories({
     visible,
-    initialTags: state.tags,
-    initialCategory: state.category,
+    initialTags: editingHabit?.tags,
+    initialCategory: editingHabit?.category,
     updateField,
   });
 

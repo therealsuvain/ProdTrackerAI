@@ -8,10 +8,7 @@ import { useCalendarState } from "@/hooks/context-hooks/use-calendar-state";
 import { useEventForm } from "@/hooks/use-forms/use-event-form";
 import { CalendarEvent } from "@/types/calendar";
 
-import {
-  DbErrorToast,
-  useDbErrorToast,
-} from "@/components/shared/db-error-toast";
+import { useDbErrorToast } from "@/components/shared/db-error-toast";
 import CalendarEventModal from "@/components/modal/calendar-event-modal";
 import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
 import Timeline from "@/components/ui/calendar-events/calendar-timeline-view";
@@ -46,7 +43,7 @@ function CalendarScreenInner() {
   const [visible, setVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
-  const { toastError, showToast, dismissToast } = useDbErrorToast();
+  const { showToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
   const { state, updateField, onSubmit } = useEventForm({
     addEvent: addEventWithEffects,
@@ -195,7 +192,7 @@ function CalendarScreenInner() {
         icon="plus"
         onPress={() => showModal()}
       />
-      <DbErrorToast error={toastError} onDismiss={dismissToast} />
+
       <Portal>
         <CalendarEventModal
           visible={visible}
@@ -203,6 +200,7 @@ function CalendarScreenInner() {
           updateField={updateField}
           state={state}
           onSubmit={onSubmit}
+          editingEvent={editingEvent}
         ></CalendarEventModal>
       </Portal>
       {deleteEventDialogActions && (

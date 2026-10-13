@@ -24,7 +24,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -686,13 +686,16 @@ export const tags = sqliteTable(
     "tags",
     {
         id: text("id").primaryKey(),
-        name: text("name").notNull().unique(),
+        name: text("name").notNull(),
+        normalizedName: text("normalized_name").notNull(),
+        mergedIntoId: text("merged_into_id"),
         count: integer("count").notNull().default(0), // Added for usage-based ranking
         ...auditFields,
     },
     (table) => ([
         index("user_tags_name_idx").on(table.name),
         index("user_tags_count_idx").on(table.count), // Optimize sorting by frequency
+        uniqueIndex("tags_normaized_name_unique_idx").on(table.normalizedName).where(sql`${table.deletedAt} IS NULL`),
     ])
 );
 
@@ -700,7 +703,9 @@ export const categories = sqliteTable(
     "categories",
     {
         id: text("id").primaryKey(),             // UUID v4
-        name: text("name").notNull().unique(),   // e.g., "Work"
+        name: text("name").notNull(),
+        normalizedName: text("normalized_name").notNull(),
+        mergedIntoId: text("merged_into_id"),
         color: text("color").notNull(),          // Hex code e.g., "#3b82f6"
         icon: text("icon").notNull(),
         count: integer("count").notNull().default(0), // Usage tracking for ranking
@@ -709,6 +714,7 @@ export const categories = sqliteTable(
     (table) => ([
         index("categories_name_idx").on(table.name),
         index("categories_count_idx").on(table.count),
+        uniqueIndex("categories_normaized_name_unique_idx").on(table.normalizedName).where(sql`${table.deletedAt} IS NULL`),
     ])
 );
 

@@ -28,6 +28,10 @@ import { CalendarEvent } from "@/types/calendar";
 import { TimerLog } from "@/types/timer";
 import { generateEmbedding } from "../embedding-engine";
 import de from "zod/v4/locales/de.cjs";
+import { inputToLowerCaseAndTrim } from "../common-utils";
+import { applyRemoteMergedCategory, applyRemoteMergedTag, getCloudActiveCategory, getCloudActiveTag, isUniqueViolation, reconcileCategoryCollision, reconcileTagCollision } from "./sync-engine-taxonomy-helpers";
+import { and } from "drizzle-orm/sql";
+import { useTagStore } from "@/stores/use-tag-store";
 
 
 /**
@@ -102,7 +106,7 @@ export async function persistReconciledNotificationIds(data: {
         event.notificationIds!.map((entry) => ({
           id: typeof entry === "string" ? entry : entry.id,
           eventId: event.id,
-          date:  entry.date,
+          date: entry.date,
         })),
       );
     });
@@ -125,39 +129,102 @@ export async function pushCategories(userId: string): Promise<void> {
 
   if (dirtyRows.length === 0) return;
 
-  const payload = dirtyRows.map((row) => ({
-    id: row.id,
-    user_id: userId,
-    icon: row.icon,
-    name: row.name,
-    color: row.color,
-    count: row.count,
-    created_at: row.createdAt,
-    updated_at: row.updatedAt,
-    deleted_at: row.deletedAt,
-    synced_at: row.syncedAt
-  }));
+  /*  const payload = dirtyRows.map((row) => ({
+     id: row.id,
+     user_id: userId,
+     icon: row.icon,
+     name: row.name,
+     mergedIntoId: row.mergedIntoId ?? null,
+     color: row.color,
+     count: row.count,
+     created_at: row.createdAt,
+     updated_at: row.updatedAt,
+     deleted_at: row.deletedAt,
+     synced_at: row.syncedAt
+   }));
+ 
+   const { error } = await supabase.from("categories").upsert(payload);
+ 
+   if (error) {
+     console.error("[sync] Failed to push categories:", error);
+     throw error;
+   }
+ 
+   const now = new Date().toISOString();
+   await db
+     .update(categories)
+     .set({ syncedAt: now })
+     .where(inArray(categories.id, dirtyRows.map((r) => r.id))); */
 
-  const { error } = await supabase.from("categories").upsert(payload);
+  const processedIds = new Set<string>();
+  for (const row of dirtyRows) {
+    if (processedIds.has(row.id)) {
+      //console.log(row.id, "Category : already processed");
+      continue;
+    }
 
-  if (error) {
-    console.error("[sync] Failed to push categories:", error);
-    throw error;
+
+    const payload = {
+      id: row.id,
+      user_id: userId,
+      icon: row.icon,
+      name: row.name,
+      color: row.color,
+      count: row.count,
+      created_at: row.createdAt,
+      updated_at: row.updatedAt,
+      deleted_at: row.deletedAt,
+      merged_into_id: row.mergedIntoId ?? null,
+    };
+
+    const { error } = await supabase
+      .from("categories")
+      .upsert(payload);
+
+    if (!error) {
+      await db
+        .update(categories)
+        .set({ syncedAt: new Date().toISOString() })
+        .where(eq(categories.id, row.id));
+      processedIds.add(row.id);
+      continue;
+    }
+
+    if (!isUniqueViolation(error)) {
+      throw error;
+    }
+
+    const remote = await getCloudActiveCategory(
+      userId,
+      inputToLowerCaseAndTrim(row.name),
+    );
+
+    if (!remote) {
+      throw error;
+    }
+
+    await reconcileCategoryCollision(
+      userId,
+      row,
+      remote,
+    );
+    processedIds.add(row.id);
+    processedIds.add(remote.id);
+    //console.log("Category:", row.id, "and", remote.id, "having", row.name, "just processed")
   }
-
-  const now = new Date().toISOString();
-  await db
-    .update(categories)
-    .set({ syncedAt: now })
-    .where(inArray(categories.id, dirtyRows.map((r) => r.id)));
 }
 
-export async function pullCategories(userId: string, since: string | null): Promise<void> {
+
+export async function pullCategories(userId: string, since: string | null, until: string | null): Promise<boolean> {
   //console.log("[sync] Pulling categories for user:", userId);
   let query = supabase.from("categories").select("*").eq("user_id", userId);
 
   if (since) {
-    query = query.gt("updated_at", since);
+    query = query.gt("server_updated_at", since)
+  }
+
+  if (until) {
+    query = query.lte("server_updated_at", until);
   }
 
   const { data, error } = await query;
@@ -167,9 +234,9 @@ export async function pullCategories(userId: string, since: string | null): Prom
     throw error;
   }
 
-  if (!data || data.length === 0) return;
-
-  for (const remote of data) {
+  if (!data || data.length === 0) return false;
+  let midPullChangse = false;
+  /* for (const remote of data) {
     const [local] = await db.select().from(categories).where(eq(categories.id, remote.id));
 
     // Last-write-wins guard — this was missing, and is the actual bug.
@@ -181,6 +248,8 @@ export async function pullCategories(userId: string, since: string | null): Prom
       .values({
         id: remote.id,
         name: remote.name,
+        normalizedName: inputToLowerCaseAndTrim(remote.name),
+        mergedIntoId: remote.merged_into_id ?? null,
         color: remote.color,
         icon: remote.icon,
         count: remote.count,
@@ -202,9 +271,143 @@ export async function pullCategories(userId: string, since: string | null): Prom
 
         },
       });
-  }
-}
+  } */
+  const processedIds = new Set<string>();
 
+  const mergedRows = data.filter((row) => row.merged_into_id);
+  const normalRows = data.filter((row) => !row.merged_into_id);
+  //console.log("Category: merged", mergedRows.length, "normal", normalRows.length);
+  for (const remote of mergedRows) {
+    if (processedIds.has(remote.id)) continue;
+    await applyRemoteMergedCategory(userId, remote);
+    processedIds.add(remote.id);
+    processedIds.add(remote.merged_into_id);
+  }
+
+  for (const remote of normalRows) {
+    if (processedIds.has(remote.id)) {
+      //console.log("Category:", remote.id, "already processed");
+      continue;
+
+    };
+    const [localById] = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.id, remote.id))
+      .limit(1);
+
+    // Existing same-ID row → normal LWW.
+    if (localById) {
+      if (
+        new Date(localById.updatedAt) >=
+        new Date(remote.updated_at)
+      ) {
+        //console.log("Category : Local is newer:", localById.id);
+        continue;
+      }
+
+      await db
+        .update(categories)
+        .set({
+          name: remote.name,
+          normalizedName: inputToLowerCaseAndTrim(remote.name),
+          color: remote.color,
+          icon: remote.icon,
+          count: remote.count,
+          createdAt: remote.created_at,
+          updatedAt: remote.updated_at,
+          deletedAt: remote.deleted_at,
+          mergedIntoId: remote.merged_into_id ?? null,
+          syncedAt: remote.updated_at,
+        })
+        .where(eq(categories.id, remote.id));
+
+      continue;
+    }
+
+    // No matching ID — check normalized name.
+    const [localSameName] = await db
+      .select()
+      .from(categories)
+      .where(
+        and(
+          isNull(categories.deletedAt),
+          eq(
+            categories.normalizedName,
+            inputToLowerCaseAndTrim(remote.name),
+          ),
+        ),
+      )
+      .limit(1);
+
+    if (localSameName) {
+      console.log("Category : Same name:", localSameName.id, remote.id);
+      await reconcileCategoryCollision(
+        userId,
+        localSameName,
+        remote,
+      );
+      processedIds.add(remote.id);
+      processedIds.add(localSameName.id);
+      //console.log("Category:", remote.id, "and", localSameName.id, "having", remote.name, "just processed");
+      midPullChangse = true;
+      continue;
+    }
+
+    // Completely new category.
+    await db
+      .insert(categories)
+      .values({
+        id: remote.id,
+        name: remote.name,
+        normalizedName: inputToLowerCaseAndTrim(remote.name),
+        color: remote.color,
+        icon: remote.icon,
+        count: remote.count,
+        createdAt: remote.created_at,
+        updatedAt: remote.updated_at,
+        syncedAt: remote.updated_at,
+        deletedAt: remote.deleted_at ?? null,
+        mergedIntoId: remote.merged_into_id ?? null,
+      });
+    //console.log("New Category:", remote.id, remote.name);
+  }
+  return midPullChangse
+}
+/**
+ * Cloud : Tag B X2 u 10am s last B sync
+ * 
+ * 1 Device A adds Tag X1 , Task Aat 9am , device B adds Tag X2 , Task B, at 10am, 
+ * 2 new tag added, tasks updatedAt is set, so it will get pushed to cloud, B pushes to cloud first
+ * 3 cloud has Task B with Tag X2 , updatedAT 10am, pushed rows get their synceAt updated after pushing to cloud
+ * 4 then when data is pulled, even these just pushed rows are pulled in but redudant updation is skipped due to local vs remote updatedAt field check
+ * 5 Device B done, Cloud has Task B with TagX2, updatedAt 10am, and TagX2 is active
+ * 6 On Device A syncs, it pushes TagX1, collision is detected and reconcileTagCollision is called
+ * 7 Local wins, TagX2 is fetched from cloud and inserted local in local and its deletedAt is set, then merge runs
+ * 8 Device A doesnt have knowledge of which tasks TagX2 was added to  , so merge basically does nothing 
+ * 9 Merge would have worked perfectly if it was the winner tag X1 that was pushed first and the device with loser did collision handling, 
+ *   but with same caveat, that it also doesnt know which items were assgned to X1 from the other device, as pull hasnt been run yet
+ * 10 Junction tables arent updaed, count isnt updated, TagX1 and TagX2 are now pushed to cloud, and Task A with TagX1 also gets pushed ,
+ *    It is important to note that Task A is not made dirty by by repo merge funciton as Device A never had the loser X2 assgined to anyone
+ *    It is the adding of the new tag before during edit that made it dirty
+ * 11 Task A is marked as synced , so currently updatedAt < syncedAt
+ * 12 Device A sync done, Cloud has Task A with TagX1, updatedAt 10am, TaskB with TagX2, UpdatedAt 9am, TagX1 is active and TagX2 is inactive
+ * 13 Device B syncs again, push has nothing new so nothin gets pushed
+ * 14 on pull for tags, Now there are 2 cases here, 
+ * 14.1A TagX1 the winner gets pulled in first, then reconcileTagCollison runs , remote wins branch runs.
+ * 14.2A Local loser is made inactive and remote winner X1 is added, merge is done, Task B now gets X1, Task A still doesnt have eihter X2 or X1 as Tasks havent been pulled yet
+ * 14.3A Merge function makes TaskB dirty, but it isnt pushed as push phase if before pull phase and push is already done this time
+ * 14.1A TagX2 the loser gets pulled in first  , applyMergeTag, Local loser is made inactive and remote winnder is added
+ * 14.2A merge runs and makes Task B dirty, but isnt pushed for same reason as 14.3A
+ * 15 Tasks are now pulled on Device B, Task A with TagX1 doesnt get pulled in, because it was updated before B's last sync as B' syncedAt field for the entire app > updatedAt field for Task A
+ *    so Device B never gets Task A with X1, it will only get it when its updated in Device A , then A syncs and then B syncs, only in this case it will pull correct in any other case there will be a mismatch
+ * 16 Now if sync in B run again on then its Task B which is dirty is pushed
+ * 17 Now A call pull in Task B with X1 and have both Task A,B with the winner X1. 
+ * 18 Device B doesnt have Task A with X1 
+ * 
+ * @param userId 
+ * @returns 
+ */
 export async function pushTasks(userId: string): Promise<void> {
   const allTasks = await db.select().from(tasks);
   const dirty = allTasks.filter(isDirty);
@@ -240,12 +443,13 @@ export async function pushTasks(userId: string): Promise<void> {
   await markRowsSynced(tasks, dirty.map((t) => t.id), syncedAt);
 }
 
-export async function pullTasks(userId: string, since: string): Promise<Task[]> {
+export async function pullTasks(userId: string, since: string, until: string): Promise<Task[]> {
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
     .eq("user_id", userId)
-    .gt("updated_at", since);
+    .gt("server_updated_at", since)
+    .lte("server_updated_at", until);
 
   if (error) {
     console.error("[Sync] Failed to pull tasks:", error);
@@ -341,7 +545,7 @@ export async function pushHabits(userId: string): Promise<void> {
       title: h.title,
       description: h.description ?? null,
       frequency: h.frequency,
-      reminder: h.reminder? 1:0,
+      reminder: h.reminder ? 1 : 0,
       reminder_date: h.reminderDate ?? null,
       target_days: h.targetDays ? JSON.parse(h.targetDays) : null,
       streak: h.streak,
@@ -374,12 +578,13 @@ export async function pushHabits(userId: string): Promise<void> {
   await markRowsSynced(habits, dirty.map((h) => h.id), syncedAt);
 }
 
-export async function pullHabits(userId: string, since: string): Promise<Habit[]> {
+export async function pullHabits(userId: string, since: string, until: string): Promise<Habit[]> {
   const { data, error } = await supabase
     .from("habits")
     .select("*")
     .eq("user_id", userId)
-    .gt("updated_at", since);
+    .gt("server_updated_at", since)
+    .lt("server_updated_at", until);
 
   if (error) {
     console.error("[Sync] Failed to pull habits:", error);
@@ -434,7 +639,7 @@ export async function pullHabits(userId: string, since: string): Promise<Habit[]
           tags: JSON.stringify(mapped.tags),
           embedding,
           syncedAt: remote.updated_at,
-          deletedAt : remote.deleted_at
+          deletedAt: remote.deleted_at
         })
         .onConflictDoUpdate({
           target: habits.id,
@@ -443,8 +648,8 @@ export async function pullHabits(userId: string, since: string): Promise<Habit[]
             targetDays: JSON.stringify(mapped.targetDays),
             tags: JSON.stringify(mapped.tags),
             embedding,
-            syncedAt:remote.updated_at,
-            deletedAt : remote.deleted_at
+            syncedAt: remote.updated_at,
+            deletedAt: remote.deleted_at
           },
         });
 
@@ -517,12 +722,13 @@ export async function pushEvents(userId: string): Promise<void> {
   await markRowsSynced(calendarEvents, dirty.map((e) => e.id), syncedAt);
 }
 
-export async function pullEvents(userId: string, since: string): Promise<CalendarEvent[]> {
+export async function pullEvents(userId: string, since: string, until: string): Promise<CalendarEvent[]> {
   const { data, error } = await supabase
     .from("calendar_events")
     .select("*")
     .eq("user_id", userId)
-    .gt("updated_at", since);
+    .gt("server_updated_at", since)
+    .lte("server_updated_at", until);
 
   if (error) {
     console.error("[Sync] Failed to pull events:", error);
@@ -621,7 +827,7 @@ export async function pushLogs(userId: string): Promise<void> {
     category: l.category ?? null,
     tags: l.tags ? JSON.parse(l.tags) : [],
     laps: l.laps ? JSON.parse(l.laps) : null,
-    is_partial: l.isPartial? 1:0,
+    is_partial: l.isPartial ? 1 : 0,
     created_at: l.createdAt,
     updated_at: l.updatedAt,
     deleted_at: l.deletedAt,
@@ -639,12 +845,13 @@ export async function pushLogs(userId: string): Promise<void> {
   await markRowsSynced(timerLogs, dirty.map((l) => l.id), syncedAt);
 }
 
-export async function pullLogs(userId: string, since: string): Promise<TimerLog[]> {
+export async function pullLogs(userId: string, since: string, until: string): Promise<TimerLog[]> {
   const { data, error } = await supabase
     .from("timer_logs")
     .select("*")
     .eq("user_id", userId)
-    .gt("updated_at", since);
+    .gt("server_updated_at", since)
+    .lte("server_updated_at", until);
 
   if (error) {
     console.error("[Sync] Failed to pull logs:", error);
@@ -653,7 +860,7 @@ export async function pullLogs(userId: string, since: string): Promise<TimerLog[
   if (!data?.length) return [];
 
   const pulledLogs: TimerLog[] = [];
-const now = new Date().toISOString();
+  const now = new Date().toISOString();
   for (const remote of data) {
     const [local] = await db.select().from(timerLogs).where(eq(timerLogs.id, remote.id));
     if (local && new Date(local.updatedAt) >= new Date(remote.updated_at)) continue;
@@ -672,7 +879,7 @@ const now = new Date().toISOString();
       updatedAt: remote.updated_at,
     };
 
-    
+
     await db.transaction(async (tx) => {
       await tx.delete(timerTags).where(eq(timerTags.logId, mapped.id));
       await tx.insert(timerLogs)
@@ -706,53 +913,93 @@ export async function pushTags(userId: string): Promise<void> {
     .where(or(isNull(tags.syncedAt), lt(tags.syncedAt, tags.updatedAt)));
 
   if (dirtyRows.length === 0) return;
+  // can we just use zustand store to get ids then iterate over ids and then fetch data inside loop
+  //const tagIds = Object.keys(useTagStore.getState().tagsById)
+  const processedIds = new Set<string>();
+  for (const row of dirtyRows) {
+    if (processedIds.has(row.id)) {
+      console.log(row.id, "already processed");
+      continue;
+    }
 
-  const payload = dirtyRows.map((row) => ({
-    id: row.id,
-    user_id: userId,
-    name: row.name,
-    count: row.count,
-    created_at: row.createdAt,
-    updated_at: row.updatedAt,
-    deleted_at: row.deletedAt,
-    synced_at: row.syncedAt
-  }));
+    const payload = {
+      id: row.id,
+      user_id: userId,
+      name: row.name,
+      count: row.count,
+      created_at: row.createdAt,
+      updated_at: row.updatedAt,
+      deleted_at: row.deletedAt,
+      merged_into_id: row.mergedIntoId ?? null,
+    };
 
-  const { error } = await supabase.from("tags").upsert(payload);
-  if (error) {
-    console.error("[sync] Failed to push tags:", error);
-    throw error;
+    const { error } = await supabase
+      .from("tags")
+      .upsert(payload);
+
+    if (!error) {
+      await db
+        .update(tags)
+        .set({ syncedAt: new Date().toISOString() })
+        .where(eq(tags.id, row.id));
+      processedIds.add(row.id);
+      continue;
+    }
+
+    if (!isUniqueViolation(error)) {
+      throw error;
+    }
+
+    const remote = await getCloudActiveTag(
+      userId,
+      inputToLowerCaseAndTrim(row.name),
+    );
+
+    if (!remote) {
+      throw error;
+    }
+
+    await reconcileTagCollision(
+      userId,
+      row,
+      remote,
+    );
+    processedIds.add(row.id);
+    processedIds.add(remote.id);
+    //console.log(row.id, "and", remote.id, "having", row.name, "just processed");
   }
-
-  const now = new Date().toISOString();
-  await db
-    .update(tags)
-    .set({ syncedAt: now })
-    .where(inArray(tags.id, dirtyRows.map((r) => r.id)));
 }
 
-export async function pullTags(userId: string, since: string | null): Promise<void> {
+export async function pullTags(userId: string, since: string | null, until: string | null): Promise<boolean> {
   let query = supabase.from("tags").select("*").eq("user_id", userId);
-  if (since) query = query.gt("updated_at", since);
+  if (since) {
+    query = query.gt("server_updated_at", since)
+  }
+
+  if (until) {
+    query = query.lte("server_updated_at", until);
+  }
 
   const { data, error } = await query;
   if (error) {
     console.error("[sync] Failed to pull tags:", error);
     throw error;
   }
-  if (!data || data.length === 0) return;
-
-  const now = new Date().toISOString();
+  if (!data || data.length === 0) return false;
+  let midPullChanges = false;
+  /* const now = new Date().toISOString();
   for (const remote of data) {
     const [local] = await db.select().from(tags).where(eq(tags.id, remote.id));
     if (local && new Date(local.updatedAt) >= new Date(remote.updated_at)) continue;
 
-    
+
     await db
       .insert(tags)
       .values({
         id: remote.id,
         name: remote.name,
+        normalizedName: inputToLowerCaseAndTrim(remote.name),
+        mergedIntoId: remote.merged_into_id ?? null,
         count: remote.count,
         createdAt: remote.created_at,
         updatedAt: remote.updated_at,
@@ -765,11 +1012,114 @@ export async function pullTags(userId: string, since: string | null): Promise<vo
           name: remote.name,
           count: remote.count,
           updatedAt: remote.updated_at,
-          syncedAt:remote.updated_at,
+          syncedAt: remote.updated_at,
           deletedAt: remote.deleted_at ?? null
         },
       });
+  } */
+  const processedIds = new Set<string>();
+
+  const mergedRows = data.filter((row) => row.merged_into_id);
+  const normalRows = data.filter((row) => !row.merged_into_id);
+  console.log("merged", mergedRows.length, "normal", normalRows.length);
+  for (const remote of mergedRows) {
+    if (processedIds.has(remote.id)) continue;
+    await applyRemoteMergedTag(userId, remote);
+    processedIds.add(remote.id);
+    processedIds.add(remote.merged_into_id);
   }
+
+  for (const remote of normalRows) {
+    // A merged row needs special handling.
+    /*   console.log(remote.id, remote.name)
+      if (remote.merged_into_id) {
+        await applyRemoteMergedTag(userId, remote);
+        continue;
+      } */
+    if (processedIds.has(remote.id)) {
+      //console.log(remote.id, "already processed");
+      continue;
+    }
+    const [localById] = await db
+      .select()
+      .from(tags)
+      .where(eq(tags.id, remote.id))
+      .limit(1);
+
+    // Existing same-ID row → normal LWW.
+    if (localById) {
+      if (
+        new Date(localById.updatedAt) >=
+        new Date(remote.updated_at)
+      ) {
+        //console.log("Local is newer:", localById.id);
+        continue;
+
+      }
+
+      await db
+        .update(tags)
+        .set({
+          name: remote.name,
+          normalizedName: inputToLowerCaseAndTrim(remote.name),
+          count: remote.count,
+          createdAt: remote.created_at,
+          updatedAt: remote.updated_at,
+          deletedAt: remote.deleted_at,
+          mergedIntoId: remote.merged_into_id ?? null,
+          syncedAt: remote.updated_at,
+        })
+        .where(eq(tags.id, remote.id));
+
+      continue;
+    }
+
+    // No matching ID — check normalized name.
+    const [localSameName] = await db
+      .select()
+      .from(tags)
+      .where(
+        and(
+          isNull(tags.deletedAt),
+          eq(
+            tags.normalizedName,
+            inputToLowerCaseAndTrim(remote.name),
+          ),
+        ),
+      )
+      .limit(1);
+
+    if (localSameName) {
+      console.log("Same name:", localSameName.id, remote.id);
+      await reconcileTagCollision(
+        userId,
+        localSameName,
+        remote,
+      );
+      processedIds.add(remote.id);
+      processedIds.add(localSameName.id);
+      //console.log(remote.id, "and", localSameName.id, "having", remote.name, "just processed");
+      midPullChanges = true;
+      continue;
+    }
+
+    // Completely new tag.
+    await db
+      .insert(tags)
+      .values({
+        id: remote.id,
+        name: remote.name,
+        normalizedName: inputToLowerCaseAndTrim(remote.name),
+        count: remote.count,
+        createdAt: remote.created_at,
+        updatedAt: remote.updated_at,
+        syncedAt: remote.updated_at,
+        deletedAt: remote.deleted_at ?? null,
+        mergedIntoId: remote.merged_into_id ?? null,
+      });
+    //console.log("New tag:", remote.id, remote.name);
+  }
+  return midPullChanges
 }
 
 // ─── UNLOCKED ACHIEVEMENTS ───────────────────────────────────────────────────
@@ -926,7 +1276,7 @@ export async function pushDailyMetrics(userId: string): Promise<void> {
       ? JSON.parse((row as any).syncedSnapshot)
       : null;
     const delta = computeMetricsDelta(row, snapshot);
-   //console.log("[sync] Pushing daily metrics for user, delta:", delta);
+    //console.log("[sync] Pushing daily metrics for user, delta:", delta);
     const hasAnyChange = Object.values(delta).some((v) => v !== 0);
     //console.log("[sync] Pushing daily metrics for user has any change:", hasAnyChange);
     if (!hasAnyChange) continue; // this row's updatedAt moved, but no metric actually changed
@@ -985,9 +1335,15 @@ export async function pushDailyMetrics(userId: string): Promise<void> {
   // successful sync instead of by date rollover.
 }
 
-export async function pullDailyMetrics(userId: string, since: string | null): Promise<void> {
+export async function pullDailyMetrics(userId: string, since: string | null, until: string | null): Promise<void> {
   let query = supabase.from("daily_metrics").select("*").eq("user_id", userId);
-  if (since) query = query.gt("updated_at", since);
+  if (since) {
+    query = query.gt("server_updated_at", since)
+  }
+
+  if (until) {
+    query = query.lte("server_updated_at", until);
+  }
 
   const { data, error } = await query;
   if (error) {
@@ -1043,7 +1399,7 @@ export async function pushGlobalMetrics(userId: string): Promise<void> {
   /* if (!local || (local.syncedAt && local.updatedAt && new Date(local.syncedAt) >= new Date(local.updatedAt))) {
     return; // nothing dirty
   } */
- //console.log("[sync] Pushing global metrics for user, db", JSON.stringify(local));
+  //console.log("[sync] Pushing global metrics for user, db", JSON.stringify(local));
   const snapshot = local.syncedSnapshot ? JSON.parse(local.syncedSnapshot) : null;
   const delta = computeMetricsDelta(local, snapshot);
   //console.log("[sync] Pushing global metrics for user, delta:", delta);
@@ -1179,9 +1535,15 @@ export async function pushDailyAIMetrics(userId: string): Promise<void> {
 
 }
 
-export async function pullDailyAIMetrics(userId: string, since: string | null): Promise<void> {
+export async function pullDailyAIMetrics(userId: string, since: string | null, until: string | null): Promise<void> {
   let query = supabase.from("daily_ai_metrics").select("*").eq("user_id", userId);
-  if (since) query = query.gt("updated_at", since);
+  if (since) {
+    query = query.gt("server_updated_at", since)
+  }
+
+  if (until) {
+    query = query.lte("server_updated_at", until);
+  }
 
   const { data, error } = await query;
   if (error) {
@@ -1203,7 +1565,7 @@ export async function pullDailyAIMetrics(userId: string, since: string | null): 
     const nowSyncedSnapshot = JSON.stringify(
       Object.fromEntries(METRIC_COLUMNS.map((k) => [k, mapped[k]])),
     );
-  const now = new Date().toISOString()
+    const now = new Date().toISOString()
     if (local) {
       await db
         .update(dailyMetricsAI)
@@ -1297,7 +1659,7 @@ export async function pullGlobalAIMetrics(userId: string): Promise<void> {
   const nowSyncedSnapshot = JSON.stringify(
     Object.fromEntries(METRIC_COLUMNS.map((k) => [k, mapped[k]])),
   );
- const now = new Date().toISOString()
+  const now = new Date().toISOString()
   const [local] = await db.select().from(globalMetricsAI);
   if (local) {
     await db.update(globalMetricsAI).set({ ...mapped, syncedAt: now, syncedSnapshot: nowSyncedSnapshot, });
@@ -1385,8 +1747,8 @@ export async function pullAchievementMetrics(userId: string): Promise<void> {
 
 // ── Orchestration ────────────────────────────────────────────────────────────
 
-export async function syncCategories(userId: string, lastPulledAt: string | null): Promise<void> {
+export async function syncCategories(userId: string, lastPulledAt: string | null, until: string | null): Promise<void> {
 
   await pushCategories(userId);
-  await pullCategories(userId, lastPulledAt);
+  await pullCategories(userId, lastPulledAt, until);
 }

@@ -61,9 +61,11 @@ export default function TagsSettingsScreen() {
     const existingTag = useTagStore.getState().tagsById[tagToEdit];
 
     if (existingTag) {
-      await editTagWithEffects({ ...existingTag, name: editNameValue.trim() });
+      await editTagWithEffects({
+        ...existingTag,
+        name: editNameValue.trim(),
+      });
     }
-    setTagToEdit(null);
   };
 
   const handleDeleteRequest = async (id: string) => {

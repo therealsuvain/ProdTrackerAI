@@ -29,9 +29,9 @@ export const EventPill = React.memo(function EventPill({
     }),
   );
 
-  const category = categoryId
-    ? useCategoryStore((s) => s.categoriesById[categoryId])
-    : undefined;
+  const category = useCategoryStore((s) =>
+    categoryId ? s.categoriesById[categoryId] : undefined,
+  );
 
   const handlePress = useCallback(() => {
     pillRef.current?.measureInWindow((x, y, width, height) => {

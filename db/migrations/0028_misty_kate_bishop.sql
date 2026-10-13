@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX `categories_normaized_name_unique_idx` ON `categories` (`normalized_name`);--> statement-breakpoint
+CREATE UNIQUE INDEX `tags_normaized_name_unique_idx` ON `tags` (`normalized_name`);

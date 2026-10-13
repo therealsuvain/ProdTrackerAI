@@ -17,6 +17,7 @@ import { randomUUID } from "expo-crypto";
  */
 import { TagsAndCategorySection } from "@/components/ui/shared/tags-and-categories-addon";
 import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
+import { Task } from "@/types/task";
 
 interface Props {
   visible: boolean;
@@ -24,6 +25,7 @@ interface Props {
   state: any;
   updateField: (field: any, value: any) => void;
   onSubmit: (tagIDs: string[]) => Promise<void> | void;
+  editingTask: Task | null;
   isNew?: boolean;
 }
 
@@ -33,14 +35,15 @@ export default function TaskModal({
   state,
   updateField,
   onSubmit,
+  editingTask,
   isNew,
 }: Props) {
   const { theme } = useContext(ThemeContext);
   //console.log(state.tags);
   const tagsAndCategoryEditor = useTagsAndCategories({
     visible,
-    initialTags: state.tags,
-    initialCategory: state.category,
+    initialTags: editingTask?.tags,
+    initialCategory: editingTask?.category,
     updateField,
   });
   const [dueDate, setDueDate] = useState(new Date());

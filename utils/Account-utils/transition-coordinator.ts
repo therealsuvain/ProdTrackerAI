@@ -30,6 +30,11 @@ import { clearActiveWorkspace, clearWorkspaceInTransaction } from "./workspace-r
 import { cancelAllScheduledNotifications } from "@/hooks/use-notifications";
 import { setWorkspaceSyncMode } from "@/utils/Account-utils/workspace-sync-mode-store";
 import { deleteAllCloudDataForUser } from "./sync-orchestrator";
+import { inputToLowerCaseAndTrim } from "../common-utils";
+import { and, isNull } from "drizzle-orm/sql";
+import { Category } from "@/types/category";
+import { mergeCategoryInTransaction, mergeTagInTransaction } from "@/db/repositories/tags-and-category-repository";
+import { entityWins } from "./sync-engine-taxonomy-helpers";
 
 type RecoveryItem = {
   snapshotId: string;
@@ -45,6 +50,11 @@ type RecoveryPayload = {
   freezes?: Record<string, any>[];
   goalCompletions?: Record<string, any>[];
   deletedOccurrences?: Record<string, any>[];
+};
+
+type TaxonomyMerges = {
+  categories: Array<{ winnerId: string; loserId: string }>;
+  tags: Array<{ winnerId: string; loserId: string }>;
 };
 
 function parsePayload(item: RecoveryItem): RecoveryPayload {
@@ -81,61 +91,271 @@ export async function replaceWorkspaceFromAccount(options: {
 }
 
 
-
+/**
+ * This is beefier than other restores as it has to make sure no categories and tags are colliding on the same
+ * normalized name, as tags and categories only allow unique normalized names for a better UX , there can be scenarios where the current local data has a category/tag
+ * with the same normalized name as a category/tag from the snapshot. All the additional checks are done for this reason
+ * @param tx 
+ * @param items 
+ * @param restoreTimestamp 
+ * @returns taxonomyMerges: which collects category and tag normalized names collisons , to later the winner of the 
+ *                          can be merged with the loser
+ */
 async function restoreCategoriesAndTags(
   tx: any,
   items: RecoveryItem[],
   restoreTimestamp: string,
-): Promise<void> {
+): Promise<TaxonomyMerges> {
   const categoryItems = itemsOfType(items, "category");
-
+  const taxonomyMerges: TaxonomyMerges = {
+    categories: [],
+    tags: [],
+  };
   for (const item of categoryItems) {
     const row = parsePlainPayload(item);
+    const normalizedName = inputToLowerCaseAndTrim(row.name);
 
-    await tx.insert(categories)
-      .values({
-        ...row,
-        syncedAt: null,
-        updatedAt: restoreTimestamp,
-      })
-      .onConflictDoUpdate({
-        target: categories.id,
-        set: {
+    const existing = await tx
+      .select()
+      .from(categories)
+      .where(
+        and(
+          isNull(categories.deletedAt),
+          eq(categories.normalizedName, normalizedName),
+        ),
+      )
+      .limit(1);
+    /* if (existing && existing[0]?.id !== row.id) */
+    if (
+      !row.deletedAt &&
+      !row.mergedIntoId &&
+      existing &&
+      existing.id !== row.id
+    ) {
+      const snapshotWins = entityWins(
+        {
+          id: row.id,
           name: row.name,
-          color: row.color,
-          icon: row.icon,
-          count: row.count,
           createdAt: row.createdAt,
-          deletedAt: row.deletedAt ?? null,
+        } as Category,
+        existing,
+      );
+
+      if (snapshotWins) {
+        await tx
+          .update(categories)
+          .set({
+            deletedAt: restoreTimestamp,
+            updatedAt: restoreTimestamp,
+            syncedAt: null,
+          })
+          .where(eq(categories.id, existing.id));
+
+        await tx.insert(categories).values({
+          ...row,
+          normalizedName,
+          deletedAt: null,
+          mergedIntoId: null,
           updatedAt: restoreTimestamp,
           syncedAt: null,
-        },
-      });
+        }).onConflictDoUpdate({
+          target: categories.id,
+          set: {
+            name: row.name,
+            normalizedName,
+            color: row.color,
+            icon: row.icon,
+            count: row.count,
+            createdAt: row.createdAt,
+            deletedAt: null,
+            mergedIntoId: null,
+            updatedAt: restoreTimestamp,
+            syncedAt: null,
+          },
+        });
+
+        taxonomyMerges.categories.push({
+          winnerId: row.id,
+          loserId: existing.id,
+        });
+      }
+      else {
+
+        await tx.insert(categories).values({
+          ...row,
+          normalizedName,
+          deletedAt: restoreTimestamp,
+          updatedAt: restoreTimestamp,
+          mergedIntoId: existing.id,
+          syncedAt: null,
+        }).onConflictDoUpdate({
+          target: categories.id,
+          set: {
+            name: row.name,
+            normalizedName,
+            color: row.color,
+            icon: row.icon,
+            count: row.count,
+            createdAt: row.createdAt,
+            deletedAt: restoreTimestamp,
+            mergedIntoId: existing.id,
+            updatedAt: restoreTimestamp,
+            syncedAt: null,
+          },
+        });
+
+        taxonomyMerges.categories.push({
+          winnerId: existing.id,
+          loserId: row.id,
+        });
+      }
+    }
+    else {
+      await tx.insert(categories)
+        .values({
+          ...row,
+          syncedAt: null,
+          updatedAt: restoreTimestamp,
+        })
+        .onConflictDoUpdate({
+          target: categories.id,
+          set: {
+            name: row.name,
+            normalizedName,
+            color: row.color,
+            icon: row.icon,
+            count: row.count,
+            createdAt: row.createdAt,
+            mergedIntoId: row.mergedIntoId ?? null,
+            deletedAt: row.deletedAt ?? null,
+            updatedAt: restoreTimestamp,
+            syncedAt: null,
+          },
+        });
+    }
+
+
   }
+
 
   const tagItems = itemsOfType(items, "tag");
 
   for (const item of tagItems) {
     const row = parsePlainPayload(item);
+    const normalizedName = inputToLowerCaseAndTrim(row.name);
 
-    await tx.insert(tags)
-      .values({
-        ...row,
-        syncedAt: null,
-        updatedAt: restoreTimestamp,
-      })
-      .onConflictDoUpdate({
-        target: tags.id,
-        set: {
+    const existing = await tx
+      .select()
+      .from(tags)
+      .where(
+        and(
+          isNull(tags.deletedAt),
+          eq(tags.normalizedName, normalizedName),
+        ),
+      )
+      .limit(1);
+
+    if (
+      !row.deletedAt &&
+      !row.mergedIntoId &&
+      existing &&
+      existing.id !== row.id
+    ) {
+      const snapshotWins = entityWins(
+        {
+          id: row.id,
           name: row.name,
-          count: row.count,
           createdAt: row.createdAt,
-          deletedAt: row.deletedAt ?? null,
+        } as Category,
+        existing,
+      );
+
+      if (snapshotWins) {
+        await tx
+          .update(tags)
+          .set({
+            deletedAt: restoreTimestamp,
+            updatedAt: restoreTimestamp,
+            syncedAt: null,
+          })
+          .where(eq(tags.id, existing.id));
+
+        await tx.insert(tags).values({
+          ...row,
+          normalizedName,
+          deletedAt: null,
+          mergedIntoId: null,
           updatedAt: restoreTimestamp,
           syncedAt: null,
-        },
-      });
+        }).onConflictDoUpdate({
+          target: categories.id,
+          set: {
+            name: row.name,
+            normalizedName,
+            count: row.count,
+            createdAt: row.createdAt,
+            deletedAt: null,
+            mergedIntoId: null,
+            updatedAt: restoreTimestamp,
+            syncedAt: null,
+          },
+        });
+
+        taxonomyMerges.tags.push({
+          winnerId: row.id,
+          loserId: existing.id,
+        });
+      }
+      else {
+        await tx.insert(tags).values({
+          ...row,
+          normalizedName,
+          deletedAt: restoreTimestamp,
+          updatedAt: restoreTimestamp,
+          syncedAt: null,
+        }).onConflictDoUpdate({
+          target: categories.id,
+          set: {
+            name: row.name,
+            normalizedName,
+            count: row.count,
+            createdAt: row.createdAt,
+            deletedAt: restoreTimestamp,
+            mergedIntoId: existing.id,
+            updatedAt: restoreTimestamp,
+            syncedAt: null,
+          },
+        });
+
+        taxonomyMerges.tags.push({
+          winnerId: existing.id,
+          loserId: row.id,
+        });
+      }
+    }
+    else {
+      await tx.insert(tags)
+        .values({
+          ...row,
+          syncedAt: null,
+          updatedAt: restoreTimestamp,
+        })
+        .onConflictDoUpdate({
+          target: tags.id,
+          set: {
+            name: row.name,
+            normalizedName,
+            count: row.count,
+            mergedIntoId: row.mergedIntoId ?? null,
+            createdAt: row.createdAt,
+            deletedAt: row.deletedAt ?? null,
+            updatedAt: restoreTimestamp,
+            syncedAt: null,
+          },
+        });
+    }
   }
+  return taxonomyMerges;
 }
 
 
@@ -540,7 +760,7 @@ async function restoreAchievements(
 
 export async function restoreRecoverySnapshotAsActiveWorkspace(
   snapshotId: string,
-  mode: 'replace'|'merge',
+  mode: 'replace' | 'merge',
 ): Promise<void> {
   const snapshot = await getRecoverySnapshotSummary();
 
@@ -552,20 +772,36 @@ export async function restoreRecoverySnapshotAsActiveWorkspace(
   const restoreTimestamp = new Date().toISOString();
 
   if (mode === "replace") {
-     await cancelAllScheduledNotifications();
+    await cancelAllScheduledNotifications();
   }
- 
+
 
   await db.transaction(async (tx) => {
-    if(mode === "replace") {
+    if (mode === "replace") {
       await clearWorkspaceInTransaction(tx);
     }
-    await restoreCategoriesAndTags(tx, items, restoreTimestamp);
+    const merges = await restoreCategoriesAndTags(tx, items, restoreTimestamp);
     await restoreParents(tx, items, restoreTimestamp);
     await restoreChildren(tx, items);
     await restoreJunctions(tx, items);
     await restoreMetrics(tx, items, restoreTimestamp);
     await restoreAchievements(tx, items);
+    for (const merge of merges.categories) {
+      await mergeCategoryInTransaction(
+        tx,
+        merge.winnerId,
+        merge.loserId,
+      );
+    }
+
+    for (const merge of merges.tags) {
+      await mergeTagInTransaction(
+        tx,
+        merge.winnerId,
+        merge.loserId,
+      );
+    }
+
   });
 }
 
@@ -573,10 +809,10 @@ export async function mergeIntoAccount(options: {
   userId: string;
   pushLocalData: (userId: string) => Promise<void>;
   pullAccountData: () => Promise<void>;
-  markRecoveryConsumed : (snapshotId: string, action: "Restored" | "Merged", timestamp: string) => void;
+  markRecoveryConsumed: (snapshotId: string, action: "Restored" | "Merged", timestamp: string) => void;
 }): Promise<void> {
-   const snapshot = await getRecoverySnapshotSummary();
-   if(snapshot){
+  const snapshot = await getRecoverySnapshotSummary();
+  if (snapshot) {
     await restoreRecoverySnapshotAsActiveWorkspace(snapshot.id, "merge");
     options.markRecoveryConsumed(snapshot.id, "Merged", new Date().toISOString());
   }

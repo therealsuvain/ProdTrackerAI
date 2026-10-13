@@ -21,10 +21,7 @@ import { useHaptics } from "@/hooks/use-haptics";
 import { withAlpha } from "@/utils/common-utils";
 import { clearStorageByKey } from "@/utils/storage-utils";
 import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
-import {
-  DbErrorToast,
-  useDbErrorToast,
-} from "@/components/shared/db-error-toast";
+import { useDbErrorToast } from "@/components/shared/db-error-toast";
 import { useTaskStore } from "@/stores/use-task-store";
 import { useScreenReady } from "@/hooks/use-screen-ready";
 import { EntitySkeleton } from "@/components/shared/loading-indicators/screen-loaders/entity-skeleton";
@@ -47,7 +44,7 @@ function TaskScreenInner() {
     "manual",
   );
   const [showSortOptions, setShowSortOptions] = useState(false);
-  const { toastError, showToast, dismissToast } = useDbErrorToast();
+  const { showToast, dismissToast } = useDbErrorToast();
   const { state, updateField, onSubmit } = useTaskForm({
     addTask: addTaskWithEffects,
     editTask: editTaskWithEffects,
@@ -285,7 +282,6 @@ function TaskScreenInner() {
           </View>
         )}
         <FAB style={styles.fab} icon="plus" onPress={() => showModal()} />
-        <DbErrorToast error={toastError} onDismiss={dismissToast} />
         {/*  <FAB style={styles.fab} icon="plus" onPress={() => allScheduledNotificationsLogs()} /> */}
         {/*  <FAB
           style={styles.fab}
@@ -304,6 +300,7 @@ function TaskScreenInner() {
           state={state}
           updateField={updateField}
           onSubmit={onSubmit}
+          editingTask={editingTask}
           isNew={!isEditing}
         />
       </Portal>

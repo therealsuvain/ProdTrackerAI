@@ -31,7 +31,6 @@ import { getAllTasks } from "@/db/repositories/task-repository";
 import { getAllHabits } from "@/db/repositories/habit-repository";
 import { getAllCalendarEvents } from "@/db/repositories/event-repository";
 import { useTaskStore } from "@/stores/use-task-store";
-import { loadSettings } from "@/utils/storage-utils";
 import { Task } from "@/types/task";
 import { Habit } from "@/types/habits";
 import { CalendarEvent } from "@/types/calendar";
@@ -47,6 +46,7 @@ import { useTimerLogStore } from "@/stores/use-timerLog-store";
 import { useCategoryStore } from "@/stores/use-category-store";
 import { useTagStore } from "@/stores/use-tag-store";
 import { useAchievementStore } from "@/stores/use-achievement-store";
+import { useSettingsStore } from "@/stores/use-settings-store";
 
 type SyncContextValue = {
   isSyncing: boolean;
@@ -176,10 +176,10 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
           }
         },
 
-        onSuccess: async (completedAt) => {
-          lastPulledAtRef.current = completedAt;
-          await saveSyncCursor(userId, completedAt);
-          setLastSyncedAt(completedAt);
+        onSuccess: async (watermark) => {
+          lastPulledAtRef.current = watermark;
+          await saveSyncCursor(userId, watermark);
+          setLastSyncedAt(watermark);
         },
       }).then(async () => {
         await refreshAllLocalState();
@@ -245,10 +245,10 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
             userId,
             lastPulledAt: null,
             onPulled: async () => {},
-            onSuccess: async (completedAt) => {
-              lastPulledAtRef.current = completedAt;
-              await saveSyncCursor(userId, completedAt);
-              setLastSyncedAt(completedAt);
+            onSuccess: async (watermark) => {
+              lastPulledAtRef.current = watermark;
+              await saveSyncCursor(userId, watermark);
+              setLastSyncedAt(watermark);
             },
           });
         },
@@ -279,10 +279,10 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
             userId,
             lastPulledAt: null,
             onPulled: async () => {},
-            onSuccess: async (completedAt) => {
-              lastPulledAtRef.current = completedAt;
-              await saveSyncCursor(userId, completedAt);
-              setLastSyncedAt(completedAt);
+            onSuccess: async (watermark) => {
+              lastPulledAtRef.current = watermark;
+              await saveSyncCursor(userId, watermark);
+              setLastSyncedAt(watermark);
             },
           });
         },
@@ -302,8 +302,9 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const settings = await loadSettings();
+      const settings = useSettingsStore.getState().settings;
       const enabled = settings.autoCloudSync;
+      console.log("[SyncProvider] Auto sync enabled:", enabled);
       if (!cancelled) setAutoSyncEnabled(enabled);
     })();
     return () => {
@@ -439,6 +440,8 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(intervalId);
   }, [authLoaded, userId, isAnonymous, syncNow, autoSyncEnabled]);
 
+  // TODO : on app reload via the console sync is run, is this ok,
+  //hpw would this look like in production app
   // Sync on sign in
   useEffect(() => {
     if (!authLoaded || !userId || isAnonymous || cursorLoadedForUser !== userId)
@@ -483,10 +486,10 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                     setShowNotificationPrompt(true);
                   }
                 },
-                onSuccess: async (completedAt) => {
-                  lastPulledAtRef.current = completedAt;
-                  await saveSyncCursor(userId, completedAt);
-                  setLastSyncedAt(completedAt);
+                onSuccess: async (watermark) => {
+                  lastPulledAtRef.current = watermark;
+                  await saveSyncCursor(userId, watermark);
+                  setLastSyncedAt(watermark);
                 },
               });
             },

@@ -9,15 +9,12 @@ import { useMetricStore } from "@/stores/use-metrics-store";
 import { useAchievementStore } from "@/stores/use-achievement-store";
 import { initMetricsPipeline } from "./analytics-services/metrics-pipeline";
 import { AIActionMemory } from "../AI-utils/agentic-handlers/ai-action-undo-handlers";
-import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
-import { sqlite } from "@/db";
+
 
 let hydrationPromise: Promise<void> | null = null;
 
 export function hydrateLocalWorkspace(): Promise<void> {
-  console.log("hydrateLocalWorkspace");
   if (hydrationPromise) return hydrationPromise;
-  console.log("hydrateLocalWorkspace2");
   hydrationPromise = (async () => {
     const [loadedTasks] = await Promise.all([
       useTaskStore.getState().refreshTasks(),
@@ -35,10 +32,9 @@ export function hydrateLocalWorkspace(): Promise<void> {
     //await runTaskMaintenanceOncePerDay(loadedTasks as Record<string, Task>, null);
     initMetricsPipeline();
     AIActionMemory.init();
-    useDrizzleStudio(sqlite);
+
 
   })();
-  console.log("hydrateLocalWorkspace3");
 
   return hydrationPromise;
 }

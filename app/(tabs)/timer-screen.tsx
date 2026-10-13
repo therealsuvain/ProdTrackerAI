@@ -22,10 +22,7 @@ import { useTimer } from "@/hooks/context-hooks/use-timer";
 import { TimerLog } from "@/types/timer";
 import { getTodayISO, withAlpha, getWeekStartISO } from "@/utils/common-utils";
 import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
-import {
-  DbErrorToast,
-  useDbErrorToast,
-} from "@/components/shared/db-error-toast";
+import { useDbErrorToast } from "@/components/shared/db-error-toast";
 import { useHaptics } from "@/hooks/use-haptics";
 import { Category } from "@/types/category";
 import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
@@ -75,7 +72,7 @@ function TimerScreenInner() {
   } = useTimer();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingLog, setEditingLog] = useState<TimerLog>();
-  const { toastError, showToast, dismissToast } = useDbErrorToast();
+  const { showToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
   /*   const { todayTotal, weekTotal, topCategory } = useMemo(() => {
     const todayISO = getTodayISO();
@@ -413,7 +410,6 @@ function TimerScreenInner() {
           );
         }}
       />
-      <DbErrorToast error={toastError} onDismiss={dismissToast} />
       <Portal>
         {editingLog && (
           <TimerEditModal

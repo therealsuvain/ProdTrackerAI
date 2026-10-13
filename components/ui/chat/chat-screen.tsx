@@ -16,10 +16,7 @@ import {
 } from "react-native-keyboard-controller";
 import { useShallow } from "zustand/react/shallow";
 
-import {
-  DbErrorToast,
-  useDbErrorToast,
-} from "@/components/shared/db-error-toast";
+import { useDbErrorToast } from "@/components/shared/db-error-toast";
 import { ThemeContext } from "@/context/ThemeContext";
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { useTaskStore } from "@/stores/use-task-store";
@@ -136,7 +133,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
   );
 
   const categories = useCategoryStore(useShallow(selectCategoryList));
-  const { toastError, showToast, dismissToast } = useDbErrorToast();
+  const { showToast } = useDbErrorToast();
   const [isThinking, setIsThinking] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const audioSource = require("@/assets/audio/record.wav");
@@ -219,6 +216,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       Habit: theme.habitBase,
       Event: theme.eventBase,
       Category: theme.blueDarkPrimary,
+      Tag: theme.blueDarkPrimary,
     };
 
     const color = Object.keys(colorMap).find((key) => call.name.includes(key));
@@ -582,7 +580,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
         >
           <Ionicons size={24} name="close-outline" color="#fff"></Ionicons>
         </Pressable>
-        <DbErrorToast error={toastError} onDismiss={dismissToast} />
       </KeyboardAvoidingView>
     </KeyboardProvider>
   );

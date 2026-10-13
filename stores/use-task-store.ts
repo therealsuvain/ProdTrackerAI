@@ -298,6 +298,7 @@ export const useTaskStore = create<TaskStoreState>((set, get) => {
       try {
         const loadedTasks = await getAllTasks();
         set({ tasksById: normalizeTasks(loadedTasks), loaded: true });
+        //console.log("Refreshing tasks", Object.values(get().tasksById).map((task) => { return { ...task, embedding: undefined } }));
         return get().tasksById; // ← new
       } finally {
         set({ refreshing: false });

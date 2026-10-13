@@ -1,3 +1,4 @@
+import { ToastState, useErrorStore } from "@/stores/use-error-store";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   Animated,
@@ -10,17 +11,17 @@ import {
 
 // ─── hook ─────────────────────────────────────────────────────────────────────
 //Note Undo Vairant has been added, not tested, not being used naywhere tho.
-interface ToastState {
+/* interface ToastState {
   message: string;
   visible: boolean;
   title?: string;
   variant?: "error" | "undo";
   actionLabel?: string;
   onAction?: () => void | Promise<void>;
-}
+} */
 
 export function useDbErrorToast() {
-  const [toastError, setToastError] = useState<ToastState>({
+  /*   const [toastError, setToastError] = useState<ToastState>({
     message: "",
     visible: false,
     title: "Save failed",
@@ -95,9 +96,14 @@ export function useDbErrorToast() {
     return () => {
       clearTimer();
     };
-  }, []);
+  }, []); */
 
-  return { toastError, showToast, showUndoToast, dismissToast, runAction };
+  return {
+    showToast: useErrorStore.getState().showToast,
+    showUndoToast: useErrorStore.getState().showUndoToast,
+    dismissToast: useErrorStore.getState().dismissToast,
+    runAction: useErrorStore.getState().runToastAction,
+  };
 }
 
 // ─── component ────────────────────────────────────────────────────────────────
@@ -108,7 +114,11 @@ interface DbErrorToastProps {
   onAction?: () => void;
 }
 
-export function DbErrorToast({ error, onDismiss }: DbErrorToastProps) {
+export function DbErrorToast({
+  error,
+  onDismiss,
+  onAction,
+}: DbErrorToastProps) {
   const translateY = useRef(new Animated.Value(100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const isUndo = error.variant === "undo";
@@ -172,7 +182,10 @@ export function DbErrorToast({ error, onDismiss }: DbErrorToastProps) {
           </Text>
         </View>
         {isUndo && error.actionLabel ? (
-          <TouchableOpacity onPress={error.onAction} style={styles.dismissButton}>
+          <TouchableOpacity
+            onPress={onAction ?? error.onAction}
+            style={styles.dismissButton}
+          >
             <Text style={styles.dismissText}>{error.actionLabel}</Text>
           </TouchableOpacity>
         ) : null}

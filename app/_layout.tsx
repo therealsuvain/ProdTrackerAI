@@ -9,7 +9,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { RootFallbackComponent } from "@/components/shared/error-fallback-component";
 import ThemeProvider from "@/context/ThemeContext";
 import { Sidebar } from "@/components/ui/sidebar";
-import DataProvider from "@/context/DataContext";
 import TimerProvider from "@/context/TimerContext";
 import AuthProvider from "@/context/AuthContext";
 import { Provider as PaperProvider } from "react-native-paper";
@@ -23,8 +22,14 @@ import * as SplashScreen from "expo-splash-screen";
 import { initDatabase } from "@/db";
 import { hydrateLocalWorkspace } from "@/utils/Data-services/local-workspace-bootstrap";
 import { AchievementToastHost } from "@/utils/Data-services/analytics-services/achievement-toast-host";
+import { useErrorStore } from "@/stores/use-error-store";
+import { FatalGate, ToastHost } from "@/components/shared/error-host";
+import { installGlobalErrorHandlers } from "@/utils/Error-utils/install-global-handlers";
+import { DevTools } from "@/components/dev/dev-tools";
+import { reportError } from "@/stores/use-error-store";
 
 SplashScreen.preventAutoHideAsync();
+installGlobalErrorHandlers();
 
 export default function RootLayout() {
   //Note :  static color values from ThemeContext are usable, dont do not work when theme changes
@@ -69,9 +74,15 @@ export default function RootLayout() {
   );
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ErrorBoundary FallbackComponent={RootFallbackComponent}>
-        <ThemeProvider>
-          <DataProvider>
+      <ErrorBoundary
+        FallbackComponent={RootFallbackComponent}
+        onError={(error) =>
+          reportError(error, { severity: "silent", source: "root-boundary" })
+        }
+        onReset={() => useErrorStore.getState().clearFatal()}
+      >
+        <FatalGate>
+          <ThemeProvider>
             <PaperProvider>
               <DialogProvider>
                 <AuthProvider>
@@ -80,6 +91,7 @@ export default function RootLayout() {
                       <SyncProvider>
                         <NotificationRescheduleModal />
                         <AchievementToastHost />
+
                         <Drawer
                           drawerContent={(props) => <Sidebar {...props} />}
                           screenOptions={{
@@ -155,9 +167,11 @@ export default function RootLayout() {
                 </AuthProvider>
               </DialogProvider>
             </PaperProvider>
-          </DataProvider>
-        </ThemeProvider>
+          </ThemeProvider>
+          <ToastHost />
+        </FatalGate>
       </ErrorBoundary>
+      {__DEV__ && dbReady ? <DevTools /> : null}
     </GestureHandlerRootView>
   );
 }

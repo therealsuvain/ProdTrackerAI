@@ -11,6 +11,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { ThemeContext } from "@/context/ThemeContext";
 import { TagsAndCategorySection } from "@/components/ui/shared/tags-and-categories-addon";
 import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
+import { CalendarEvent } from "@/types/calendar";
 
 interface Props {
   visible: boolean;
@@ -18,6 +19,7 @@ interface Props {
   state: any;
   updateField: (field: any, value: any) => void;
   onSubmit: (tagsIds: string[]) => Promise<void> | void;
+  editingEvent: CalendarEvent | null;
 }
 
 export default function CalendarEventModal({
@@ -26,6 +28,7 @@ export default function CalendarEventModal({
   state,
   updateField,
   onSubmit,
+  editingEvent,
 }: Props) {
   const { theme } = useContext(ThemeContext);
   const [showStartPicker, setShowStartPicker] = useState(false);
@@ -37,8 +40,8 @@ export default function CalendarEventModal({
   const [androidDate, setAndroidDate] = useState<Date>();
   const tagsAndCategoryEditor = useTagsAndCategories({
     visible,
-    initialTags: state.tags,
-    initialCategory: state.category,
+    initialTags: editingEvent?.tags,
+    initialCategory: editingEvent?.category,
     updateField,
   });
   const onStartChange = (event: any, selected?: Date) => {

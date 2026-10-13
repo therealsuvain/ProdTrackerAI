@@ -8,6 +8,7 @@ import {
     updateTag,
 } from "@/db/repositories/tags-and-category-repository";
 import { Tag } from "@/types/tag";
+import { inputToLowerCaseAndTrim } from "@/utils/common-utils";
 
 type TagStoreState = {
     tagsById: Record<string, Tag>;
@@ -31,7 +32,7 @@ function normalizeTags(list: Tag[]): Record<string, Tag> {
 // Most-used first (matches getAllTags ordering), name as a stable tie-break.
 export const selectTagList = (state: { tagsById: Record<string, Tag> }): Tag[] =>
     Object.values(state.tagsById).sort(
-        (a, b) => b.count - a.count || a.name.localeCompare(b.name),
+        (a, b) => b.count - a.count || a.normalizedName.localeCompare(b.normalizedName),
     );
 
 // For non-React callers (AI handlers etc.)
@@ -78,16 +79,18 @@ export const useTagStore = create<TagStoreState>((set, get) => {
         addTags: async (payload) => {
             const now = new Date().toISOString();
             const next = { ...get().tagsById };
-            const idByName = new Map(Object.values(next).map((t) => [t.name, t.id]));
+            const idByName = new Map(Object.values(next).map((t) => [t.normalizedName, t.id]));
             const ids: string[] = [];
-            const dbPayload: Tag[] = [];
+            const dbPayloadNew: Tag[] = [];
+            const dbPayloadExisting: string[] = [];
             let createdCount = 0;
 
             for (const { id, name } of payload) {
-                const tag: Tag = { id, name, count: 1, createdAt: now, updatedAt: now };
-                dbPayload.push(tag);
+                const normalizedName = inputToLowerCaseAndTrim(name);
+                const tag: Tag = { id, name, normalizedName, count: 1, createdAt: now, updatedAt: now };
 
-                const existingId = idByName.get(name);
+
+                const existingId = idByName.get(normalizedName);
                 if (existingId) {
                     next[existingId] = {
                         ...next[existingId],
@@ -95,18 +98,21 @@ export const useTagStore = create<TagStoreState>((set, get) => {
                         updatedAt: now,
                     };
                     ids.push(existingId);
+                    dbPayloadExisting.push(existingId);
                 } else {
                     next[id] = tag;
-                    idByName.set(name, id);
+                    idByName.set(normalizedName, id);
                     ids.push(id);
+                    dbPayloadNew.push(tag);
                     createdCount += 1;
+
                 }
             }
 
             await applyOptimisticMutation(
                 [...new Set(ids)],
                 () => next,
-                () => insertTags(dbPayload),
+                () => insertTags(dbPayloadNew, dbPayloadExisting),
             );
             return { ids, createdCount };
         },
@@ -125,7 +131,18 @@ export const useTagStore = create<TagStoreState>((set, get) => {
         editTag: async (tag) => {
             const existing = get().tagsById[tag.id];
             if (!existing) throw new Error(`Tag ${tag.id} not found`);
-            const merged: Tag = { ...existing, ...tag };
+            const normalizedName = inputToLowerCaseAndTrim(tag.name);
+
+            const duplicate = Object.values(get().tagsById).find(
+                (t) =>
+                    t.id !== tag.id &&
+                    t.normalizedName === normalizedName,
+            );
+
+            if (duplicate) {
+                throw new Error("TAG_NAME_CONFLICT");
+            }
+            const merged: Tag = { ...existing, ...tag, normalizedName };
             await applyOptimisticMutation(
                 [tag.id],
                 (byId) => ({ ...byId, [tag.id]: merged }),

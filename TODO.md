@@ -98,3 +98,44 @@
 - TODO : Maybe handler for cloud syncing via AI chat
 - TODO : handler for theme management via AI chat
 - TODO : for opening color picker via AI chat
+
+# NEW
+
+- TOOD : Check error handling for AI handlers so that AI can asnwer what wnet wrong
+- TODO : Sync loading should have a mention that its syncing
+- TODO : This error still happens : [sync] Failed to push categories: {"code": "PGRST303", "details": null, "hint": null, "message": "JWT issued at future"}
+- TODO : UI indicator taht item has a notificaiton setup
+- TODO : Check how are tombstones pruned eventually or do they stay forever
+- TODO : Sync interval changes via settings,
+- TODO : first time device sigin throws [SyncProvider] Sync failed: [Error: Call to function 'NativeStatement.runSync' has been rejected. → Caused by: Error code : FOREIGN KEY constraint failed] , check why and fix
+- TODO : I think pressing sync now button doesnt addiitonally refresh in app items , check for other syncs too
+- TODO : New sync error : Error: Uncaught (in promise, id: 1) Error: Call to function 'NativeStatement.runSync' has been rejected.
+  → Caused by: Error code : UNIQUE constraint failed: habit_check_ins.id, I think this happens because in supabase child tables arent stored, so when a habit is autofrozen, habit row changes its updatedAt and the data is then pushed to clud, now when another device pulls in data, as both devices had the same check ins table, the pull rebuilds the same data and tries to insert it in habit item, which then obviously causes a sync error, I think the there will the same issue if both unsynced devices checkin the same habit and then try to sync to cloud, so this has to be fixed
+- TODO : in edit modals, when no category is assigned, 'None Selected' which rendered earlier doesnt show up
+- TODO : Additonal confirmation after successfull deletion of big deletes, like reset achievements currently after reset is pressed , shows no confirmation that the "Achievements Reset Successfully" , I think that is a must and good to have
+
+# Big Overhaul #1 (BO1): Upgrade Sync Engine to Event-Driven, Selective Sync
+
+**Goal:** Replace reliance on periodic full sync cycles with an intelligent sync coordinator that reacts to local changes, batches work, and synchronizes only what is necessary.
+
+### Planned changes
+
+1. **Repository change notifications:** Emit notifications after successful local mutations, identifying the affected entity types (Tasks, Tags, Habits, etc.). Treat these as wake-up signals, not the source of truth for dirty state.
+
+2. **Debounced sync scheduler:** Add a central `requestSync()` mechanism that batches rapid changes (e.g. wait 1–3 seconds), prevents concurrent syncs, and queues a follow-up run if changes occur during an active sync.
+
+3. **Selective push execution:** Use existing `updatedAt`/`syncedAt` dirty-state tracking to identify pending records. Query dirty rows directly in SQLite instead of loading entire tables into memory, and skip entity types with no pending changes.
+
+4. **Selective pull execution:** Continue incremental pulls using the server-managed `server_updated_at` watermark. Run pulls when scheduled, on app foreground/connectivity recovery, or when a remote-change notification indicates new data.
+
+5. **Post-pull reconciliation push:** If Tag/Category collision resolution modifies item references during pulling, conditionally push Tasks, Habits, Events and Logs again after all pulls finish.
+
+6. **Fallback and reliability:** Keep periodic sync (e.g. every 5 minutes) as a safety net. Ensure failures retain dirty state, pending requests are not lost, and cursors advance only after successful pulls.
+
+7. **Optional later enhancement — Supabase Realtime:** Subscribe to remote changes to trigger sync sooner, while retaining periodic sync for missed notifications and offline recovery.
+
+### Complexity / estimate
+
+**Medium-sized upgrade — approximately 1–3 focused days** for the scheduler, selective execution and integration; allow **3–5 days** for thorough testing, race-condition handling and cross-device verification.
+
+**Recommended order:** Fix post-pull pushing first; implement the debounced scheduler and pending-run handling next; optimize dirty-row queries; add Realtime only if needed. Test offline edits, simultaneous device changes, collisions, failed syncs and app backgrounding.

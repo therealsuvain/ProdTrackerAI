@@ -24,13 +24,13 @@ export async function addCategoryWithEffects(
     payload: { id: string; name: string; color: string; icon: string },
     actor: Actor = "user",
     mode: "regular" | "undo" = "regular"
-): Promise<string> {
+): Promise<{ id: string; created: boolean }> {
     const { id, created } = await useCategoryStore.getState().addCategory(payload);
     if (created) {
         trackMetric(["categoriesAdded"], 1, actor);
     }
     if (mode === "undo") trackMetric(["categoriesDeleted"], -1, actor);
-    return id;
+    return { id, created };
 }
 
 export async function incrementCategoryUsageWithEffects(id: string): Promise<void> {

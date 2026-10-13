@@ -1,11 +1,11 @@
 import { CalendarEvent } from "@/types/calendar";
 import { Habit } from "@/types/habits";
 import { Task } from "@/types/task";
-import { 
-  pushCategories, pushTags, pushTasks, pushHabits, pushEvents, pushLogs, 
-  pushUnlockedAchievements, pushDailyMetrics, pushGlobalMetrics, 
-  pullCategories, pullTags, pullTasks, pullHabits, pullEvents, pullLogs, 
-  pullUnlockedAchievements, pullDailyMetrics, pullGlobalMetrics, 
+import {
+  pushCategories, pushTags, pushTasks, pushHabits, pushEvents, pushLogs,
+  pushUnlockedAchievements, pushDailyMetrics, pushGlobalMetrics,
+  pullCategories, pullTags, pullTasks, pullHabits, pullEvents, pullLogs,
+  pullUnlockedAchievements, pullDailyMetrics, pullGlobalMetrics,
   pushDailyAIMetrics,
   pushGlobalAIMetrics,
   pushAchievementMetrics,
@@ -17,6 +17,7 @@ import {
 import { supabase } from "./supabase-client";
 import { reconcileNotificationsForPulledData } from "./reconcile-notifications";
 import { NotificationRescheduleChoice } from "@/components/modal/notificaiton-reschedule-modal";
+import { Category } from "@/types/category";
 
 type SyncRunOptions = {
   userId: string;
@@ -42,9 +43,9 @@ async function withJwtSkewRetry<T>(
       const isClockSkewError =
         err?.code === "PGRST303" ||
         String(err?.message ?? "").toLowerCase().includes("jwt issued at future");
-
+      console.log("Caught Clock skew error?", isClockSkewError);
       if (!isClockSkewError || attempt === maxAttempts - 1) throw err;
-
+      console.log("Clock skew error, retrying...", attempt + 1, "of", maxAttempts);
       await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
     }
   }
@@ -52,6 +53,41 @@ async function withJwtSkewRetry<T>(
   throw new Error("unreachable");
 }
 
+async function getServerTimeStamp() {
+  // This is a server timestamp, not the device clock. Incremental pull
+  // functions must query server_updated_at > since AND <= watermark.
+  let data: unknown;
+  try {
+    data = await withJwtSkewRetry(async () => {
+      const { data, error } = await supabase.rpc("get_sync_watermark" as any);
+      // Throw INSIDE the retry wrapper so JWT-skew errors can be retried.
+      if (error) throw error;
+      return data;
+    });
+  } catch (error) {
+    console.error("[Sync] Failed to obtain server pull watermark:", error);
+    throw error;
+  }
+
+  // get_sync_watermark() currently returns a scalar timestamptz. The other
+  // shapes are tolerated if the RPC is later changed to return a named row.
+  let watermark: unknown = data;
+  if (Array.isArray(data)) {
+    watermark = data[0]?.watermark ?? data[0]?.get_sync_watermark;
+  } else if (data && typeof data === "object") {
+    const row = data as Record<string, unknown>;
+    watermark = row.watermark ?? row.get_sync_watermark;
+  }
+
+  if (typeof watermark !== "string" || !Number.isFinite(Date.parse(watermark))) {
+    throw new Error(
+      `[Sync] get_sync_watermark() returned an invalid timestamp: ${String(watermark)}`,
+    );
+  }
+
+  return watermark;
+
+}
 export function runFullSync(options: SyncRunOptions): Promise<void> {
   if (syncPromise) return syncPromise;
 
@@ -73,63 +109,78 @@ async function runFullSyncInternal({
   // Parents first because child rows reference them.
 
   await pushToCloud(userId);
-  
- await pullFromCloud({ userId, lastPulledAt, onSuccess, onPulled });
 
- 
+  await pullFromCloud({ userId, lastPulledAt: since, onSuccess, onPulled });
+
+
 }
 
 export const pushToCloud = async (userId: string) => {
   console.log("Pushing Data to Cloud for user with id", userId);
-   await  withJwtSkewRetry(() => pushCategories(userId));
-  await  withJwtSkewRetry(() => pushTags(userId));
+  await withJwtSkewRetry(() => pushCategories(userId));
+  await withJwtSkewRetry(() => pushTags(userId));
 
-  await  withJwtSkewRetry(() => pushTasks(userId));
-  await  withJwtSkewRetry(() => pushHabits(userId));
-  await  withJwtSkewRetry(() => pushEvents(userId));
-  await  withJwtSkewRetry(() => pushLogs(userId));
+  await withJwtSkewRetry(() => pushTasks(userId));
+  await withJwtSkewRetry(() => pushHabits(userId));
+  await withJwtSkewRetry(() => pushEvents(userId));
+  await withJwtSkewRetry(() => pushLogs(userId));
 
-  await  withJwtSkewRetry(() => pushUnlockedAchievements(userId));
-  await  withJwtSkewRetry(() => pushDailyMetrics(userId));
-  await  withJwtSkewRetry(() => pushGlobalMetrics(userId));
-  await  withJwtSkewRetry(() => pushDailyAIMetrics(userId));
-  await  withJwtSkewRetry(() => pushGlobalAIMetrics(userId));
-  await  withJwtSkewRetry(() => pushAchievementMetrics(userId));
+  await withJwtSkewRetry(() => pushUnlockedAchievements(userId));
+  await withJwtSkewRetry(() => pushDailyMetrics(userId));
+  await withJwtSkewRetry(() => pushGlobalMetrics(userId));
+  await withJwtSkewRetry(() => pushDailyAIMetrics(userId));
+  await withJwtSkewRetry(() => pushGlobalAIMetrics(userId));
+  await withJwtSkewRetry(() => pushAchievementMetrics(userId));
 }
 
- export const pullFromCloud = async ({
+export const pushEntitiesOnly = async (userId: string) => {
+  await withJwtSkewRetry(() => pushTasks(userId));
+  await withJwtSkewRetry(() => pushHabits(userId));
+  await withJwtSkewRetry(() => pushEvents(userId));
+  await withJwtSkewRetry(() => pushLogs(userId));
+}
+export const pullFromCloud = async ({
   userId,
   lastPulledAt,
   onSuccess,
   onPulled,
 }: SyncRunOptions) => {
-   const since = lastPulledAt ?? "1970-01-01T00:00:00.000Z";
-  console.log('Pulling Data from Cloud. It was last synced at ', since)
-   await withJwtSkewRetry(() => pullCategories(userId, since));
-  await  withJwtSkewRetry(() => pullTags(userId, since));
-  const [pulledTasks, pulledHabits, pulledEvents] = await Promise.all([
-     withJwtSkewRetry(() => pullTasks(userId, since)),
-     withJwtSkewRetry(() => pullHabits(userId, since)),
-     withJwtSkewRetry(() => pullEvents(userId, since)),
+  const since = lastPulledAt ?? "1970-01-01T00:00:00.000Z";
+
+  const watermark = await getServerTimeStamp();
+  console.log('Pulling Data from Cloud. It was last synced at ', since, "server timestamp ", watermark)
+  /* const midPullChangesCategory = await withJwtSkewRetry(() => pullCategories(userId, since, watermark));
+  const midPullChangesCategory = await withJwtSkewRetry(() => pullTags(userId, since, watermark)) */;
+  const [midPullChangeViaCategory, midPullChangesViaTag, pulledTasks, pulledHabits, pulledEvents] = await Promise.all([
+    withJwtSkewRetry(() => pullCategories(userId, since, watermark)),
+    withJwtSkewRetry(() => pullTags(userId, since, watermark)),
+    withJwtSkewRetry(() => pullTasks(userId, since, watermark)),
+    withJwtSkewRetry(() => pullHabits(userId, since, watermark)),
+    withJwtSkewRetry(() => pullEvents(userId, since, watermark)),
   ]);
-  await  withJwtSkewRetry(() => pullLogs(userId, since));
-  await  withJwtSkewRetry(() => pullUnlockedAchievements(userId));
-  await  withJwtSkewRetry(() => pullDailyMetrics(userId, since));
-  await  withJwtSkewRetry(() => pullGlobalMetrics(userId));
-  await  withJwtSkewRetry(() => pullDailyAIMetrics(userId,since));
-  await  withJwtSkewRetry(() => pullGlobalAIMetrics(userId));
-  await  withJwtSkewRetry(() => pullAchievementMetrics(userId));
+  await withJwtSkewRetry(() => pullLogs(userId, since, watermark));
+  await withJwtSkewRetry(() => pullUnlockedAchievements(userId));
+  await withJwtSkewRetry(() => pullDailyMetrics(userId, since, watermark));
+  await withJwtSkewRetry(() => pullGlobalMetrics(userId));
+  await withJwtSkewRetry(() => pullDailyAIMetrics(userId, since, watermark));
+  await withJwtSkewRetry(() => pullGlobalAIMetrics(userId));
+  await withJwtSkewRetry(() => pullAchievementMetrics(userId));
+
+
+  if (midPullChangeViaCategory || midPullChangesViaTag) {
+    await pushEntitiesOnly(userId);
+  }
 
   await onPulled?.({
     tasks: pulledTasks,
     habits: pulledHabits,
     events: pulledEvents,
   });
- const completedAt = new Date().toISOString();
-  await onSuccess?.(completedAt);
- }
 
- export async function deleteAllCloudDataForUser(userId: string): Promise<void> {
+  await onSuccess?.(watermark);
+}
+
+export async function deleteAllCloudDataForUser(userId: string): Promise<void> {
   const tables = [
     "categories", "tags", "tasks", "habits", "calendar_events",
     "timer_logs", "unlocked_achievements",
@@ -158,4 +209,5 @@ export async function runSelectiveNotificationReschedule(
 
   await persistReconciledNotificationIds(data);
 }
+
 

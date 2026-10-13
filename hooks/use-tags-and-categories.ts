@@ -30,6 +30,7 @@ export function useTagsAndCategories({ visible, initialTags, initialCategory, up
   // Synchronization Effect
   useEffect(() => {
     if (visible) {
+      console.log("initialTags", initialTags, "initialCategory", initialCategory);
       originalTagIdsRef.current = initialTags ?? [];
       originalCategoryRef.current = initialCategory ?? null;
 
@@ -55,8 +56,11 @@ export function useTagsAndCategories({ visible, initialTags, initialCategory, up
   const removeTag = (tag: string) => setTagNames((prev) => prev.filter((t) => t !== tag));
 
   const handleCreateCategory = async (name: string, color: string, icon: string) => {
-    const id = randomUUID();
-    await addCategoryWithEffects({ id, name, color, icon });
+    let id = randomUUID();
+    const catId = await addCategoryWithEffects({ id, name, color, icon });
+    if (!catId.created) {
+      throw new Error("CATEGORY_NAME_CONFLICT");
+    }
     setSessionCatIds((prev) => new Set(prev).add(id));
     setCategory(id);
     if (updateField) { updateField("category", id); } // Sync parent form
@@ -98,8 +102,8 @@ export function useTagsAndCategories({ visible, initialTags, initialCategory, up
         ? await addTagsWithEffects(tagNames.map(name => ({ id: randomUUID(), name })))
         : [];
     }
-
-    if (currentFormCategory !== originalCategoryRef.current && currentFormCategory) {
+    console.log("currentFormCategory", currentFormCategory, "originalCategoryRef", originalCategoryRef.current);
+    if (currentFormCategory && currentFormCategory !== originalCategoryRef.current) {
       await incrementCategoryUsageWithEffects(currentFormCategory);
     }
 

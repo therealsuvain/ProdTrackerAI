@@ -8,6 +8,8 @@ import React, {
 import { AppState, StatusBar, useColorScheme } from "react-native";
 import storageMMKV from "@/utils/Storage-Utils/mmkv-instance";
 import { STORAGE_KEYS } from "@/utils/Storage-Utils/storage-keys";
+import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
+import { sqlite } from "@/db";
 
 // Define theme colors
 const themes = {
@@ -110,6 +112,7 @@ export const ThemeContext = createContext<ThemeContextType>({
 });
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+  useDrizzleStudio(sqlite);
   const systemScheme = useColorScheme() ?? "dark";
   const [preference, setPreference] = useState<ThemeName>("system");
 
