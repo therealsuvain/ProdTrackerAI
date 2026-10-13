@@ -9,7 +9,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { RootFallbackComponent } from "@/components/shared/error-fallback-component";
 import ThemeProvider from "@/context/ThemeContext";
 import { Sidebar } from "@/components/ui/sidebar";
-import TimerProvider from "@/context/TimerContext";
 import AuthProvider from "@/context/AuthContext";
 import { Provider as PaperProvider } from "react-native-paper";
 import { useEffect, useState } from "react";
@@ -27,9 +26,12 @@ import { FatalGate, ToastHost } from "@/components/shared/error-host";
 import { installGlobalErrorHandlers } from "@/utils/Error-utils/install-global-handlers";
 import { DevTools } from "@/components/dev/dev-tools";
 import { reportError } from "@/stores/use-error-store";
+import { setupNotificationHandler } from "@/utils/Timer-utils/notification-setup";
+import { initTimerBridge } from "@/utils/Data-services/timer-services/timer-actions";
 
 SplashScreen.preventAutoHideAsync();
 installGlobalErrorHandlers();
+setupNotificationHandler();
 
 export default function RootLayout() {
   //Note :  static color values from ThemeContext are usable, dont do not work when theme changes
@@ -47,6 +49,7 @@ export default function RootLayout() {
       } finally {
         setWorkspaceReady(true);
         SplashScreen.hideAsync();
+        initTimerBridge();
       }
     })();
   }, []);
@@ -87,82 +90,80 @@ export default function RootLayout() {
               <DialogProvider>
                 <AuthProvider>
                   <EntitlementProvider>
-                    <TimerProvider>
-                      <SyncProvider>
-                        <NotificationRescheduleModal />
-                        <AchievementToastHost />
+                    <SyncProvider>
+                      <NotificationRescheduleModal />
+                      <AchievementToastHost />
 
-                        <Drawer
-                          drawerContent={(props) => <Sidebar {...props} />}
-                          screenOptions={{
-                            //headerShown: false, // Hide the default drawer header to let tabs handle their own headers
-                            drawerStyle: {
-                              width: "65%", // Standard sidebar width
-                            },
+                      <Drawer
+                        drawerContent={(props) => <Sidebar {...props} />}
+                        screenOptions={{
+                          //headerShown: false, // Hide the default drawer header to let tabs handle their own headers
+                          drawerStyle: {
+                            width: "65%", // Standard sidebar width
+                          },
+                        }}
+                      >
+                        <Drawer.Screen
+                          name="(tabs)"
+                          options={{
+                            headerShown: false,
                           }}
-                        >
-                          <Drawer.Screen
-                            name="(tabs)"
-                            options={{
-                              headerShown: false,
-                            }}
-                          />
-                          <Drawer.Screen
-                            name="settings"
-                            options={({ navigation }) => ({
-                              title: "Settings",
-                              headerStyle: styles.headerStyle,
-                              headerTitleStyle: styles.headerTitleStyle,
-                              headerLeft: () => headerLefty(navigation),
-                            })}
-                          />
-                          <Drawer.Screen
-                            name="achievements"
-                            options={({ navigation }) => ({
-                              title: "Achievements",
-                              headerStyle: styles.headerStyle,
-                              headerTitleStyle: styles.headerTitleStyle,
-                              headerLeft: () => headerLefty(navigation),
-                            })}
-                          />
-                          <Drawer.Screen
-                            name="analytics"
-                            options={({ navigation }) => ({
-                              title: "Analytics",
-                              headerStyle: styles.headerStyle,
-                              headerTitleStyle: styles.headerTitleStyle,
-                              headerLeft: () => headerLefty(navigation),
-                            })}
-                          />
+                        />
+                        <Drawer.Screen
+                          name="settings"
+                          options={({ navigation }) => ({
+                            title: "Settings",
+                            headerStyle: styles.headerStyle,
+                            headerTitleStyle: styles.headerTitleStyle,
+                            headerLeft: () => headerLefty(navigation),
+                          })}
+                        />
+                        <Drawer.Screen
+                          name="achievements"
+                          options={({ navigation }) => ({
+                            title: "Achievements",
+                            headerStyle: styles.headerStyle,
+                            headerTitleStyle: styles.headerTitleStyle,
+                            headerLeft: () => headerLefty(navigation),
+                          })}
+                        />
+                        <Drawer.Screen
+                          name="analytics"
+                          options={({ navigation }) => ({
+                            title: "Analytics",
+                            headerStyle: styles.headerStyle,
+                            headerTitleStyle: styles.headerTitleStyle,
+                            headerLeft: () => headerLefty(navigation),
+                          })}
+                        />
 
-                          <Drawer.Screen
-                            name="sign-up"
-                            options={({ navigation }) => ({
-                              title: "Sign Up",
-                              headerStyle: styles.headerStyle,
-                              headerTitleStyle: styles.headerTitleStyle,
-                              headerLeft: () => headerLefty(navigation),
-                            })}
-                          />
-                          <Drawer.Screen
-                            name="sign-in"
-                            options={({ navigation }) => ({
-                              title: "Sign In",
-                              headerStyle: styles.headerStyle,
-                              headerTitleStyle: styles.headerTitleStyle,
-                              headerLeft: () => headerLefty(navigation),
-                            })}
-                          />
-                          <Drawer.Screen
-                            name="paywall-screen"
-                            options={{
-                              headerShown: false,
-                            }}
-                          />
-                        </Drawer>
-                        <StatusBar style="auto" />
-                      </SyncProvider>
-                    </TimerProvider>
+                        <Drawer.Screen
+                          name="sign-up"
+                          options={({ navigation }) => ({
+                            title: "Sign Up",
+                            headerStyle: styles.headerStyle,
+                            headerTitleStyle: styles.headerTitleStyle,
+                            headerLeft: () => headerLefty(navigation),
+                          })}
+                        />
+                        <Drawer.Screen
+                          name="sign-in"
+                          options={({ navigation }) => ({
+                            title: "Sign In",
+                            headerStyle: styles.headerStyle,
+                            headerTitleStyle: styles.headerTitleStyle,
+                            headerLeft: () => headerLefty(navigation),
+                          })}
+                        />
+                        <Drawer.Screen
+                          name="paywall-screen"
+                          options={{
+                            headerShown: false,
+                          }}
+                        />
+                      </Drawer>
+                      <StatusBar style="auto" />
+                    </SyncProvider>
                   </EntitlementProvider>
                 </AuthProvider>
               </DialogProvider>

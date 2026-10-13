@@ -47,9 +47,9 @@ export interface AIActionContext {
   /*   getImmediateContext: () => Promise<any>;
     getMoreContext: (args: any) => Promise<any>; */
   /* timerLogs: TimerLog[]; */
-  setTitle: (title: string) => void;
+  /* setTitle: (title: string) => void;
   start: () => void;
-  stop: () => void;
+  stop: () => void; */
   navigation: any;
   /* trackMetric: (key: GlobalMetricKey[], amount: number, actor?: "user" | "ai") => void; */
   // Add other state setters as needed (Timer, Navigation, etc.)

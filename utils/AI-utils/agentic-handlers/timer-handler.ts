@@ -3,11 +3,12 @@ import { resolveIdsFromNames } from "./tags-and-categories-handlers";
 import { useTimerLogStore } from "@/stores/use-timerLog-store";
 import { getCategoryList } from "@/stores/use-category-store";
 import { getTagList } from "@/stores/use-tag-store";
+import { setTimerTitle, startTimerWithEffects, stopTimerWithEffects } from "@/utils/Data-services/timer-services/timer-actions";
 
 export const StartTimerHandler: AIHandler = {
   execute: async (params, context) => {
-    context.setTitle(params.title || "Unnamed Timer");
-    context.start();
+    setTimerTitle(params.title || "Unnamed Timer");
+    startTimerWithEffects();
     context.navigation.navigate("timer-screen");
 
     console.log(`AI Action: Started timer for "${params.title}"`);
@@ -16,7 +17,7 @@ export const StartTimerHandler: AIHandler = {
 
 export const StopTimerHandler: AIHandler = {
   execute: async (params, context) => {
-    context.stop();
+    stopTimerWithEffects();
     context.navigation.navigate("timer-screen");
 
     console.log(`AI Action: Stopped timer`);

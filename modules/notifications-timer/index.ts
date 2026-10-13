@@ -1,30 +1,31 @@
 // Reexport the native module. On web, it will be resolved to NotificationsTimerModule.web.ts
 // and on native platforms to NotificationsTimerModule.ts
-export { default  } from './src/NotificationsTimerModule';
+export { default } from './src/NotificationsTimerModule';
 export { default as NotificationsTimerView } from './src/NotificationsTimerView';
-export * from  './src/NotificationsTimer.types';
-import { requireNativeModule } from 'expo-modules-core';
+export * from './src/NotificationsTimer.types';
+import { Platform, requireNativeModule } from 'expo-modules-core';
 
 // Get reference to the native module
-const NotificationsTimer = requireNativeModule('NotificationsTimer');
+const NotificationsTimer = Platform.OS === "android" ? requireNativeModule("NotificationsTimer") : null;
 
 
 // JS Helper functions
 
 export function showNotification(
-  title: string, 
-  startTimeMs: number, 
-  isRunning: boolean, 
+  title: string,
+  startTimeMs: number,
+  isRunning: boolean,
   pausedElapsedSecs: number
 ) {
-  NotificationsTimer.showNotification(title, startTimeMs, isRunning, pausedElapsedSecs);
+  NotificationsTimer?.showNotification(title, startTimeMs, isRunning, pausedElapsedSecs);
 }
 
 export function addTimerActionListener(
   onPause: () => void,
   onResume: () => void,
-  onStop:()=>void,
+  onStop: () => void,
 ) {
+  if (!NotificationsTimer) return [];
   const pauseListener = NotificationsTimer.addListener('onPauseAction', onPause);
   const resumeListener = NotificationsTimer.addListener('onResumeAction', onResume);
   const stopListener = NotificationsTimer.addListener('onStopAction', onStop);
@@ -32,5 +33,5 @@ export function addTimerActionListener(
 }
 
 export function stopNativeTimer() {
-  NotificationsTimer.stopNotification();
+  NotificationsTimer?.stopNotification();
 }

@@ -14,7 +14,7 @@
  */
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { TimerMode } from "@/context/TimerContext";
+import { TimerMode } from "@/utils/Timer-utils/timer-math";
 import { useContext, useRef, useEffect, useState } from "react";
 import {
   Text,
@@ -30,20 +30,20 @@ import Svg, { Circle } from "react-native-svg";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const SIZE          = 250;
-const RADIUS        = 125;
-const STROKE        = 6;
-const CIRCLE_R      = (SIZE - STROKE) / 2;
+const SIZE = 250;
+const RADIUS = 125;
+const STROKE = 6;
+const CIRCLE_R = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * CIRCLE_R;
 const FLIP_DURATION = 380;
 
-const ITEM_HEIGHT   = 48;
-const VISIBLE_ROWS  = 3;
+const ITEM_HEIGHT = 48;
+const VISIBLE_ROWS = 3;
 const PICKER_HEIGHT = ITEM_HEIGHT * VISIBLE_ROWS;
-const SCROLL_PAD    = ITEM_HEIGHT;
+const SCROLL_PAD = ITEM_HEIGHT;
 
-const HOURS        = Array.from({ length: 24 }, (_, i) => i);
-const MINUTES      = Array.from({ length: 60 }, (_, i) => i);
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 const SECONDS_LIST = Array.from({ length: 60 }, (_, i) => i);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -59,11 +59,11 @@ const toTimeStr = (seconds: number) =>
 // ─── TimerDisplay Props ───────────────────────────────────────────────────────
 
 interface TimerDisplayProps {
-  time:            number;
-  mode:            TimerMode;
+  time: number;
+  mode: TimerMode;
   countdownTarget: number;
-  isRunning:       boolean;
-  onToggleMode:    () => void;
+  isRunning: boolean;
+  onToggleMode: () => void;
 }
 
 // ─── TimerDisplay ─────────────────────────────────────────────────────────────
@@ -81,8 +81,8 @@ export default function TimerDisplay({
   // useState so re-render fires after flip, recalculating outputRange ternaries
   const [showingFront, setShowingFront] = useState(true);
   const showingFrontRef = useRef(true); // ref for use inside callback (no stale closure)
-  const flipAnim        = useRef(new Animated.Value(0)).current;
-  const isFlipping      = useRef(false);
+  const flipAnim = useRef(new Animated.Value(0)).current;
+  const isFlipping = useRef(false);
 
   const triggerFlip = () => {
     if (isRunning || isFlipping.current) return;
@@ -105,20 +105,20 @@ export default function TimerDisplay({
   // showingFront=true  → Face A (stopwatch) visible now, flipping away; B coming in
   // showingFront=false → Face B (countdown)  visible now, flipping away; A coming in
   const aRotate = flipAnim.interpolate({
-    inputRange:  [0, 0.5, 1],
+    inputRange: [0, 0.5, 1],
     outputRange: showingFront
       ? ["0deg", "90deg", "90deg"]
       : ["-90deg", "-90deg", "0deg"],
   });
   const bRotate = flipAnim.interpolate({
-    inputRange:  [0, 0.5, 1],
+    inputRange: [0, 0.5, 1],
     outputRange: showingFront
       ? ["-90deg", "-90deg", "0deg"]
       : ["0deg", "90deg", "90deg"],
   });
 
   // ── Pulse ─────────────────────────────────────────────────────────────────
-  const pulseAnim  = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
   const prevSecond = useRef(-1);
   useEffect(() => {
     if (mode !== "stopwatch" || !isRunning) return;
@@ -126,8 +126,16 @@ export default function TimerDisplay({
     if (s !== prevSecond.current) {
       prevSecond.current = s;
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.025, duration: 100, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1,     duration: 100, useNativeDriver: true }),
+        Animated.timing(pulseAnim, {
+          toValue: 1.025,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
       ]).start();
     }
   }, [time, mode, isRunning]);
@@ -135,17 +143,23 @@ export default function TimerDisplay({
   // ── SVG drain ring ────────────────────────────────────────────────────────
   const drainRatio = countdownTarget > 0 ? time / countdownTarget : 1;
   const dashOffset = CIRCUMFERENCE * (1 - drainRatio);
-  const ringColor  = mode === "countdown" && time <= 10 && time > 0
-    ? "#ef4444" : theme.timerBase;
+  const ringColor =
+    mode === "countdown" && time <= 10 && time > 0
+      ? "#ef4444"
+      : theme.timerBase;
 
   // ── Face content ──────────────────────────────────────────────────────────
   // Both faces are pure Text — no ScrollViews, no gesture conflicts
   // Face A: elapsed stopwatch time
   // Face B: countdown target time (static — picker is outside the circle)
-  const faceA = <Text style={[faceStyles.time, { color: theme.timerBase }]}>{toTimeStr(time)}</Text>;
+  const faceA = (
+    <Text style={[faceStyles.time, { color: theme.timerBase }]}>
+      {toTimeStr(time)}
+    </Text>
+  );
   const faceB = (
     <View style={faceStyles.countdownFace}>
-     {/*  <Text style={[faceStyles.countdownLabel, { color: withAlpha(theme.timerBase, "88") }]}>
+      {/*  <Text style={[faceStyles.countdownLabel, { color: withAlpha(theme.timerBase, "88") }]}>
         {isRunning ? "REMAINING" : "SET TIME"}
       </Text> */}
       <Text style={[faceStyles.time, { color: theme.timerBase }]}>
@@ -160,17 +174,21 @@ export default function TimerDisplay({
   );
 
   const renderFace = (
-    rotateY:    Animated.AnimatedInterpolation<string>,
+    rotateY: Animated.AnimatedInterpolation<string>,
     isAbsolute: boolean,
-    content:    React.ReactNode
+    content: React.ReactNode,
   ) => (
-    <Animated.View style={[
-      styles.face,
-      isAbsolute && styles.absoluteFace,
-      { borderColor: withAlpha(theme.timerBase, "44") },
-      { transform: [{ perspective: 800 }, { rotateY }],
-        backfaceVisibility: "hidden" },
-    ]}>
+    <Animated.View
+      style={[
+        styles.face,
+        isAbsolute && styles.absoluteFace,
+        { borderColor: withAlpha(theme.timerBase, "44") },
+        {
+          transform: [{ perspective: 800 }, { rotateY }],
+          backfaceVisibility: "hidden",
+        },
+      ]}
+    >
       {content}
     </Animated.View>
   );
@@ -182,27 +200,35 @@ export default function TimerDisplay({
       activeOpacity={0.9}
       disabled={isRunning}
     >
-      <Animated.View style={[styles.outer, { transform: [{ scale: pulseAnim }] }]}>
+      <Animated.View
+        style={[styles.outer, { transform: [{ scale: pulseAnim }] }]}
+      >
         <Svg width={SIZE} height={SIZE} style={StyleSheet.absoluteFill}>
           <Circle
-            cx={SIZE/2} cy={SIZE/2} r={CIRCLE_R}
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={CIRCLE_R}
             stroke={withAlpha(theme.timerBase, "22")}
-            strokeWidth={STROKE} fill="none"
+            strokeWidth={STROKE}
+            fill="none"
           />
           <Circle
-            cx={SIZE/2} cy={SIZE/2} r={CIRCLE_R}
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={CIRCLE_R}
             stroke={ringColor}
-            strokeWidth={STROKE} fill="none"
+            strokeWidth={STROKE}
+            fill="none"
             strokeDasharray={CIRCUMFERENCE}
             strokeDashoffset={dashOffset}
             strokeLinecap="round"
             rotation="-90"
-            origin={`${SIZE/2}, ${SIZE/2}`}
+            origin={`${SIZE / 2}, ${SIZE / 2}`}
           />
         </Svg>
 
         {renderFace(aRotate, false, faceA)}
-        {renderFace(bRotate, true,  faceB)}
+        {renderFace(bRotate, true, faceB)}
       </Animated.View>
     </TouchableOpacity>
   );
@@ -214,10 +240,10 @@ export default function TimerDisplay({
 // Pure ScrollViews with no parent gesture conflicts whatsoever.
 
 interface CountdownPickerPanelProps {
-  visible:         boolean; // mode === "countdown" && !isRunning
+  visible: boolean; // mode === "countdown" && !isRunning
   countdownTarget: number;
-  onChange:        (seconds: number) => void;
-  color:           string;
+  onChange: (seconds: number) => void;
+  color: string;
 }
 
 export function CountdownPickerPanel({
@@ -237,7 +263,8 @@ export function CountdownPickerPanel({
   }, [visible]);
 
   const translateY = anim.interpolate({
-    inputRange: [0, 1], outputRange: [20, 0],
+    inputRange: [0, 1],
+    outputRange: [20, 0],
   });
 
   // Picker values held in refs — no re-render on scroll
@@ -264,7 +291,10 @@ export function CountdownPickerPanel({
     mVal.current = newM;
     sVal.current = newS;
     const go = (r: React.RefObject<ScrollView | null>, idx: number) =>
-      setTimeout(() => r.current?.scrollTo({ y: idx * ITEM_HEIGHT, animated: false }), 50);
+      setTimeout(
+        () => r.current?.scrollTo({ y: idx * ITEM_HEIGHT, animated: false }),
+        50,
+      );
     go(hRef, newH);
     go(mRef, newM);
     go(sRef, newS);
@@ -282,10 +312,10 @@ export function CountdownPickerPanel({
     };
 
   const column = (
-    list:    number[],
-    ref:     React.RefObject<ScrollView | null>,
+    list: number[],
+    ref: React.RefObject<ScrollView | null>,
     handler: (e: NativeSyntheticEvent<NativeScrollEvent>) => void,
-    label:   string
+    label: string,
   ) => (
     <View style={pickerStyles.col}>
       <Text style={[pickerStyles.label, { color: withAlpha(color, "88") }]}>
@@ -315,20 +345,22 @@ export function CountdownPickerPanel({
 
   // Always rendered but opacity-animated — keeps ScrollView refs alive
   return (
-    <Animated.View style={[
-      pickerStyles.panel,
-      { opacity: anim, transform: [{ translateY }] },
-      !visible && { pointerEvents: "none" } as any,
-    ]}>
+    <Animated.View
+      style={[
+        pickerStyles.panel,
+        { opacity: anim, transform: [{ translateY }] },
+        !visible && ({ pointerEvents: "none" } as any),
+      ]}
+    >
       {/* Selection band */}
       <View
         pointerEvents="none"
         style={[pickerStyles.band, { borderColor: withAlpha(color, "55") }]}
       />
       <View style={pickerStyles.row}>
-        {column(HOURS,        hRef, makeHandler(hVal, HOURS),        "HH")}
+        {column(HOURS, hRef, makeHandler(hVal, HOURS), "HH")}
         <Text style={[pickerStyles.colon, { color }]}>:</Text>
-        {column(MINUTES,      mRef, makeHandler(mVal, MINUTES),      "MM")}
+        {column(MINUTES, mRef, makeHandler(mVal, MINUTES), "MM")}
         <Text style={[pickerStyles.colon, { color }]}>:</Text>
         {column(SECONDS_LIST, sRef, makeHandler(sVal, SECONDS_LIST), "SS")}
       </View>
@@ -340,13 +372,18 @@ export function CountdownPickerPanel({
 
 const styles = StyleSheet.create({
   outer: {
-    width: SIZE, height: SIZE,
-    alignItems: "center", justifyContent: "center",
+    width: SIZE,
+    height: SIZE,
+    alignItems: "center",
+    justifyContent: "center",
   },
   face: {
-    width: SIZE, height: SIZE,
-    borderRadius: RADIUS, borderWidth: 2,
-    justifyContent: "center", alignItems: "center",
+    width: SIZE,
+    height: SIZE,
+    borderRadius: RADIUS,
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
     overflow: "hidden",
     backgroundColor: "transparent",
   },
@@ -389,15 +426,21 @@ const pickerStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  col:   { alignItems: "center", width: 72 },
+  col: { alignItems: "center", width: 72 },
   label: { fontSize: 10, fontWeight: "700", letterSpacing: 1, marginBottom: 2 },
-  item:  { height: ITEM_HEIGHT, justifyContent: "center", alignItems: "center" },
+  item: { height: ITEM_HEIGHT, justifyContent: "center", alignItems: "center" },
   digit: { fontSize: 32, fontWeight: "600" },
-  colon: { fontSize: 28, fontWeight: "700", marginTop: 14, marginHorizontal: 4 },
-  band:  {
+  colon: {
+    fontSize: 28,
+    fontWeight: "700",
+    marginTop: 14,
+    marginHorizontal: 4,
+  },
+  band: {
     position: "absolute",
     top: ITEM_HEIGHT + 22, // label(~22) + top padding row
-    left: 0, right: 0,
+    left: 0,
+    right: 0,
     height: ITEM_HEIGHT,
     borderTopWidth: 1,
     borderBottomWidth: 1,
@@ -1661,8 +1704,6 @@ const pickerStyles = StyleSheet.create({
 //   },
 // });
 
-
-
 // import { ThemeContext } from "@/context/ThemeContext";
 // import { TimerMode } from "@/context/TimerContext";
 // import { useContext, useRef, useState, useEffect } from "react";
@@ -2074,8 +2115,6 @@ const pickerStyles = StyleSheet.create({
 //   },
 // });
 
-
-
 // import { useContext, useEffect, useRef, useState, useCallback } from "react";
 // import {
 //   Text,
@@ -2477,7 +2516,6 @@ const pickerStyles = StyleSheet.create({
 //   );
 // }
 
-
 // const styles = StyleSheet.create({
 //   outerScale: {
 //     width: SIZE, height: SIZE,
@@ -2493,7 +2531,7 @@ const pickerStyles = StyleSheet.create({
 //     position: "absolute",
 //   },
 // });
- 
+
 // // ClockFace styles — font size matches picker digits so swapping is seamless
 // const faceStyles = StyleSheet.create({
 //   time: {
@@ -2503,7 +2541,7 @@ const pickerStyles = StyleSheet.create({
 //     letterSpacing: 2,
 //   },
 // });
- 
+
 // const pickerStyles = StyleSheet.create({
 //   root: {
 //     flexDirection: "row",

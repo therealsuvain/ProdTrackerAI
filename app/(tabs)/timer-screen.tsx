@@ -17,8 +17,7 @@ import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
 import { XButton } from "@/components/ui/shared/x-button";
 import TimerEditModal from "@/components/modal/timer-modal";
 import { ThemeContext } from "@/context/ThemeContext";
-import { formatDuration } from "@/context/TimerContext";
-import { useTimer } from "@/hooks/context-hooks/use-timer";
+import { formatDuration } from "@/utils/Timer-utils/timer-math";
 import { TimerLog } from "@/types/timer";
 import { getTodayISO, withAlpha, getWeekStartISO } from "@/utils/common-utils";
 import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
@@ -39,6 +38,18 @@ import {
   selectCategoryList,
   useCategoryStore,
 } from "@/stores/use-category-store";
+import { useTimerStore } from "@/stores/use-timer-store";
+import {
+  lapTimerWithEffects,
+  pauseTimerWithEffects,
+  requestResetTimer,
+  saveAndResetTimerWithEffects,
+  setTimerCountdownTarget,
+  setTimerTitle,
+  startTimerWithEffects,
+  stopTimerWithEffects,
+  toggleTimerModeWithEffects,
+} from "@/utils/Data-services/timer-services/timer-actions";
 // Note : Timescreen is the only component where value prop is used for the TextInput instead of defaultValue
 // Note ContinuedFromAbove: default Value only takes input once, then doesnt update, the reason its works in other places is because
 // Note ContinuedFromAbove: the modals re-render everytime, so default value gets feeded the latest state value and it looks ok,
@@ -52,8 +63,7 @@ function TimerScreenInner() {
   const [logToDelete, setLogToDelete] = useState<string | null>(null);
   const categories = useCategoryStore(useShallow(selectCategoryList));
   //const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
-  const {
-    time,
+  /*   const {
     isRunning,
     title,
     category,
@@ -69,7 +79,12 @@ function TimerScreenInner() {
     pause,
     stop,
     reset,
-  } = useTimer();
+  } = useTimer(); */
+  const title = useTimerStore((state) => state.title);
+  const isRunning = useTimerStore((state) => state.isRunning);
+  const mode = useTimerStore(useShallow((state) => state.mode));
+  const countdownTarget = useTimerStore((state) => state.countdownTarget);
+  const laps = useTimerStore(useShallow((state) => state.laps));
   const [modalVisible, setModalVisible] = useState(false);
   const [editingLog, setEditingLog] = useState<TimerLog>();
   const { showToast } = useDbErrorToast();
@@ -277,7 +292,7 @@ function TimerScreenInner() {
           placeholder="Activity name"
           value={title}
           textColor={theme.text}
-          onChangeText={setTitle}
+          onChangeText={setTimerTitle}
           style={[styles.input, { backgroundColor: theme.background }]}
           mode="outlined"
           theme={{
@@ -291,12 +306,11 @@ function TimerScreenInner() {
       </View>
 
       <TimerDisplay
-        time={time}
         mode={mode}
         countdownTarget={countdownTarget}
         isRunning={isRunning}
-        onToggleMode={toggleMode}
-        onCountdownTargetChange={setCountdownTarget}
+        onToggleMode={toggleTimerModeWithEffects}
+        onCountdownTargetChange={setTimerCountdownTarget}
       />
       {/* Mode hint below the circle 
           <Text style={[styles.modeHint, { color: theme.timerBase }]}>
@@ -312,26 +326,41 @@ function TimerScreenInner() {
             size="big"
             onPress={() => {
               triggerHaptic();
-              start();
+              startTimerWithEffects();
             }}
           />
         ) : (
           <>
-            <XButton icon="pause" mode="timer" size="big" onPress={pause} />
+            <XButton
+              icon="pause"
+              mode="timer"
+              size="big"
+              onPress={pauseTimerWithEffects}
+            />
             <XButton
               icon="stop"
               mode="timer"
               size="big"
               onPress={async () => {
                 triggerHaptic();
-                const log = await stop();
+                const log = await stopTimerWithEffects();
                 if (log) showModal(log);
               }}
             />
             {mode === "stopwatch" && (
-              <XButton icon="flag" mode="timer" size="big" onPress={lap} />
+              <XButton
+                icon="flag"
+                mode="timer"
+                size="big"
+                onPress={lapTimerWithEffects}
+              />
             )}
-            <XButton icon="refresh" mode="timer" size="big" onPress={reset} />
+            <XButton
+              icon="refresh"
+              mode="timer"
+              size="big"
+              onPress={requestResetTimer}
+            />
           </>
         )}
       </View>

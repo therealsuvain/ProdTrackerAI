@@ -5,7 +5,10 @@ import React, { useContext, useState } from "react";
 import { XButton } from "../shared/x-button";
 
 import { ThemeContext } from "@/context/ThemeContext";
-import { formatDuration, formatRelativeTime } from "@/context/TimerContext";
+import {
+  formatDuration,
+  formatRelativeTime,
+} from "@/utils/Timer-utils/timer-math";
 import { withAlpha } from "@/utils/common-utils";
 import { TagList } from "@/components/ui/shared/tags/tag-list";
 import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
@@ -20,12 +23,9 @@ interface TimerLogItemProps {
 function TimerLogItem({ logId, onDelete, onEdit }: TimerLogItemProps) {
   const { theme } = useContext(ThemeContext);
   const log = useTimerLogStore((state) => state.logsById[logId]);
-  let logCategory;
-  if (log.category) {
-    logCategory = useCategoryStore((state) =>
-      log.category ? state.categoriesById[log.category] : null,
-    );
-  }
+  const logCategory = useCategoryStore((s) =>
+    log.category ? s.categoriesById[log.category] : undefined,
+  );
   const route = useRoute();
   const isNotHome = route.name !== "index";
 

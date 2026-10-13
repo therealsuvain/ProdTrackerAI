@@ -4,6 +4,7 @@ import { getTimerDimensions, toTimeStr } from "../time-display.utils";
 import { TimerDisplayProps } from "../time-display";
 import { useTimerDisplayAnimation } from "../use-time-display.animations";
 import { useHaptics } from "@/hooks/use-haptics";
+import { useTimerSeconds } from "@/hooks/context-hooks/use-timer-seconds";
 
 interface TimerDisplayCircleProps {
   timeDisplayProps: TimerDisplayProps;
@@ -17,30 +18,28 @@ export const TimerDisplayCircle = ({
   Size,
   onCirclePress,
 }: TimerDisplayCircleProps) => {
+  const time = useTimerSeconds();
   const { STROKE, CIRCLE_R, CIRCUMFERENCE } = getTimerDimensions(Size);
-  const { aRotate, bRotate, pulseAnim, handleLongPress } = useTimerDisplayAnimation(timeDisplayProps);
+  const { aRotate, bRotate, pulseAnim, handleLongPress } =
+    useTimerDisplayAnimation(timeDisplayProps);
   const { triggerHaptic } = useHaptics();
   const drainRatio =
     timeDisplayProps.countdownTarget > 0
-      ? timeDisplayProps.time / timeDisplayProps.countdownTarget
+      ? time / timeDisplayProps.countdownTarget
       : 1;
   const dashOffset = CIRCUMFERENCE * (1 - drainRatio);
   const ringColor =
-    timeDisplayProps.mode === "countdown" &&
-    timeDisplayProps.time <= 10 &&
-    timeDisplayProps.time > 0
+    timeDisplayProps.mode === "countdown" && time <= 10 && time > 0
       ? "#ef4444"
-      :styles.base;
+      : styles.base;
 
   // ── Face content ──────────────────────────────────────────────────────────
   // Reverted to the last working version — no mode-isolation logic.
   // Face A: elapsed stopwatch time
   // Face B: remaining time when running, target when idle
-  const faceAText = toTimeStr(timeDisplayProps.time);
+  const faceAText = toTimeStr(time);
   const faceBText = toTimeStr(
-    timeDisplayProps.isRunning
-      ? timeDisplayProps.time
-      : timeDisplayProps.countdownTarget,
+    timeDisplayProps.isRunning ? time : timeDisplayProps.countdownTarget,
   );
 
   const renderFace = (
@@ -65,7 +64,10 @@ export const TimerDisplayCircle = ({
   return (
     <TouchableOpacity
       onPress={onCirclePress}
-      onLongPress={()=>{triggerHaptic();handleLongPress()}}
+      onLongPress={() => {
+        triggerHaptic();
+        handleLongPress();
+      }}
       delayLongPress={350}
       activeOpacity={timeDisplayProps.isRunning ? 1 : 0.85}
     >

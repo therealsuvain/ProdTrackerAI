@@ -1,89 +1,532 @@
-// import React, {
-//   createContext,
-//   useContext,
-//   useState,
-//   useRef,
-//   useEffect,
-//   ReactNode,
-// } from 'react';
-// import { randomUUID } from 'expo-crypto';
-// import { TimerLog } from '@/types/timer';
-// import { useData } from '@/hooks/context-hooks/use-data';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useRef,
+} from "react";
+import { Alert, AppState } from "react-native";
+import * as Notifications from "expo-notifications";
+import { randomUUID } from "expo-crypto";
+import { TimerLog } from "@/types/timer";
+import storageMMKV from "@/utils/Storage-Utils/mmkv-instance";
+import { STORAGE_KEYS } from "@/utils/Storage-Utils/storage-keys";
+import {
+  showNotification,
+  stopNativeTimer,
+  addTimerActionListener,
+} from "../modules/notifications-timer";
+import { addLogWithEffects } from "@/utils/Data-services/timerlog-services/log-actions";
 
-// interface TimerContextType {
-//   time: number;
-//   isRunning: boolean;
-//   title: string;
-//   start: () => void;
-//   pause: () => void;
-//   stop: () => void;
-//   reset: () => void;
-//   setTitle: (title: string) => void;
-// }
-// export const TimerContext = createContext<TimerContextType | undefined>(
-//   undefined
-// );
+export type TimerMode = "stopwatch" | "countdown";
+interface TimerContextType {
+  time: number;
+  isRunning: boolean;
+  title: string;
+  category: string;
+  laps: number[];
+  mode: TimerMode;
+  countdownTarget: number; // seconds — what the picker set
+  toggleMode: () => void; // triggers coin flip + mode switch
+  setCountdownTarget: (seconds: number) => void;
+  start: () => void;
+  pause: () => void;
+  stop: () => Promise<TimerLog | null>;
+  reset: () => void;
+  lap: () => void;
+  setTitle: (title: string) => void;
+  setCategory: (category: string) => void;
+}
 
-// export default function TimerProvider({ children }: { children: ReactNode }){
-// const [time, setTime]= useState(0);
-//     const [isRunning, setIsRunning]= useState(false);
-//     const [title, setTitle] = useState('');
-//     const intervalRef = useRef<number|null>(null);
-//     const startTimeRef = useRef<Date | null>(null);
-//     const {timerLogs,setTimerLogs}= useData()
+export const TimerContext = createContext<TimerContextType | undefined>(
+  undefined,
+);
 
-//     useEffect(()=>{
-//         if(isRunning){
-//             intervalRef.current = setInterval(()=> setTime(prev=>prev+1),1000);
-//         } else if(intervalRef.current){
-//             clearInterval(intervalRef.current);
-//         }
-//         return ()=> {
-//             if(intervalRef.current)
-//                 clearInterval(intervalRef.current);
-//         }
-//     },[isRunning])
+const NOTIFICATION_ID = "timer-notification"; // Use consistent ID
 
-//     const start = () => {
-//         setIsRunning(true);
-//         startTimeRef.current = new Date();
-//     };
+interface TimerData {
+  startTimestamp: number | null;
+  pausedSeconds: number;
+  title: string;
+  category: string;
+  laps: number[];
+  isRunning: boolean;
+  mode: TimerMode;
+  countdownTarget: number;
+}
 
-//     const pause = () => setIsRunning(false);
+// Configure notifications
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+    priority: Notifications.AndroidNotificationPriority.HIGH,
+  }),
+});
 
-//     const stop = () => {
-//         setIsRunning(false);
-//         if(startTimeRef.current && time > 0){
-//             const log : TimerLog = {
-//                 id: randomUUID(),
-//                 title,
-//                 startTime: startTimeRef.current,
-//                 endTime: new Date(),
-//                 duration : time,
-//             };
-//             setTimerLogs([...timerLogs, log]);
-//         }
-//         reset();
-//     };
+// TODOOptim Clean-up and document this bloated poo
+export default function TimerProvider({ children }: { children: ReactNode }) {
+  //!const [time, setTime] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [laps, setLaps] = useState<number[]>([]);
+  const [mode, setMode] = useState<TimerMode>("stopwatch");
+  const [countdownTarget, setCountdownTarget] = useState(300); // default 5 min
+  const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
+  const [pausedSeconds, setPausedSeconds] = useState(0);
+  const updateIntervalRef = useRef<number | null>(null);
+  //const notificationUpdateRef = useRef<number | null>(null);
+  const isInitializedRef = useRef(false);
+  const zeroHitRef = useRef(false);
+  const timerStateRef = useRef<TimerData>({
+    startTimestamp: null,
+    pausedSeconds: 0,
+    title: "",
+    category: "",
+    laps: [],
+    mode: "stopwatch",
+    countdownTarget: 300,
+    isRunning: false,
+  });
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const elapsedSeconds =
+    isRunning && startTimestamp
+      ? pausedSeconds + Math.floor((nowMs - startTimestamp) / 1000)
+      : pausedSeconds;
 
-//     const reset = () => {
-//         setTime(0);
-//         setTitle('');
-//         startTimeRef.current=null;
-//     }
-//       const value: TimerContextType = {
-//     time,
-//     isRunning,
-//     title,
-//     start,
-//     pause,
-//     stop,
-//     reset,
-//     setTitle,
-//   };
+  const time =
+    mode === "countdown"
+      ? Math.max(0, countdownTarget - elapsedSeconds)
+      : elapsedSeconds;
+  useEffect(() => {
+    timerStateRef.current = {
+      startTimestamp,
+      pausedSeconds,
+      title,
+      category,
+      laps,
+      mode,
+      countdownTarget,
+      isRunning,
+    };
+  }, [
+    startTimestamp,
+    pausedSeconds,
+    title,
+    category,
+    laps,
+    mode,
+    countdownTarget,
+    isRunning,
+  ]);
 
-//   return (
-//     <TimerContext.Provider value={value}>{children}</TimerContext.Provider>
-//   );
+  useEffect(() => {
+    const listeners = addTimerActionListener(
+      () => {
+        console.log("Notification: Pause Clicked");
+        pause(); // Call your existing pause logic
+      },
+      () => {
+        console.log("Notification: Resume Clicked");
+        start(); // Call your existing resume logic
+      },
+      () => {
+        console.log("Notification: Saved");
+        stop(); // Call your existing resume logic
+      },
+    );
 
-// }
+    return () => {
+      listeners.forEach((listener) => listener.remove());
+    };
+  }, [/* time, */ isRunning, startTimestamp]);
+  // Initialize on mount
+  useEffect(() => {
+    const init = async () => {
+      // Request notification permissions
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== "granted") {
+        console.warn("Notification permissions not granted");
+      }
+      // Load saved timer state
+      loadTimerData();
+      isInitializedRef.current = true;
+    };
+
+    init();
+
+    // Listen for app state changes (foreground/background)
+    const appStateSubscription = AppState.addEventListener(
+      "change",
+      (nextAppState) => {
+        if (nextAppState === "active") {
+          // App came to foreground - recalculate time
+          loadTimerData();
+        } else if (
+          nextAppState === "background" ||
+          nextAppState === "inactive"
+        ) {
+          // App went to background - save state
+          saveTimerData();
+        }
+      },
+    );
+
+    return () => {
+      /*     notificationSubscription.remove();*/
+      appStateSubscription.remove();
+      cleanupIntervals();
+    };
+  }, []);
+
+  // Save timer state to AsyncStorage
+  const saveTimerData = () => {
+    try {
+      const data: TimerData = {
+        ...timerStateRef.current,
+      };
+      storageMMKV.set(STORAGE_KEYS.TIMER, JSON.stringify(data));
+    } catch (error) {
+      console.error("Failed to save timer data:", error);
+    }
+  };
+
+  // Load timer state from AsyncStorage
+  const loadTimerData = () => {
+    try {
+      const json = storageMMKV.getString(STORAGE_KEYS.TIMER);
+      if (!json) return;
+
+      const data: TimerData = JSON.parse(json);
+
+      setCategory(data.category ?? "");
+      setLaps(data.laps ?? []);
+      setMode(data.mode ?? "stopwatch");
+      setCountdownTarget(data.countdownTarget ?? 300);
+
+      // If timer was running, recalculate elapsed time (including background time)
+      if (data.isRunning && data.startTimestamp) {
+        const elapsed =
+          data.pausedSeconds +
+          Math.floor((Date.now() - data.startTimestamp) / 1000);
+
+        //!setTime(elapsed);
+        setNowMs(elapsed);
+        setPausedSeconds(data.pausedSeconds);
+        setStartTimestamp(data.startTimestamp); // Keep original start timestamp
+        setIsRunning(true);
+        setTitle(data.title);
+      } else if (!data.isRunning) {
+        // Timer is paused, restore paused state
+        //!setTime(data.pausedSeconds);
+        setNowMs(data.pausedSeconds);
+        setPausedSeconds(data.pausedSeconds);
+        setStartTimestamp(Date.now());
+        setIsRunning(false);
+        setTitle(data.title);
+      }
+    } catch (error) {
+      console.error("Failed to load timer data:", error);
+    }
+  };
+
+  // Auto-save when state changes (but not on initial load)
+  useEffect(() => {
+    if (isInitializedRef.current) {
+      saveTimerData();
+    }
+  }, [
+    startTimestamp,
+    pausedSeconds,
+    title,
+    category,
+    laps,
+    mode,
+    countdownTarget,
+    isRunning,
+  ]);
+
+  // Ticker's only job now: force a re-render every 100ms while running.
+  useEffect(() => {
+    cleanupIntervals();
+    if (isRunning && startTimestamp) {
+      updateIntervalRef.current = setInterval(() => setNowMs(Date.now()), 100);
+    }
+    return cleanupIntervals;
+  }, [isRunning, startTimestamp]);
+
+  // Countdown-hits-zero watches the computed `time` instead of keeping its own copy.
+  useEffect(() => {
+    if (mode === "countdown" && isRunning && time <= 0 && !zeroHitRef.current) {
+      zeroHitRef.current = true;
+      cleanupIntervals();
+      setPausedSeconds(countdownTarget);
+      setIsRunning(false);
+      setStartTimestamp(null);
+      handleCountdownZero(elapsedSeconds);
+    }
+  }, [time, mode, isRunning, countdownTarget, elapsedSeconds]);
+
+  const cleanupIntervals = () => {
+    if (updateIntervalRef.current) {
+      clearInterval(updateIntervalRef.current);
+      updateIntervalRef.current = null;
+    }
+  };
+
+  // ── Countdown Zero Handler ────────────────────────────────────────────────
+
+  /**
+   * Called exactly once when countdown reaches 0. Shows alert asking the user
+   * whether to save the completed session. Does not auto-save — user decides.
+   */
+  const handleCountdownZero = (finalTime: number) => {
+    Alert.alert(
+      "⏱ Time's Up!",
+      `"${title || "Timer"}" has ended. Would you like to save this session?`,
+      [
+        {
+          text: "Save Session",
+          onPress: async () => {
+            const log: TimerLog = {
+              id: randomUUID(),
+              title: title || "Untitled Activity",
+              category: category.trim() || undefined,
+              startTime: new Date(Date.now() - finalTime * 1000).toISOString(),
+              endTime: new Date().toISOString(),
+              duration: finalTime,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              laps: laps.length > 0 ? laps : undefined,
+            };
+            await addLogWithEffects(log);
+            stopNativeTimer();
+            resetState();
+          },
+        },
+        {
+          text: "Discard",
+          style: "destructive",
+          onPress: () => {
+            stopNativeTimer();
+            resetState();
+          },
+        },
+      ],
+      { cancelable: false }, // force a choice — no tapping outside to dismiss
+    );
+  };
+
+  // ── Mode Toggle ───────────────────────────────────────────────────────────
+
+  /**
+   * Switches between stopwatch and countdown. Only allowed when not running —
+   * the circle tap handler in TimerDisplay checks isRunning before calling this.
+   * Resets time state so the new mode starts clean.
+   */
+  const toggleMode = () => {
+    if (isRunning) return; // safety guard — shouldn't be callable while running
+    zeroHitRef.current = false;
+    setMode((prev) => (prev === "stopwatch" ? "countdown" : "stopwatch"));
+    //!setTime(0);
+    setPausedSeconds(0);
+    setStartTimestamp(null);
+    setLaps([]);
+  };
+
+  // Start timer
+  const start = () => {
+    zeroHitRef.current = false;
+    const now = Date.now();
+    setStartTimestamp(now);
+    //!
+    setNowMs(now);
+    setPausedSeconds(
+      mode === "countdown"
+        ? countdownTarget - time // track elapsed, not remaining
+        : time,
+    );
+    setIsRunning(true);
+
+    //!FIXME
+    /* showNotification(
+      title || "Timer",
+      now - pausedSeconds * 1000,
+      true,
+      pausedSeconds,
+    ); */
+    showNotification(
+      title || "Timer",
+      now - (mode === "countdown" ? countdownTarget - time : time) * 1000,
+      true,
+      time,
+    );
+  };
+
+  /*   // Resume timer
+  const resume = () => {
+    const now = Date.now();
+    setStartTimestamp(now); 
+    setPausedSeconds(time);
+    setIsRunning(true);
+  };
+ */
+  // Pause timer
+  const pause = () => {
+    if (startTimestamp) {
+      const elapsed =
+        pausedSeconds + Math.floor((Date.now() - startTimestamp) / 1000);
+      setPausedSeconds(() => elapsed);
+      const displayTime =
+        mode === "countdown" ? Math.max(0, countdownTarget - elapsed) : elapsed;
+      //!setTime(displayTime);
+      const now = Date.now();
+      showNotification(
+        title || "Timer",
+        Date.now() - elapsed * 1000,
+        false,
+        displayTime,
+      );
+      //!FIXME
+      /* showNotification(
+        title || "Timer",
+        now - pausedSeconds * 1000,
+        false,
+        elapsed,
+      ); */
+    }
+    setStartTimestamp(null);
+    setIsRunning(false);
+    //stopNativeTimer();
+  };
+
+  // Stop timer and save log
+  const stop = async () => {
+    const finalTime =
+      isRunning && startTimestamp
+        ? pausedSeconds + Math.floor((Date.now() - startTimestamp) / 1000)
+        : pausedSeconds;
+    //! Freeze immediately so nothing can tick during the `await` below.
+    setIsRunning(false);
+    setStartTimestamp(null);
+    var log: TimerLog | null = null;
+    //const workedTime = finalTime;
+    if (finalTime > 0) {
+      log = {
+        id: randomUUID(),
+        title: title || "Untitled Activity",
+        category: category.trim() || undefined,
+        startTime: new Date(Date.now() - finalTime * 1000).toISOString(),
+        endTime: new Date().toISOString(),
+        duration: finalTime,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        laps: laps.length > 0 ? laps : undefined,
+      };
+      await addLogWithEffects(log);
+
+      stopNativeTimer();
+    }
+
+    resetState();
+    console.log(mode);
+    return log;
+  };
+  const resetWithConfirmation = () => {
+    if (time === 0) {
+      // Nothing running — silent reset is fine
+      resetState();
+      return;
+    }
+
+    Alert.alert(
+      "Reset Timer",
+      "What would you like to do with the current session?",
+      [
+        {
+          text: "Save & Reset",
+          onPress: async () => {
+            // Save as partial log so the time isn't lost
+            const finalTime =
+              isRunning && startTimestamp
+                ? pausedSeconds +
+                  Math.floor((Date.now() - startTimestamp) / 1000)
+                : pausedSeconds;
+
+            if (finalTime > 0) {
+              const log: TimerLog = {
+                id: randomUUID(),
+                title: title || "Untitled Activity",
+                category: category.trim() || undefined,
+                startTime: new Date(
+                  Date.now() - finalTime * 1000,
+                ).toISOString(),
+                endTime: new Date().toISOString(),
+                duration: finalTime,
+                laps: laps.length > 0 ? laps : undefined,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                isPartial: true, // flagged so the log item can show "(partial)"
+              };
+              await addLogWithEffects(log);
+            }
+            stopNativeTimer();
+            resetState();
+          },
+        },
+        {
+          text: "Discard",
+          style: "destructive",
+          onPress: () => {
+            stopNativeTimer();
+            resetState();
+          },
+        },
+        { text: "Cancel", style: "cancel" },
+      ],
+    );
+  };
+
+  // Internal: zero out all timer state. Called by both stop() and reset paths.
+  const resetState = () => {
+    //!setTime(0);
+    setTitle("");
+    setCategory("");
+    setLaps([]);
+    setStartTimestamp(null);
+    setPausedSeconds(0);
+    setIsRunning(false);
+    stopNativeTimer();
+    zeroHitRef.current = false;
+  };
+
+  const lap = () => {
+    if (!isRunning || mode === "countdown") return;
+    setLaps((prev) => [...prev, time]);
+  };
+
+  const value: TimerContextType = {
+    time,
+    isRunning,
+    title,
+    category,
+    laps,
+    mode,
+    countdownTarget,
+    toggleMode,
+    setCountdownTarget,
+    start,
+    pause,
+    stop,
+    reset: resetWithConfirmation,
+    lap,
+    setTitle,
+    setCategory,
+  };
+  return (
+    <TimerContext.Provider value={value}>{children}</TimerContext.Provider>
+  );
+}

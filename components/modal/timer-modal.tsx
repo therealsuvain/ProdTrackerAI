@@ -3,7 +3,7 @@ import { StyleSheet, View, Text } from "react-native";
 import { Button, Modal, TextInput } from "react-native-paper";
 import { ThemeContext } from "@/context/ThemeContext";
 import { TimerLog } from "@/types/timer";
-import { formatDuration } from "@/context/TimerContext";
+import { formatDuration } from "@/utils/Timer-utils/timer-math";
 import { withAlpha } from "@/utils/common-utils";
 import { useTagsAndCategories } from "@/hooks/use-tags-and-categories";
 import { TagsAndCategorySection } from "../ui/shared/tags-and-categories-addon";

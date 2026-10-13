@@ -112,7 +112,6 @@ interface Props {
 export const ChatScreen = ({ visible, onDismiss }: Props) => {
   const headerHeight = useHeaderHeight();
   const { theme } = useContext(ThemeContext);
-  const { setTitle, start, stop } = useTimer();
   const navigation = useNavigation();
   const { isLoading, startRecording, stopRecording, transcript, error } =
     useVoiceInput({});
@@ -320,9 +319,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       const { response, calls } = await processCommandAgentic(
         text,
         {
-          setTitle,
-          start,
-          stop,
           navigation,
         },
         {},
@@ -401,9 +397,6 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       const response = await agenticExecutor(
         actions,
         {
-          setTitle,
-          start,
-          stop,
           navigation,
         },
         transcript,
