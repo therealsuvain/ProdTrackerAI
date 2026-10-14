@@ -39,7 +39,7 @@ export const AchievementToast = ({ badge }: AchievementToastProps) => {
     if (!badge?.id) return;
     console.log("Badge ID:", badge.id);
     router.push({
-      pathname: "/achievements", // Change to your actual route path
+      pathname: "/achievements",
       params: { targetBadgeId: badge.id },
     });
   };

@@ -1,5 +1,5 @@
 import { View, StyleSheet, FlatList, Text } from "react-native";
-import { useContext, useState, useCallback } from "react";
+import { useContext, useState, useCallback, useRef, useEffect } from "react";
 import { FAB, Portal, Searchbar } from "react-native-paper";
 import { Habit } from "@/types/habits";
 
@@ -29,6 +29,7 @@ import {
 import { useHabitStore } from "@/stores/use-habit-store";
 import { useShallow } from "zustand/shallow";
 import { useDailyMetrics } from "@/stores/use-metrics-store";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 function HabitsScreenInner() {
   const { theme, isDarkMode } = useContext(ThemeContext);
@@ -41,6 +42,14 @@ function HabitsScreenInner() {
   const [completedHabit, setCompletedHabit] = useState<Habit | null>(null);
   const { showToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
+  const router = useRouter();
+
+  const { openAdd, openAddRequest } = useLocalSearchParams<{
+    openAdd?: string;
+    openAddRequest?: string;
+  }>();
+
+  const handledOpenAddRequest = useRef<string | null>(null);
   const { state, updateField, onSubmit } = useHabitForm({
     addHabit: addHabitWithEffects,
     editHabit: editHabitWithEffects,
@@ -71,6 +80,7 @@ function HabitsScreenInner() {
       return;
     }
     setEditingHabit(null);
+    setVisibleInEditMode(false);
     setVisible(true);
   };
   const hideModal = () => {
@@ -197,7 +207,26 @@ function HabitsScreenInner() {
       </View>
     </View>
   );
+  useEffect(() => {
+    if (
+      openAdd !== "1" ||
+      !openAddRequest ||
+      handledOpenAddRequest.current === openAddRequest
+    ) {
+      return;
+    }
 
+    // Prevent this request from opening the modal more than once.
+    handledOpenAddRequest.current = openAddRequest;
+
+    showModal();
+
+    // Clear the request so it won't be replayed on a later visit.
+    router.setParams({
+      openAdd: undefined,
+      openAddRequest: undefined,
+    });
+  }, [openAdd, openAddRequest, router, showModal]);
   return (
     <>
       <View style={[styles.container, { backgroundColor: theme.background }]}>

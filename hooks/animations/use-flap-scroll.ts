@@ -1,0 +1,270 @@
+import { useCallback } from 'react';
+import type { LayoutChangeEvent } from 'react-native';
+import {
+    Extrapolation,
+    interpolate,
+    useAnimatedReaction,
+    useAnimatedScrollHandler,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
+    withDelay,      // new
+    withSequence,   // new
+} from 'react-native-reanimated';
+
+// ─── TUNING ──────────────────────────────────────────────────────
+// Same natural frequency as your old config (sqrt(25 / 0.25) = 10 rad/s) so the
+// swing speed feels identical. Only damping changes: 0.2 -> 1.25 (damping ratio
+// 0.04 -> 0.25). Still swings back and forth ~4 times, but comes to rest in ~2s
+// instead of ringing for 10-20s. Lower damping = more swings, higher = fewer.
+const FLAP_SPRING = {
+    mass: 0.25, stiffness: 25, damping: 0.5,
+    restDisplacementThreshold: 0.5, // degrees
+    restSpeedThreshold: 5,          // deg/s
+    energyThreshold: 3e-4,
+};
+
+
+const MIN_DELAY_MS = 0;
+const MAX_DELAY_MS = 150;
+const BURST_START = 0.15;  // px/ms: scrolling faster than this counts as "a scroll started"
+const BURST_END = 0.03;    // px/ms: slower than this counts as "stopped"; next speed-up fires again
+
+
+const ENTER_MARGIN = 24;   // px the title must be inside the viewport before it flaps
+const COOLDOWN_MS = 500;   // stops re-triggering when scroll jitters around the edge
+const MIN_AMP = 10;        // degrees at slow scroll
+const MAX_AMP = 42;        // degrees at fast fling
+const LAUNCH_AMP = 26;     // degrees when it appears without scrolling (first load)
+const SLOW_SPEED = 0.1;    // px/ms  -> MIN_AMP
+const FAST_SPEED = 2.5;    // px/ms  -> MAX_AMP
+const KICK_VELOCITY_PER_DEG = 11.6; // deg/s of initial speed per degree of peak swing, tuned for damping 0.5
+
+// ─── SCREEN LEVEL: one per ScrollView ────────────────────────────
+// Everything here runs on the UI thread. No JS timers, no runOnUI.
+export function useFlapScroll() {
+    const scrollY = useSharedValue(0);
+    const viewportH = useSharedValue(0);
+    const velocity = useSharedValue(0); // px/ms, signed (+ = scrolling down)
+    const lastY = useSharedValue(0);
+    const lastT = useSharedValue(0);
+    const burst = useSharedValue(0);       // increments each time a scroll "starts"
+    const active = useSharedValue(false);
+
+    /* const scrollHandler = useAnimatedScrollHandler({
+        onScroll: (e) => {
+            const y = e.contentOffset.y;
+            const now = Date.now();
+            const dt = now - lastT.value;
+
+            if (dt > 150) {
+                // first event of a new gesture: no meaningful velocity yet
+                velocity.value = 0;
+                lastY.value = y;
+                lastT.value = now;
+            } else if (dt >= 8) {
+                const instant = (y - lastY.value) / dt;
+                velocity.value = velocity.value * 0.6 + instant * 0.4; // smooth
+                lastY.value = y;
+                lastT.value = now;
+            }
+
+            scrollY.value = y;
+            if (viewportH.value === 0) viewportH.value = e.layoutMeasurement.height;
+        },
+        onMomentumEnd: () => {
+            velocity.value = 0;
+        },
+    }); */
+    const scrollHandler = useAnimatedScrollHandler({
+        onBeginDrag: () => {
+            velocity.value = 0;
+            active.value = false;
+        },
+        onScroll: (e) => {
+            const y = e.contentOffset.y;
+            const now = Date.now();
+            const dt = now - lastT.value;
+
+            if (dt > 150) {
+                velocity.value = 0;
+                active.value = false;
+                lastY.value = y;
+                lastT.value = now;
+            } else if (dt >= 8) {
+                const instant = (y - lastY.value) / dt;
+                velocity.value = velocity.value * 0.6 + instant * 0.4;
+                lastY.value = y;
+                lastT.value = now;
+            }
+
+            const speed = Math.abs(velocity.value);
+            if (!active.value && speed > BURST_START) {
+                active.value = true;
+                burst.value += 1;
+            } else if (active.value && speed < BURST_END) {
+                active.value = false;
+            }
+
+            scrollY.value = y;
+            if (viewportH.value === 0) viewportH.value = e.layoutMeasurement.height;
+        },
+        onMomentumEnd: () => {
+            velocity.value = 0;
+            active.value = false;
+        },
+    });
+
+    const onViewportLayout = useCallback((e: LayoutChangeEvent) => {
+        viewportH.value = e.nativeEvent.layout.height;
+    }, []);
+
+    // call when the ScrollView is (re)mounted so stale offsets don't linger
+    const reset = useCallback(() => {
+        scrollY.value = 0;
+        velocity.value = 0;
+        lastY.value = 0;
+        lastT.value = 0;
+    }, []);
+
+    /* return { scrollY, viewportH, velocity, scrollHandler, onViewportLayout, reset }; */
+    return { scrollY, viewportH, velocity, burst, scrollHandler, onViewportLayout, reset };
+}
+
+export type FlapScroll = ReturnType<typeof useFlapScroll>;
+
+// ─── TITLE LEVEL: one per Animated.Text ──────────────────────────
+export function useFlapTitle(scroll: FlapScroll) {
+    const top = useSharedValue(0);      // y inside the ScrollView content
+    const height = useSharedValue(0);
+    const rotateX = useSharedValue(0);
+    const opacity = useSharedValue(0);
+    const lift = useSharedValue(14);
+    const lastFlap = useSharedValue(0);
+    const revealed = useSharedValue(false);
+
+    const onLayout = useCallback((e: LayoutChangeEvent) => {
+        const { y, height: h } = e.nativeEvent.layout;
+        top.value = y;
+        height.value = h;
+    }, []);
+
+    const isInView = () => {
+        'worklet';
+        const vh = scroll.viewportH.value;
+        const h = height.value;
+        if (vh === 0 || h === 0) return false;
+        const y = scroll.scrollY.value;
+        const t = top.value;
+        return t < y + vh - ENTER_MARGIN && t + h > y;
+    };
+
+    const flap = () => {
+        'worklet';
+        if (!revealed.value) {
+            revealed.value = true;
+            opacity.value = withTiming(1, { duration: 400 });
+            lift.value = withSpring(0, { damping: 18, stiffness: 180 });
+        }
+
+        const now = Date.now();
+        if (now - lastFlap.value < COOLDOWN_MS) return;
+        lastFlap.value = now;
+
+        const v = scroll.velocity.value;
+        const speed = Math.abs(v);
+        const amp =
+            speed < 0.02
+                ? LAUNCH_AMP
+                : interpolate(speed, [SLOW_SPEED, FAST_SPEED], [MIN_AMP, MAX_AMP], Extrapolation.CLAMP);
+        const dir = v < 0 ? 1 : -1;
+
+        const delay = MIN_DELAY_MS + Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS);
+        rotateX.value = withDelay(
+            delay,
+            withSequence(
+                withTiming(dir * amp, { duration: 0 }),
+                withSpring(0, {
+                    ...FLAP_SPRING,
+                    velocity: dir * amp * KICK_VELOCITY_PER_DEG,
+                }),
+            ),
+        );
+    };
+
+    // A) title scrolls into view
+    useAnimatedReaction(isInView, (inView, wasInView) => {
+        if (inView && !wasInView) flap();
+    });
+
+    // B) a scroll starts while the title is already on screen
+    useAnimatedReaction(
+        () => scroll.burst.value,
+        (b, prev) => {
+            if (prev === null || b === prev) return; // ignore the initial run
+            if (isInView()) flap();
+        },
+    );
+    /* useAnimatedReaction(
+        () => {
+            const vh = scroll.viewportH.value;
+            const h = height.value;
+            if (vh === 0 || h === 0) return false;
+            const y = scroll.scrollY.value;
+            const t = top.value;
+            return t < y + vh - ENTER_MARGIN && t + h > y;
+        },
+        (inView, wasInView) => {
+            // fire only on the false -> true edge ("title just scrolled in")
+            if (!inView || wasInView) return;
+
+            if (!revealed.value) {
+                revealed.value = true;
+                opacity.value = withTiming(1, { duration: 400 });
+                lift.value = withSpring(0, { damping: 18, stiffness: 180 });
+            }
+
+            const now = Date.now();
+            if (now - lastFlap.value < COOLDOWN_MS) return;
+            lastFlap.value = now;
+
+            const v = scroll.velocity.value;
+            const speed = Math.abs(v);
+            const amp =
+                speed < 0.02
+                    ? LAUNCH_AMP
+                    : interpolate(speed, [SLOW_SPEED, FAST_SPEED], [MIN_AMP, MAX_AMP], Extrapolation.CLAMP);
+            const dir = v < 0 ? 1 : -1; // scrolling up kicks the other way
+
+            // assigning cancels any spring still running, so no stacking
+            //  rotateX.value = dir * amp;
+            // rotateX.value = withSpring(0, FLAP_SPRING); 
+            //!Above is with delay below is with delay
+            const delay = MIN_DELAY_MS + Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS);
+            rotateX.value = withDelay(
+                delay,
+                withSequence(
+                    withTiming(dir * amp, { duration: 0 }), // snap to the kick angle when the delay ends
+                    withSpring(0, FLAP_SPRING),
+                ),
+            );
+        },
+    ); */
+
+    // identical transform to your original: hinge at the top edge
+    const animatedStyle = useAnimatedStyle(() => {
+        const half = height.value / 2;
+        return {
+            opacity: opacity.value,
+            transform: [
+                { perspective: 500 },
+                { translateY: -half },
+                { rotateX: `${rotateX.value}deg` },
+                { translateY: half + lift.value },
+            ],
+        };
+    });
+
+    return { onLayout, animatedStyle };
+}

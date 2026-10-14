@@ -1,5 +1,17 @@
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
-import React, { useCallback, useContext, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import Animated from "react-native-reanimated";
 import {
   Button,
@@ -13,6 +25,7 @@ import {
   Text,
 } from "react-native-paper";
 import { useShallow } from "zustand/react/shallow";
+import { useRouter } from "expo-router";
 
 import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
 import EventItem from "@/components/ui/calendar-events/event-item";
@@ -26,7 +39,7 @@ import { ThemeContext } from "@/context/ThemeContext";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useSearch } from "@/hooks/use-search";
 import { selectedDateTaskIds, useTaskStore } from "@/stores/use-task-store";
-import { getTodayISO } from "@/utils/common-utils";
+import { getTodayISO, withAlpha } from "@/utils/common-utils";
 import { useFlapAnimation } from "@/hooks/animations/use-flap-animation-new";
 import { useHaptics } from "@/hooks/use-haptics";
 import { useDbErrorToast } from "@/components/shared/db-error-toast";
@@ -40,6 +53,16 @@ import { useSync } from "@/context/SyncContext";
 import LoadingIndicator from "@/components/shared/loading-indicator";
 import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 import { sqlite } from "@/db";
+import {
+  useFlapScroll,
+  useFlapTitle,
+} from "@/hooks/animations/use-flap-scroll";
+import {
+  HomeAllEmptyState,
+  HomeEmptyStateCard,
+} from "@/components/ui/home/empty-states";
+import { set } from "date-fns";
+import { Ionicons } from "@expo/vector-icons";
 
 const EMPTY_IDS: string[] = [];
 
@@ -56,6 +79,13 @@ function HomeScreenInner() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const todayDate = useMemo(() => getTodayISO(), [isFocused]);
   const { isSyncing } = useSync();
+  const router = useRouter();
+  const HOME_ROUTES = {
+    tasks: "/(tabs)/task-screen",
+    calendar: "/(tabs)/calendar-screen",
+    habits: "/(tabs)/habits-screen",
+    timer: "/(tabs)/timer-screen",
+  } as const;
   const isSelectedDateToday = useMemo(
     () => selectedDate.toDateString() === todayDate,
     [selectedDate, todayDate],
@@ -122,7 +152,59 @@ function HomeScreenInner() {
     console.log("[DebugAuthProbe]", { authLoaded, userId, isAnonymous });
     return null;
   }; */
+  // in HomeScreenInner, replacing the commented-out block:
+  const flapScroll = useFlapScroll();
+  const todayFlap = useFlapTitle(flapScroll);
+  const eventsFlap = useFlapTitle(flapScroll);
+  const timerLogsFlap = useFlapTitle(flapScroll);
+  const habitsFlap = useFlapTitle(flapScroll);
 
+  const allSectionsEmpty =
+    todaysTaskIds.length === 0 &&
+    upcomingEvents.length === 0 &&
+    activeHabits.length === 0 &&
+    recentLogs.length === 0;
+
+  const navigateToAddScreen = useCallback(
+    (
+      pathname:
+        | typeof HOME_ROUTES.tasks
+        | typeof HOME_ROUTES.calendar
+        | typeof HOME_ROUTES.habits,
+    ) => {
+      router.push({
+        pathname,
+        params: {
+          openAdd: "1",
+          openAddRequest: String(Date.now()),
+        },
+      });
+    },
+    [router],
+  );
+
+  const openAddTask = useCallback(
+    () => navigateToAddScreen(HOME_ROUTES.tasks),
+    [navigateToAddScreen],
+  );
+
+  const openAddEvent = useCallback(
+    () => navigateToAddScreen(HOME_ROUTES.calendar),
+    [navigateToAddScreen],
+  );
+
+  const openAddHabit = useCallback(
+    () => navigateToAddScreen(HOME_ROUTES.habits),
+    [navigateToAddScreen],
+  );
+
+  const openTimer = useCallback(() => {
+    router.navigate(HOME_ROUTES.timer);
+  }, [router]);
+
+  useEffect(() => {
+    if (viewMode === "overview") flapScroll.reset(); // ScrollView remounts at offset 0
+  }, [viewMode]);
   const toggleTaskCompleted = useCallback(
     async (id: string) => {
       void toggleTaskWithEffects(id);
@@ -147,7 +229,7 @@ function HomeScreenInner() {
     <Provider>
       {isSyncing && <LoadingIndicator />}
 
-      <View style={{ backgroundColor: theme.background }}>
+      {/*       <View style={{ backgroundColor: theme.background }}>
         <SegmentedButtons
           value={viewMode}
           onValueChange={(value) =>
@@ -158,8 +240,6 @@ function HomeScreenInner() {
               value: "overview",
               label: "Overview",
               icon: "view-dashboard",
-              uncheckedColor: theme.text,
-              checkedColor: theme.blueLightPrimary,
               style: {
                 backgroundColor:
                   viewMode === "overview"
@@ -171,8 +251,6 @@ function HomeScreenInner() {
               value: "timeline",
               label: "Today's Timeline",
               icon: "timeline",
-              uncheckedColor: theme.text,
-              checkedColor: theme.blueLightPrimary,
               style: {
                 backgroundColor:
                   viewMode === "timeline"
@@ -183,254 +261,386 @@ function HomeScreenInner() {
           ]}
           style={[styles.viewSwitcher, { backgroundColor: theme.background }]}
         />
-      </View>
-      {viewMode === "overview" ? (
-        <ScrollView style={{ backgroundColor: theme.background }}>
-          <Searchbar
-            style={{
-              marginVertical: 4,
-              backgroundColor: theme.taskBaseTransToo,
-            }}
-            placeholder="Search Everything"
-            onChangeText={performSearch}
-            value={query}
-          />
-          {results.length > 0 && (
-            <Button onPress={() => setSearchVisible(true)}>
-              {" "}
-              View Results ({results.length})
-            </Button>
-          )}
-
-          {/*    <Animated.Text
-            onLayout={todayFlap.onLayout}
-            style={[
-              styles.sectionTitle,
-              todayFlap.animatedStyle,
-              {
-                color: theme.taskBase,
-              },
-            ]}
-          >
-            Today's Task
-          </Animated.Text> */}
-          <Text
-            style={[
-              styles.sectionTitle,
-              {
-                color: theme.taskBase,
-              },
-            ]}
-          >
-            Today's Task
-          </Text>
-          {todaysTaskIds.length > 0 ? (
-            todaysTaskIds.map((taskId) => (
-              <TaskItem
-                key={taskId}
-                id={taskId}
-                onToggleComplete={toggleTaskCompleted}
-              />
-            ))
+      </View> */}
+      <View
+        style={{ paddingTop: 10, flex: 1, backgroundColor: theme.background }}
+      >
+        {viewMode === "overview" ? (
+          allSectionsEmpty ? (
+            <HomeAllEmptyState
+              backgroundColor={theme.background}
+              accentColor={theme.taskBase}
+              textColor={theme.text}
+              onViewTimeline={() => setViewMode("timeline")}
+              actions={[
+                {
+                  id: "tasks",
+                  icon: "checkbox-marked-circle-outline",
+                  title: "Today's Tasks",
+                  subtitle: "Add a task for today",
+                  accentColor: theme.taskBase,
+                  onPress: openAddTask,
+                },
+                {
+                  id: "events",
+                  icon: "calendar-blank-outline",
+                  title: "Upcoming Events",
+                  subtitle: "Make room for something important",
+                  accentColor: theme.eventBase,
+                  onPress: openAddEvent,
+                },
+                {
+                  id: "habits",
+                  icon: "sprout",
+                  title: "Active Habits",
+                  subtitle: "Build a routine, one step at a time",
+                  accentColor: theme.habitBase,
+                  onPress: openAddHabit,
+                },
+                {
+                  id: "timer",
+                  icon: "timer-outline",
+                  title: "Timer Sessions",
+                  subtitle: "Start a focused session",
+                  accentColor: theme.timerBase,
+                  onPress: openTimer,
+                },
+              ]}
+            />
           ) : (
-            <Text style={{ color: theme.taskBase }}>No task Today</Text>
-          )}
-          <Divider style={styles.divider} />
-
-          {/*           <Animated.Text
-            onLayout={eventsFlap.onLayout}
-            style={[
-              styles.sectionTitle,
-              eventsFlap.animatedStyle,
-              {
-                color: theme.eventBase,
-              },
-            ]}
-          >
-            Upcoming Events
-          </Animated.Text> */}
-          <Text
-            style={[
-              styles.sectionTitle,
-              {
-                color: theme.eventBase,
-              },
-            ]}
-          >
-            Upcoming Events
-          </Text>
-          {upcomingEvents.length ? (
-            upcomingEvents.map((eventId) => (
-              <EventItem key={eventId} id={eventId}></EventItem>
-            ))
-          ) : (
-            <Text style={{ color: theme.eventBase }}>No Upcoming Events</Text>
-          )}
-          <Divider style={styles.divider} />
-
-          {/*           <Animated.Text
-            onLayout={timerLogsFlap.onLayout}
-            style={[
-              styles.sectionTitle,
-              timerLogsFlap.animatedStyle,
-              {
-                color: theme.timerBase,
-              },
-            ]}
-          >
-            Recent Timer Logs
-          </Animated.Text> */}
-          <Text
-            style={[
-              styles.sectionTitle,
-              {
-                color: theme.timerBase,
-              },
-            ]}
-          >
-            Recent Timer Logs
-          </Text>
-          {recentLogs.length ? (
-            recentLogs.map((log) => (
-              <TimerLogItem
-                key={log}
-                logId={log}
-                onDelete={() => {}}
-                onEdit={() => {}}
-              />
-            ))
-          ) : (
-            <Text style={{ color: theme.timerBase }}>No Recent Logs</Text>
-          )}
-          <Divider style={styles.divider} />
-
-          {/*           <Animated.Text
-            onLayout={habitsFlap.onLayout}
-            style={[
-              styles.sectionTitle,
-              habitsFlap.animatedStyle,
-              {
-                color: theme.habitBase,
-              },
-            ]}
-          >
-            Active Habits
-          </Animated.Text> */}
-          <Text
-            style={[
-              styles.sectionTitle,
-              {
-                color: theme.habitBase,
-              },
-            ]}
-          >
-            Active Habits
-          </Text>
-          {activeHabits.length ? (
-            activeHabits.map((id) => (
-              <HabitItem
-                key={id}
-                id={id}
-                onCheckin={handleHabitUpdate}
-                onDelete={() => 0}
-                onEdit={() => 0}
-              />
-            ))
-          ) : (
-            <Text style={{ color: theme.habitBase }}>No Active Habits</Text>
-          )}
-          <Divider style={styles.divider} />
-          <Portal>
-            <Modal
-              visible={searchVisible}
-              onDismiss={() => setSearchVisible(false)}
+            <Animated.ScrollView
+              style={{ backgroundColor: theme.background }}
+              onScroll={flapScroll.scrollHandler}
+              scrollEventThrottle={16}
+              onLayout={flapScroll.onViewportLayout}
             >
-              <SearchResults
-                results={results}
-                onItemPress={(result) => {
-                  setSearchVisible(false);
-                }}
-              />
-            </Modal>
-          </Portal>
-        </ScrollView>
-      ) : (
-        <View
-          style={[
-            styles.timelineContainer,
-            { backgroundColor: theme.background },
-          ]}
-        >
-          {/* Date selector */}
-          <View style={styles.dateSelector}>
-            <Button
-              icon="chevron-left"
-              labelStyle={{
-                fontWeight: "condensedBold",
-                fontSize: 16,
-                color: theme.blueDarkPrimary,
-                textShadowColor: theme.text,
-                textShadowRadius: 0.1,
-                textShadowOffset: { width: 0, height: 0.1 },
-              }}
-              onPress={() => {
-                const newDate = new Date(selectedDate);
-                newDate.setDate(newDate.getDate() - 1);
-                setSelectedDate(newDate);
-              }}
-            >
-              {/*               <Text
+              <Searchbar
                 style={{
+                  marginVertical: 4,
+                  backgroundColor: theme.taskBaseTransToo,
+                }}
+                placeholder="Search Everything"
+                onChangeText={performSearch}
+                value={query}
+              />
+              {results.length > 0 && (
+                <Button onPress={() => setSearchVisible(true)}>
+                  {" "}
+                  View Results ({results.length})
+                </Button>
+              )}
+
+              <Animated.Text
+                onLayout={todayFlap.onLayout}
+                style={[
+                  styles.sectionTitle,
+                  todayFlap.animatedStyle,
+                  {
+                    color: theme.taskBase,
+                  },
+                ]}
+              >
+                Today's Task
+              </Animated.Text>
+              {/* <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: theme.taskBase,
+              },
+            ]}
+          >
+            Today's Task
+          </Text> */}
+              {todaysTaskIds.length > 0 ? (
+                todaysTaskIds.map((taskId) => (
+                  <TaskItem
+                    key={taskId}
+                    id={taskId}
+                    onToggleComplete={toggleTaskCompleted}
+                  />
+                ))
+              ) : (
+                <HomeEmptyStateCard
+                  icon="checkbox-multiple-marked-outline"
+                  accentColor={theme.taskBase}
+                  textColor={theme.text}
+                  title="A fresh page"
+                  description="Nothing planned for today. Add one small win to get started."
+                  actionLabel="Add task"
+                  onPress={openAddTask}
+                />
+              )}
+              <Divider style={styles.divider} />
+
+              <Animated.Text
+                onLayout={eventsFlap.onLayout}
+                style={[
+                  styles.sectionTitle,
+                  eventsFlap.animatedStyle,
+                  {
+                    color: theme.eventBase,
+                  },
+                ]}
+              >
+                Upcoming Events
+              </Animated.Text>
+              {/*  <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: theme.eventBase,
+              },
+            ]}
+          >
+            Upcoming Events
+          </Text> */}
+              {upcomingEvents.length ? (
+                upcomingEvents.map((eventId) => (
+                  <EventItem key={eventId} id={eventId}></EventItem>
+                ))
+              ) : (
+                <HomeEmptyStateCard
+                  icon="calendar-month-outline"
+                  accentColor={theme.eventBase}
+                  textColor={theme.text}
+                  title="Room to breathe"
+                  description="No upcoming events. Your schedule is open."
+                  actionLabel="Schedule event"
+                  onPress={openAddEvent}
+                />
+              )}
+              <Divider style={styles.divider} />
+
+              <Animated.Text
+                onLayout={timerLogsFlap.onLayout}
+                style={[
+                  styles.sectionTitle,
+                  timerLogsFlap.animatedStyle,
+                  {
+                    color: theme.timerBase,
+                  },
+                ]}
+              >
+                Recent Timer Logs
+              </Animated.Text>
+              {/* <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: theme.timerBase,
+              },
+            ]}
+          >
+            Recent Timer Logs
+          </Text> */}
+              {recentLogs.length ? (
+                recentLogs.map((log) => (
+                  <TimerLogItem
+                    key={log}
+                    logId={log}
+                    onDelete={() => {}}
+                    onEdit={() => {}}
+                  />
+                ))
+              ) : (
+                <HomeEmptyStateCard
+                  icon="timer-settings-outline"
+                  accentColor={theme.timerBase}
+                  textColor={theme.text}
+                  title="Ready when you are"
+                  description="No timer sessions logged yet. Start a focused session whenever you're ready."
+                  actionLabel="Start a session"
+                  onPress={openTimer}
+                />
+              )}
+              <Divider style={styles.divider} />
+
+              <Animated.Text
+                onLayout={habitsFlap.onLayout}
+                style={[
+                  styles.sectionTitle,
+                  habitsFlap.animatedStyle,
+                  {
+                    color: theme.habitBase,
+                  },
+                ]}
+              >
+                Active Habits
+              </Animated.Text>
+              {/* <Text
+            style={[
+              styles.sectionTitle,
+              {
+                color: theme.habitBase,
+              },
+            ]}
+          >
+            Active Habits
+          </Text> */}
+              {activeHabits.length ? (
+                activeHabits.map((id) => (
+                  <HabitItem
+                    key={id}
+                    id={id}
+                    onCheckin={handleHabitUpdate}
+                    onDelete={() => 0}
+                    onEdit={() => 0}
+                  />
+                ))
+              ) : (
+                <HomeEmptyStateCard
+                  icon="sprout"
+                  accentColor={theme.habitBase}
+                  textColor={theme.text}
+                  title="Growth starts small"
+                  description="Start building a routine, one repeatable action at a time."
+                  actionLabel="Add a habit"
+                  onPress={openAddHabit}
+                />
+              )}
+              <Divider style={styles.divider} />
+              <Portal>
+                <Modal
+                  visible={searchVisible}
+                  onDismiss={() => setSearchVisible(false)}
+                >
+                  <SearchResults
+                    results={results}
+                    onItemPress={(result) => {
+                      setSearchVisible(false);
+                    }}
+                  />
+                </Modal>
+              </Portal>
+            </Animated.ScrollView>
+          )
+        ) : (
+          <View
+            style={[
+              styles.timelineContainer,
+              { backgroundColor: theme.background },
+            ]}
+          >
+            {/* Date selector */}
+            <View style={styles.dateSelector}>
+              {/* <Button
+                icon="chevron-left"
+                labelStyle={{
+                  fontWeight: "condensedBold",
+                  fontSize: 30,
                   color: theme.blueDarkPrimary,
                   textShadowColor: theme.text,
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 0,
+                  //textShadowRadius: 0.1,
+                  //textShadowOffset: { width: 0, height: 0.1 },
+                }}
+                onPress={() => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setDate(newDate.getDate() - 1);
+                  setSelectedDate(newDate);
                 }}
               >
-                Previous
-              </Text> */}
-              Previous
-            </Button>
-            <Button
-              mode="contained"
-              buttonColor={theme.blueDarkPrimary}
-              textColor={theme.whiteBase}
-              onPress={() => setSelectedDate(new Date())}
-            >
-              {isSelectedDateToday ? "Today" : selectedDate.toDateString()}
-            </Button>
-            <Button
-              icon="chevron-right"
-              labelStyle={{
-                fontWeight: "condensedBold",
-                fontSize: 16,
-                color: theme.blueDarkPrimary,
-                textShadowColor: "#ffffffa9",
-                textShadowRadius: 0.1,
-                textShadowOffset: { width: 0, height: 0.1 },
-              }}
-              onPress={() => {
-                const newDate = new Date(selectedDate);
-                newDate.setDate(newDate.getDate() + 1);
-                setSelectedDate(newDate);
-              }}
-            >
-              Next
-            </Button>
-          </View>
+                
+              </Button> */}
+              <Pressable
+                onPress={() => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setDate(newDate.getDate() + 1);
+                  setSelectedDate(newDate);
+                }}
+                style={({ pressed }) => {
+                  return {
+                    opacity: pressed ? 0.5 : 1,
+                  };
+                }}
+              >
+                <Ionicons
+                  name="chevron-back-circle-sharp"
+                  size={36}
+                  color="white"
+                />
+              </Pressable>
+              <Button
+                mode="elevated"
+                // buttonColor={theme.blueDarkPrimary}
+                textColor={theme.whiteBase}
+                onPress={() => setSelectedDate(new Date())}
+              >
+                {isSelectedDateToday ? "Today" : selectedDate.toDateString()}
+              </Button>
+              {/*  <Button
+                icon="chevron-right"
+                style={{
+                  marginLeft: 20,
+                  width: 50,
+                  height: 50,
+                  borderRadius: 25,
+                  borderColor: theme.blueDarkPrimary,
+                  borderWidth: 2,
+                }}
+                labelStyle={{
+                  fontWeight: "condensedBold",
+                  fontSize: 30,
+                  color: theme.blueDarkPrimary,
+                  textShadowColor: "#ffffffa9",
+                  //textShadowRadius: 0.1,
+                  //textShadowOffset: { width: 0, height: 0.1 },
+                }}
+                onPress={() => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setDate(newDate.getDate() + 1);
+                  setSelectedDate(newDate);
+                }}
+              >
+                {" "}
+              </Button> */}
+              <Pressable
+                onPress={() => {
+                  const newDate = new Date(selectedDate);
+                  newDate.setDate(newDate.getDate() + 1);
+                  setSelectedDate(newDate);
+                }}
+                style={({ pressed }) => {
+                  return {
+                    opacity: pressed ? 0.5 : 1,
+                  };
+                }}
+              >
+                <Ionicons
+                  name="chevron-forward-circle-sharp"
+                  size={36}
+                  color="white"
+                />
+              </Pressable>
+            </View>
 
-          <UnifiedTimeline
-            selectedDate={selectedDate}
-            onTaskToggle={toggleTaskCompleted}
-            onHabitCheckIn={handleHabitUpdate}
-          />
-        </View>
-      )}
+            <UnifiedTimeline
+              selectedDate={selectedDate}
+              onTaskToggle={toggleTaskCompleted}
+              onHabitCheckIn={handleHabitUpdate}
+            />
+          </View>
+        )}
+      </View>
       <FAB
         style={styles.fab}
         color="white"
         icon="brain"
         onPress={() => setAiVisible(true)}
+      />
+      <FAB
+        style={styles.fabTimeline}
+        variant="surface"
+        color="white"
+        size="small"
+        icon={
+          viewMode === "overview" ? "timeline-clock-outline" : "view-dashboard"
+        }
+        onPress={() =>
+          viewMode === "overview"
+            ? setViewMode("timeline")
+            : setViewMode("overview")
+        }
       />
       {aiVisible && (
         <Portal>
@@ -470,9 +680,10 @@ const styles = StyleSheet.create({
   viewSwitcher: { marginVertical: 12 },
   timelineContainer: { flex: 1 },
   dateSelector: {
+    gap: 6,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "center",
     marginBottom: 8,
   },
   fab: {
@@ -480,5 +691,15 @@ const styles = StyleSheet.create({
     bottom: 80,
     right: 16,
     backgroundColor: "grey",
+  },
+
+  fabTimeline: {
+    position: "absolute",
+    top: 20,
+    right: 16,
+    borderRadius: 20,
+    borderColor: "white",
+    borderWidth: 0.25,
+    backgroundColor: "transparent",
   },
 });

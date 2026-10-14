@@ -32,6 +32,7 @@ import { inputToLowerCaseAndTrim } from "../common-utils";
 import { applyRemoteMergedCategory, applyRemoteMergedTag, getCloudActiveCategory, getCloudActiveTag, isUniqueViolation, reconcileCategoryCollision, reconcileTagCollision } from "./sync-engine-taxonomy-helpers";
 import { and } from "drizzle-orm/sql";
 import { useTagStore } from "@/stores/use-tag-store";
+import { withRowContext } from "@/components/dev/db-error-diagnosis-helper";
 
 
 /**
@@ -722,6 +723,8 @@ export async function pushEvents(userId: string): Promise<void> {
   await markRowsSynced(calendarEvents, dirty.map((e) => e.id), syncedAt);
 }
 
+
+
 export async function pullEvents(userId: string, since: string, until: string): Promise<CalendarEvent[]> {
   const { data, error } = await supabase
     .from("calendar_events")
@@ -758,7 +761,7 @@ export async function pullEvents(userId: string, since: string, until: string): 
       endTime: remote.end_time,
       recurrence: remote.recurrence ?? undefined,
       startDate: remote.start_date,
-      endDate: remote.recurrence_end_date ?? undefined,
+      endDate: remote.end_date ?? undefined,
       category: remote.category ?? undefined,
       tags: remote.tags ?? [],
       reminder: remote.reminder,
@@ -768,7 +771,7 @@ export async function pullEvents(userId: string, since: string, until: string): 
     };
 
     const now = new Date().toISOString();
-    await db.transaction(async (tx) => {
+    withRowContext("calendarEvents", mapped.id, async () => db.transaction(async (tx) => {
       await tx.delete(eventTags).where(eq(eventTags.eventId, mapped.id));
       await tx.insert(calendarEvents)
         .values({
@@ -800,7 +803,7 @@ export async function pullEvents(userId: string, since: string, until: string): 
         }));
         await tx.insert(eventTags).values(junctionData);
       }
-    });
+    }));
 
     pulledEvents.push(mapped);
   }
@@ -1024,7 +1027,7 @@ export async function pullTags(userId: string, since: string | null, until: stri
   console.log("merged", mergedRows.length, "normal", normalRows.length);
   for (const remote of mergedRows) {
     if (processedIds.has(remote.id)) continue;
-    await applyRemoteMergedTag(userId, remote);
+    /* await */ withRowContext("tags-apply", remote.name, async () => await applyRemoteMergedTag(userId, remote));
     processedIds.add(remote.id);
     processedIds.add(remote.merged_into_id);
   }
@@ -1057,7 +1060,7 @@ export async function pullTags(userId: string, since: string | null, until: stri
 
       }
 
-      await db
+      /* await  */withRowContext("tags-udapte", localById.name, async () => await db
         .update(tags)
         .set({
           name: remote.name,
@@ -1069,7 +1072,7 @@ export async function pullTags(userId: string, since: string | null, until: stri
           mergedIntoId: remote.merged_into_id ?? null,
           syncedAt: remote.updated_at,
         })
-        .where(eq(tags.id, remote.id));
+        .where(eq(tags.id, remote.id)));
 
       continue;
     }
@@ -1104,7 +1107,7 @@ export async function pullTags(userId: string, since: string | null, until: stri
     }
 
     // Completely new tag.
-    await db
+    /* await */ withRowContext("tags-new", remote.name, async () => db
       .insert(tags)
       .values({
         id: remote.id,
@@ -1116,7 +1119,7 @@ export async function pullTags(userId: string, since: string | null, until: stri
         syncedAt: remote.updated_at,
         deletedAt: remote.deleted_at ?? null,
         mergedIntoId: remote.merged_into_id ?? null,
-      });
+      }));
     //console.log("New tag:", remote.id, remote.name);
   }
   return midPullChanges
@@ -1368,23 +1371,23 @@ export async function pullDailyMetrics(userId: string, since: string | null, unt
 
     const now = new Date().toISOString();
     if (local) {
-      await db
-        .update(dailyMetrics)
-        .set({
-          ...mapped,
-          syncedAt: now,
-          syncedSnapshot: nowSyncedSnapshot,
-        })
-        .where(eq(dailyMetrics.date, remote.metric_date));
-    } else {
-      // Fixed: spread at the top level — the pasted version nested the
-      // whole payload as the VALUE of a `date` key, which is malformed.
-      await db.insert(dailyMetrics).values({
-        date: remote.metric_date,
+      /* await  */withRowContext("dailyMetrics- update", remote.metric_date, async () => db
+      .update(dailyMetrics)
+      .set({
         ...mapped,
         syncedAt: now,
         syncedSnapshot: nowSyncedSnapshot,
-      });
+      })
+      .where(eq(dailyMetrics.date, remote.metric_date)));
+    } else {
+      // Fixed: spread at the top level — the pasted version nested the
+      // whole payload as the VALUE of a `date` key, which is malformed.
+     /*  await  */withRowContext("dailyMetrics- update", remote.metric_date, async () => db.insert(dailyMetrics).values({
+      date: remote.metric_date,
+      ...mapped,
+      syncedAt: now,
+      syncedSnapshot: nowSyncedSnapshot,
+    }));
     }
   }
 }

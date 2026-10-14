@@ -1,4 +1,10 @@
-import React, { useCallback, useContext, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import {
   TouchableOpacity,
   View,
@@ -11,6 +17,7 @@ import { Button, FAB, Portal, Searchbar } from "react-native-paper";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import Octicons from "@expo/vector-icons/Octicons";
 import { useShallow } from "zustand/react/shallow";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { Task } from "@/types/task";
 import TaskItem from "@/components/ui/tasks/task-item";
@@ -52,7 +59,17 @@ function TaskScreenInner() {
     onClose: () => setVisible(false),
   });
   const { triggerHaptic } = useHaptics();
+
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const router = useRouter();
+
+  const { openAdd, openAddRequest } = useLocalSearchParams<{
+    openAdd?: string;
+    openAddRequest?: string;
+  }>();
+
+  const handledOpenAddRequest = useRef<string | null>(null);
+
   const filteredTaskIds = useTaskStore(
     useShallow((state) =>
       Object.values(state.tasksById)
@@ -88,6 +105,7 @@ function TaskScreenInner() {
       return;
     }
     setEditingTask(null);
+    setIsEditing(false);
     setVisible(true);
   }, []);
 
@@ -204,6 +222,27 @@ function TaskScreenInner() {
       </View>
     </View>
   );
+
+  useEffect(() => {
+    if (
+      openAdd !== "1" ||
+      !openAddRequest ||
+      handledOpenAddRequest.current === openAddRequest
+    ) {
+      return;
+    }
+
+    // Prevent this request from opening the modal more than once.
+    handledOpenAddRequest.current = openAddRequest;
+
+    showModal();
+
+    // Clear the request so it won't be replayed on a later visit.
+    router.setParams({
+      openAdd: undefined,
+      openAddRequest: undefined,
+    });
+  }, [openAdd, openAddRequest, router, showModal]);
   return (
     <>
       <View style={[styles.container, { backgroundColor: theme.background }]}>

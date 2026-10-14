@@ -9,6 +9,7 @@ import type { CalendarEventRow, CalendarEventInsert, EventDeletedOccurrenceRow, 
 // rowToCalendarEvent handles the scalar fields on the calendarEvents table only.
 // history / freezeHistory / goalCompletions are NOT populated here.
 
+
 function rowToCalendarEvent(
     row: CalendarEventRow,
     deletedOccurrences: EventDeletedOccurrenceRow[],
@@ -245,14 +246,14 @@ export async function updateCalendarEvent(event: CalendarEvent): Promise<Calenda
 export async function deleteCalendarEvent(id: string): Promise<void> {
     //await db.delete(calendarEvents).where(eq(calendarEvents.id, id));
     const now = new Date().toISOString();
-     await db
-    .update(calendarEvents)
-    .set({
-      deletedAt: now,
-      updatedAt: now,
-      syncedAt: null,
-    })
-    .where(eq(calendarEvents.id, id));
+    await db
+        .update(calendarEvents)
+        .set({
+            deletedAt: now,
+            updatedAt: now,
+            syncedAt: null,
+        })
+        .where(eq(calendarEvents.id, id));
 }
 
 // ─── bulk operations ──────────────────────────────────────────────────────────
@@ -360,14 +361,14 @@ export async function deleteAllCalendarEvents(): Promise<number> {
     const count = await countCalendarEvents();
     if (count === 0) return 0;
 
-   // await db.delete(calendarEvents);
+    // await db.delete(calendarEvents);
     await db
-    .update(calendarEvents)
-    .set({
-      deletedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      syncedAt: null,
-    });
+        .update(calendarEvents)
+        .set({
+            deletedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            syncedAt: null,
+        });
 
     return count;
 }

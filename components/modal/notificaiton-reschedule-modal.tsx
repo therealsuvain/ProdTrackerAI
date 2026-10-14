@@ -1,7 +1,15 @@
 import { useSync } from "@/context/SyncContext";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import React, { useState } from "react";
-import { Button, Modal, Text, Switch, View, StyleSheet } from "react-native";
+import {
+  Button,
+  Modal,
+  Text,
+  Switch,
+  View,
+  StyleSheet,
+  Pressable,
+} from "react-native";
 
 export type NotificationRescheduleChoice = {
   tasks: boolean;
@@ -46,6 +54,12 @@ export default function NotificationRescheduleModal() {
               </Text>
               <Switch
                 value={choice.tasks}
+                thumbColor={theme.taskBase}
+                trackColor={{
+                  false: theme.whiteBase,
+                  true: theme.taskBaseTrans,
+                }}
+                style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
                 onValueChange={(v) => setChoice((c) => ({ ...c, tasks: v }))}
               />
             </View>
@@ -55,6 +69,12 @@ export default function NotificationRescheduleModal() {
               </Text>
               <Switch
                 value={choice.habits}
+                thumbColor={theme.habitBase}
+                trackColor={{
+                  false: theme.whiteBase,
+                  true: theme.habitBaseTrans,
+                }}
+                style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
                 onValueChange={(v) => setChoice((c) => ({ ...c, habits: v }))}
               />
             </View>
@@ -64,16 +84,32 @@ export default function NotificationRescheduleModal() {
               </Text>
               <Switch
                 value={choice.events}
+                thumbColor={theme.eventBase}
+                trackColor={{
+                  false: theme.whiteBase,
+                  true: theme.eventBaseTrans,
+                }}
+                style={{ transform: [{ scaleX: 1.3 }, { scaleY: 1.3 }] }}
                 onValueChange={(v) => setChoice((c) => ({ ...c, events: v }))}
               />
             </View>
           </View>
-
-          <Button
-            title="Reschedule selected"
-            onPress={() => submitNotificationReschedule(choice)}
-          />
-          <Button title="Skip for now" onPress={dismissNotificationPrompt} />
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <Pressable
+              style={styles.button}
+              onPress={() => submitNotificationReschedule(choice)}
+            >
+              <Text style={[styles.buttonText]}>Reschedule selected</Text>
+            </Pressable>
+            <Pressable
+              style={styles.button}
+              onPress={dismissNotificationPrompt}
+            >
+              <Text style={[styles.buttonText]}>Skip for now</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </Modal>
@@ -88,7 +124,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   sheet: {
-    backgroundColor: "#1c1b19",
+    backgroundColor: "#1c1b19a9",
     borderRadius: 20,
     padding: 20,
     maxHeight: "50%",
@@ -103,11 +139,13 @@ const styles = StyleSheet.create({
   },
   switchLable: {
     marginRight: 8,
+    fontSize: 20,
   },
   switchContainer: {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
+    gap: 12,
   },
   switchRow: {
     flexDirection: "row",
@@ -115,7 +153,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   button: {
-    marginTop: 16,
-    borderRadius: 10,
+    alignSelf: "center",
+    marginTop: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
+    borderWidth: 0.375,
+    borderColor: "white",
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 15,
   },
 });

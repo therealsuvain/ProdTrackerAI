@@ -1,5 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useContext, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { FAB, Portal } from "react-native-paper";
 
@@ -29,6 +35,7 @@ import {
 } from "@/utils/Data-services/event-services/event-actions";
 import { useEventStore } from "@/stores/use-event-store";
 import { EventDetailsHost } from "@/components/ui/calendar-events/event-details-host";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 // TODOX - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {
@@ -45,6 +52,15 @@ function CalendarScreenInner() {
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const { showToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
+  const router = useRouter();
+
+  const { openAdd, openAddRequest } = useLocalSearchParams<{
+    openAdd?: string;
+    openAddRequest?: string;
+  }>();
+
+  const handledOpenAddRequest = useRef<string | null>(null);
+
   const { state, updateField, onSubmit } = useEventForm({
     addEvent: addEventWithEffects,
     editEvent: editEventWithEffects,
@@ -63,6 +79,7 @@ function CalendarScreenInner() {
       return;
     }
     setEditingEvent(null);
+    setIsEditing(false);
     setVisible(true);
   };
 
@@ -149,6 +166,27 @@ function CalendarScreenInner() {
   const handleDateSelect = useCallback((date: Date) => {
     setSelectedDate(date);
   }, []);
+
+  useEffect(() => {
+    if (
+      openAdd !== "1" ||
+      !openAddRequest ||
+      handledOpenAddRequest.current === openAddRequest
+    ) {
+      return;
+    }
+
+    // Prevent this request from opening the modal more than once.
+    handledOpenAddRequest.current = openAddRequest;
+
+    showModal();
+
+    // Clear the request so it won't be replayed on a later visit.
+    router.setParams({
+      openAdd: undefined,
+      openAddRequest: undefined,
+    });
+  }, [openAdd, openAddRequest, router, showModal]);
   return (
     <>
       <View

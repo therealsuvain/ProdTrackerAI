@@ -25,7 +25,7 @@ import {
   localRecoverySnapshots,
   localRecoveryItems,
 } from "@/db";
-import { RecoveryItem ,RecoveryEntityType } from "@/types/recovery-snapshot";
+import { RecoveryItem, RecoveryEntityType } from "@/types/recovery-snapshot";
 
 
 
@@ -46,13 +46,13 @@ function groupBy<T>(
   return result;
 }
 
-  // 1. Read complete current workspace.
-  // 2. Delete previous recovery snapshot.
-  // 3. Insert new header.
-  // 4. Insert all logical payloads.
-  // 5. Commit atomically.
+// 1. Read complete current workspace.
+// 2. Delete previous recovery snapshot.
+// 3. Insert new header.
+// 4. Insert all logical payloads.
+// 5. Commit atomically.
 
-  function buildRecoveryItems(data: {
+function buildRecoveryItems(data: {
   taskRows: any[];
   habitRows: any[];
   eventRows: any[];
@@ -242,7 +242,7 @@ function groupBy<T>(
   }
 
 
-  console.log(JSON.stringify(items));
+  //console.log(JSON.stringify(items));
   return items;
 }
 

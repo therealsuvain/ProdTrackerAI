@@ -113,6 +113,7 @@
   → Caused by: Error code : UNIQUE constraint failed: habit_check_ins.id, I think this happens because in supabase child tables arent stored, so when a habit is autofrozen, habit row changes its updatedAt and the data is then pushed to clud, now when another device pulls in data, as both devices had the same check ins table, the pull rebuilds the same data and tries to insert it in habit item, which then obviously causes a sync error, I think the there will the same issue if both unsynced devices checkin the same habit and then try to sync to cloud, so this has to be fixed
 - TODO : in edit modals, when no category is assigned, 'None Selected' which rendered earlier doesnt show up
 - TODO : Additonal confirmation after successfull deletion of big deletes, like reset achievements currently after reset is pressed , shows no confirmation that the "Achievements Reset Successfully" , I think that is a must and good to have
+  -TODO : Notificaiton rescheduler , check once . On app reload when all data is pulled in then too the rescheduler modal is shown, even tho there not be any new notificaitions
 
 # Big Overhaul #1 (BO1): Upgrade Sync Engine to Event-Driven, Selective Sync
 
@@ -139,3 +140,39 @@
 **Medium-sized upgrade — approximately 1–3 focused days** for the scheduler, selective execution and integration; allow **3–5 days** for thorough testing, race-condition handling and cross-device verification.
 
 **Recommended order:** Fix post-pull pushing first; implement the debounced scheduler and pending-run handling next; optimize dirty-row queries; add Realtime only if needed. Test offline edits, simultaneous device changes, collisions, failed syncs and app backgrounding.
+
+## Big Overhaul #2 (BO2) (MUST-DO): Upgrade the native timer notification
+
+**Goal:** Make the sticky timer notification reliable and cheap by letting Android render the ticking time, and make its buttons work even when the app process is gone. Batch all native changes into as few 5–10 minute rebuilds as possible.
+
+### Current problems this fixes
+
+- The notification re-posts itself every second from a main-thread loop inside the app process. If Android freezes or kills the process, the time freezes and the buttons stop working until the app is reopened.
+- Countdown mode shows elapsed time, not remaining time.
+- Tapping the notification doesn't open the app, and the first post pops a heads-up banner.
+
+### Planned changes
+
+1. **Spike the chronometer first (one build).**
+   - Test stopwatch with `setUsesChronometer(true)`, `setWhen(startedAtMs)` and `setShowWhen(true)`, plus a static `setContentText` for the paused state.
+   - Try it on at least two device brands and Android 12–15.
+   - Keep the current manual loop as a fallback behind a flag, since the earlier chronometer attempt was abandoned for an unknown reason.
+2. **Countdown.**
+   - Use `setChronometerCountDown(true)` with `setWhen(endAtMs)`.
+   - The chronometer counts up after zero, so add `setTimeoutAfter(remainingMs)` (API 26+) to remove the notification, and keep the existing scheduled "Time's up" notification.
+3. **Replace the positional arguments with one descriptor.**
+   - Fields: `{ title, mode, isRunning, startedAtMs, endAtMs, elapsedMs }`.
+   - Update `syncNotification` in `timer-actions.ts` and the `modules/notifications-timer` wrapper.
+   - Keep it platform-neutral so the iOS module can implement it differently.
+4. **Buttons handled natively.**
+   - On a button press, update the notification immediately, then emit the JS event.
+   - Persist a queue of `(action, timestamp)` pairs in SharedPreferences.
+   - Register the receiver in the module's `AndroidManifest.xml`, and add `setPackage` to the action intents.
+   - Add `drainPendingActions()` for `initTimerBridge()`, applying each action at its original timestamp via `begin(now)` or `halt(now)`.
+5. **Notification polish.**
+   - Content intent that opens the app.
+   - A new `LOW` importance channel id, deleting the old one.
+   - Stopwatch category, custom small icon, and a proper Stop icon.
+6. **Lifecycle and permission.**
+   - Decide what `OnDestroy` does. If state is persisted and the chronometer is used, leaving the notification up is fine.
+   - Make `showNotification` return whether notifications are enabled, so

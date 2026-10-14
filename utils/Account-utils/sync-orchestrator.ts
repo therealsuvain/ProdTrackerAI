@@ -18,6 +18,7 @@ import { supabase } from "./supabase-client";
 import { reconcileNotificationsForPulledData } from "./reconcile-notifications";
 import { NotificationRescheduleChoice } from "@/components/modal/notificaiton-reschedule-modal";
 import { Category } from "@/types/category";
+import { dumpForeignKeys } from "@/components/dev/db-error-diagnosis-helper";
 
 type SyncRunOptions = {
   userId: string;
@@ -51,6 +52,15 @@ async function withJwtSkewRetry<T>(
   }
 
   throw new Error("unreachable");
+}
+
+async function step<T>(name: string, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    console.error(`[sync] step "${name}" failed:`, err);
+    throw err;
+  }
 }
 
 async function getServerTimeStamp() {
@@ -97,7 +107,19 @@ export function runFullSync(options: SyncRunOptions): Promise<void> {
 
   return syncPromise;
 }
+/**
+// [
+  "5535c7cc-b8f4-45e0-be20-c87defc36f1d",
+  "2da40892-d5c7-4253-90af-7dac8f944879",
+  "0802b642-b200-4b93-8847-8dc27e68efa6"
 
+
+  9883abca-53db-4763-affe-24379a837664
+
+   "5535c7cc-b8f4-45e0-be20-c87defc36f1d",
+  "2da40892-d5c7-4253-90af-7dac8f944879",
+  "0802b642-b200-4b93-8847-8dc27e68efa6"
+ */
 async function runFullSyncInternal({
   userId,
   lastPulledAt,
@@ -151,22 +173,40 @@ export const pullFromCloud = async ({
   console.log('Pulling Data from Cloud. It was last synced at ', since, "server timestamp ", watermark)
   /* const midPullChangesCategory = await withJwtSkewRetry(() => pullCategories(userId, since, watermark));
   const midPullChangesCategory = await withJwtSkewRetry(() => pullTags(userId, since, watermark)) */;
-  const [midPullChangeViaCategory, midPullChangesViaTag, pulledTasks, pulledHabits, pulledEvents] = await Promise.all([
-    withJwtSkewRetry(() => pullCategories(userId, since, watermark)),
-    withJwtSkewRetry(() => pullTags(userId, since, watermark)),
-    withJwtSkewRetry(() => pullTasks(userId, since, watermark)),
-    withJwtSkewRetry(() => pullHabits(userId, since, watermark)),
-    withJwtSkewRetry(() => pullEvents(userId, since, watermark)),
-  ]);
+  /*  const [midPullChangeViaCategory, midPullChangesViaTag, pulledTasks, pulledHabits, pulledEvents] = await Promise.all([
+     withJwtSkewRetry(() => pullCategories(userId, since, watermark)),
+     //console.log("Pulled cat, tag , tasks, habits, events"),
+     withJwtSkewRetry(() => pullTags(userId, since, watermark)),
+     withJwtSkewRetry(() => pullTasks(userId, since, watermark)),
+     withJwtSkewRetry(() => pullHabits(userId, since, watermark)),
+     withJwtSkewRetry(() => pullEvents(userId, since, watermark)),
+   ]); */
+  const midPullChangeViaCategory = await step("pullCategories", () => pullCategories(userId, since, watermark));
+  console.log("Pulled cat");
+  const midPullChangesViaTag = await step("pullTags", () => pullTags(userId, since, watermark));
+  console.log("Pulled tag");
+  const pulledTasks = await step("pullTasks", () => pullTasks(userId, since, watermark));
+  console.log("Pulled tasks");
+  const pulledHabits = await step("pullHabits", () => pullHabits(userId, since, watermark));
+  console.log("Pulled habits");
+  const pulledEvents = await step("pullEvents", () => pullEvents(userId, since, watermark));
+  console.log("Pulled cat, tag , tasks, habits, events");
   await withJwtSkewRetry(() => pullLogs(userId, since, watermark));
+  console.log("Pulled logs");
   await withJwtSkewRetry(() => pullUnlockedAchievements(userId));
+  console.log("Pulled unlocked achievements");
   await withJwtSkewRetry(() => pullDailyMetrics(userId, since, watermark));
+  console.log("Pulled daily metrics");
   await withJwtSkewRetry(() => pullGlobalMetrics(userId));
+  console.log("Pulled global metrics");
   await withJwtSkewRetry(() => pullDailyAIMetrics(userId, since, watermark));
+  console.log("Pulled daily ai metrics");
   await withJwtSkewRetry(() => pullGlobalAIMetrics(userId));
+  console.log("Pulled global ai metrics");
   await withJwtSkewRetry(() => pullAchievementMetrics(userId));
+  console.log("Pulled achievement metrics");
 
-
+  await dumpForeignKeys();
   if (midPullChangeViaCategory || midPullChangesViaTag) {
     await pushEntitiesOnly(userId);
   }
