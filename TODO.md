@@ -2,7 +2,6 @@
 
 - TODO : Custom colors for categories currently only local to devices and dont sync to cloud
 - TODO : Maybe keep darkMode as default irrespective of system settings
-- TODO : Item Label(Home-screen Today's tasks , events, habits etc) animations, like ads
 - TODO : Mayeb add more animations for the app. R&D
 - TODO : More settings options
 - TODO : Few more achievements
@@ -17,12 +16,8 @@
 # Fixes Severity : High
 
 - TODO : Toggling Match System Theme crashes app due to hook changes
-- TODO : achivement reseting logic and cloud sync combination check how to get it to work or what should to logic
-- TODO : completeling task is very laggy
-- TODO : Achivements metrics are not being used currently
 - TODO : Analytics - if filter leads to no data for that filter, empty tiles are displaed, isntead display soem message or hide tiles or something
 - TODO : If due date of task is changed, the notification should be updated, or user should be told to reschedule the notification or something, same with events, probably not habit
-- TODO : Home page search is broken right now
 - TODO : tag names unique issue, maybe can be psued and pulled that causes error, either ignore duplciate or silently
 - TODO : duplicate adds for habitAutoFrozen metric
 - TODO : certain charts when rendered in chart-details-modal, need some barWidth, fontSzie, viewPort, domainPadding etc. changes
@@ -31,7 +26,8 @@
 - TODO : If task is marked complete then notification is cancelled in the AI handler, but not in the task item logic, also if task is then marked incomplete, then a new notificaiton is not scheduled, R&D how it should be ideally
 - TODO : CAtch high demand errors nad return a suitable response, catch any other possibel errors too
 - TODO : task due date, event startdate and end date are just in (YYYY-MM-DD) format, convert to ISO 8601 format
-- TODO : Duplicate category names are allowed to entered and submitted which casues error, NEED TO FIX
+- TODO : Deleted taxonomy is still present in items, r&d if that is ok , but due to this one bug has been found in item's edit modals, if a category is deleted and the category selector is opened using the item's edit modal , app crashes
+- TODO : [Entitlement] refreshEntitlement failed: {"code": "PGRST303", "details": null, "hint": null, "message": "JWT issued at future"} - Entitlement defaults to free tier, so just catching error and continuing wont solve it
 
 # Fixes Severity : Medium
 

@@ -1,5 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useCallback, useContext, useMemo, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   Text,
@@ -8,6 +15,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  ViewToken,
 } from "react-native";
 
 import { Portal, TextInput } from "react-native-paper";
@@ -50,6 +58,7 @@ import {
   stopTimerWithEffects,
   toggleTimerModeWithEffects,
 } from "@/utils/Data-services/timer-services/timer-actions";
+import { useLocalSearchParams, useRouter } from "expo-router";
 // Note : Timescreen is the only component where value prop is used for the TextInput instead of defaultValue
 // Note ContinuedFromAbove: default Value only takes input once, then doesnt update, the reason its works in other places is because
 // Note ContinuedFromAbove: the modals re-render everytime, so default value gets feeded the latest state value and it looks ok,
@@ -61,25 +70,9 @@ function TimerScreenInner() {
     useShallow((state) => Object.keys(state.logsById)),
   );
   const [logToDelete, setLogToDelete] = useState<string | null>(null);
-  const categories = useCategoryStore(useShallow(selectCategoryList));
+  //const categories = useCategoryStore(useShallow(selectCategoryList));
   //const addLog = (log : TimerLog) => setTimerLogs([...timerLogs, log]);
-  /*   const {
-    isRunning,
-    title,
-    category,
-    laps,
-    lap,
-    setTitle,
-    setCategory,
-    mode,
-    countdownTarget,
-    toggleMode,
-    setCountdownTarget,
-    start,
-    pause,
-    stop,
-    reset,
-  } = useTimer(); */
+
   const title = useTimerStore((state) => state.title);
   const isRunning = useTimerStore((state) => state.isRunning);
   const mode = useTimerStore(useShallow((state) => state.mode));
@@ -89,6 +82,26 @@ function TimerScreenInner() {
   const [editingLog, setEditingLog] = useState<TimerLog>();
   const { showToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
+  const logListRef = useRef<FlatList<string>>(null);
+  const pendingLogFocusId = useRef<string | null>(null);
+  const handledLogFocusRequest = useRef<string | null>(null);
+  const [logToFocus, setLogToFocus] = useState<string | null>(null);
+  const [isFocusLoading, setIsFocusLoading] = useState(false);
+  const {
+    openAdd,
+    openAddRequest,
+    focusItemId,
+    focusItemType,
+    focusRequestId,
+  } = useLocalSearchParams<{
+    openAdd?: string;
+    openAddRequest?: string;
+    focusItemId?: string;
+    focusItemType?: string;
+    focusRequestId?: string;
+  }>();
+  const router = useRouter();
+  const handledOpenAddRequest = useRef<string | null>(null);
   /*   const { todayTotal, weekTotal, topCategory } = useMemo(() => {
     const todayISO = getTodayISO();
     const weekStartISO = getWeekStartISO();
@@ -140,9 +153,9 @@ function TimerScreenInner() {
     }),
   );
   var topCategory = null;
-  if (topCategoryId) {
+  /* if (topCategoryId) {
     topCategory = categories.find((c) => c.id === topCategoryId);
-  }
+  } */
   const handleDelete = async () => {
     if (!logToDelete) return;
     const id = logToDelete;
@@ -210,6 +223,119 @@ function TimerScreenInner() {
     ),
     [handleEditRow, handleDeleteRow],
   );
+
+  const handleScrollToIndexFailed = useCallback(
+    ({
+      index,
+      averageItemLength,
+    }: {
+      index: number;
+      averageItemLength: number;
+    }) => {
+      const list = logListRef.current;
+      if (!list) return;
+
+      // Approximate the item's location and allow the list to render there.
+      list.scrollToOffset({
+        offset: Math.max(0, averageItemLength * index),
+        animated: false,
+      });
+
+      // Retry after the list has had an opportunity to measure more rows.
+      setTimeout(() => {
+        logListRef.current?.scrollToIndex({
+          index,
+          animated: true,
+          viewPosition: 0,
+          viewOffset: 8,
+        });
+      }, 120);
+    },
+    [],
+  );
+
+  const logViewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 10,
+  }).current;
+
+  // Keep the callback identity stable because FlatList expects a stable
+  // onViewableItemsChanged callback.
+  const handleLogViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken<string>[] }) => {
+      const pendingId = pendingLogFocusId.current;
+      //console.log("pendingId", pendingId);
+      if (!pendingId) return;
+
+      const targetIsVisible = viewableItems.some(
+        (token) => token.item === pendingId,
+      );
+
+      if (targetIsVisible) {
+        pendingLogFocusId.current = null;
+        setIsFocusLoading(false);
+      }
+    },
+  ).current;
+
+  useEffect(() => {
+    if (
+      focusItemType !== "log" ||
+      !focusItemId ||
+      !focusRequestId ||
+      handledLogFocusRequest.current === focusRequestId
+    ) {
+      return;
+    }
+
+    handledLogFocusRequest.current = focusRequestId;
+    pendingLogFocusId.current = focusItemId;
+    setLogToFocus(focusItemId);
+
+    router.setParams({
+      focusItemId: undefined,
+      focusItemType: undefined,
+      focusRequestId: undefined,
+    });
+  }, [focusItemId, focusItemType, focusRequestId, router]);
+  //console.log("logToFocus", logToFocus);
+  useEffect(() => {
+    if (!logToFocus) return;
+
+    const index = timerLogs.indexOf(logToFocus);
+
+    // The store may still be loading, or the log may no longer exist.
+    // Keep the request pending until the item becomes available.
+    if (index === -1) return;
+    // Expand the paginated data so the requested index is valid
+    // in the FlatList's actual data prop.
+    const requiredPage = Math.floor(index / ITEMS_PER_PAGE) + 1;
+
+    if (currentPage < requiredPage) {
+      setIsFocusLoading(true);
+      setCurrentPage(requiredPage);
+      return;
+    }
+
+    // Guard against scrolling before the target is present in data.
+    if (index >= displayedLogs.length) return;
+
+    const frame = requestAnimationFrame(() => {
+      const list = logListRef.current;
+
+      if (!list) return;
+
+      list.scrollToIndex({
+        index,
+        animated: true,
+        viewPosition: 0,
+        viewOffset: 8,
+      });
+
+      setLogToFocus(null);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [logToFocus, timerLogs, currentPage, displayedLogs.length]);
 
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
@@ -417,28 +543,51 @@ function TimerScreenInner() {
           ]}
         />
       </View>
+      <View style={styles.logListContainer}>
+        <FlatList
+          ref={logListRef}
+          data={displayedLogs}
+          keyExtractor={keyExtractor}
+          style={styles.logList}
+          showsVerticalScrollIndicator={false}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5} // Triggers when user is halfway through the last visible screen
+          initialNumToRender={15} // How many items to render in the exact first batch
+          maxToRenderPerBatch={15} // Limits the amount rendered per scroll chunk to keep JS thread fast
+          windowSize={5} // (Default is 21) Lowering this saves RAM by unmounting views far off-screen
+          renderItem={renderTimerLog}
+          onScrollToIndexFailed={handleScrollToIndexFailed}
+          onViewableItemsChanged={handleLogViewableItemsChanged}
+          viewabilityConfig={logViewabilityConfig}
+          ListEmptyComponent={EmptyState}
+          ListFooterComponent={() => {
+            if (displayedLogs.length >= timerLogs.length) return null;
+            return (
+              <View style={{ paddingVertical: 20 }}>
+                <ActivityIndicator size="small" />
+              </View>
+            );
+          }}
+        />
+        {isFocusLoading && (
+          <View
+            pointerEvents="auto"
+            style={[
+              styles.logFocusOverlay,
+              {
+                backgroundColor: withAlpha(theme.background, "CC"),
+                borderColor: withAlpha(timerBaseColor, "35"),
+              },
+            ]}
+          >
+            <ActivityIndicator size="large" color={timerBaseColor} />
 
-      <FlatList
-        data={displayedLogs}
-        keyExtractor={keyExtractor}
-        style={{ width: "95%" }}
-        showsVerticalScrollIndicator={false}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5} // Triggers when user is halfway through the last visible screen
-        initialNumToRender={15} // How many items to render in the exact first batch
-        maxToRenderPerBatch={15} // Limits the amount rendered per scroll chunk to keep JS thread fast
-        windowSize={5} // (Default is 21) Lowering this saves RAM by unmounting views far off-screen
-        renderItem={renderTimerLog}
-        ListEmptyComponent={EmptyState}
-        ListFooterComponent={() => {
-          if (displayedLogs.length >= timerLogs.length) return null;
-          return (
-            <View style={{ paddingVertical: 20 }}>
-              <ActivityIndicator size="small" />
-            </View>
-          );
-        }}
-      />
+            <Text style={[styles.logFocusOverlayText, { color: theme.text }]}>
+              Preparing logs…
+            </Text>
+          </View>
+        )}
+      </View>
       <Portal>
         {editingLog && (
           <TimerEditModal
@@ -471,7 +620,7 @@ function StatCell({
   accent,
 }: {
   label: string;
-  value: string | Category;
+  value: string | null;
   accent: string;
 }) {
   return (
@@ -480,7 +629,7 @@ function StatCell({
         <Text style={[styles.statValue, { color: accent }]}>{value}</Text>
       ) : (
         <View>
-          <CategoryBadge category={value} />
+          <CategoryBadge categoryId={value} />
         </View>
       )}
       <Text style={[styles.statLabel, { color: accent }]}>{label}</Text>
@@ -572,6 +721,33 @@ const styles = StyleSheet.create({
   },
   logDividerLabel: {
     marginHorizontal: 6,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  logListContainer: {
+    flex: 1,
+    width: "95%",
+    minHeight: 0,
+    position: "relative",
+  },
+
+  logList: {
+    flex: 1,
+    width: "100%",
+  },
+
+  logFocusOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
+    elevation: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderRadius: 12,
+  },
+
+  logFocusOverlayText: {
+    marginTop: 10,
     fontSize: 14,
     fontWeight: "600",
   },

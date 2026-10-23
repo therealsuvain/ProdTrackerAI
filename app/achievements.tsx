@@ -1,5 +1,11 @@
-import { useLocalSearchParams } from "expo-router";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import AchievementBadge from "@/components/ui/achievements/achievement-badge";
@@ -15,7 +21,7 @@ import { useMetricStore } from "@/stores/use-metrics-store";
 
 export default function AchievementsScreen() {
   const { theme } = useTheme();
-  const { targetBadgeId } = useLocalSearchParams<{ targetBadgeId: string }>();
+  const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
   const itemOffsets = useRef<Record<string, number>>({}); // The Offset Dictionary
   const unlockedAchievements = useAchievementStore(
@@ -26,21 +32,17 @@ export default function AchievementsScreen() {
   console.log("metricGlobal", metricGlobal.tasksCompleted);
   console.log("metricBasline", metricBasline.tasksCompleted);
   const [achievements, setAchievements] = useState(ALL_ACHIEVEMENTS);
+  //Add a state (or ref) to hold whichever badge we are waiting to scroll to
+  const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
 
-  /*   useEffect(() => {
-    const loadBadges = async () => {
-      // Convert array to a dictionary for O(1) lookups during rendering
-      const unlockedMap: Record<string, BadgeType> = {};
-      unlockedAchievements.forEach((badge) => {
-        unlockedMap[badge.id] = badge;
-      });
-      setUnlockedData(unlockedMap);
-      setAchievements((prevAchievements) => {
-        return [...prevAchievements];
-      });
-    };
-    loadBadges();
-  }, [unlockedAchievements]); // Re-run if core data changes */
+  const { targetBadgeId, focusItemId, focusItemType, focusRequestId } =
+    useLocalSearchParams<{
+      targetBadgeId: string;
+      focusItemId?: string;
+      focusItemType?: string;
+      focusRequestId?: string;
+    }>();
+  const handledAchievementFocusRequest = useRef<string | null>(null);
 
   const unlockedData = useMemo(() => {
     const map: Record<string, BadgeType> = {};
@@ -57,8 +59,6 @@ export default function AchievementsScreen() {
       let metricValue = 0;
       let baseLineValue = 0;
       if (def.metricTrigger !== "meta") {
-        /* metricValue = appMetrics?.global[def.metricTrigger] || 0;
-        baseLineValue = achievementMetrics[def.metricTrigger] || 0; */
         metricValue = metricGlobal[def.metricTrigger] || 0;
         baseLineValue = metricBasline[def.metricTrigger] || 0;
       }
@@ -70,10 +70,30 @@ export default function AchievementsScreen() {
     });
   }, [achievements, unlockedData, metricGlobal, metricBasline]);
 
-  useEffect(() => {
+  // Make scrollToAchievement return a boolean indicating if it succeeded
+  const scrollToAchievement = useCallback((id: string): boolean => {
+    const targetY = itemOffsets.current[id];
+
+    // IMPORTANT: Check for undefined, NOT !targetY (because the 1st item has y === 0!)
+    if (targetY === undefined || !scrollViewRef.current) {
+      return false;
+    }
+
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollTo({
+        y: Math.max(0, targetY - 20),
+        animated: true,
+      });
+    });
+
+    return true;
+  }, []);
+
+  /*   useEffect(() => {
     if (targetBadgeId) {
       // using a small timeout to ensure the layout has finished calculating
-      const scrollTimeout = setTimeout(() => {
+      const scrollTimeout =
+        setTimeout(() => {
         const targetY = itemOffsets.current[targetBadgeId];
 
         if (targetY !== undefined && scrollViewRef.current) {
@@ -86,17 +106,59 @@ export default function AchievementsScreen() {
 
       return () => clearTimeout(scrollTimeout);
     }
-  }, [targetBadgeId]);
+  }, [targetBadgeId]); */
 
+  useEffect(() => {
+    if (targetBadgeId) {
+      setPendingScrollId(targetBadgeId);
+      router.setParams({ targetBadgeId: undefined });
+      return;
+    }
+
+    if (
+      focusItemType !== "achievement" ||
+      !focusItemId ||
+      !focusRequestId ||
+      handledAchievementFocusRequest.current === focusRequestId
+    ) {
+      return;
+    }
+
+    const exists = achievementsWithProgress.some(
+      (achievement) => achievement.def.id === focusItemId,
+    );
+
+    // Keep the request pending if achievement data is not ready yet.
+    if (!exists) return;
+
+    handledAchievementFocusRequest.current = focusRequestId;
+    setPendingScrollId(focusItemId);
+    // Reuse the screen's existing scroll-to-achievement behavior.
+    scrollToAchievement(focusItemId);
+
+    router.setParams({
+      focusItemId: undefined,
+      focusItemType: undefined,
+      focusRequestId: undefined,
+    });
+  }, [
+    focusItemId,
+    focusItemType,
+    focusRequestId,
+    achievementsWithProgress,
+    router,
+  ]);
   const unlockedBadgesCount = Object.keys(unlockedData).length;
 
-  // Helper function to map an achievement ID to its current metric progress
-  /*   const getProgressForBadge = (badgeId: string): number => {
-    const achivement = ALL_ACHIEVEMENTS.find((a) => a.id === badgeId);
-    if (!achivement) return 0;
-    if (achivement.metricTrigger === "meta") return unlockedBadgesCount;
-    else return appMetrics?.global[achivement.metricTrigger] || 0;
-  }; */
+  //Try to scroll immediately if offsets are already cached in memory (2nd+ visit)
+  useEffect(() => {
+    if (!pendingScrollId) return;
+
+    const didScroll = scrollToAchievement(pendingScrollId);
+    if (didScroll) {
+      setPendingScrollId(null); // Clear once scrolled!
+    }
+  }, [pendingScrollId, scrollToAchievement]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -106,18 +168,6 @@ export default function AchievementsScreen() {
 
       <ScrollView ref={scrollViewRef} contentContainerStyle={styles.content}>
         {achievementsWithProgress.map((achievement) => {
-          /* const unlockedInfo = unlockedData[def.id];
-          const isUnlocked = !!unlockedInfo;
-          let metricValue = 0;
-          let baseLineValue = 0;
-          if (def.metricTrigger !== "meta") {
-            metricValue = appMetrics?.global[def.metricTrigger] || 0;
-            baseLineValue = achievementMetrics[def.metricTrigger] || 0;
-          }
-          const currentProgress =
-            def.metricTrigger === "meta"
-              ? unlockedBadgesCount
-              : metricValue - baseLineValue; */
           return (
             <View
               key={achievement.def.id}
@@ -129,7 +179,14 @@ export default function AchievementsScreen() {
               }}
               onLayout={(event) => {
                 const { y } = event.nativeEvent.layout;
-                itemOffsets.current[achievement.def.id] = y;
+                const id = achievement.def.id;
+                itemOffsets.current[id] = y;
+                //SOTA Handshake: If this is the exact item we are waiting for on 1st load, scroll now!
+                if (pendingScrollId === id) {
+                  if (scrollToAchievement(id)) {
+                    setPendingScrollId(null);
+                  }
+                }
               }}
             >
               <AchievementBadge

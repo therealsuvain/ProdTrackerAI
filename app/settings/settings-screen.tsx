@@ -13,10 +13,7 @@ import { getRecoverySnapshotSummary } from "@/db/repositories/sync-repository";
 import { AppDialog } from "@/components/shared/dialog-system/AppDialog";
 import { ConfirmDialog } from "@/components/shared/dialog-system/ConfirmDialog";
 import { SyncResolutionModal } from "@/components/shared/dialog-system/SyncResolutionDialog";
-import {
-  getWorkspaceSyncMode,
-  useWorkspaceSyncModeStore,
-} from "@/utils/Account-utils/workspace-sync-mode-store";
+import { useWorkspaceSyncModeStore } from "@/utils/Account-utils/workspace-sync-mode-store";
 import {
   resetSettingsWithEffects,
   updateSettingWithEffects,

@@ -1,4 +1,4 @@
-import React, { useContext, useState, useMemo } from "react";
+import React, { useContext, useState, useMemo, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
 import { CategoryBadge } from "@/components/ui/shared/categories/category-badge";
@@ -53,7 +53,11 @@ export default function CategoriesSettingsScreen() {
     description?: string;
     actions: DialogAction[];
   } | null>(null);
-
+  const { openEditItemId, openEditRequestId } = useLocalSearchParams<{
+    openEditItemId?: string;
+    openEditRequestId?: string;
+  }>();
+  const handledCategoryEditRequest = useRef<string | null>(null);
   // 1. Filter by Search, then Sort by Color (Hex Code String Comparison)
   const displayCategories = useMemo(() => {
     let filtered = categories;
@@ -175,11 +179,41 @@ export default function CategoriesSettingsScreen() {
     setCategoryToDelete(null);
   };
 
+  useEffect(() => {
+    if (
+      !openEditItemId ||
+      !openEditRequestId ||
+      handledCategoryEditRequest.current === openEditRequestId
+    ) {
+      return;
+    }
+
+    const category = useCategoryStore.getState().categoriesById[openEditItemId];
+
+    if (!category) return;
+
+    handledCategoryEditRequest.current = openEditRequestId;
+
+    // PLACEHOLDER: set the existing selected/editing category and open its modal.
+    setSelectedCategoryId(category.id);
+
+    router.setParams({
+      openEditItemId: undefined,
+      openEditRequestId: undefined,
+      focusItemId: undefined,
+      focusItemType: undefined,
+      focusRequestId: undefined,
+    });
+  }, [openEditItemId, openEditRequestId, router]);
+
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
       {/* 1. Header Area */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          onPress={() => router.dismissTo("/settings/settings-screen")}
+          style={styles.backButton}
+        >
           <Ionicons name="arrow-back" size={18} color={theme.whiteBase} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: theme.whiteBase }]}>
@@ -237,7 +271,7 @@ export default function CategoriesSettingsScreen() {
               onPress={() => setSelectedCategoryId(cat.id)}
               style={styles.pillWrapper}
             >
-              <CategoryBadge category={cat} size="medium" />
+              <CategoryBadge categoryId={cat.id} size="medium" />
             </Pressable>
           ))}
 

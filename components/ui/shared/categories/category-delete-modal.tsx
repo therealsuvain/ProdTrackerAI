@@ -53,7 +53,7 @@ export const CategoryDeleteModal = ({
               .filter((c) => c.id !== categoryToDelete)
               .map((cat) => (
                 <Pressable key={cat.id} onPress={() => onReassign(cat.id)}>
-                  <CategoryBadge category={cat} />
+                  <CategoryBadge categoryId={cat.id} />
                 </Pressable>
               ))}
           </ScrollView>

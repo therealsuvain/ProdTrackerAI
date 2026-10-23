@@ -25,9 +25,9 @@ function TaskItem({ id, onToggleComplete, onEdit, onDelete }: TaskItemProps) {
     medium: theme.habitBase,
     high: theme.eventBase,
   }[task.priority];
-  const taskCategory = useCategoryStore((state) =>
+  /*   const taskCategory = useCategoryStore((state) =>
     task.category ? state.categoriesById[task.category] : null,
-  );
+  ); */
 
   const route = useRoute();
   const isNotHome = route.name !== "index";
@@ -71,8 +71,8 @@ function TaskItem({ id, onToggleComplete, onEdit, onDelete }: TaskItemProps) {
             >
               {task.title}
             </Text>
-            {taskCategory && (
-              <CategoryBadge category={taskCategory} variant="iconOnly" />
+            {task.category && (
+              <CategoryBadge categoryId={task.category} variant="iconOnly" />
             )}
             {!task.completed && overDue && (
               <Text style={[styles.overDueText, { color: theme.error }]}>

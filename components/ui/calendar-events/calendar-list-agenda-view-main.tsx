@@ -25,9 +25,18 @@ import {
 import { useShallow } from "zustand/shallow";
 import { EventPill } from "./event-pill";
 
+export interface CalendarEventFocusRequest {
+  eventId: string;
+  occurrenceDate: string;
+  requestId: string;
+}
+
 interface CalendarListAgendaAltProps {
   onDateSelect: (date: Date) => void;
   selectedDate: Date;
+  focusRequest?: CalendarEventFocusRequest;
+  onFocusRequestHandled?: (requestId: string) => void;
+  onFocusRequestFailed?: (requestId: string) => void;
 }
 
 /* const MemoizedEventItem = memo(
@@ -85,14 +94,32 @@ type EventAgendaEntry = AgendaEntry & {
 const MemoizedEventPills = React.memo(function MemoizedEventPills({
   eventIds,
   occurrence,
+  focusRequest,
+  onFocusRequestHandled,
+  onFocusRequestFailed,
 }: {
   eventIds: string[];
   occurrence: string;
+  focusRequest?: CalendarEventFocusRequest;
+  onFocusRequestHandled?: (requestId: string) => void;
+  onFocusRequestFailed?: (requestId: string) => void;
 }) {
   return (
     <View style={styles.pillContainer}>
       {eventIds.map((eventId) => (
-        <EventPill key={eventId} id={eventId} occurrence={occurrence} />
+        <EventPill
+          key={eventId}
+          id={eventId}
+          occurrence={occurrence}
+          focusRequest={
+            focusRequest?.eventId === eventId &&
+            focusRequest.occurrenceDate === occurrence
+              ? focusRequest
+              : undefined
+          }
+          onFocusRequestHandled={onFocusRequestHandled}
+          onFocusRequestFailed={onFocusRequestFailed}
+        />
       ))}
     </View>
   );
@@ -101,6 +128,8 @@ const MemoizedEventPills = React.memo(function MemoizedEventPills({
 export default React.memo(function CalendarListAgendaMain({
   onDateSelect,
   selectedDate,
+  focusRequest,
+  onFocusRequestHandled,
 }: CalendarListAgendaAltProps) {
   const { theme } = useContext(ThemeContext);
   const [items, setItems] = useState<AgendaSchedule>({});
@@ -275,7 +304,7 @@ export default React.memo(function CalendarListAgendaMain({
     [theme],
   );
 
-  useEffect(() => {
+  /*   useEffect(() => {
     const today = new Date();
     const timestamp = today.getTime();
     const dateData: DateData = {
@@ -287,7 +316,19 @@ export default React.memo(function CalendarListAgendaMain({
     };
     loadItems(dateData);
     //console.log(events.filter((e) => e.title === "ThirdEvent")[0].category);
-  }, [loadItems]);
+  }, [loadItems]); */
+  useEffect(() => {
+    const timestamp = selectedDate.getTime();
+    const dateString = selectedDate.toISOString().split("T")[0];
+
+    loadItems({
+      year: selectedDate.getUTCFullYear(),
+      month: selectedDate.getUTCMonth() + 1,
+      day: selectedDate.getUTCDate(),
+      timestamp,
+      dateString,
+    });
+  }, [loadItems, selectedDate]);
 
   useEffect(() => {
     const change = useEventStore.getState().agendaChange;
@@ -382,6 +423,8 @@ export default React.memo(function CalendarListAgendaMain({
         <MemoizedEventPills
           eventIds={item.eventIds}
           occurrence={item.occurrence}
+          focusRequest={focusRequest}
+          onFocusRequestHandled={onFocusRequestHandled}
         />
       </View>
     );

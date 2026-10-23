@@ -46,7 +46,7 @@ export const CategorySelectionModal = ({
           <ScrollView contentContainerStyle={styles.wrapContainer}>
             {categories.map((cat) => (
               <Pressable key={cat.id} onPress={() => onSelect(cat.id)}>
-                <CategoryBadge category={cat} />
+                <CategoryBadge categoryId={cat.id} />
               </Pressable>
             ))}
           </ScrollView>

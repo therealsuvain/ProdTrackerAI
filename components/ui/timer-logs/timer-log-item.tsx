@@ -23,9 +23,9 @@ interface TimerLogItemProps {
 function TimerLogItem({ logId, onDelete, onEdit }: TimerLogItemProps) {
   const { theme } = useContext(ThemeContext);
   const log = useTimerLogStore((state) => state.logsById[logId]);
-  const logCategory = useCategoryStore((s) =>
+  /*   const logCategory = useCategoryStore((s) =>
     log.category ? s.categoriesById[log.category] : undefined,
-  );
+  ); */
   const route = useRoute();
   const isNotHome = route.name !== "index";
 
@@ -69,7 +69,7 @@ function TimerLogItem({ logId, onDelete, onEdit }: TimerLogItemProps) {
                     { borderColor: withAlpha(theme.timerBase, "66") },
                   ]}
                 >
-                  <CategoryBadge category={logCategory} variant="iconOnly" />
+                  <CategoryBadge categoryId={log.category} variant="iconOnly" />
                 </View>
               )}
             </View>

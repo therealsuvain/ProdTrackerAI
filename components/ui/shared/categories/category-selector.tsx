@@ -76,7 +76,7 @@ export const CategorySelector = ({
           Category
         </Text>
         {selectedCategory ? (
-          <CategoryBadge category={selectedTaskCategory} />
+          <CategoryBadge categoryId={selectedTaskCategory?.id} />
         ) : (
           <Text style={{ color: theme.whiteBase }}>None Selected</Text>
         )}

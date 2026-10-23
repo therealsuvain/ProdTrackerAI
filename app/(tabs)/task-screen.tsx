@@ -52,6 +52,11 @@ function TaskScreenInner() {
   );
   const [showSortOptions, setShowSortOptions] = useState(false);
   const { showToast, dismissToast } = useDbErrorToast();
+  const taskListRef = useRef<FlatList<string>>(null);
+  const pendingTaskFocusId = useRef<string | null>(null);
+  const handledTaskFocusRequest = useRef<string | null>(null);
+  const [taskToFocus, setTaskToFocus] = useState<string | null>(null);
+
   const { state, updateField, onSubmit } = useTaskForm({
     addTask: addTaskWithEffects,
     editTask: editTaskWithEffects,
@@ -63,9 +68,18 @@ function TaskScreenInner() {
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const router = useRouter();
 
-  const { openAdd, openAddRequest } = useLocalSearchParams<{
+  const {
+    openAdd,
+    openAddRequest,
+    focusItemId,
+    focusItemType,
+    focusRequestId,
+  } = useLocalSearchParams<{
     openAdd?: string;
     openAddRequest?: string;
+    focusItemId?: string;
+    focusItemType?: string;
+    focusRequestId?: string;
   }>();
 
   const handledOpenAddRequest = useRef<string | null>(null);
@@ -188,6 +202,89 @@ function TaskScreenInner() {
     [toggleComplete, handleEditRow, handleDeleteRow],
   );
 
+  const handleScrollToIndexFailed = useCallback(
+    ({
+      index,
+      averageItemLength,
+    }: {
+      index: number;
+      averageItemLength: number;
+    }) => {
+      const list = taskListRef.current;
+      if (!list) return;
+
+      // Approximate the item's location and allow the list to render there.
+      list.scrollToOffset({
+        offset: Math.max(0, averageItemLength * index),
+        animated: false,
+      });
+
+      // Retry after the list has had an opportunity to measure more rows.
+      setTimeout(() => {
+        taskListRef.current?.scrollToIndex({
+          index,
+          animated: true,
+          viewPosition: 0,
+          viewOffset: 8,
+        });
+      }, 120);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (
+      focusItemType !== "task" ||
+      !focusItemId ||
+      !focusRequestId ||
+      handledTaskFocusRequest.current === focusRequestId
+    ) {
+      return;
+    }
+
+    handledTaskFocusRequest.current = focusRequestId;
+
+    // Clear any existing Tasks-screen search filter.
+    setSearchQuery("");
+
+    // Schedule scrolling once the list contains the requested task.
+    setTaskToFocus(focusItemId);
+
+    // Consume this navigation request so it isn't replayed.
+    router.setParams({
+      focusItemId: undefined,
+      focusItemType: undefined,
+      focusRequestId: undefined,
+    });
+  }, [focusItemId, focusItemType, focusRequestId, router]);
+
+  useEffect(() => {
+    if (!taskToFocus) return;
+
+    const index = filteredTaskIds.indexOf(taskToFocus);
+
+    // The store may still be loading, or the task may no longer exist.
+    // Keep the request pending until the item becomes available.
+    if (index === -1) return;
+
+    const frame = requestAnimationFrame(() => {
+      const list = taskListRef.current;
+
+      if (!list) return;
+
+      list.scrollToIndex({
+        index,
+        animated: true,
+        viewPosition: 0,
+        viewOffset: 8,
+      });
+
+      setTaskToFocus(null);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [taskToFocus, filteredTaskIds, sortBy]);
+
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
       <Octicons name="tasklist" size={60} color={theme.taskBase} />
@@ -302,10 +399,12 @@ function TaskScreenInner() {
           <View style={styles.flatlist}>
             <DraggableFlatList
               data={filteredTaskIds}
+              ref={taskListRef as any}
               renderItem={renderDraggableTask}
               keyExtractor={keyExtractor}
               onDragEnd={handleDragEnd}
               showsVerticalScrollIndicator={false}
+              onScrollToIndexFailed={handleScrollToIndexFailed}
               ListEmptyComponent={EmptyState}
             />
           </View>
@@ -313,9 +412,11 @@ function TaskScreenInner() {
           <View style={styles.flatlist}>
             <FlatList
               data={filteredTaskIds}
+              ref={taskListRef}
               renderItem={renderTask}
               keyExtractor={keyExtractor}
               showsVerticalScrollIndicator={false}
+              onScrollToIndexFailed={handleScrollToIndexFailed}
               ListEmptyComponent={EmptyState}
             />
           </View>

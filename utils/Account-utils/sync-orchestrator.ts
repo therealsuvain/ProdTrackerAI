@@ -182,32 +182,33 @@ export const pullFromCloud = async ({
      withJwtSkewRetry(() => pullEvents(userId, since, watermark)),
    ]); */
   const midPullChangeViaCategory = await step("pullCategories", () => pullCategories(userId, since, watermark));
-  console.log("Pulled cat");
+  //console.log("Pulled cat");
   const midPullChangesViaTag = await step("pullTags", () => pullTags(userId, since, watermark));
-  console.log("Pulled tag");
+  //console.log("Pulled tag");
   const pulledTasks = await step("pullTasks", () => pullTasks(userId, since, watermark));
-  console.log("Pulled tasks");
+  //console.log("Pulled tasks");
   const pulledHabits = await step("pullHabits", () => pullHabits(userId, since, watermark));
-  console.log("Pulled habits");
+  //console.log("Pulled habits");
   const pulledEvents = await step("pullEvents", () => pullEvents(userId, since, watermark));
-  console.log("Pulled cat, tag , tasks, habits, events");
+  //console.log("Pulled cat, tag , tasks, habits, events");
   await withJwtSkewRetry(() => pullLogs(userId, since, watermark));
-  console.log("Pulled logs");
+  //console.log("Pulled logs");
   await withJwtSkewRetry(() => pullUnlockedAchievements(userId));
-  console.log("Pulled unlocked achievements");
+  //console.log("Pulled unlocked achievements");
   await withJwtSkewRetry(() => pullDailyMetrics(userId, since, watermark));
-  console.log("Pulled daily metrics");
+  //console.log("Pulled daily metrics");
   await withJwtSkewRetry(() => pullGlobalMetrics(userId));
-  console.log("Pulled global metrics");
+  //console.log("Pulled global metrics");
   await withJwtSkewRetry(() => pullDailyAIMetrics(userId, since, watermark));
-  console.log("Pulled daily ai metrics");
+  //console.log("Pulled daily ai metrics");
   await withJwtSkewRetry(() => pullGlobalAIMetrics(userId));
-  console.log("Pulled global ai metrics");
+  //console.log("Pulled global ai metrics");
   await withJwtSkewRetry(() => pullAchievementMetrics(userId));
-  console.log("Pulled achievement metrics");
+  //console.log("Pulled achievement metrics");
 
-  await dumpForeignKeys();
+  // dumpForeignKeys();
   if (midPullChangeViaCategory || midPullChangesViaTag) {
+    console.log("Pushing mid pull changes");
     await pushEntitiesOnly(userId);
   }
 

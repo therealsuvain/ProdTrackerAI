@@ -76,9 +76,9 @@ function HabitItem({
   const isNotHome = route.name !== "index";
   const { playDeniedFeedback, animatedStyle } = useHabitDeniedFeedback();
   const progress = habit.goal ? habit.streak / habit.goal : 0;
-  const habitCategory = useCategoryStore((state) =>
+  /* const habitCategory = useCategoryStore((state) =>
     habit.category ? state.categoriesById[habit.category] : undefined,
-  );
+  ); */
 
   const handleEditing = useCallback(() => {
     if (habit.pendingStreakResetAfter) {
@@ -148,8 +148,8 @@ function HabitItem({
               <Text style={[styles.title, { color: theme.whiteBase }]}>
                 {habit.title}
               </Text>
-              {habitCategory && (
-                <CategoryBadge category={habitCategory} variant="iconOnly" />
+              {habit.category && (
+                <CategoryBadge categoryId={habit.category} variant="iconOnly" />
               )}
             </View>
             {habit.description && (

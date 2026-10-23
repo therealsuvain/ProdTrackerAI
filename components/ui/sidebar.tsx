@@ -28,7 +28,7 @@ export const Sidebar = (props: any) => {
   // NOTE: avatarId storage location is a decision for you — see explanation
   // below the code. This assumes a SettingsContext exposing avatarId +
   // a setter, matching your existing context conventions.
-  console.log("are there pending notifications?", pendingNotification);
+  //console.log("are there pending notifications?", pendingNotification);
   const [avatarPickerVisible, setAvatarPickerVisible] = useState(false);
   const avatarId = useSettingsStore((s) => s.settings.avatarId.id);
   const displayName = isAnonymous ? "Guest" : (userEmail ?? "Guest");
@@ -150,7 +150,11 @@ export const Sidebar = (props: any) => {
                 color={theme.text}
               />
             )}
-            onPress={() => props.navigation.navigate("settings")}
+            onPress={() =>
+              props.navigation.navigate("settings", {
+                screen: "settings-screen",
+              })
+            }
           />
           <DrawerItem
             label="Achievements"

@@ -1,10 +1,4 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Keyboard, View } from "react-native";
 import React, {
   useCallback,
   useContext,
@@ -17,22 +11,21 @@ import {
   Button,
   Divider,
   FAB,
-  Modal,
   Portal,
   Provider,
-  Searchbar,
-  SegmentedButtons,
   Text,
 } from "react-native-paper";
 import { useShallow } from "zustand/react/shallow";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useIsFocused } from "@react-navigation/native";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 import { ScreenErrorBoundary } from "@/components/shared/screen-error-boundary";
 import EventItem from "@/components/ui/calendar-events/event-item";
 import { ChatScreen } from "@/components/ui/chat/chat-screen";
 import HabitItem from "@/components/ui/habits/habit-item";
 import UnifiedTimeline from "@/components/ui/home-timeline/home-timeline";
-import { SearchResults } from "@/components/ui/search-results";
 import TaskItem from "@/components/ui/tasks/task-item";
 import TimerLogItem from "@/components/ui/timer-logs/timer-log-item";
 import { ThemeContext } from "@/context/ThemeContext";
@@ -40,10 +33,8 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { useSearch } from "@/hooks/use-search";
 import { selectedDateTaskIds, useTaskStore } from "@/stores/use-task-store";
 import { getTodayISO, withAlpha } from "@/utils/common-utils";
-import { useFlapAnimation } from "@/hooks/animations/use-flap-animation-new";
 import { useHaptics } from "@/hooks/use-haptics";
 import { useDbErrorToast } from "@/components/shared/db-error-toast";
-import { useIsFocused } from "@react-navigation/native";
 import { toggleTaskWithEffects } from "@/utils/Data-services/task-services/task-actions";
 import { checkInHabitWithEffects } from "@/utils/Data-services/habit-services/habit-actions";
 import { useHabitStore } from "@/stores/use-habit-store";
@@ -51,8 +42,6 @@ import { useTimerLogStore } from "@/stores/use-timerLog-store";
 import { useEventStore } from "@/stores/use-event-store";
 import { useSync } from "@/context/SyncContext";
 import LoadingIndicator from "@/components/shared/loading-indicator";
-import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
-import { sqlite } from "@/db";
 import {
   useFlapScroll,
   useFlapTitle,
@@ -61,8 +50,11 @@ import {
   HomeAllEmptyState,
   HomeEmptyStateCard,
 } from "@/components/ui/home/empty-states";
-import { set } from "date-fns";
-import { Ionicons } from "@expo/vector-icons";
+import { GlobalSearchScreen } from "@/components/ui/global-search/global-search-screen";
+import { SearchResult } from "@/utils/search-utils";
+import type { GlobalSearchSelectionRequest } from "@/types/global-search";
+import { dispatchGlobalSearchSelection } from "@/utils/Search-utils/selection-dispatcher";
+import { resolveEventOccurrenceDate } from "@/utils/Search-utils/resolve-event-occurence";
 
 const EMPTY_IDS: string[] = [];
 
@@ -86,6 +78,13 @@ function HomeScreenInner() {
     habits: "/(tabs)/habits-screen",
     timer: "/(tabs)/timer-screen",
   } as const;
+
+  /*   const SEARCH_RESULT_ROUTES: Record<SearchResult["type"], string> = {
+    task: "/(tabs)/task-screen",
+    event: "/(tabs)/calendar-screen",
+    habit: "/(tabs)/habits-screen",
+    log: "/(tabs)/timer-screen",
+  }; */
   const isSelectedDateToday = useMemo(
     () => selectedDate.toDateString() === todayDate,
     [selectedDate, todayDate],
@@ -202,9 +201,79 @@ function HomeScreenInner() {
     router.navigate(HOME_ROUTES.timer);
   }, [router]);
 
+  /*   const handleSearchResultPress = useCallback(
+    (result: SearchResult) => {
+      setSearchVisible(false);
+
+      router.navigate({
+        pathname: SEARCH_RESULT_ROUTES[result.type] as never,
+        params: {
+          focusItemId: String(result.item.id),
+          focusItemType: result.type,
+          focusRequestId: String(Date.now()),
+        },
+      } as never);
+    },
+    [router],
+  ); */
+  const handleSearchResultPress = useCallback(
+    (request: GlobalSearchSelectionRequest) => {
+      let requestToDispatch = request;
+
+      if (request.target.kind === "event") {
+        const event = useEventStore.getState().eventsById[request.target.id];
+
+        const occurrenceDate = event
+          ? resolveEventOccurrenceDate(event, getTodayISO())
+          : null;
+
+        if (!event || !occurrenceDate) {
+          showToast("This event has no valid occurrence to open.");
+          return;
+        }
+
+        requestToDispatch = {
+          ...request,
+          context: {
+            ...request.context,
+            occurrenceDate,
+          },
+        };
+      }
+
+      const handled = dispatchGlobalSearchSelection(requestToDispatch, {
+        navigate: ({ pathname, params, withAnchor }) => {
+          const href = {
+            pathname: pathname as never,
+            params,
+          } as never;
+
+          if (withAnchor) {
+            router.push(href, { withAnchor: true });
+          } else {
+            router.navigate(href);
+          }
+        },
+
+        onUnsupportedTarget: (target) => {
+          console.warn(
+            `[Global Search] No selection handler registered for "${target.kind}" yet.`,
+          );
+        },
+      });
+
+      // Leave search open if a target isn't supported yet.
+      if (handled) {
+        setSearchVisible(false);
+      }
+    },
+    [router],
+  );
+
   useEffect(() => {
     if (viewMode === "overview") flapScroll.reset(); // ScrollView remounts at offset 0
   }, [viewMode]);
+
   const toggleTaskCompleted = useCallback(
     async (id: string) => {
       void toggleTaskWithEffects(id);
@@ -224,44 +293,9 @@ function HomeScreenInner() {
     [checkInHabitWithEffects],
   );
   //DebugAuthProbe();
-  //if (isSyncing) return <LoadingIndicator />;
   return (
     <Provider>
       {isSyncing && <LoadingIndicator />}
-
-      {/*       <View style={{ backgroundColor: theme.background }}>
-        <SegmentedButtons
-          value={viewMode}
-          onValueChange={(value) =>
-            setViewMode(value as "overview" | "timeline")
-          }
-          buttons={[
-            {
-              value: "overview",
-              label: "Overview",
-              icon: "view-dashboard",
-              style: {
-                backgroundColor:
-                  viewMode === "overview"
-                    ? theme.blueDarkPrimary
-                    : "transparent",
-              },
-            },
-            {
-              value: "timeline",
-              label: "Today's Timeline",
-              icon: "timeline",
-              style: {
-                backgroundColor:
-                  viewMode === "timeline"
-                    ? theme.blueDarkPrimary
-                    : "transparent",
-              },
-            },
-          ]}
-          style={[styles.viewSwitcher, { backgroundColor: theme.background }]}
-        />
-      </View> */}
       <View
         style={{ paddingTop: 10, flex: 1, backgroundColor: theme.background }}
       >
@@ -314,21 +348,69 @@ function HomeScreenInner() {
               scrollEventThrottle={16}
               onLayout={flapScroll.onViewportLayout}
             >
-              <Searchbar
+              {/* <Searchbar
                 style={{
                   marginVertical: 4,
+                  marginRight: 60,
                   backgroundColor: theme.taskBaseTransToo,
                 }}
                 placeholder="Search Everything"
                 onChangeText={performSearch}
                 value={query}
               />
-              {results.length > 0 && (
-                <Button onPress={() => setSearchVisible(true)}>
-                  {" "}
+              {query.trim().length > 0 && (
+                <Button
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setSearchVisible(true);
+                  }}
+                >
                   View Results ({results.length})
                 </Button>
-              )}
+              )} */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Open Search Everything"
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setSearchVisible(true);
+                }}
+                style={({ pressed }) => [
+                  styles.searchLauncher,
+                  { backgroundColor: theme.taskBaseTransToo },
+                  pressed && styles.searchLauncherPressed,
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="magnify"
+                  size={28}
+                  color={withAlpha(theme.text, "D9")}
+                />
+
+                <View style={styles.searchLauncherCopy}>
+                  <Text
+                    variant="titleMedium"
+                    numberOfLines={1}
+                    style={{ color: theme.text, fontWeight: "500" }}
+                  >
+                    Search Everything
+                  </Text>
+
+                  <Text
+                    variant="bodySmall"
+                    numberOfLines={1}
+                    style={{ color: withAlpha(theme.text, "A8") }}
+                  >
+                    Tasks, tags, achievements, settings...
+                  </Text>
+                </View>
+
+                <MaterialCommunityIcons
+                  name="arrow-top-right"
+                  size={23}
+                  color={withAlpha(theme.text, "A8")}
+                />
+              </Pressable>
 
               <Animated.Text
                 onLayout={todayFlap.onLayout}
@@ -500,19 +582,6 @@ function HomeScreenInner() {
                 />
               )}
               <Divider style={styles.divider} />
-              <Portal>
-                <Modal
-                  visible={searchVisible}
-                  onDismiss={() => setSearchVisible(false)}
-                >
-                  <SearchResults
-                    results={results}
-                    onItemPress={(result) => {
-                      setSearchVisible(false);
-                    }}
-                  />
-                </Modal>
-              </Portal>
             </Animated.ScrollView>
           )
         ) : (
@@ -524,24 +593,6 @@ function HomeScreenInner() {
           >
             {/* Date selector */}
             <View style={styles.dateSelector}>
-              {/* <Button
-                icon="chevron-left"
-                labelStyle={{
-                  fontWeight: "condensedBold",
-                  fontSize: 30,
-                  color: theme.blueDarkPrimary,
-                  textShadowColor: theme.text,
-                  //textShadowRadius: 0.1,
-                  //textShadowOffset: { width: 0, height: 0.1 },
-                }}
-                onPress={() => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setDate(newDate.getDate() - 1);
-                  setSelectedDate(newDate);
-                }}
-              >
-                
-              </Button> */}
               <Pressable
                 onPress={() => {
                   const newDate = new Date(selectedDate);
@@ -568,32 +619,7 @@ function HomeScreenInner() {
               >
                 {isSelectedDateToday ? "Today" : selectedDate.toDateString()}
               </Button>
-              {/*  <Button
-                icon="chevron-right"
-                style={{
-                  marginLeft: 20,
-                  width: 50,
-                  height: 50,
-                  borderRadius: 25,
-                  borderColor: theme.blueDarkPrimary,
-                  borderWidth: 2,
-                }}
-                labelStyle={{
-                  fontWeight: "condensedBold",
-                  fontSize: 30,
-                  color: theme.blueDarkPrimary,
-                  textShadowColor: "#ffffffa9",
-                  //textShadowRadius: 0.1,
-                  //textShadowOffset: { width: 0, height: 0.1 },
-                }}
-                onPress={() => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setDate(newDate.getDate() + 1);
-                  setSelectedDate(newDate);
-                }}
-              >
-                {" "}
-              </Button> */}
+
               <Pressable
                 onPress={() => {
                   const newDate = new Date(selectedDate);
@@ -622,10 +648,20 @@ function HomeScreenInner() {
           </View>
         )}
       </View>
+      <GlobalSearchScreen
+        visible={searchVisible}
+        query={query}
+        results={results}
+        onQueryChange={performSearch}
+        onDismiss={() => setSearchVisible(false)}
+        onItemPress={handleSearchResultPress}
+      />
       <FAB
         style={styles.fab}
+        variant="surface"
         color="white"
         icon="brain"
+        size="medium"
         onPress={() => setAiVisible(true)}
       />
       <FAB
@@ -633,9 +669,7 @@ function HomeScreenInner() {
         variant="surface"
         color="white"
         size="small"
-        icon={
-          viewMode === "overview" ? "timeline-clock-outline" : "view-dashboard"
-        }
+        icon={viewMode === "overview" ? "menu-open" : "view-dashboard"}
         onPress={() =>
           viewMode === "overview"
             ? setViewMode("timeline")
@@ -686,11 +720,35 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 8,
   },
+  searchLauncher: {
+    flex: 1,
+    marginHorizontal: 8,
+    marginRight: 60,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 36,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+
+  searchLauncherCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+
+  searchLauncherPressed: {
+    opacity: 0.78,
+  },
   fab: {
     position: "absolute",
     bottom: 80,
     right: 16,
-    backgroundColor: "grey",
+    borderRadius: 30,
+    backgroundColor: "#0000004f",
+    borderColor: "white",
+    borderWidth: 0.5,
   },
 
   fabTimeline: {

@@ -32,9 +32,9 @@ export default function EventItem({
   const eventLocal = useEventStore((state) => state.eventsById[id]);
   const categoryId = eventLocal?.category;
 
-  const eventCategory = useCategoryStore((state) =>
+  /*  const eventCategory = useCategoryStore((state) =>
     categoryId ? state.categoriesById[categoryId] : undefined,
-  );
+  ); */
 
   const isNotHome = route.name !== "index";
   const showDetailedTime = isDetail || !isNotHome;
@@ -69,8 +69,8 @@ export default function EventItem({
         {isDetail && (
           <View style={styles.detailHeader}>
             <View style={styles.detailCategoryRow}>
-              {eventCategory && (
-                <CategoryBadge category={eventCategory} variant="iconOnly" />
+              {categoryId && (
+                <CategoryBadge categoryId={categoryId} variant="iconOnly" />
               )}
               <View style={[styles.detailHeaderText]}>
                 <Text
@@ -115,8 +115,8 @@ export default function EventItem({
               {eventLocal.title}
             </Text>
           )}
-          {!isDetail && eventCategory && (
-            <CategoryBadge category={eventCategory} variant="iconOnly" />
+          {!isDetail && categoryId && (
+            <CategoryBadge categoryId={categoryId} variant="iconOnly" />
           )}
           {isOverNight && (
             <Text style={[styles.overnightText, { color: theme.whiteBase }]}>

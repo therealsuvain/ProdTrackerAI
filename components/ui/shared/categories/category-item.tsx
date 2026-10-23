@@ -36,7 +36,7 @@ export const CategoryItem = ({
         onPress={onPress}
         style={{ flexDirection: "row", alignItems: "center" }}
       >
-        <CategoryBadge category={category} size="medium" />
+        <CategoryBadge categoryId={category.id} size="medium" />
       </TouchableOpacity>
       {isNewlyCreated && (
         <TouchableOpacity

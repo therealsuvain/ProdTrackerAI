@@ -42,11 +42,24 @@ function HabitsScreenInner() {
   const [completedHabit, setCompletedHabit] = useState<Habit | null>(null);
   const { showToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
+  const habitListRef = useRef<FlatList<string>>(null);
+  const pendingHabitFocusId = useRef<string | null>(null);
+  const handledHabitFocusRequest = useRef<string | null>(null);
+  const [habitToFocus, setHabitToFocus] = useState<string | null>(null);
   const router = useRouter();
 
-  const { openAdd, openAddRequest } = useLocalSearchParams<{
+  const {
+    openAdd,
+    openAddRequest,
+    focusItemId,
+    focusItemType,
+    focusRequestId,
+  } = useLocalSearchParams<{
     openAdd?: string;
     openAddRequest?: string;
+    focusItemId?: string;
+    focusItemType?: string;
+    focusRequestId?: string;
   }>();
 
   const handledOpenAddRequest = useRef<string | null>(null);
@@ -171,6 +184,89 @@ function HabitsScreenInner() {
     [handleCheckin, handleEditRow, handleDeleteRow, handleGoalReached],
   );
 
+  const handleScrollToIndexFailed = useCallback(
+    ({
+      index,
+      averageItemLength,
+    }: {
+      index: number;
+      averageItemLength: number;
+    }) => {
+      const list = habitListRef.current;
+      if (!list) return;
+
+      // Approximate the item's location and allow the list to render there.
+      list.scrollToOffset({
+        offset: Math.max(0, averageItemLength * index),
+        animated: false,
+      });
+
+      // Retry after the list has had an opportunity to measure more rows.
+      setTimeout(() => {
+        habitListRef.current?.scrollToIndex({
+          index,
+          animated: true,
+          viewPosition: 0,
+          viewOffset: 8,
+        });
+      }, 120);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (
+      focusItemType !== "habit" ||
+      !focusItemId ||
+      !focusRequestId ||
+      handledHabitFocusRequest.current === focusRequestId
+    ) {
+      return;
+    }
+
+    handledHabitFocusRequest.current = focusRequestId;
+
+    // Clear any existing Habits-screen search filter.
+    setSearchQuery("");
+
+    // Schedule scrolling once the list contains the requested habit.
+    setHabitToFocus(focusItemId);
+
+    // Consume this navigation request so it isn't replayed.
+    router.setParams({
+      focusItemId: undefined,
+      focusItemType: undefined,
+      focusRequestId: undefined,
+    });
+  }, [focusItemId, focusItemType, focusRequestId, router]);
+
+  useEffect(() => {
+    if (!habitToFocus) return;
+
+    const index = filteredHabitsIds.indexOf(habitToFocus);
+
+    // The store may still be loading, or the habit may no longer exist.
+    // Keep the request pending until the item becomes available.
+    if (index === -1) return;
+
+    const frame = requestAnimationFrame(() => {
+      const list = habitListRef.current;
+
+      if (!list) return;
+
+      list.scrollToIndex({
+        index,
+        animated: true,
+        viewPosition: 0,
+        viewOffset: 8,
+      });
+
+      setHabitToFocus(null);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [habitToFocus, filteredHabitsIds]);
+
   const emptyStateColor = isDarkMode ? theme.habitBase : theme.habitDarkPrimary;
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
@@ -240,6 +336,7 @@ function HabitsScreenInner() {
           theme={{ colors: { onSurfaceVariant: theme.whiteBase } }}
         />
         <FlatList
+          ref={habitListRef}
           data={filteredHabitsIds}
           showsVerticalScrollIndicator={false}
           keyExtractor={keyExtractor}
@@ -248,6 +345,7 @@ function HabitsScreenInner() {
           }
           renderItem={renderHabit}
           ListEmptyComponent={EmptyState}
+          onScrollToIndexFailed={handleScrollToIndexFailed}
         />
         <FAB
           color={theme.habitDarkPrimary}

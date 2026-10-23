@@ -1,4 +1,4 @@
-import React, { useContext, useState, useMemo } from "react";
+import React, { useContext, useState, useMemo, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { ThemeContext } from "@/context/ThemeContext";
 import { TagAnalyticsModal } from "@/components/ui/shared/tags/tags-modal";
@@ -45,6 +45,11 @@ export default function TagsSettingsScreen() {
     description?: string;
     actions: DialogAction[];
   } | null>(null);
+  const { openEditItemId, openEditRequestId } = useLocalSearchParams<{
+    openEditItemId?: string;
+    openEditRequestId?: string;
+  }>();
+  const handledTagEditRequest = useRef<string | null>(null);
 
   // --- HANDLERS ---
   const handleEditRequest = (id: string) => {
@@ -144,6 +149,34 @@ export default function TagsSettingsScreen() {
     reassignLogTagWithEffects(tagToDelete, fallbackId);
     setTagToDelete(null);
   };
+
+  useEffect(() => {
+    if (
+      !openEditItemId ||
+      !openEditRequestId ||
+      handledTagEditRequest.current === openEditRequestId
+    ) {
+      return;
+    }
+
+    const tag = useTagStore.getState().tagsById[openEditItemId];
+
+    if (!tag) return;
+
+    handledTagEditRequest.current = openEditRequestId;
+
+    // PLACEHOLDER: set the existing selected/editing tag and open its modal.
+    setSelectedTagId(tag.id);
+
+    router.setParams({
+      openEditItemId: undefined,
+      openEditRequestId: undefined,
+      focusItemId: undefined,
+      focusItemType: undefined,
+      focusRequestId: undefined,
+    });
+  }, [openEditItemId, openEditRequestId, router]);
+
   // Filter and sort alphabetically
   const displayTags = useMemo(() => {
     let filtered = tags;
@@ -158,7 +191,10 @@ export default function TagsSettingsScreen() {
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          onPress={() => router.dismissTo("/settings/settings-screen")}
+          style={styles.backButton}
+        >
           <Ionicons name="arrow-back" size={24} color={theme.whiteBase} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: theme.whiteBase }]}>

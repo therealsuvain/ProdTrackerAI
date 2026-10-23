@@ -30,6 +30,7 @@ export const TaxonomyChip = ({
 
   if (isCategory) {
     const categoryData: Category = {
+      id: action.args.id || action.extraInfo?.id,
       name: action.args.name || action.extraInfo?.name,
       color: action.args.hexColor || action.extraInfo?.color || "black",
       icon:
@@ -46,7 +47,11 @@ export const TaxonomyChip = ({
             opacity: pressed && isEditable ? 0.7 : 1,
           })}
         >
-          <CategoryBadge category={categoryData} size="big" />
+          <CategoryBadge
+            categoryId={action.args.id}
+            dummyData={categoryData}
+            size="big"
+          />
         </Pressable>
         {action.args.fallbackCategoryId &&
           action.extraInfo?.fallbackCategory && (
@@ -58,7 +63,7 @@ export const TaxonomyChip = ({
                 color={"black"}
               />
               <CategoryBadge
-                category={action.extraInfo.fallbackCategory}
+                categoryId={action.extraInfo.fallbackCategory}
                 size="big"
               />
             </>
@@ -116,7 +121,7 @@ export const TaxonomyChip = ({
             setIsEditorOpen(false);
             setEditingTagIndex(null); // Clean up pointer
           }}
-          onSave={() => {
+          onSave={async () => {
             if (action.args.names && editingTagIndex !== null) {
               // 3. ADDED: Array Mutator Logic
               // Shallow copy the array to respect immutability

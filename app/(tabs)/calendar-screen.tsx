@@ -36,6 +36,13 @@ import {
 import { useEventStore } from "@/stores/use-event-store";
 import { EventDetailsHost } from "@/components/ui/calendar-events/event-details-host";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { doesEventOccurOnDate } from "@/stores/use-event-store";
+
+type PendingCalendarEventFocus = {
+  eventId: string;
+  occurrenceDate: string;
+  requestId: string;
+};
 
 // TODOX - can we getting db write error from useItemForm hook into ItemScreen and display toast?
 function CalendarScreenInner() {
@@ -52,11 +59,30 @@ function CalendarScreenInner() {
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const { showToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
+  const [pendingEventFocus, setPendingEventFocus] =
+    useState<PendingCalendarEventFocus | null>(null);
+
+  const [agendaFocusEpoch, setAgendaFocusEpoch] = useState(0);
+
+  const handledEventFocusRequest = useRef<string | null>(null);
+
+  const eventsLoaded = useEventStore((state) => state.loaded);
   const router = useRouter();
 
-  const { openAdd, openAddRequest } = useLocalSearchParams<{
+  const {
+    openAdd,
+    openAddRequest,
+    focusItemId,
+    focusItemType,
+    focusRequestId,
+    occurrenceDate,
+  } = useLocalSearchParams<{
     openAdd?: string;
     openAddRequest?: string;
+    focusItemId?: string;
+    focusItemType?: string;
+    focusRequestId?: string;
+    occurrenceDate?: string;
   }>();
 
   const handledOpenAddRequest = useRef<string | null>(null);
@@ -167,6 +193,25 @@ function CalendarScreenInner() {
     setSelectedDate(date);
   }, []);
 
+  const handleCalendarFocusRequestHandled = useCallback((requestId: string) => {
+    setPendingEventFocus((current) =>
+      current?.requestId === requestId ? null : current,
+    );
+  }, []);
+
+  const handleCalendarFocusRequestFailed = useCallback(
+    (requestId: string) => {
+      setPendingEventFocus((current) =>
+        current?.requestId === requestId ? null : current,
+      );
+
+      showToast(
+        "Couldn't bring this event occurrence into view. Open it from the calendar instead.",
+      );
+    },
+    [showToast],
+  );
+
   useEffect(() => {
     if (
       openAdd !== "1" ||
@@ -187,6 +232,74 @@ function CalendarScreenInner() {
       openAddRequest: undefined,
     });
   }, [openAdd, openAddRequest, router, showModal]);
+
+  useEffect(() => {
+    if (
+      focusItemType !== "event" ||
+      !focusItemId ||
+      !focusRequestId ||
+      !occurrenceDate ||
+      handledEventFocusRequest.current === focusRequestId
+    ) {
+      return;
+    }
+
+    // Wait for the initial event-store load before deciding the target is gone.
+    if (!eventsLoaded) return;
+
+    const event = useEventStore.getState().eventsById[focusItemId];
+
+    const consumeParams = () => {
+      router.setParams({
+        focusItemId: undefined,
+        focusItemType: undefined,
+        focusRequestId: undefined,
+        occurrenceDate: undefined,
+      });
+    };
+
+    // Revalidate against the current event data. The occurrence could have
+    // been removed or edited while the search screen was open.
+    if (!event || !doesEventOccurOnDate(event, occurrenceDate)) {
+      handledEventFocusRequest.current = focusRequestId;
+      showToast("This event occurrence is no longer available.");
+      consumeParams();
+      return;
+    }
+
+    handledEventFocusRequest.current = focusRequestId;
+
+    // Agenda must be in month view so the target pill exists.
+    setCurrentView("month");
+
+    // Preserve the ISO calendar day. Using UTC noon avoids shifting the
+    // date backwards when the date string is parsed in local time.
+    setSelectedDate(new Date(`${occurrenceDate}T12:00:00.000Z`));
+
+    setPendingEventFocus({
+      eventId: focusItemId,
+      occurrenceDate,
+      requestId: focusRequestId,
+    });
+
+    // Remount the Agenda for this explicit navigation request so its
+    // initial selected day and loaded date range are the target occurrence.
+    setAgendaFocusEpoch((current) => current + 1);
+
+    // The request is now safely stored in local state.
+    consumeParams();
+  }, [
+    focusItemId,
+    focusItemType,
+    focusRequestId,
+    occurrenceDate,
+    eventsLoaded,
+    router,
+    setCurrentView,
+    setSelectedDate,
+    showToast,
+  ]);
+
   return (
     <>
       <View
@@ -210,11 +323,12 @@ function CalendarScreenInner() {
 
       {currentView === "month" ? (
         <CalendarListAgendaMain
-          //key={Object.keys(events).length}
+          key={agendaFocusEpoch}
           selectedDate={selectedDate}
           onDateSelect={handleDateSelect}
-          /* onEventSelect={handleEditRow}
-          onDelete={handleDelete} */
+          focusRequest={pendingEventFocus ?? undefined}
+          onFocusRequestHandled={handleCalendarFocusRequestHandled}
+          onFocusRequestFailed={handleCalendarFocusRequestFailed}
         />
       ) : (
         <Timeline

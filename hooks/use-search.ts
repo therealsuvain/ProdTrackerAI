@@ -33,3 +33,17 @@ export const useSearch = () => {
 
     return { query, results, performSearch };
 }
+
+/**
+ * const results = useMemo(
+  () =>
+    query.trim()
+      ? globalSearch(query, tasks, events, habits, timerLogs)
+      : [],
+  [query, tasks, events, habits, timerLogs],
+);
+
+const performSearch = useCallback((newQuery: string) => {
+  setQuery(newQuery);
+}, []);
+ */

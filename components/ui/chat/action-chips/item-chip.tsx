@@ -193,20 +193,20 @@ export const ItemChip = ({
             disabled={isReadOnly}
           >
             <CategoryBadge
-              category={action.extraInfo.category}
+              categoryId={action.extraInfo.category}
               variant="iconOnly"
             />
           </Pressable>
         )}
         {args.category ? (
           <>
-            <Text style={styles.arrow}>➔</Text>
+            {action.extraInfo?.category && <Text style={styles.arrow}>➔</Text>}
             <Pressable
               onPress={() => setShowCategoryModal(true)}
               disabled={isReadOnly}
             >
               <CategoryBadge
-                category={{ id: action.args.category } as any}
+                categoryId={action.args.category}
                 variant="iconOnly"
               />
             </Pressable>

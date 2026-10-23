@@ -21,7 +21,6 @@ import { ThemeContext } from "@/context/ThemeContext";
 import { usePlaySound } from "@/hooks/use-play-sound";
 import { useTaskStore } from "@/stores/use-task-store";
 
-import { useTimer } from "@/hooks/context-hooks/use-timer";
 import { useVoiceInput } from "@/hooks/use-voice-input";
 import { Message } from "@/types/chat";
 //import { agenticExecutor, processCommandAgentic } from "@/utils/ai-utils";
@@ -266,6 +265,7 @@ export const ChatScreen = ({ visible, onDismiss }: Props) => {
       Category: {
         list: categories,
         pick: (c) => ({
+          id: c.id,
           name: c.name,
           color: c.color,
           icon: c.icon,
