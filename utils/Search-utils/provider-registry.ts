@@ -6,6 +6,12 @@ import {
     type GlobalSearchProviderId,
 } from "@/types/global-search";
 
+import {
+    recordGlobalSearchCatalogueBuild,
+    recordGlobalSearchProviderBuild,
+    startGlobalSearchTimer,
+} from "@/utils/Search-utils/diagnostics/search-diagnostics";
+
 export interface RegisteredGlobalSearchProvider {
     readonly id: GlobalSearchProviderId;
 
@@ -69,37 +75,60 @@ export function buildGlobalSearchCatalogue(
     >,
     context: GlobalSearchProviderContext,
 ): readonly GlobalSearchDocument[] {
+
+    const catalogueStartedAt = startGlobalSearchTimer();
     const documents: GlobalSearchDocument[] = [];
     const seenKeys = new Set<string>();
+    try {
+        for (const [providerId, provider] of registry) {
+            //!TEST ONLY CODE COMMENT REMOVE AFTER TEST ONLY CODE REMOVED
+            //const providerDocuments = provider.buildDocuments(context);
 
-    for (const [providerId, provider] of registry) {
-        const providerDocuments = provider.buildDocuments(context);
+            //!TEST ONLY CODE START
+            const providerStartedAt = startGlobalSearchTimer();
+            let providerDocuments: readonly GlobalSearchDocument[] = [];
 
-        for (const document of providerDocuments) {
-            if (document.kind !== providerId) {
-                throw new Error(
-                    `Provider "${providerId}" returned a document of kind "${document.kind}"`,
+            try {
+                providerDocuments = provider.buildDocuments(context);
+            } finally {
+                recordGlobalSearchProviderBuild(
+                    providerId,
+                    providerStartedAt,
+                    providerDocuments.length,
                 );
             }
+            //!TEST ONLY CODE END
+            for (const document of providerDocuments) {
+                if (document.kind !== providerId) {
+                    throw new Error(
+                        `Provider "${providerId}" returned a document of kind "${document.kind}"`,
+                    );
+                }
 
-            const expectedKey = getGlobalSearchKey(document.target);
+                const expectedKey = getGlobalSearchKey(document.target);
 
-            if (document.key !== expectedKey) {
-                throw new Error(
-                    `Invalid search key "${document.key}". Expected "${expectedKey}"`,
-                );
+                if (document.key !== expectedKey) {
+                    throw new Error(
+                        `Invalid search key "${document.key}". Expected "${expectedKey}"`,
+                    );
+                }
+
+                if (seenKeys.has(document.key)) {
+                    throw new Error(
+                        `Duplicate global search document: "${document.key}"`,
+                    );
+                }
+
+                seenKeys.add(document.key);
+                documents.push(document);
             }
-
-            if (seenKeys.has(document.key)) {
-                throw new Error(
-                    `Duplicate global search document: "${document.key}"`,
-                );
-            }
-
-            seenKeys.add(document.key);
-            documents.push(document);
         }
-    }
 
-    return documents;
+        return documents;
+    } finally {
+        recordGlobalSearchCatalogueBuild(
+            catalogueStartedAt,
+            documents.length,
+        );
+    }
 }

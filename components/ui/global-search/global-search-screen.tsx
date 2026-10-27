@@ -16,10 +16,11 @@ import {
   StyleSheet,
   TextInput,
   View,
+  Text,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { Button, IconButton, Searchbar, Text } from "react-native-paper";
+import { Button, IconButton, Searchbar } from "react-native-paper";
 
 import { ThemeContext } from "@/context/ThemeContext";
 import { withAlpha } from "@/utils/common-utils";
@@ -41,6 +42,20 @@ import type {
   GlobalSearchResult,
 } from "@/types/global-search";
 
+import { GlobalSearchConveniencePanel } from "@/components/ui/global-search/global-search-convenience-panel";
+import { GlobalSearchSavedScopesModal } from "@/components/ui/global-search/global-search-saved-scopes-modal";
+import { GlobalSearchShortcutsModal } from "@/components/ui/global-search/global-search-shortcuts-modal";
+import type {
+  RecentGlobalSearchItem,
+  SavedGlobalSearchScope,
+} from "@/types/global-search-convenience";
+import { Alert, Linking } from "react-native";
+
+import { GlobalSearchEasterEggRow } from "@/components/ui/global-search/search-result-row-easter-egg";
+import { matchGlobalSearchEasterEggs } from "@/utils/Search-utils/easter-egg-matcher";
+import { GLOBAL_SEARCH_EASTER_EGGS_BY_ID } from "@/utils/Search-utils/easter-egg-registry";
+import { recordGlobalSearchEasterEggDiscovery } from "@/utils/Search-utils/easter-egg-discovery";
+
 import { createGlobalSearchSelectionRequest } from "@/utils/Search-utils/selection-dispatcher";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { TagBadge } from "../shared/tags/tag-badge";
@@ -49,7 +64,7 @@ type SearchFilter = "all" | GlobalSearchFilterKind;
 
 type SearchSection = {
   title: string;
-  type: GlobalSearchFilterKind;
+  type: GlobalSearchKind;
   data: GlobalSearchResult[];
 };
 
@@ -57,7 +72,7 @@ const TYPE_LABELS: Record<GlobalSearchFilterKind, string> = {
   task: "Tasks",
   event: "Events",
   habit: "Habits",
-  log: "Timer logs",
+  log: "Logs",
   tag: "Tags",
   category: "Categories",
   achievement: "Achievements",
@@ -71,10 +86,13 @@ const FILTERS: { label: string; value: SearchFilter }[] = [
   { label: "Tasks", value: "task" },
   { label: "Events", value: "event" },
   { label: "Habits", value: "habit" },
-  { label: "Timer logs", value: "log" },
+  { label: "Logs", value: "log" },
   { label: "Tags", value: "tag" },
   { label: "Categories", value: "category" },
   { label: "Achievements", value: "achievement" },
+  { label: "Settings", value: "setting" },
+  { label: "Charts", value: "chart" },
+  { label: "Actions", value: "action" },
 ];
 
 type Props = {
@@ -85,24 +103,6 @@ type Props = {
   onDismiss: () => void;
   onItemPress: (request: GlobalSearchSelectionRequest) => void;
 };
-
-function getGlobalSearchTarget(result: SearchResult): GlobalSearchTarget {
-  const id = String(result.item.id);
-
-  switch (result.type) {
-    case "task":
-      return { kind: "task", id };
-
-    case "event":
-      return { kind: "event", id };
-
-    case "habit":
-      return { kind: "habit", id };
-
-    case "log":
-      return { kind: "log", id };
-  }
-}
 
 export function GlobalSearchScreen({
   visible,
@@ -124,12 +124,13 @@ export function GlobalSearchScreen({
   });
 
   const [showFilterModal, setShowFilterModal] = useState(false);
-
+  const [showSavedScopesModal, setShowSavedScopesModal] = useState(false);
   const openFilterModal = useCallback(() => {
     controller.openFilterPicker();
     setShowFilterModal(true);
   }, [controller.openFilterPicker]);
-
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+  const activeEggActivationRef = useRef<string | null>(null);
   // Resolve the ranked document targets back to their live source records.
   // This compatibility adapter lets the current SearchResultRow and
   // onItemPress continue to work while the richer dispatcher is deferred.
@@ -157,19 +158,36 @@ export function GlobalSearchScreen({
     [controller.filters.tagIds, tags],
   );
 
-  const sections = useMemo<SearchSection[]>(() => {
-    const types = [
-      ...new Set(filteredResults.map((result) => result.document.kind)),
-    ].filter((type): type is GlobalSearchFilterKind => type !== "easterEgg");
+  const easterEggResults = useMemo(
+    () => matchGlobalSearchEasterEggs(query),
+    [query],
+  );
 
-    return types
-      .map((type) => ({
-        type,
-        title: TYPE_LABELS[type],
-        data: filteredResults.filter((result) => result.document.kind === type),
-      }))
-      .filter((section) => section.data.length > 0);
-  }, [filteredResults]);
+  const sections = useMemo<SearchSection[]>(() => {
+    const next: SearchSection[] = [];
+
+    if (easterEggResults.length > 0) {
+      next.push({
+        title: "Easter eggs",
+        type: "easterEgg",
+        data: easterEggResults,
+      });
+    }
+
+    const ordinaryTypes = [
+      ...new Set(filteredResults.map((result) => result.document.kind)),
+    ].filter((kind) => kind !== "easterEgg");
+
+    for (const kind of ordinaryTypes) {
+      next.push({
+        title: TYPE_LABELS[kind as keyof typeof TYPE_LABELS] ?? "Results",
+        type: kind,
+        data: filteredResults.filter((result) => result.document.kind === kind),
+      });
+    }
+
+    return next;
+  }, [easterEggResults, filteredResults]);
 
   const getAccentColor = (type: SearchFilter) => {
     switch (type) {
@@ -185,6 +203,31 @@ export function GlobalSearchScreen({
         return theme.taskBase;
     }
   };
+
+  const handleApplySavedScope = useCallback(
+    (scope: SavedGlobalSearchScope) => {
+      // Only replace filters. Current query remains untouched.
+      controller.applySavedScope(scope);
+    },
+    [controller.applySavedScope],
+  );
+
+  const handleSaveScope = useCallback(
+    (name: string) => controller.saveScope(name, controller.filters),
+    [controller.saveScope, controller.filters],
+  );
+
+  const handleRenameScope = useCallback(
+    (scope: SavedGlobalSearchScope, name: string) =>
+      controller.updateScope(scope.id, name, scope.filters),
+    [controller.updateScope],
+  );
+
+  const handleUpdateScopeFilters = useCallback(
+    (scope: SavedGlobalSearchScope) =>
+      controller.updateScope(scope.id, scope.name, controller.filters),
+    [controller.updateScope, controller.filters],
+  );
 
   const isQueryEmpty = query.trim().length === 0;
   const hasActiveFilters = controller.hasActiveFilters;
@@ -224,6 +267,58 @@ export function GlobalSearchScreen({
     return () => clearTimeout(timeout);
   }, [visible]);
 
+  const handleEasterEggPress = useCallback(
+    async (eggId: string) => {
+      // Ignore concurrent taps while an activation is being handed off.
+      if (activeEggActivationRef.current) return;
+
+      const egg = GLOBAL_SEARCH_EASTER_EGGS_BY_ID.get(eggId);
+      if (!egg) return;
+
+      // These four effects remain intentionally disabled until their designs
+      // are approved. Do not mark them discovered during this staging period.
+      if (egg.activation.kind === "animation") {
+        Alert.alert(
+          "Surprise still in development",
+          "This Easter egg's effect is being designed. It isn't activated yet.",
+        );
+        return;
+      }
+
+      activeEggActivationRef.current = eggId;
+
+      // If the user submits or activates an egg, retain their current query.
+      controller.recordSubmittedSearch();
+
+      try {
+        // Discovery is recorded on tap, before trying to open the URL.
+        // A failed external URL still counts as an explicit activation tap.
+        try {
+          await recordGlobalSearchEasterEggDiscovery(eggId);
+        } catch (storageError) {
+          console.warn(
+            "[Global Search] Couldn't persist Easter egg discovery.",
+            storageError,
+          );
+        }
+
+        try {
+          // Rickroll only: external navigation happens after the explicit tap.
+          await Linking.openURL(egg.activation.url);
+        } catch {
+          Alert.alert(
+            "Couldn't open YouTube",
+            "The surprise was activated, but the external link couldn't be opened.",
+          );
+        }
+      } finally {
+        activeEggActivationRef.current = null;
+      }
+    },
+    [controller.recordSubmittedSearch],
+  );
+  const visibleResultCount = filteredResults.length + easterEggResults.length;
+
   return (
     <Modal
       visible={visible}
@@ -250,22 +345,18 @@ export function GlobalSearchScreen({
             />
 
             <View style={styles.headerCopy}>
-              <Text
-                variant="titleLarge"
-                style={[styles.headerTitle, { color: theme.text }]}
-              >
+              <Text style={[styles.headerTitle, { color: theme.text }]}>
                 Search Everything
               </Text>
 
               <Text
-                variant="bodySmall"
                 numberOfLines={1}
                 style={{ color: withAlpha(theme.text, "A8") }}
               >
                 {isQueryEmpty && !hasActiveFilters
                   ? "Search across your app"
-                  : `${filteredResults.length} result${
-                      filteredResults.length === 1 ? "" : "s"
+                  : `${visibleResultCount} result${
+                      visibleResultCount === 1 ? "" : "s"
                     } ${
                       isQueryEmpty
                         ? "matching current filters"
@@ -292,10 +383,95 @@ export function GlobalSearchScreen({
               },
             ]}
             accessibilityLabel="Search everything"
+            onSubmitEditing={controller.recordSubmittedSearch}
           />
 
           {/* Type filters */}
-          <View style={styles.typeFilterRow}>
+          <View style={styles.filterControlsWrap}>
+            <View style={styles.filterChipsWrap}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  controller.activeFacetCount > 0
+                    ? `Edit filters, ${controller.activeFacetCount} active`
+                    : "Edit search filters"
+                }
+                onPress={openFilterModal}
+                style={[
+                  styles.filterButton,
+                  {
+                    backgroundColor: withAlpha(theme.text, "08"),
+                    borderColor: withAlpha(theme.text, "24"),
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="tune-variant"
+                  size={16}
+                  color={theme.text}
+                />
+
+                {controller.activeFacetCount > 0 && (
+                  <View
+                    style={[
+                      styles.filterCountBadge,
+                      { backgroundColor: theme.taskBase },
+                    ]}
+                  >
+                    <Text
+                      style={{
+                        color: theme.whiteBase,
+                        fontSize: 10,
+                        fontWeight: "500",
+                      }}
+                    >
+                      {controller.activeFacetCount}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+              {FILTERS.map((filter) => {
+                const selected = controller.filters.type === filter.value;
+                const accent = getAccentColor(filter.value);
+
+                return (
+                  <Pressable
+                    key={filter.value}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    onPress={() => controller.setType(filter.value)}
+                    style={[
+                      styles.filterChip,
+                      {
+                        backgroundColor: selected
+                          ? accent
+                          : withAlpha(theme.text, "08"),
+                        borderColor: selected
+                          ? accent
+                          : withAlpha(theme.text, "18"),
+                      },
+                    ]}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        color: selected ? theme.whiteBase : theme.text,
+                        fontWeight: selected ? "700" : "500",
+                        fontSize: 12,
+                      }}
+                    >
+                      {filter.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/**
+           * //OLD! SCROLL VIEW VERSION
+           * */}
+          {/*  <View style={styles.typeFilterRow}>
             <View
               style={{
                 alignItems: "center",
@@ -328,9 +504,6 @@ export function GlobalSearchScreen({
                   size={17}
                   color={theme.text}
                 />
-                {/*  <Text variant="labelLarge" style={{ color: theme.text }}>
-                Filters
-              </Text> */}
 
                 {controller.activeFacetCount > 0 && (
                   <View
@@ -393,16 +566,16 @@ export function GlobalSearchScreen({
                 );
               })}
             </ScrollView>
-          </View>
-          {(activeCategoryFilters.length > 0 ||
-            activeTagFilters.length > 0) && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={styles.activeFiltersContent}
-              style={styles.activeFiltersScroll}
-            >
+          </View> */}
+          {controller.hasActiveFilters && (
+            // <ScrollView
+            //   horizontal
+            //   showsHorizontalScrollIndicator={false}
+            //   keyboardShouldPersistTaps="handled"
+            //   contentContainerStyle={styles.activeFiltersContent}
+            //   style={styles.activeFiltersScroll}
+            // >
+            <View style={styles.activeFiltersWrap}>
               {activeCategoryFilters.map((category) => (
                 <Pressable
                   key={`active-category-${category.id}`}
@@ -424,10 +597,10 @@ export function GlobalSearchScreen({
                   >
                     {category.label}
                   </Text> */}
-                  <CategoryBadge categoryId={category.id} />
+                  <CategoryBadge categoryId={category.id} variant="iconOnly" />
                   <MaterialCommunityIcons
                     name="close"
-                    size={15}
+                    size={12}
                     color={theme.text}
                   />
                 </Pressable>
@@ -457,22 +630,31 @@ export function GlobalSearchScreen({
                   <TagBadge tagId={tag.id} holeColor={theme.background} />
                   <MaterialCommunityIcons
                     name="close"
-                    size={15}
+                    size={12}
                     color={theme.text}
                   />
                 </Pressable>
               ))}
-
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Save current filters as a scope"
+                onPress={() => setShowSavedScopesModal(true)}
+                style={styles.clearFiltersButton}
+              >
+                <Text style={{ color: theme.taskBase, fontWeight: "600" }}>
+                  Save scope
+                </Text>
+              </Pressable>
               <Pressable
                 accessibilityRole="button"
                 onPress={controller.clearAllFilters}
                 style={styles.clearFiltersButton}
               >
-                <Text variant="labelMedium" style={{ color: theme.taskBase }}>
+                <Text style={{ color: theme.taskBase, fontWeight: "600" }}>
                   Clear all
                 </Text>
               </Pressable>
-            </ScrollView>
+            </View>
           )}
 
           {/* Grouped results */}
@@ -480,6 +662,50 @@ export function GlobalSearchScreen({
             sections={sections}
             keyExtractor={(item, index) =>
               `${String(item.document.key ?? index)}`
+            }
+            ListHeaderComponent={
+              isQueryEmpty && !controller.hasActiveFilters ? (
+                <GlobalSearchConveniencePanel
+                  savedScopes={controller.savedScopes}
+                  recentSearches={controller.recentSearches}
+                  recentItems={controller.recentItems}
+                  shortcuts={controller.documents.filter(
+                    (document) => document.kind === "action",
+                  )}
+                  isLoaded={controller.isConvenienceStoreLoaded}
+                  onApplyScope={handleApplySavedScope}
+                  onManageScopes={() => setShowSavedScopesModal(true)}
+                  onRestoreSearch={controller.restoreRecentSearch}
+                  onRemoveSearch={controller.removeRecentSearch}
+                  onClearSearches={controller.clearRecentSearches}
+                  onOpenShortcuts={() => setShowShortcutsModal(true)}
+                  onOpenRecentItem={(recent: RecentGlobalSearchItem) => {
+                    const document = controller.documents.find(
+                      (candidate) => candidate.key === recent.key,
+                    );
+
+                    if (!document) {
+                      void controller.removeRecentItem(recent.key);
+                      return;
+                    }
+
+                    controller.recordSelectedResult(document);
+
+                    onItemPress(
+                      createGlobalSearchSelectionRequest(document.target),
+                    );
+                  }}
+                  onRemoveRecentItem={controller.removeRecentItem}
+                  onClearRecentItems={controller.clearRecentItems}
+                  onActivateShortcut={(document) => {
+                    controller.recordSelectedResult(document);
+
+                    onItemPress(
+                      createGlobalSearchSelectionRequest(document.target),
+                    );
+                  }}
+                />
+              ) : null
             }
             renderSectionHeader={({ section }) => (
               <View
@@ -491,34 +717,54 @@ export function GlobalSearchScreen({
                   },
                 ]}
               >
-                <Text
-                  variant="titleMedium"
-                  style={[styles.sectionTitle, { color: theme.text }]}
-                >
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>
                   {section.title}
                 </Text>
 
                 <Text
-                  variant="labelMedium"
                   style={{
-                    color: withAlpha(getAccentColor(section.type), "FF"),
+                    color: withAlpha(
+                      section.type === "easterEgg"
+                        ? "#ed62ff"
+                        : getAccentColor(section.type),
+                      "FF",
+                    ),
+                    fontWeight: "500",
+                    fontSize: 16,
                   }}
                 >
                   {section.data.length}
                 </Text>
               </View>
             )}
-            renderItem={({ item }) => (
-              <SearchResultRow
-                result={item}
-                query={query}
-                onPress={() =>
-                  onItemPress(
-                    createGlobalSearchSelectionRequest(item.document.target),
-                  )
-                }
-              />
-            )}
+            renderItem={({ item }) => {
+              if (item.document.kind === "easterEgg") {
+                const eggId = item.document.target.eggId;
+                const activationEnabled = eggId === "rickroll";
+
+                return (
+                  <GlobalSearchEasterEggRow
+                    result={item}
+                    activationEnabled={activationEnabled}
+                    onPress={() => {
+                      void handleEasterEggPress(eggId);
+                    }}
+                  />
+                );
+              }
+              return (
+                <SearchResultRow
+                  result={item}
+                  query={query}
+                  onPress={() => {
+                    controller.recordSelectedResult(item.document);
+                    onItemPress(
+                      createGlobalSearchSelectionRequest(item.document.target),
+                    );
+                  }}
+                />
+              );
+            }}
             ItemSeparatorComponent={() => <View style={styles.rowSeparator} />}
             ListEmptyComponent={
               <View style={styles.emptyState}>
@@ -537,15 +783,11 @@ export function GlobalSearchScreen({
                   />
                 </View>
 
-                <Text
-                  variant="titleLarge"
-                  style={[styles.emptyTitle, { color: theme.text }]}
-                >
+                <Text style={[styles.emptyTitle, { color: theme.text }]}>
                   {emptyTitle}
                 </Text>
 
                 <Text
-                  variant="bodyMedium"
                   style={[
                     styles.emptyDescription,
                     { color: withAlpha(theme.text, "A8") },
@@ -601,6 +843,37 @@ export function GlobalSearchScreen({
               selectedSurface: withAlpha(theme.taskBase, "08"),
             }}
           />
+          <GlobalSearchSavedScopesModal
+            visible={showSavedScopesModal}
+            scopes={controller.savedScopes}
+            currentFilters={controller.filters}
+            canSaveCurrentFilters={controller.hasActiveFilters}
+            onClose={() => setShowSavedScopesModal(false)}
+            onSaveScope={handleSaveScope}
+            onApplyScope={handleApplySavedScope}
+            onRenameScope={handleRenameScope}
+            onUpdateScopeFilters={handleUpdateScopeFilters}
+            onDeleteScope={controller.deleteScope}
+            onClearScopes={controller.clearScopes}
+          />
+          <GlobalSearchShortcutsModal
+            visible={showShortcutsModal}
+            shortcuts={controller.documents.filter(
+              (document) => document.kind === "action",
+            )}
+            savedScopes={controller.savedScopes}
+            isLoaded={controller.isConvenienceStoreLoaded}
+            onClose={() => setShowShortcutsModal(false)}
+            onManageScopes={() => setShowSavedScopesModal(true)}
+            onApplyScope={(scope) => {
+              controller.applySavedScope(scope);
+            }}
+            onActivateShortcut={(document) => {
+              controller.recordSelectedResult(document);
+
+              onItemPress(createGlobalSearchSelectionRequest(document.target));
+            }}
+          />
         </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
@@ -626,6 +899,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontWeight: "700",
+    fontSize: 22,
   },
   searchbar: {
     marginHorizontal: 16,
@@ -635,7 +909,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     elevation: 0,
   },
-  typeFilterRow: {
+  //!OLD FILTER CHIP SCROLL VIEW VERSION
+  /*   typeFilterRow: {
     width: "100%",
     minWidth: 0,
     flexDirection: "row",
@@ -655,8 +930,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     alignItems: "center",
     gap: 8,
-  },
-  filterChip: {
+  }, 
+   filterChip: {
     height: 44,
     flexShrink: 0,
     paddingHorizontal: 16,
@@ -665,15 +940,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  taxnonomyChip: {
+  }, 
+   taxnonomyChip: {
     height: 40,
     width: 40,
     borderRadius: 20,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
+  }, */
 
   sectionHeader: {
     flexDirection: "row",
@@ -687,6 +962,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontWeight: "700",
+    fontSize: 16,
   },
   rowSeparator: {
     height: 2,
@@ -714,12 +990,14 @@ const styles = StyleSheet.create({
   emptyTitle: {
     textAlign: "center",
     fontWeight: "700",
+    fontSize: 22,
   },
   emptyDescription: {
     textAlign: "center",
     lineHeight: 22,
     marginTop: 8,
     maxWidth: 320,
+    fontSize: 14,
   },
   emptyAction: {
     marginTop: 10,
@@ -729,14 +1007,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 6,
   },
-  filterCountBadge: {
+  //!OLD FILTER CHIP SCROLL VIEW VERSION
+  /*  filterCountBadge: {
     minWidth: 19,
     height: 19,
     borderRadius: 10,
     paddingHorizontal: 4,
     alignItems: "center",
     justifyContent: "center",
-  },
+  }, */
   activeFiltersScroll: {
     maxHeight: 42,
     flexGrow: 0,
@@ -755,8 +1034,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 5,
-    paddingHorizontal: 10,
+    gap: 3,
+    paddingHorizontal: 6,
     borderWidth: 1,
     borderRadius: 16,
   },
@@ -764,5 +1043,64 @@ const styles = StyleSheet.create({
     minHeight: 30,
     justifyContent: "center",
     paddingHorizontal: 5,
+  },
+
+  filterControlsWrap: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    gap: 8,
+  },
+
+  filterButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+
+  filterChipsWrap: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 4,
+  },
+
+  filterChip: {
+    minHeight: 30,
+    flexShrink: 0,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  filterCountBadge: {
+    position: "absolute",
+    right: -3,
+    top: -3,
+    minWidth: 17,
+    height: 17,
+    paddingHorizontal: 3,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  activeFiltersWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    gap: 8,
   },
 });

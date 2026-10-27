@@ -106,6 +106,7 @@ export const settingsSearchProvider: GlobalSearchProvider<
                                 family: "material-community",
                                 name: getSettingIcon(setting.type),
                             },
+                            accentColor: "#616161", // Use a default accent color for settings
                         },
                     },
                     fields,

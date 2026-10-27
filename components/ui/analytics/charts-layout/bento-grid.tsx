@@ -13,6 +13,7 @@ import {
   Text,
   Dimensions,
 } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { CHART_REGISTRY, ChartProps } from "../charts-registry";
 import { computeGridLayout } from "./chart-tile-config";
 import { ChartTile } from "./chart-tile";
@@ -22,6 +23,8 @@ import { Portal } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SharedValue } from "react-native-reanimated";
 import { FilteredChart } from "./filtered-chart-component-wrapper";
+import { useEntitlement } from "@/context/EntitlementContext";
+import { tierAtLeast } from "@/types/entitlement";
 
 interface Props {
   order: string[];
@@ -64,6 +67,15 @@ export const AnalyticsBentoGrid = ({
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const lastAbsoluteYRef = useRef<number | null>(null);
+  const router = useRouter();
+  const { plan, isLoaded } = useEntitlement();
+
+  const { openChartId, openChartRequestId } = useLocalSearchParams<{
+    openChartId?: string;
+    openChartRequestId?: string;
+  }>();
+
+  const handledChartRequest = useRef<string | null>(null);
 
   // Gesture callbacks fire on every animation frame, so we keep the current
   // order in a ref to avoid stale closures without re-subscribing gestures.
@@ -204,6 +216,55 @@ export const AnalyticsBentoGrid = ({
 
     return () => clearInterval(interval);
   }, [draggedId, scrollRef, scrollY, viewportRef]);
+
+  useEffect(() => {
+    if (
+      !openChartId ||
+      !openChartRequestId ||
+      handledChartRequest.current === openChartRequestId
+    ) {
+      return;
+    }
+
+    // Wait for entitlement state before deciding whether access is allowed.
+    if (!isLoaded) return;
+
+    const consumeParams = () => {
+      router.setParams({
+        openChartId: undefined,
+        openChartRequestId: undefined,
+      });
+    };
+
+    if (!tierAtLeast(plan, "gold")) {
+      handledChartRequest.current = openChartRequestId;
+      consumeParams();
+
+      router.navigate({
+        pathname: "/paywall-screen",
+        params: {
+          requiredTier: "gold",
+          sourceFeatureId: "analytics",
+        },
+      } as never);
+
+      return;
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(CHART_REGISTRY, openChartId)) {
+      handledChartRequest.current = openChartRequestId;
+      consumeParams();
+      console.warn(`[Global Search] Unknown chart ID: ${openChartId}`);
+      return;
+    }
+
+    handledChartRequest.current = openChartRequestId;
+
+    // Open the existing modal directly; the chart need not be visible
+    // in the current dashboard bento layout.
+    setExpandedId(openChartId);
+    consumeParams();
+  }, [openChartId, openChartRequestId, plan, isLoaded, router, setExpandedId]);
 
   const exitEditMode = useCallback(() => {
     setEditMode(false);

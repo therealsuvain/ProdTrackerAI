@@ -14,6 +14,11 @@ import {
     tokenizeSearchText,
 } from "./text-normalization";
 
+import {
+    beginGlobalSearchMatching,
+    finishGlobalSearchMatching,
+    recordGlobalSearchFuzzyComparison,
+} from "@/utils/Search-utils/diagnostics/search-diagnostics";
 /**
  * These are ranking scores, not confidence percentages.
  * Higher scores mean a stronger match.
@@ -184,6 +189,7 @@ function fuzzyTokensMatch(
     normalizedTitle: string,
     queryTokens: readonly string[],
 ): { matches: boolean; position: number } {
+    recordGlobalSearchFuzzyComparison();
     if (!GLOBAL_SEARCH_FUZZY_CONFIG.enabled) {
         return { matches: false, position: Number.MAX_SAFE_INTEGER };
     }
@@ -613,7 +619,7 @@ export function filterGlobalSearchDocuments(
  * An empty query returns no text-ranked results; filter-only browsing can
  * be handled separately by the UI pipeline.
  */
-export function searchGlobalDocuments(
+function searchGlobalDocumentsImpl(
     documents: readonly GlobalSearchDocument[],
     rawQuery: string,
     filters: GlobalSearchFilters,
@@ -723,4 +729,26 @@ export function searchGlobalDocuments(
     });
 
     return ranked.map((candidate) => candidate.result);
+}
+
+export function searchGlobalDocuments(
+    documents: readonly GlobalSearchDocument[],
+    rawQuery: string,
+    filters: GlobalSearchFilters,
+): GlobalSearchResult[] {
+    const startedAt = beginGlobalSearchMatching(rawQuery.length);
+    let resultCount = 0;
+
+    try {
+        const results = searchGlobalDocumentsImpl(
+            documents,
+            rawQuery,
+            filters,
+        );
+
+        resultCount = results.length;
+        return results;
+    } finally {
+        finishGlobalSearchMatching(startedAt, resultCount);
+    }
 }

@@ -27,8 +27,8 @@ export const categorySearchProvider: GlobalSearchProvider<
                     subtitle: "Category",
                     presentation: {
                         icon: {
-                            family: "material-community",
-                            name: "shape-outline",
+                            family: "ionicons",
+                            name: category.icon || "shape-outline",
                         },
                         accentColor: category.color,
                     },

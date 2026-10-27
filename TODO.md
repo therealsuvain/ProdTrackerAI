@@ -110,6 +110,7 @@
 - TODO : in edit modals, when no category is assigned, 'None Selected' which rendered earlier doesnt show up
 - TODO : Additonal confirmation after successfull deletion of big deletes, like reset achievements currently after reset is pressed , shows no confirmation that the "Achievements Reset Successfully" , I think that is a must and good to have
   -TODO : Notificaiton rescheduler , check once . On app reload when all data is pulled in then too the rescheduler modal is shown, even tho there not be any new notificaitions
+- TOOD : Chart Details Modal doesnt fit into one plus phone, the dimesion calculation worked for motorola phone but didnt work for the older one plus with a smaller resolution, this is just one case where dimensions of modals and components dont scale properly across different screens. There probably a numberous more cases where current dimensions are only working for my 2 test devices and will not be properly scaled on different screens and resolutions other than this.
 
 # Big Overhaul #1 (BO1): Upgrade Sync Engine to Event-Driven, Selective Sync
 

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useShallow } from "zustand/shallow";
 
 import { ALL_ACHIEVEMENTS } from "@/types/achievements-ui";
@@ -36,6 +36,15 @@ import {
     achievementSearchProvider,
     type AchievementSearchSource,
 } from "@/utils/Search-utils/providers/achievement-provider";
+import { settingsSearchProvider, type SearchableSettingsSection } from "@/utils/Search-utils/providers/settings-provider";
+import { chartSearchProvider } from "@/utils/Search-utils/providers/chart-provider";
+import { buildGlobalSearchActionDocuments } from "@/utils/Search-utils/action-registry";
+import { CHART_REGISTRY } from "@/components/ui/analytics/charts-registry";
+import { SETTINGS_LAYOUT } from "@/types/settings-ui";
+
+import {
+    recordGlobalSearchCatalogueFinalized
+} from "@/utils/Search-utils/diagnostics/search-diagnostics";
 
 export function useGlobalSearchCatalogue() {
     // Subscribe to the existing record stores.
@@ -94,6 +103,14 @@ export function useGlobalSearchCatalogue() {
         [unlockedAchievements, metricBaseline, metricGlobal],
     );
 
+    const settingsSections =
+        SETTINGS_LAYOUT as readonly SearchableSettingsSection[];
+
+    const chartIds = useMemo(
+        () => Object.keys(CHART_REGISTRY),
+        [],
+    );
+
     const { plan, isLoaded } = useEntitlement();
 
     // The provider contract uses ReadonlyMap rather than the
@@ -146,16 +163,24 @@ export function useGlobalSearchCatalogue() {
                     achievementSearchProvider,
                     () => achievementSource,
                 ),
+                bindGlobalSearchProvider(settingsSearchProvider, () => settingsSections),
+                bindGlobalSearchProvider(chartSearchProvider, () => chartIds),
             ]),
-        [tasks, events, habits, timerLogs, tagList, categoryList, achievementSource],
+        [tasks, events, habits, timerLogs, tagList, categoryList, achievementSource, settingsSections, chartIds],
     );
 
     // Rebuild documents when source records, lookups, or provider
     // definitions change—not in response to each search keystroke.
     const documents = useMemo(
-        () => buildGlobalSearchCatalogue(providerRegistry, providerContext),
+        () => [
+            ...buildGlobalSearchCatalogue(providerRegistry, providerContext),
+            ...buildGlobalSearchActionDocuments(),
+        ],
         [providerRegistry, providerContext],
     );
 
+    useEffect(() => {
+        recordGlobalSearchCatalogueFinalized(documents.length);
+    }, [documents]);
     return documents;
 }

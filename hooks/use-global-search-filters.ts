@@ -166,6 +166,20 @@ export function useGlobalSearchFilters() {
         setDraftFilters((current) => (current ? copyFilters(defaults) : null));
     }, []);
 
+    const replaceFilters = useCallback(
+        (nextFilters: GlobalSearchFilters) => {
+            const next = copyFilters(nextFilters);
+
+            setFilters(next);
+
+            // Keep an open picker consistent with the newly applied filters.
+            setDraftFilters((current) =>
+                current ? copyFilters(next) : null,
+            );
+        },
+        [],
+    );
+
     return {
         filters,
         draftFilters,
@@ -184,5 +198,6 @@ export function useGlobalSearchFilters() {
         removeCategoryFilter,
         removeTagFilter,
         clearAllFilters,
+        replaceFilters,
     };
 }

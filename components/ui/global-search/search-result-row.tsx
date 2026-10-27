@@ -16,6 +16,7 @@ import type {
   GlobalSearchKind,
   GlobalSearchResult,
 } from "@/types/global-search";
+import { Ionicons } from "@expo/vector-icons";
 
 const RESULT_META: Record<
   Exclude<GlobalSearchKind, "easterEgg">,
@@ -260,15 +261,23 @@ export function SearchResultRow({ result, onPress, query = "" }: Props) {
           { backgroundColor: withAlpha(accentColor, "20") },
         ]}
       >
-        <MaterialCommunityIcons
-          name={
-            iconName as React.ComponentProps<
-              typeof MaterialCommunityIcons
-            >["name"]
-          }
-          size={23}
-          color={accentColor}
-        />
+        {type === "category" ? (
+          <Ionicons
+            name={iconName as keyof typeof Ionicons.glyphMap}
+            size={23}
+            color={accentColor}
+          />
+        ) : (
+          <MaterialCommunityIcons
+            name={
+              iconName as React.ComponentProps<
+                typeof MaterialCommunityIcons
+              >["name"]
+            }
+            size={23}
+            color={accentColor}
+          />
+        )}
       </View>
 
       <View style={styles.content}>

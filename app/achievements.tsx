@@ -18,6 +18,10 @@ import {
 } from "@/stores/use-achievement-store";
 import { useShallow } from "zustand/shallow";
 import { useMetricStore } from "@/stores/use-metrics-store";
+import {
+  GlobalSearchFocusHighlight,
+  GlobalSearchFocusHighlightRequest,
+} from "@/components/ui/global-search/global-search-focus-highlight";
 
 export default function AchievementsScreen() {
   const { theme } = useTheme();
@@ -43,7 +47,39 @@ export default function AchievementsScreen() {
       focusRequestId?: string;
     }>();
   const handledAchievementFocusRequest = useRef<string | null>(null);
+  const itemHeights = useRef<Record<string, number>>({});
 
+  const pendingAchievementHighlight =
+    useRef<GlobalSearchFocusHighlightRequest | null>(null);
+
+  const [highlightedAchievement, setHighlightedAchievement] =
+    useState<GlobalSearchFocusHighlightRequest | null>(null);
+
+  const achievementsScrollY = useRef(0);
+  const achievementsViewportHeight = useRef(0);
+
+  const maybeHighlightVisibleAchievement = useCallback(() => {
+    const pending = pendingAchievementHighlight.current;
+    if (!pending) return;
+
+    const y = itemOffsets.current[pending.id];
+    const height = itemHeights.current[pending.id];
+    const viewportHeight = achievementsViewportHeight.current;
+
+    if (y === undefined || height === undefined || viewportHeight <= 0) {
+      return;
+    }
+
+    const viewportTop = achievementsScrollY.current;
+    const viewportBottom = viewportTop + viewportHeight;
+
+    const isVisible = y + height > viewportTop && y < viewportBottom;
+
+    if (!isVisible) return;
+
+    pendingAchievementHighlight.current = null;
+    setHighlightedAchievement(pending);
+  }, []);
   const unlockedData = useMemo(() => {
     const map: Record<string, BadgeType> = {};
     unlockedAchievements.forEach((badge) => {
@@ -135,6 +171,10 @@ export default function AchievementsScreen() {
     setPendingScrollId(focusItemId);
     // Reuse the screen's existing scroll-to-achievement behavior.
     scrollToAchievement(focusItemId);
+    pendingAchievementHighlight.current = {
+      id: focusItemId,
+      requestId: focusRequestId,
+    };
 
     router.setParams({
       focusItemId: undefined,
@@ -166,7 +206,19 @@ export default function AchievementsScreen() {
       style={[styles.container, { backgroundColor: theme.background }]}
     > */}
 
-      <ScrollView ref={scrollViewRef} contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={scrollViewRef}
+        contentContainerStyle={styles.content}
+        scrollEventThrottle={16}
+        onScroll={(event) => {
+          achievementsScrollY.current = event.nativeEvent.contentOffset.y;
+          maybeHighlightVisibleAchievement();
+        }}
+        onLayout={(event) => {
+          achievementsViewportHeight.current = event.nativeEvent.layout.height;
+          maybeHighlightVisibleAchievement();
+        }}
+      >
         {achievementsWithProgress.map((achievement) => {
           return (
             <View
@@ -178,24 +230,36 @@ export default function AchievementsScreen() {
                 marginTop: 5,
               }}
               onLayout={(event) => {
-                const { y } = event.nativeEvent.layout;
+                const { y, height } = event.nativeEvent.layout;
                 const id = achievement.def.id;
                 itemOffsets.current[id] = y;
+                itemHeights.current[id] = height;
                 //SOTA Handshake: If this is the exact item we are waiting for on 1st load, scroll now!
                 if (pendingScrollId === id) {
                   if (scrollToAchievement(id)) {
                     setPendingScrollId(null);
                   }
                 }
+                requestAnimationFrame(maybeHighlightVisibleAchievement);
               }}
             >
-              <AchievementBadge
-                key={achievement.def.id}
-                badge={achievement.def}
-                isUnlocked={achievement.isUnlocked}
-                unlockedAt={achievement.unlockedInfo?.unlockedAt}
-                currentProgress={achievement.currentProgress as number}
-              />
+              <GlobalSearchFocusHighlight
+                request={
+                  highlightedAchievement?.id === achievement.def.id
+                    ? highlightedAchievement
+                    : null
+                }
+                accentColor={"white"}
+                borderRadius={14}
+              >
+                <AchievementBadge
+                  key={achievement.def.id}
+                  badge={achievement.def}
+                  isUnlocked={achievement.isUnlocked}
+                  unlockedAt={achievement.unlockedInfo?.unlockedAt}
+                  currentProgress={achievement.currentProgress as number}
+                />
+              </GlobalSearchFocusHighlight>
             </View>
           );
         })}

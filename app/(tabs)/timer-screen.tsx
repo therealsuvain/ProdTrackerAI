@@ -59,6 +59,10 @@ import {
   toggleTimerModeWithEffects,
 } from "@/utils/Data-services/timer-services/timer-actions";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  GlobalSearchFocusHighlight,
+  GlobalSearchFocusHighlightRequest,
+} from "@/components/ui/global-search/global-search-focus-highlight";
 // Note : Timescreen is the only component where value prop is used for the TextInput instead of defaultValue
 // Note ContinuedFromAbove: default Value only takes input once, then doesnt update, the reason its works in other places is because
 // Note ContinuedFromAbove: the modals re-render everytime, so default value gets feeded the latest state value and it looks ok,
@@ -83,66 +87,35 @@ function TimerScreenInner() {
   const { showToast } = useDbErrorToast();
   const { triggerHaptic } = useHaptics();
   const logListRef = useRef<FlatList<string>>(null);
-  const pendingLogFocusId = useRef<string | null>(null);
+  // const pendingLogFocusId = useRef<string | null>(null);
   const handledLogFocusRequest = useRef<string | null>(null);
+  const handledStartTimerRequest = useRef<string | null>(null);
   const [logToFocus, setLogToFocus] = useState<string | null>(null);
   const [isFocusLoading, setIsFocusLoading] = useState(false);
+  const pendingLogHighlight = useRef<GlobalSearchFocusHighlightRequest | null>(
+    null,
+  );
+
+  const [highlightedLog, setHighlightedLog] =
+    useState<GlobalSearchFocusHighlightRequest | null>(null);
+
   const {
     openAdd,
     openAddRequest,
     focusItemId,
     focusItemType,
     focusRequestId,
+    startTimerRequestId,
   } = useLocalSearchParams<{
     openAdd?: string;
     openAddRequest?: string;
     focusItemId?: string;
     focusItemType?: string;
     focusRequestId?: string;
+    startTimerRequestId?: string;
   }>();
   const router = useRouter();
   const handledOpenAddRequest = useRef<string | null>(null);
-  /*   const { todayTotal, weekTotal, topCategory } = useMemo(() => {
-    const todayISO = getTodayISO();
-    const weekStartISO = getWeekStartISO();
-
-    let todayTotal = 0;
-    let weekTotal = 0;
-    const categoryTotals: Record<string, number> = {};
-
-    for (const log of timerLogs) {
-      if (!log.duration) continue;
-      const logDate = log.startTime.split("T")[0];
-      if (logDate === todayISO) todayTotal += log.duration;
-      if (logDate >= weekStartISO) {
-        weekTotal += log.duration;
-        if (log.category) {
-          categoryTotals[log.category] =
-            (categoryTotals[log.category] ?? 0) + log.duration;
-        }
-      }
-    }
-
-    // Top category this week by total time
-    const topCategoryId =
-      Object.entries(categoryTotals).sort(([, a], [, b]) => b - a)[0]?.[0] ??
-      null;
-    var topCategory = null;
-    if (topCategoryId) {
-      topCategory = categories.find((c) => c.id === topCategoryId);
-    }
-    return { todayTotal, weekTotal, topCategory };
-  }, [timerLogs]);
- 
-  // ── Last-used category suggestion ────────────────────────────────────────
-  // Find the most recently saved log that has a category — show as a
-  // one-tap suggestion chip so the user doesn't have to retype it.
-  const lastUsedCategory = useMemo(() => {
-    for (let i = timerLogs.length - 1; i >= 0; i--) {
-      if (timerLogs[i].category) return timerLogs[i].category!;
-    }
-    return null;
-  }, [timerLogs]); */
 
   const ITEMS_PER_PAGE = 15;
   const [currentPage, setCurrentPage] = useState(1);
@@ -153,10 +126,8 @@ function TimerScreenInner() {
     }),
   );
   var topCategory = null;
-  /* if (topCategoryId) {
-    topCategory = categories.find((c) => c.id === topCategoryId);
-  } */
-  const handleDelete = async () => {
+
+  const handleDelete = useCallback(async () => {
     if (!logToDelete) return;
     const id = logToDelete;
     try {
@@ -167,7 +138,7 @@ function TimerScreenInner() {
       setLogToDelete(null);
       showToast("Couldn't delete the log. It has been restored.");
     }
-  };
+  }, [triggerHaptic, setLogToDelete, showToast]);
 
   const handleEditViaModal = useCallback(
     async (log: TimerLog) => {
@@ -178,10 +149,10 @@ function TimerScreenInner() {
     [editLogWithEffects],
   );
 
-  const showModal = (log: TimerLog) => {
+  const showModal = useCallback((log: TimerLog) => {
     setEditingLog(log);
     setModalVisible(true);
-  };
+  }, []);
 
   // 2. Derive the currently visible slice of data based on the page number
   const displayedLogs = useMemo(() => {
@@ -215,13 +186,19 @@ function TimerScreenInner() {
 
   const renderTimerLog = useCallback(
     ({ item: id }: { item: string }) => (
-      <TimerLogItem
-        logId={id}
-        onDelete={handleDeleteRow}
-        onEdit={handleEditRow}
-      />
+      <GlobalSearchFocusHighlight
+        request={highlightedLog?.id === id ? highlightedLog : null}
+        accentColor={theme.timerBase}
+        borderRadius={14}
+      >
+        <TimerLogItem
+          logId={id}
+          onDelete={handleDeleteRow}
+          onEdit={handleEditRow}
+        />
+      </GlobalSearchFocusHighlight>
     ),
-    [handleEditRow, handleDeleteRow],
+    [handleEditRow, handleDeleteRow, highlightedLog],
   );
 
   const handleScrollToIndexFailed = useCallback(
@@ -262,16 +239,19 @@ function TimerScreenInner() {
   // onViewableItemsChanged callback.
   const handleLogViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken<string>[] }) => {
-      const pendingId = pendingLogFocusId.current;
+      //const pendingId = pendingLogFocusId.current;
+      const pending = pendingLogHighlight.current;
       //console.log("pendingId", pendingId);
-      if (!pendingId) return;
+      if (!pending) return;
 
       const targetIsVisible = viewableItems.some(
-        (token) => token.item === pendingId,
+        (token) => token.item === pending.id,
       );
 
       if (targetIsVisible) {
-        pendingLogFocusId.current = null;
+        //pendingLogFocusId.current = null;
+        pendingLogHighlight.current = null;
+        setHighlightedLog(pending);
         setIsFocusLoading(false);
       }
     },
@@ -288,7 +268,11 @@ function TimerScreenInner() {
     }
 
     handledLogFocusRequest.current = focusRequestId;
-    pendingLogFocusId.current = focusItemId;
+    //pendingLogFocusId.current = focusItemId;
+    pendingLogHighlight.current = {
+      id: focusItemId,
+      requestId: focusRequestId,
+    };
     setLogToFocus(focusItemId);
 
     router.setParams({
@@ -298,6 +282,7 @@ function TimerScreenInner() {
     });
   }, [focusItemId, focusItemType, focusRequestId, router]);
   //console.log("logToFocus", logToFocus);
+
   useEffect(() => {
     if (!logToFocus) return;
 
@@ -337,6 +322,25 @@ function TimerScreenInner() {
     return () => cancelAnimationFrame(frame);
   }, [logToFocus, timerLogs, currentPage, displayedLogs.length]);
 
+  useEffect(() => {
+    if (
+      !startTimerRequestId ||
+      handledStartTimerRequest.current === startTimerRequestId
+    ) {
+      return;
+    }
+
+    handledStartTimerRequest.current = startTimerRequestId;
+
+    // Don't toggle or restart an already-running timer.
+    if (!useTimerStore.getState().isRunning) {
+      startTimerWithEffects();
+    }
+
+    router.setParams({
+      startTimerRequestId: undefined,
+    });
+  }, [startTimerRequestId, router]);
   const EmptyState = () => (
     <View style={emptyStateStyle.emptyContainer}>
       <Ionicons name="timer" size={60} color={timerBaseColor} />

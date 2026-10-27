@@ -1,12 +1,16 @@
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { Searchbar } from "react-native-paper";
 
 import { SettingsGroup } from "@/components/ui/settings/settings-group";
 import { SettingsRow } from "@/components/ui/settings/settings-row";
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
-import { SettingItem, SettingsSection } from "@/types/settings-ui";
+import {
+  SettingItem,
+  SETTINGS_LAYOUT,
+  SettingsSection,
+} from "@/types/settings-ui";
 import SettingsSkeleton from "@/components/shared/loading-indicators/screen-loaders/settings-skeleton";
 import { useSync } from "@/context/SyncContext";
 import { getRecoverySnapshotSummary } from "@/db/repositories/sync-repository";
@@ -19,7 +23,10 @@ import {
   updateSettingWithEffects,
 } from "@/utils/Data-services/settings-services/settings-actions";
 import { useSettingsStore } from "@/stores/use-settings-store";
-
+import {
+  GlobalSearchFocusHighlight,
+  type GlobalSearchFocusHighlightRequest,
+} from "@/components/ui/global-search/global-search-focus-highlight";
 // This is our Configuration map. Adding a new setting is as easy as adding a line here.
 
 const filterSettings = (
@@ -57,135 +64,6 @@ const filterSettings = (
   return filteredSections as SettingsSection[];
 };
 
-const SETTINGS_LAYOUT: SettingsSection[] = [
-  {
-    title: "Profile",
-    data: [
-      {
-        id: "soundEffectsEnabled",
-        label: "ADMIN Mode",
-        icon: "key",
-        type: "link",
-      },
-      {
-        id: "deleteProfile",
-        label: "Delete Profle",
-        icon: "trash",
-        type: "link",
-      },
-      {
-        id: "manualSyncEnabled",
-        label: "Sync Now",
-        icon: "cloud-upload-outline",
-        type: "action",
-        options: [
-          {
-            type: "widget",
-            value: "ManualSyncWidget",
-          },
-        ],
-      },
-      {
-        id: "restoreRecovery",
-        label: "Restore Old Data",
-        icon: "restore",
-        type: "action",
-        options: [
-          {
-            type: "widget",
-            value: "RestoreRecoveryWidget",
-          },
-        ],
-      },
-      {
-        id: "autoCloudSync",
-        label: "Auto Cloud Sync",
-        icon: "cloud-sync",
-        type: "toggle",
-      },
-    ],
-  },
-  {
-    title: "Appearance",
-    data: [
-      {
-        id: "isSystemTheme",
-        label: "Match System Theme",
-        icon: "phonelink-setup",
-        type: "toggle",
-      },
-      { id: "isDarkMode", label: "Dark Mode", icon: "moon", type: "toggle" },
-    ],
-  },
-  {
-    title: "Sound",
-    data: [
-      {
-        id: "hapticsEnabled",
-        label: "Haptic Feedback",
-        icon: "vibration",
-        type: "toggle",
-      },
-      {
-        id: "soundEffectsEnabled",
-        label: "Sound Effects",
-        icon: "volume-high",
-        type: "toggle",
-      },
-    ],
-  },
-  {
-    title: "Data Mangement",
-    data: [
-      {
-        id: "deleteAllData",
-        label: "Delete All Data",
-        icon: "folder-delete",
-        type: "link",
-        href: "/settings/data-management",
-      },
-      {
-        id: "editCategories",
-        label: "Categories Management",
-        icon: "category",
-        type: "link",
-        options: [
-          {
-            type: "widget",
-            value: "CategoryWidget",
-          },
-        ],
-        href: "/settings/category/category-settings",
-      },
-      {
-        id: "editTags",
-        label: "Tags Management",
-        icon: "pricetags-sharp",
-        type: "link",
-        options: [
-          {
-            type: "widget",
-            value: "TagsWidget",
-          },
-        ],
-        href: "/settings/tags/tags-settings",
-      },
-      {
-        id: "resetAchievements",
-        label: "Reset Achievements",
-        icon: "trophy",
-        type: "link",
-      },
-      {
-        id: "resetSettings",
-        label: "Reset to default settings",
-        icon: "settings-backup-restore",
-        type: "action",
-      },
-    ],
-  },
-];
-
 export default function SettingsScreen() {
   const { theme, preference, toggleTheme, setThemeToSystemTheme } = useTheme();
   const settings = useSettingsStore((state) => state.settings);
@@ -198,8 +76,53 @@ export default function SettingsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [confirmDialogVisible, setConfirmDialogVisible] = useState(false);
   const [multiDialogVisible, setMultiDialogVisible] = useState(false);
+  const handledSettingsFocusRequest = useRef<string | null>(null);
   const [filteredSections, setFilteredSections] =
     useState<SettingsSection[]>(SETTINGS_LAYOUT);
+  const { focusSettingId, focusRequestId } = useLocalSearchParams<{
+    focusSettingId?: string;
+    focusRequestId?: string;
+  }>();
+  const [pendingScrollId, setPendingScrollId] = useState<SettingItem | null>(
+    null,
+  );
+  const scrollViewRef = useRef<ScrollView>(null);
+  const settingsContentRef = useRef<View>(null);
+
+  const settingRowRefs = useRef<Record<string, View | null>>({});
+  const pendingSettingHighlight =
+    useRef<GlobalSearchFocusHighlightRequest | null>(null);
+
+  const [highlightedSetting, setHighlightedSetting] =
+    useState<GlobalSearchFocusHighlightRequest | null>(null);
+
+  const settingPositions = useRef<
+    Record<string, { y: number; height: number }>
+  >({});
+
+  const settingsScrollY = useRef(0);
+  const settingsViewportHeight = useRef(0);
+
+  const maybeHighlightVisibleSetting = useCallback(() => {
+    const pending = pendingSettingHighlight.current;
+    if (!pending) return;
+
+    const position = settingPositions.current[pending.id];
+    const viewportHeight = settingsViewportHeight.current;
+
+    if (!position || viewportHeight <= 0) return;
+
+    const viewportTop = settingsScrollY.current;
+    const viewportBottom = viewportTop + viewportHeight;
+
+    const isVisible =
+      position.y + position.height > viewportTop && position.y < viewportBottom;
+
+    if (!isVisible) return;
+
+    pendingSettingHighlight.current = null;
+    setHighlightedSetting(pending);
+  }, []);
 
   const handleToggle = (id: string, newValue: boolean) => {
     // Type assertion is safe here because our SETTINGS_LAYOUT strictly maps to SettingsConfig keys
@@ -255,6 +178,130 @@ export default function SettingsScreen() {
     setFilteredSections(filterSettings(SETTINGS_LAYOUT, searchQuery));
   }, [searchQuery]);
   const workspaceSyncMode = useWorkspaceSyncModeStore((state) => state.mode);
+
+  /* const scrollToSetting = useCallback((setting: SettingItem): boolean => {
+    if (setting.href) {
+      router.push(setting.href as any);
+      return true;
+    } // Approximate Y position based on section index
+    const index = SETTINGS_LAYOUT.map((section) => section.data)
+      .flat()
+      .map((item) => item.id)
+      .indexOf(setting.id);
+    const parentIndex = SETTINGS_LAYOUT.indexOf(
+      SETTINGS_LAYOUT.find((section) => section.data.includes(setting))!,
+    );
+    const itemIndex = SETTINGS_LAYOUT[parentIndex].data.indexOf(setting);
+    //const targetY = parentIndex * 100 + itemIndex * 60; // Adjust these multipliers based on your layout
+    //console.log(index, "index");
+    const targetY = index * 50; // Adjust this multiplier based on your layout
+
+    // IMPORTANT: Check for undefined, NOT !targetY (because the 1st item has y === 0!)
+    if (targetY === undefined || !scrollViewRef.current) {
+      return false;
+    }
+
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollTo({
+        y: Math.max(0, targetY - 20),
+        animated: true,
+      });
+    });
+
+    return true;
+  }, []); */
+
+  const scrollToSetting = useCallback(
+    (setting: SettingItem): boolean => {
+      // Preserve existing behavior for settings with their own destination.
+      if (setting.href) {
+        router.push(setting.href as any);
+        return true;
+      }
+
+      const row = settingRowRefs.current[setting.id];
+      const content = settingsContentRef.current;
+
+      if (!row || !content || !scrollViewRef.current) {
+        return false;
+      }
+
+      row.measureLayout(
+        content,
+        (_x, y, width, height) => {
+          settingPositions.current[setting.id] = { y, height };
+
+          scrollViewRef.current?.scrollTo({
+            y: Math.max(0, y - 20),
+            animated: true,
+          });
+
+          // Clear the request only after the measurement succeeds.
+          setPendingScrollId((current) =>
+            current?.id === setting.id ? null : current,
+          );
+          requestAnimationFrame(maybeHighlightVisibleSetting);
+        },
+        () => {
+          // Leave the target pending if measurement fails.
+          // The layout can be measured again after a subsequent render.
+        },
+      );
+
+      return true;
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    if (
+      !focusSettingId ||
+      !focusRequestId ||
+      handledSettingsFocusRequest.current === focusRequestId
+    ) {
+      return;
+    }
+
+    const setting = SETTINGS_LAYOUT.flatMap((section) => section.data).find(
+      (item) => item.id === focusSettingId,
+    );
+
+    if (!setting) return;
+
+    handledSettingsFocusRequest.current = focusRequestId;
+
+    // Clear any Settings screen search filter so the target row is rendered.
+    setSearchQuery("");
+
+    if (setting.href) {
+      // Settings with their own destination navigate normally.
+      router.setParams({
+        focusSettingId: undefined,
+        focusRequestId: undefined,
+      });
+
+      router.push(setting.href as any);
+      return;
+    }
+
+    // The pending-target effect below handles the actual scroll.
+    setPendingScrollId(setting);
+    pendingSettingHighlight.current = {
+      id: setting.id,
+      requestId: focusRequestId,
+    };
+    router.setParams({
+      focusSettingId: undefined,
+      focusRequestId: undefined,
+    });
+  }, [focusSettingId, focusRequestId, router]);
+
+  useEffect(() => {
+    if (!pendingScrollId) return;
+
+    scrollToSetting(pendingScrollId);
+  }, [pendingScrollId, scrollToSetting]);
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Searchbar
@@ -268,21 +315,51 @@ export default function SettingsScreen() {
           styles.content,
           { backgroundColor: theme.background },
         ]}
+        ref={scrollViewRef}
+        scrollEventThrottle={16}
+        onScroll={(event) => {
+          settingsScrollY.current = event.nativeEvent.contentOffset.y;
+          maybeHighlightVisibleSetting();
+        }}
+        onLayout={(event) => {
+          settingsViewportHeight.current = event.nativeEvent.layout.height;
+          maybeHighlightVisibleSetting();
+        }}
       >
-        {filteredSections.map((section, sectionIndex) => (
-          <SettingsGroup key={sectionIndex} title={section.title}>
-            {visibleItems(section.data).map((item, itemIndex, arr) => (
-              <SettingsRow
-                key={item.id}
-                item={item}
-                value={settings[item.id as keyof typeof settings] as any}
-                onToggle={handleToggle}
-                onPress={handlePress}
-                isLast={itemIndex === arr.length - 1}
-              />
-            ))}
-          </SettingsGroup>
-        ))}
+        <View ref={settingsContentRef} collapsable={false}>
+          {filteredSections.map((section, sectionIndex) => (
+            <SettingsGroup key={sectionIndex} title={section.title}>
+              {visibleItems(section.data).map((item, itemIndex, arr) => (
+                <View
+                  key={item.id}
+                  ref={(node) => {
+                    settingRowRefs.current[item.id] = node;
+                  }}
+                  collapsable={false}
+                >
+                  <GlobalSearchFocusHighlight
+                    request={
+                      highlightedSetting?.id === item.id
+                        ? highlightedSetting
+                        : null
+                    }
+                    accentColor={"white"}
+                    borderRadius={10}
+                  >
+                    <SettingsRow
+                      key={item.id}
+                      item={item}
+                      value={settings[item.id as keyof typeof settings] as any}
+                      onToggle={handleToggle}
+                      onPress={handlePress}
+                      isLast={itemIndex === arr.length - 1}
+                    />
+                  </GlobalSearchFocusHighlight>
+                </View>
+              ))}
+            </SettingsGroup>
+          ))}
+        </View>
       </ScrollView>
       {confirmDialogVisible && (
         <ConfirmDialog

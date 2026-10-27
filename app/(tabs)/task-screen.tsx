@@ -13,6 +13,7 @@ import {
   Pressable,
   Text,
 } from "react-native";
+import type { ViewToken } from "react-native";
 import { Button, FAB, Portal, Searchbar } from "react-native-paper";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import Octicons from "@expo/vector-icons/Octicons";
@@ -40,6 +41,13 @@ import {
   toggleTaskWithEffects,
   setTaskOrderWithEffects,
 } from "@/utils/Data-services/task-services/task-actions";
+
+import {
+  GlobalSearchFocusHighlight,
+  type GlobalSearchFocusHighlightRequest,
+} from "@/components/ui/global-search/global-search-focus-highlight";
+import { th } from "zod/v4/locales/index.js";
+
 function TaskScreenInner() {
   const { theme } = useContext(ThemeContext);
 
@@ -56,6 +64,34 @@ function TaskScreenInner() {
   const pendingTaskFocusId = useRef<string | null>(null);
   const handledTaskFocusRequest = useRef<string | null>(null);
   const [taskToFocus, setTaskToFocus] = useState<string | null>(null);
+  const pendingTaskHighlight = useRef<GlobalSearchFocusHighlightRequest | null>(
+    null,
+  );
+
+  const [highlightedTask, setHighlightedTask] =
+    useState<GlobalSearchFocusHighlightRequest | null>(null);
+
+  const taskViewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 15,
+  }).current;
+
+  const onTaskViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken<string>[] }) => {
+      const pending = pendingTaskHighlight.current;
+
+      if (
+        !pending ||
+        !viewableItems.some(
+          (token) => token.isViewable && token.item === pending.id,
+        )
+      ) {
+        return;
+      }
+
+      pendingTaskHighlight.current = null;
+      setHighlightedTask(pending);
+    },
+  ).current;
 
   const { state, updateField, onSubmit } = useTaskForm({
     addTask: addTaskWithEffects,
@@ -178,28 +214,40 @@ function TaskScreenInner() {
 
   const renderTask = useCallback(
     ({ item: id }: { item: string }) => (
-      <TaskItem
-        id={id}
-        onToggleComplete={toggleComplete}
-        onEdit={handleEditRow}
-        onDelete={handleDeleteRow}
-      />
-    ),
-    [toggleComplete, handleEditRow, handleDeleteRow],
-  );
-
-  const renderDraggableTask = useCallback(
-    ({ item: id, drag }: { item: string; drag: () => void }) => (
-      <TouchableOpacity onLongPress={drag}>
+      <GlobalSearchFocusHighlight
+        request={highlightedTask?.id === id ? highlightedTask : null}
+        accentColor={theme.taskBase}
+        borderRadius={14}
+      >
         <TaskItem
           id={id}
           onToggleComplete={toggleComplete}
           onEdit={handleEditRow}
           onDelete={handleDeleteRow}
         />
-      </TouchableOpacity>
+      </GlobalSearchFocusHighlight>
     ),
-    [toggleComplete, handleEditRow, handleDeleteRow],
+    [toggleComplete, handleEditRow, handleDeleteRow, highlightedTask],
+  );
+
+  const renderDraggableTask = useCallback(
+    ({ item: id, drag }: { item: string; drag: () => void }) => (
+      <GlobalSearchFocusHighlight
+        request={highlightedTask?.id === id ? highlightedTask : null}
+        accentColor={theme.taskBase}
+        borderRadius={14}
+      >
+        <TouchableOpacity onLongPress={drag}>
+          <TaskItem
+            id={id}
+            onToggleComplete={toggleComplete}
+            onEdit={handleEditRow}
+            onDelete={handleDeleteRow}
+          />
+        </TouchableOpacity>
+      </GlobalSearchFocusHighlight>
+    ),
+    [toggleComplete, handleEditRow, handleDeleteRow, highlightedTask],
   );
 
   const handleScrollToIndexFailed = useCallback(
@@ -249,6 +297,11 @@ function TaskScreenInner() {
 
     // Schedule scrolling once the list contains the requested task.
     setTaskToFocus(focusItemId);
+
+    pendingTaskHighlight.current = {
+      id: focusItemId,
+      requestId: focusRequestId,
+    };
 
     // Consume this navigation request so it isn't replayed.
     router.setParams({
@@ -406,6 +459,8 @@ function TaskScreenInner() {
               showsVerticalScrollIndicator={false}
               onScrollToIndexFailed={handleScrollToIndexFailed}
               ListEmptyComponent={EmptyState}
+              viewabilityConfig={taskViewabilityConfig}
+              onViewableItemsChanged={onTaskViewableItemsChanged}
             />
           </View>
         ) : (
@@ -418,6 +473,8 @@ function TaskScreenInner() {
               showsVerticalScrollIndicator={false}
               onScrollToIndexFailed={handleScrollToIndexFailed}
               ListEmptyComponent={EmptyState}
+              viewabilityConfig={taskViewabilityConfig}
+              onViewableItemsChanged={onTaskViewableItemsChanged}
             />
           </View>
         )}

@@ -12,6 +12,7 @@ export interface GlobalSearchNavigationIntent {
 export interface GlobalSearchSelectionHandlers {
     navigate: (intent: GlobalSearchNavigationIntent) => void;
     onUnsupportedTarget?: (target: GlobalSearchTarget) => void;
+    executeAction?: (actionId: string) => boolean;
 }
 
 let requestSequence = 0;
@@ -106,6 +107,47 @@ export function dispatchGlobalSearchSelection(
                     focusRequestId: request.requestId,
                 },
             });
+
+            return true;
+        }
+        case "setting": {
+            const pathname =
+                target.href ?? "/settings/settings-screen";
+
+            handlers.navigate({
+                pathname,
+                params: {
+                    focusSettingId: target.id,
+                    focusRequestId: request.requestId,
+                },
+                ...(pathname.startsWith("/settings/")
+                    ? { withAnchor: true }
+                    : {}),
+            });
+
+            return true;
+        }
+
+        case "chart": {
+            handlers.navigate({
+                pathname: "/analytics/analytics-screen",
+                params: {
+                    openChartId: target.chartId,
+                    openChartRequestId: request.requestId,
+                },
+                withAnchor: true,
+            });
+
+            return true;
+        }
+
+        case "action": {
+            const executed = handlers.executeAction?.(target.actionId);
+
+            if (!executed) {
+                handlers.onUnsupportedTarget?.(target);
+                return false;
+            }
 
             return true;
         }

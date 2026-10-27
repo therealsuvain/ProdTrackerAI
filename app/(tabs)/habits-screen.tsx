@@ -1,4 +1,4 @@
-import { View, StyleSheet, FlatList, Text } from "react-native";
+import { View, StyleSheet, FlatList, Text, ViewToken } from "react-native";
 import { useContext, useState, useCallback, useRef, useEffect } from "react";
 import { FAB, Portal, Searchbar } from "react-native-paper";
 import { Habit } from "@/types/habits";
@@ -30,6 +30,10 @@ import { useHabitStore } from "@/stores/use-habit-store";
 import { useShallow } from "zustand/shallow";
 import { useDailyMetrics } from "@/stores/use-metrics-store";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  GlobalSearchFocusHighlight,
+  GlobalSearchFocusHighlightRequest,
+} from "@/components/ui/global-search/global-search-focus-highlight";
 
 function HabitsScreenInner() {
   const { theme, isDarkMode } = useContext(ThemeContext);
@@ -83,9 +87,36 @@ function HabitsScreenInner() {
   );
 
   const [habitToDelete, setHabitToDelete] = useState<string | null>(null);
+  const pendingHabitHighlight =
+    useRef<GlobalSearchFocusHighlightRequest | null>(null);
+
+  const [highlightedHabit, setHighlightedHabit] =
+    useState<GlobalSearchFocusHighlightRequest | null>(null);
+
+  const habitViewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 15,
+  }).current;
+
+  const onHabitViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken<string>[] }) => {
+      const pending = pendingHabitHighlight.current;
+
+      if (
+        !pending ||
+        !viewableItems.some(
+          (token) => token.isViewable && token.item === pending.id,
+        )
+      ) {
+        return;
+      }
+
+      pendingHabitHighlight.current = null;
+      setHighlightedHabit(pending);
+    },
+  ).current;
   const audioSource = require("@/assets/audio/habit-congrats-2.mp3");
   const audioPlayer = usePlaySound(audioSource, 0.5);
-  const showModal = (habit?: Habit) => {
+  const showModal = useCallback((habit?: Habit) => {
     if (habit) {
       setVisibleInEditMode(true);
       setVisible(true);
@@ -95,11 +126,11 @@ function HabitsScreenInner() {
     setEditingHabit(null);
     setVisibleInEditMode(false);
     setVisible(true);
-  };
-  const hideModal = () => {
+  }, []);
+  const hideModal = useCallback(() => {
     setVisibleInEditMode(false);
     setVisible(false);
-  };
+  }, []);
 
   const handleCheckin = useCallback(
     async (id: string) => {
@@ -172,16 +203,28 @@ function HabitsScreenInner() {
 
   const renderHabit = useCallback(
     ({ item: id }: { item: string }) => (
-      <HabitItem
-        id={id}
-        onCheckin={handleCheckin}
-        onEdit={handleEditRow}
-        onDelete={handleDeleteRow}
-        onFreeze={handleFreeze}
-        onGoalReached={handleGoalReached}
-      />
+      <GlobalSearchFocusHighlight
+        request={highlightedHabit?.id === id ? highlightedHabit : null}
+        accentColor={theme.habitBase}
+        borderRadius={14}
+      >
+        <HabitItem
+          id={id}
+          onCheckin={handleCheckin}
+          onEdit={handleEditRow}
+          onDelete={handleDeleteRow}
+          onFreeze={handleFreeze}
+          onGoalReached={handleGoalReached}
+        />
+      </GlobalSearchFocusHighlight>
     ),
-    [handleCheckin, handleEditRow, handleDeleteRow, handleGoalReached],
+    [
+      handleCheckin,
+      handleEditRow,
+      handleDeleteRow,
+      handleGoalReached,
+      highlightedHabit,
+    ],
   );
 
   const handleScrollToIndexFailed = useCallback(
@@ -231,6 +274,11 @@ function HabitsScreenInner() {
 
     // Schedule scrolling once the list contains the requested habit.
     setHabitToFocus(focusItemId);
+
+    pendingHabitHighlight.current = {
+      id: focusItemId,
+      requestId: focusRequestId,
+    };
 
     // Consume this navigation request so it isn't replayed.
     router.setParams({
@@ -346,6 +394,8 @@ function HabitsScreenInner() {
           renderItem={renderHabit}
           ListEmptyComponent={EmptyState}
           onScrollToIndexFailed={handleScrollToIndexFailed}
+          viewabilityConfig={habitViewabilityConfig}
+          onViewableItemsChanged={onHabitViewableItemsChanged}
         />
         <FAB
           color={theme.habitDarkPrimary}

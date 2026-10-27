@@ -55,6 +55,7 @@ import { SearchResult } from "@/utils/search-utils";
 import type { GlobalSearchSelectionRequest } from "@/types/global-search";
 import { dispatchGlobalSearchSelection } from "@/utils/Search-utils/selection-dispatcher";
 import { resolveEventOccurrenceDate } from "@/utils/Search-utils/resolve-event-occurence";
+import { GLOBAL_SEARCH_ACTIONS_BY_ID } from "@/utils/Search-utils/action-registry";
 
 const EMPTY_IDS: string[] = [];
 
@@ -260,6 +261,35 @@ function HomeScreenInner() {
             `[Global Search] No selection handler registered for "${target.kind}" yet.`,
           );
         },
+        executeAction: (actionId) => {
+  const action = GLOBAL_SEARCH_ACTIONS_BY_ID.get(actionId);
+
+  if (!action) return false;
+
+  try {
+    const execution = action.execute({
+      navigateToTimerWithStartRequest: () => {
+        router.navigate({
+          pathname: "/(tabs)/timer-screen",
+          params: {
+            startTimerRequestId: String(Date.now()),
+          },
+        } as never);
+      },
+    });
+
+    void Promise.resolve(execution).catch((error) => {
+      console.error("[Global Search] Action failed:", error);
+      showToast("Couldn't execute this action.");
+    });
+
+    return true;
+  } catch (error) {
+    console.error("[Global Search] Action failed:", error);
+    showToast("Couldn't execute this action.");
+    return false;
+  }
+},
       });
 
       // Leave search open if a target isn't supported yet.
