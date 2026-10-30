@@ -16,8 +16,8 @@ type HelloThereEasterEggAnimationProps = {
   onFinished: () => void;
 };
 
-const helloThereHead = require("@/assets/easter-eggs/hello-there-head.png");
-const helloThereRaisedHand = require("@/assets/easter-eggs/hello-there-raised-hand-cropped.png");
+const helloThereHead = require("@/assets/easter-eggs/hello-there-assets/older-versions-or-unused/hello_there_head.png");
+const helloThereRaisedHand = require("@/assets/easter-eggs/hello-there-assets/older-versions-or-unused/hello-there-raised-hand-cropped.png");
 /**
  * A decorative, row-anchored Hello There animation.
  *

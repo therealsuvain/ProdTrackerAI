@@ -31,23 +31,23 @@ import {
 // ---------------------------------------------------------------------------
 // Static assets. Keep these literal requires so Metro can resolve them.
 // ---------------------------------------------------------------------------
-const editedHeadCurious = require("@/assets/easter-eggs/edited-head-curious.png");
-const editedHeadNeutral = require("@/assets/easter-eggs/edited-head-neutral.png");
-const editedHeadSmile1 = require("@/assets/easter-eggs/edited-head-smile-1.png");
-const editedHeadSmile2 = require("@/assets/easter-eggs/edited-head-smile-2.png");
-const headWinking = require("@/assets/easter-eggs/head_winking.png");
+const editedHeadCurious = require("@/assets/easter-eggs/hello-there-assets/older-versions-or-unused/edited-head-curious.png");
+const editedHeadNeutral = require("@/assets/easter-eggs/hello-there-assets/older-versions-or-unused/edited-head-neutral.png");
+const editedHeadSmile1 = require("@/assets/easter-eggs/hello-there-assets/older-versions-or-unused/edited-head-smile-1.png");
+const editedHeadSmile2 = require("@/assets/easter-eggs/hello-there-assets/older-versions-or-unused/edited-head-smile-2.png");
+const headWinking = require("@/assets/easter-eggs/hello-there-assets/older-versions-or-unused/head_winking.png");
 
-const wallGrippedLeft = require("@/assets/easter-eggs/wall_gripped_left_only.png");
-const wallGrippedRight = require("@/assets/easter-eggs/wall_gripped_right_only.png");
-const wallMidLeft = require("@/assets/easter-eggs/wall_mid_transition_left_only.png");
-const wallMidRight = require("@/assets/easter-eggs/wall_mid_transition_right_only.png");
-const wallPalmsLeft = require("@/assets/easter-eggs/wall_palms_up_left_only.png");
-const wallPalmsRight = require("@/assets/easter-eggs/wall_palms_up_right_only.png");
+const wallGrippedLeft = require("@/assets/easter-eggs/hello-there-assets/wall_gripped_left_only.png");
+const wallGrippedRight = require("@/assets/easter-eggs/hello-there-assets/wall_gripped_right_only.png");
+const wallMidLeft = require("@/assets/easter-eggs/hello-there-assets/wall_mid_transition_left_only.png");
+const wallMidRight = require("@/assets/easter-eggs/hello-there-assets/wall_mid_transition_right_only.png");
+const wallPalmsLeft = require("@/assets/easter-eggs/hello-there-assets/wall_palms_up_left_only.png");
+const wallPalmsRight = require("@/assets/easter-eggs/hello-there-assets/wall_palms_up_right_only.png");
 
 // Note: wave__arm_with_shoulder.png is intentionally unused in this sequence.
-const waveFlat1 = require("@/assets/easter-eggs/wave__flat_1.png");
-const waveFlat2 = require("@/assets/easter-eggs/wave_flat_2.png");
-const waveFlat3 = require("@/assets/easter-eggs/wave_flat_3.png");
+const waveFlat1 = require("@/assets/easter-eggs/hello-there-assets/wave__flat_1.png");
+const waveFlat2 = require("@/assets/easter-eggs/hello-there-assets/wave_flat_2.png");
+const waveFlat3 = require("@/assets/easter-eggs/hello-there-assets/wave_flat_3.png");
 
 type Point = { x: number; y: number };
 type Rect = Point & { width: number; height: number };
@@ -162,15 +162,25 @@ const HAND_ART: Record<Exclude<HandPose, "hidden">, Record<Side, HandArt>> = {
 };
 
 const WAVE_ART: Record<WavePose, WaveArt> = {
-  flat1: {
+  /* flat1: {
     source: waveFlat1,
     sourceWidth: 1940,
     sourceHeight: 1120,
     // Act 2.3 SCALE: calibrated to the visible hand width (~35 dp), not the
     // long horizontal sleeve. If it looks larger than the gripping hands, tune here.
-    scale: 0.1,
-    pivotX: 1000,
-    pivotY: 560,
+    scale: 0.09,//0.1,
+    pivotX: 50,//1000,
+    pivotY: 560,//560,
+    imageOffsetX: 10,//0,
+    imageOffsetY: 0,
+  }, */
+  flat1: {
+    source: waveFlat2,
+    sourceWidth: 1600,
+    sourceHeight: 1600,
+    scale: 0.12, //0.064,
+    pivotX: 400, //1000,
+    pivotY: 450, //560,
     imageOffsetX: 0,
     imageOffsetY: 0,
   },
@@ -178,19 +188,19 @@ const WAVE_ART: Record<WavePose, WaveArt> = {
     source: waveFlat2,
     sourceWidth: 1600,
     sourceHeight: 1600,
-    scale: 0.1, //0.064,
-    pivotX: 450,
-    pivotY: 1100,
+    scale: 0.12, //0.064,
+    pivotX: 650,
+    pivotY: 500, //1100,
     imageOffsetX: 0,
     imageOffsetY: 0,
   },
   flat3: {
-    source: waveFlat3,
+    source: waveFlat2, //waveFlat3,
     sourceWidth: 1600,
     sourceHeight: 1600,
-    scale: 0.1, //0.075,
-    pivotX: 500,
-    pivotY: 1000,
+    scale: 0.12, //0.075,
+    pivotX: 650, //500,
+    pivotY: 500, //1000,
     imageOffsetX: 0,
     imageOffsetY: 0,
   },
@@ -261,16 +271,18 @@ const TUNING = {
   headSpringMass: 1.9, //0.9,
 
   // Act 2.3 WAVE POSITION: the wrist/shoulder pivot starts on the right side
-  // of the head. Change this ratio if the arm looks detached from the character.
+
   // Act 2.3 POSITION:
-  // Place the waving-arm pivot relative to the avatar centre.
-  // Increase to move the pivot toward the character's right shoulder.
+
+  // of the head. Change this ratio if the arm looks detached from the character.
   wavePivotHeadOffsetRatio: 0.28,
   waveRotationBox: 640,
+  // Place the waving-arm pivot relative to the avatar centre.
+  // Increase to move the pivot toward the character's right shoulder.
   waveHiddenPivotY: 82,
   // Act 2.3 POSITION: the active wrist/pivot sits just above the row. This keeps
   // the sleeve emerging from the same physical origin instead of floating.
-  waveActivePivotY: -68,
+  waveActivePivotY: -6,
 
   // Act 2.3 ASSET ALIGNMENT: pivot corrections (dp) compensate for the three
   // different image canvases. They are intentionally separate and commented.

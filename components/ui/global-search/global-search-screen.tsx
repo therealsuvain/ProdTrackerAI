@@ -59,7 +59,10 @@ import { recordGlobalSearchEasterEggDiscovery } from "@/utils/Search-utils/easte
 import { createGlobalSearchSelectionRequest } from "@/utils/Search-utils/selection-dispatcher";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { TagBadge } from "../shared/tags/tag-badge";
-import { useHelloThereEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-easter-egg-animation-v2";
+import { useHelloThereEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-easter-egg-phase-1-animation";
+import { useNoNoNoEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-phase-2-animation-v2";
+import { useSleepingZEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-phase-3-animation-v2";
+import { useEasterEggAnimationSequence } from "@/hooks/animations/easter-eggs/use-hello-there-animation-sequence";
 
 type SearchFilter = "all" | GlobalSearchFilterKind;
 
@@ -137,6 +140,9 @@ export function GlobalSearchScreen({
   );
   const animationCanvasRef = useRef<View | null>(null);
   const helloThereAnimation = useHelloThereEasterEggAnimation(theme.background);
+  const noNoNo = useNoNoNoEasterEggAnimation();
+  const sleepingZ = useSleepingZEasterEggAnimation();
+  const sequence = useEasterEggAnimationSequence();
 
   // Resolve the ranked document targets back to their live source records.
   // This compatibility adapter lets the current SearchResultRow and
@@ -284,6 +290,7 @@ export function GlobalSearchScreen({
 
       // These four effects remain intentionally disabled until their designs
       // are approved. Do not mark them discovered during this staging period.
+
       if (egg.activation.kind === "animation") {
         // Hello There is the first enabled animation.
         // Keep the other animation effects disabled for now.
@@ -295,7 +302,7 @@ export function GlobalSearchScreen({
           );
           return;
         }
-        if (activeEggActivationRef.current) return;
+        /*  if (activeEggActivationRef.current) return;
         // Acquire the lock synchronously before starting the animation.
         activeEggActivationRef.current = eggId;
 
@@ -311,14 +318,73 @@ export function GlobalSearchScreen({
               storageError,
             );
           },
-        );
+        ); */
 
-        void helloThereAnimation.start(rowRef, animationCanvasRef, () => {
+        /* void helloThereAnimation.start(rowRef, animationCanvasRef, () => {
           if (activeEggActivationRef.current === eggId) {
             activeEggActivationRef.current = null;
           }
         });
+ */
 
+        /* void noNoNo.start(rowRef, animationCanvasRef, () => {
+          if (activeEggActivationRef.current === eggId) {
+            activeEggActivationRef.current = null;
+          }
+        });
+ */
+
+        /*   void sleepingZ.start(rowRef, animationCanvasRef, () => {
+          if (activeEggActivationRef.current === eggId) {
+            activeEggActivationRef.current = null;
+          }
+        }); */
+
+        /* const result = await sequence.activate({
+  "hello-there": () => helloThereAnimation.start(rowRef, animationCanvasRef),
+  "no-no-no": () => noNoNo.start(rowRef, animationCanvasRef),
+  "sleeping-z": () => sleepingZ.start(rowRef, animationCanvasRef),
+}); */
+        // This outer lock protects the whole handoff and remains held until the
+        // selected animation Promise settles. sequence.activate has its own
+        // synchronous lock as a second guard against overlapping effects.
+        activeEggActivationRef.current = eggId;
+
+        try {
+          controller.recordSubmittedSearch();
+
+          // Discovery is idempotent and is recorded on the explicit row tap,
+          // regardless of which visual animation the sequence selects.
+          void recordGlobalSearchEasterEggDiscovery(eggId).catch(
+            (storageError) => {
+              console.warn(
+                "[Global Search] Couldn't persist Easter egg discovery.",
+                storageError,
+              );
+            },
+          );
+
+          const completedAnimation = await sequence.activate({
+            "hello-there": () =>
+              helloThereAnimation.start(rowRef, animationCanvasRef),
+            "no-no-no": () => noNoNo.start(rowRef, animationCanvasRef),
+            "sleeping-z": () => sleepingZ.start(rowRef, animationCanvasRef),
+          });
+
+          if (!completedAnimation) {
+            console.warn(
+              "[Global Search] Easter egg animation did not complete; sequence step was not consumed.",
+            );
+          }
+        } catch (error) {
+          console.warn("[Global Search] Easter egg animation failed.", error);
+        } finally {
+          // CRITICAL: without this release, the first accepted press leaves the
+          // screen-level guard set forever, so presses 2 and 3 are ignored.
+          if (activeEggActivationRef.current === eggId) {
+            activeEggActivationRef.current = null;
+          }
+        }
         return;
       }
 
@@ -352,32 +418,24 @@ export function GlobalSearchScreen({
         activeEggActivationRef.current = null;
       }
     },
-    [controller.recordSubmittedSearch],
+    [
+      controller.recordSubmittedSearch,
+      helloThereAnimation.start,
+      noNoNo.start,
+      sequence.activate,
+      sleepingZ.start,
+    ],
   );
-  /* 
-  const finishHelloThereAnimation = useCallback(() => {
-    if (activeEggActivationRef.current !== "hello_there") return;
-
-    activeEggActivationRef.current = null;
-
-    setActiveAnimatedEggId((current) =>
-      current === "hello_there" ? null : current,
-    );
-  }, []); */
 
   const visibleResultCount = filteredResults.length + easterEggResults.length;
 
-  /*   useEffect(() => {
+  useEffect(() => {
     if (visible) return;
 
-    if (activeEggActivationRef.current === "hello_there") {
-      activeEggActivationRef.current = null;
-      setActiveAnimatedEggId(null);
-    }
-  }, [visible]); */
-  useEffect(() => {
-    if (!visible) helloThereAnimation.cancel();
-  }, [visible, helloThereAnimation.cancel]);
+    helloThereAnimation.cancel();
+    noNoNo.cancel();
+    sleepingZ.cancel();
+  }, [visible, helloThereAnimation.cancel, noNoNo.cancel, sleepingZ.cancel]);
 
   return (
     <Modal
@@ -399,9 +457,6 @@ export function GlobalSearchScreen({
             collapsable={false}
             style={styles.animationCanvas}
           >
-            {/* Behind character: must be BEFORE the actual row/list content. */}
-            {helloThereAnimation.behindLayer}
-
             <View style={styles.searchContentLayer}>
               {/* Header */}
               <View style={styles.header}>
@@ -781,7 +836,7 @@ export function GlobalSearchScreen({
                     />
                   ) : null
                 }
-                /* renderSectionHeader={({ section }) => (
+                renderSectionHeader={({ section }) => (
                   <View
                     style={[
                       styles.sectionHeader,
@@ -810,7 +865,7 @@ export function GlobalSearchScreen({
                       {section.data.length}
                     </Text>
                   </View>
-                )} */
+                )}
                 renderItem={({ item }) => {
                   if (item.document.kind === "easterEgg") {
                     const eggId = item.document.target.eggId;
@@ -824,14 +879,6 @@ export function GlobalSearchScreen({
                         onPress={(rowRef) => {
                           void handleEasterEggPress(eggId, rowRef);
                         }}
-                        /* animationActive={
-                      activeAnimatedEggId === "hello_there" &&
-                      eggId === "hello_there"
-                    }
-                    onAnimationFinished={finishHelloThereAnimation}
-                    onPress={() => {
-                      void handleEasterEggPress(eggId);
-                    }} */
                       />
                     );
                   }
@@ -897,7 +944,12 @@ export function GlobalSearchScreen({
                 }
                 contentContainerStyle={styles.resultsContent}
                 keyboardShouldPersistTaps="handled"
-                scrollEnabled={!helloThereAnimation.active}
+                scrollEnabled={
+                  !helloThereAnimation.active &&
+                  !noNoNo.active &&
+                  !sleepingZ.active &&
+                  !sequence.isRunning
+                }
                 keyboardDismissMode={
                   Platform.OS === "ios" ? "interactive" : "on-drag"
                 }
@@ -966,8 +1018,11 @@ export function GlobalSearchScreen({
               />
             </View>
 
-            {/* Fingers and speech bubble: must be AFTER the actual row/list content. */}
+            {helloThereAnimation.behindLayer}
+            {noNoNo.behindLayer}
+            {sleepingZ.behindLayer}
             {helloThereAnimation.foregroundLayer}
+            {noNoNo.foregroundLayer}
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
