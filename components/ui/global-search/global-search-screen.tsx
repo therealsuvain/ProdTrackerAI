@@ -51,7 +51,7 @@ import type {
 } from "@/types/global-search-convenience";
 import { Alert, Linking } from "react-native";
 
-import { GlobalSearchEasterEggRow } from "@/components/ui/global-search/search-result-row-easter-egg";
+import { GlobalSearchEasterEggRow } from "@/components/ui/global-search/search-result-row-easter-egg-v2";
 import { matchGlobalSearchEasterEggs } from "@/utils/Search-utils/easter-egg-matcher";
 import { GLOBAL_SEARCH_EASTER_EGGS_BY_ID } from "@/utils/Search-utils/easter-egg-registry";
 import { recordGlobalSearchEasterEggDiscovery } from "@/utils/Search-utils/easter-egg-discovery";
@@ -59,6 +59,10 @@ import { recordGlobalSearchEasterEggDiscovery } from "@/utils/Search-utils/easte
 import { createGlobalSearchSelectionRequest } from "@/utils/Search-utils/selection-dispatcher";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { TagBadge } from "../shared/tags/tag-badge";
+import { useHelloThereEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-easter-egg-phase-1-animation";
+import { useNoNoNoEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-phase-2-animation-v2";
+import { useSleepingZEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-phase-3-animation-v2";
+import { useEasterEggAnimationSequence } from "@/hooks/animations/easter-eggs/use-hello-there-animation-sequence";
 
 type SearchFilter = "all" | GlobalSearchFilterKind;
 
@@ -131,6 +135,15 @@ export function GlobalSearchScreen({
   }, [controller.openFilterPicker]);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const activeEggActivationRef = useRef<string | null>(null);
+  const [activeAnimatedEggId, setActiveAnimatedEggId] = useState<string | null>(
+    null,
+  );
+  const animationCanvasRef = useRef<View | null>(null);
+  const helloThereAnimation = useHelloThereEasterEggAnimation(theme.background);
+  const noNoNo = useNoNoNoEasterEggAnimation();
+const sleepingZ = useSleepingZEasterEggAnimation();
+const sequence = useEasterEggAnimationSequence();
+
   // Resolve the ranked document targets back to their live source records.
   // This compatibility adapter lets the current SearchResultRow and
   // onItemPress continue to work while the richer dispatcher is deferred.
@@ -268,7 +281,7 @@ export function GlobalSearchScreen({
   }, [visible]);
 
   const handleEasterEggPress = useCallback(
-    async (eggId: string) => {
+    async (eggId: string, rowRef: React.RefObject<View | null>) => {
       // Ignore concurrent taps while an activation is being handed off.
       if (activeEggActivationRef.current) return;
 
@@ -277,11 +290,101 @@ export function GlobalSearchScreen({
 
       // These four effects remain intentionally disabled until their designs
       // are approved. Do not mark them discovered during this staging period.
+      
       if (egg.activation.kind === "animation") {
-        Alert.alert(
-          "Surprise still in development",
-          "This Easter egg's effect is being designed. It isn't activated yet.",
-        );
+        // Hello There is the first enabled animation.
+        // Keep the other animation effects disabled for now.
+        console.log(eggId, "activation enabled:", egg.activation);
+        if (eggId !== "hello_there") {
+          Alert.alert(
+            "Surprise still in development",
+            "This Easter egg's effect is being designed. It isn't activated yet.",
+          );
+          return;
+        }
+       /*  if (activeEggActivationRef.current) return;
+        // Acquire the lock synchronously before starting the animation.
+        activeEggActivationRef.current = eggId;
+
+        // Preserve the submitted query and start the effect.
+        controller.recordSubmittedSearch();
+        //setActiveAnimatedEggId(eggId);
+
+        // Record discovery on the explicit tap, without waiting for the animation.
+        void recordGlobalSearchEasterEggDiscovery(eggId).catch(
+          (storageError) => {
+            console.warn(
+              "[Global Search] Couldn't persist Easter egg discovery.",
+              storageError,
+            );
+          },
+        ); */
+
+        /* void helloThereAnimation.start(rowRef, animationCanvasRef, () => {
+          if (activeEggActivationRef.current === eggId) {
+            activeEggActivationRef.current = null;
+          }
+        });
+ */
+
+         /* void noNoNo.start(rowRef, animationCanvasRef, () => {
+          if (activeEggActivationRef.current === eggId) {
+            activeEggActivationRef.current = null;
+          }
+        });
+ */
+
+       /*   void sleepingZ.start(rowRef, animationCanvasRef, () => {
+          if (activeEggActivationRef.current === eggId) {
+            activeEggActivationRef.current = null;
+          }
+        }); */
+
+/* const result = await sequence.activate({
+  "hello-there": () => helloThereAnimation.start(rowRef, animationCanvasRef),
+  "no-no-no": () => noNoNo.start(rowRef, animationCanvasRef),
+  "sleeping-z": () => sleepingZ.start(rowRef, animationCanvasRef),
+}); */
+ // This outer lock protects the whole handoff and remains held until the
+        // selected animation Promise settles. sequence.activate has its own
+        // synchronous lock as a second guard against overlapping effects.
+        activeEggActivationRef.current = eggId;
+
+        try {
+          controller.recordSubmittedSearch();
+
+          // Discovery is idempotent and is recorded on the explicit row tap,
+          // regardless of which visual animation the sequence selects.
+          void recordGlobalSearchEasterEggDiscovery(eggId).catch(
+            (storageError) => {
+              console.warn(
+                "[Global Search] Couldn't persist Easter egg discovery.",
+                storageError,
+              );
+            },
+          );
+
+          const completedAnimation = await sequence.activate({
+            "hello-there": () =>
+              helloThereAnimation.start(rowRef, animationCanvasRef),
+            "no-no-no": () => noNoNo.start(rowRef, animationCanvasRef),
+            "sleeping-z": () => sleepingZ.start(rowRef, animationCanvasRef),
+          });
+
+          if (!completedAnimation) {
+            console.warn(
+              "[Global Search] Easter egg animation did not complete; sequence step was not consumed.",
+            );
+          }
+        } catch (error) {
+          console.warn("[Global Search] Easter egg animation failed.", error);
+        } finally {
+          // CRITICAL: without this release, the first accepted press leaves the
+          // screen-level guard set forever, so presses 2 and 3 are ignored.
+          if (activeEggActivationRef.current === eggId) {
+            activeEggActivationRef.current = null;
+          }
+        }
         return;
       }
 
@@ -315,9 +418,27 @@ export function GlobalSearchScreen({
         activeEggActivationRef.current = null;
       }
     },
-    [controller.recordSubmittedSearch],
+    [controller.recordSubmittedSearch,helloThereAnimation.start,
+      noNoNo.start,
+      sequence.activate,
+      sleepingZ.start,],
   );
+  
+
   const visibleResultCount = filteredResults.length + easterEggResults.length;
+
+   useEffect(() => {
+    if (visible) return;
+
+    helloThereAnimation.cancel();
+    noNoNo.cancel();
+    sleepingZ.cancel();
+  }, [
+    visible,
+    helloThereAnimation.cancel,
+    noNoNo.cancel,
+    sleepingZ.cancel,
+  ]);
 
   return (
     <Modal
@@ -334,144 +455,152 @@ export function GlobalSearchScreen({
           style={styles.keyboardContainer}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <IconButton
-              icon="arrow-left"
-              size={25}
-              iconColor={theme.text}
-              onPress={onDismiss}
-              accessibilityLabel="Close search"
-            />
+          <View
+            ref={animationCanvasRef}
+            collapsable={false}
+            style={styles.animationCanvas}
+          >
+            
 
-            <View style={styles.headerCopy}>
-              <Text style={[styles.headerTitle, { color: theme.text }]}>
-                Search Everything
-              </Text>
-
-              <Text
-                numberOfLines={1}
-                style={{ color: withAlpha(theme.text, "A8") }}
-              >
-                {isQueryEmpty && !hasActiveFilters
-                  ? "Search across your app"
-                  : `${visibleResultCount} result${
-                      visibleResultCount === 1 ? "" : "s"
-                    } ${
-                      isQueryEmpty
-                        ? "matching current filters"
-                        : `for "${query.trim()}"`
-                    }`}
-              </Text>
-            </View>
-          </View>
-
-          {/* Search input */}
-          <Searchbar
-            placeholder="Search everything"
-            ref={searchInputRef}
-            value={query}
-            onChangeText={controller.setQuery}
-            iconColor={theme.text}
-            placeholderTextColor={withAlpha(theme.text, "80")}
-            inputStyle={{ color: theme.text }}
-            style={[
-              styles.searchbar,
-              {
-                backgroundColor: theme.taskBaseTransToo,
-                borderColor: withAlpha(theme.text, "12"),
-              },
-            ]}
-            accessibilityLabel="Search everything"
-            onSubmitEditing={controller.recordSubmittedSearch}
-          />
-
-          {/* Type filters */}
-          <View style={styles.filterControlsWrap}>
-            <View style={styles.filterChipsWrap}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  controller.activeFacetCount > 0
-                    ? `Edit filters, ${controller.activeFacetCount} active`
-                    : "Edit search filters"
-                }
-                onPress={openFilterModal}
-                style={[
-                  styles.filterButton,
-                  {
-                    backgroundColor: withAlpha(theme.text, "08"),
-                    borderColor: withAlpha(theme.text, "24"),
-                  },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="tune-variant"
-                  size={16}
-                  color={theme.text}
+            <View style={styles.searchContentLayer}>
+              {/* Header */}
+              <View style={styles.header}>
+                <IconButton
+                  icon="arrow-left"
+                  size={25}
+                  iconColor={theme.text}
+                  onPress={onDismiss}
+                  accessibilityLabel="Close search"
                 />
 
-                {controller.activeFacetCount > 0 && (
-                  <View
-                    style={[
-                      styles.filterCountBadge,
-                      { backgroundColor: theme.taskBase },
-                    ]}
-                  >
-                    <Text
-                      style={{
-                        color: theme.whiteBase,
-                        fontSize: 10,
-                        fontWeight: "500",
-                      }}
-                    >
-                      {controller.activeFacetCount}
-                    </Text>
-                  </View>
-                )}
-              </Pressable>
-              {FILTERS.map((filter) => {
-                const selected = controller.filters.type === filter.value;
-                const accent = getAccentColor(filter.value);
+                <View style={styles.headerCopy}>
+                  <Text style={[styles.headerTitle, { color: theme.text }]}>
+                    Search Everything
+                  </Text>
 
-                return (
+                  <Text
+                    numberOfLines={1}
+                    style={{ color: withAlpha(theme.text, "A8") }}
+                  >
+                    {isQueryEmpty && !hasActiveFilters
+                      ? "Search across your app"
+                      : `${visibleResultCount} result${
+                          visibleResultCount === 1 ? "" : "s"
+                        } ${
+                          isQueryEmpty
+                            ? "matching current filters"
+                            : `for "${query.trim()}"`
+                        }`}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Search input */}
+              <Searchbar
+                placeholder="Search everything"
+                ref={searchInputRef}
+                value={query}
+                onChangeText={controller.setQuery}
+                iconColor={theme.text}
+                placeholderTextColor={withAlpha(theme.text, "80")}
+                inputStyle={{ color: theme.text }}
+                style={[
+                  styles.searchbar,
+                  {
+                    backgroundColor: theme.taskBaseTransToo,
+                    borderColor: withAlpha(theme.text, "12"),
+                  },
+                ]}
+                accessibilityLabel="Search everything"
+                onSubmitEditing={controller.recordSubmittedSearch}
+              />
+
+              {/* Type filters */}
+              <View style={styles.filterControlsWrap}>
+                <View style={styles.filterChipsWrap}>
                   <Pressable
-                    key={filter.value}
                     accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    onPress={() => controller.setType(filter.value)}
+                    accessibilityLabel={
+                      controller.activeFacetCount > 0
+                        ? `Edit filters, ${controller.activeFacetCount} active`
+                        : "Edit search filters"
+                    }
+                    onPress={openFilterModal}
                     style={[
-                      styles.filterChip,
+                      styles.filterButton,
                       {
-                        backgroundColor: selected
-                          ? accent
-                          : withAlpha(theme.text, "08"),
-                        borderColor: selected
-                          ? accent
-                          : withAlpha(theme.text, "18"),
+                        backgroundColor: withAlpha(theme.text, "08"),
+                        borderColor: withAlpha(theme.text, "24"),
                       },
                     ]}
                   >
-                    <Text
-                      numberOfLines={1}
-                      style={{
-                        color: selected ? theme.whiteBase : theme.text,
-                        fontWeight: selected ? "700" : "500",
-                        fontSize: 12,
-                      }}
-                    >
-                      {filter.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
+                    <MaterialCommunityIcons
+                      name="tune-variant"
+                      size={16}
+                      color={theme.text}
+                    />
 
-          {/**
-           * //OLD! SCROLL VIEW VERSION
-           * */}
-          {/*  <View style={styles.typeFilterRow}>
+                    {controller.activeFacetCount > 0 && (
+                      <View
+                        style={[
+                          styles.filterCountBadge,
+                          { backgroundColor: theme.taskBase },
+                        ]}
+                      >
+                        <Text
+                          style={{
+                            color: theme.whiteBase,
+                            fontSize: 10,
+                            fontWeight: "500",
+                          }}
+                        >
+                          {controller.activeFacetCount}
+                        </Text>
+                      </View>
+                    )}
+                  </Pressable>
+                  {FILTERS.map((filter) => {
+                    const selected = controller.filters.type === filter.value;
+                    const accent = getAccentColor(filter.value);
+
+                    return (
+                      <Pressable
+                        key={filter.value}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
+                        onPress={() => controller.setType(filter.value)}
+                        style={[
+                          styles.filterChip,
+                          {
+                            backgroundColor: selected
+                              ? accent
+                              : withAlpha(theme.text, "08"),
+                            borderColor: selected
+                              ? accent
+                              : withAlpha(theme.text, "18"),
+                          },
+                        ]}
+                      >
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            color: selected ? theme.whiteBase : theme.text,
+                            fontWeight: selected ? "700" : "500",
+                            fontSize: 12,
+                          }}
+                        >
+                          {filter.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/**
+               * //OLD! SCROLL VIEW VERSION
+               * */}
+              {/*  <View style={styles.typeFilterRow}>
             <View
               style={{
                 alignItems: "center",
@@ -567,313 +696,340 @@ export function GlobalSearchScreen({
               })}
             </ScrollView>
           </View> */}
-          {controller.hasActiveFilters && (
-            // <ScrollView
-            //   horizontal
-            //   showsHorizontalScrollIndicator={false}
-            //   keyboardShouldPersistTaps="handled"
-            //   contentContainerStyle={styles.activeFiltersContent}
-            //   style={styles.activeFiltersScroll}
-            // >
-            <View style={styles.activeFiltersWrap}>
-              {activeCategoryFilters.map((category) => (
-                <Pressable
-                  key={`active-category-${category.id}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remove category filter ${category.label}`}
-                  onPress={() => controller.removeCategoryFilter(category.id)}
-                  style={[
-                    styles.activeFilterChip,
-                    {
-                      backgroundColor: withAlpha(theme.taskBase, "12"),
-                      borderColor: withAlpha(theme.taskBase, "40"),
-                    },
-                  ]}
-                >
-                  {/*  <Text
+              {controller.hasActiveFilters && (
+                // <ScrollView
+                //   horizontal
+                //   showsHorizontalScrollIndicator={false}
+                //   keyboardShouldPersistTaps="handled"
+                //   contentContainerStyle={styles.activeFiltersContent}
+                //   style={styles.activeFiltersScroll}
+                // >
+                <View style={styles.activeFiltersWrap}>
+                  {activeCategoryFilters.map((category) => (
+                    <Pressable
+                      key={`active-category-${category.id}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove category filter ${category.label}`}
+                      onPress={() =>
+                        controller.removeCategoryFilter(category.id)
+                      }
+                      style={[
+                        styles.activeFilterChip,
+                        {
+                          backgroundColor: withAlpha(theme.taskBase, "12"),
+                          borderColor: withAlpha(theme.taskBase, "40"),
+                        },
+                      ]}
+                    >
+                      {/*  <Text
                     variant="labelMedium"
                     numberOfLines={1}
                     style={{ color: theme.text }}
                   >
                     {category.label}
                   </Text> */}
-                  <CategoryBadge categoryId={category.id} variant="iconOnly" />
-                  <MaterialCommunityIcons
-                    name="close"
-                    size={12}
-                    color={theme.text}
-                  />
-                </Pressable>
-              ))}
+                      <CategoryBadge
+                        categoryId={category.id}
+                        variant="iconOnly"
+                      />
+                      <MaterialCommunityIcons
+                        name="close"
+                        size={12}
+                        color={theme.text}
+                      />
+                    </Pressable>
+                  ))}
 
-              {activeTagFilters.map((tag) => (
-                <Pressable
-                  key={`active-tag-${tag.id}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remove tag filter ${tag.label}`}
-                  onPress={() => controller.removeTagFilter(tag.id)}
-                  style={[
-                    styles.activeFilterChip,
-                    {
-                      backgroundColor: withAlpha(theme.taskBase, "12"),
-                      borderColor: withAlpha(theme.taskBase, "40"),
-                    },
-                  ]}
-                >
-                  {/* <Text
+                  {activeTagFilters.map((tag) => (
+                    <Pressable
+                      key={`active-tag-${tag.id}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove tag filter ${tag.label}`}
+                      onPress={() => controller.removeTagFilter(tag.id)}
+                      style={[
+                        styles.activeFilterChip,
+                        {
+                          backgroundColor: withAlpha(theme.taskBase, "12"),
+                          borderColor: withAlpha(theme.taskBase, "40"),
+                        },
+                      ]}
+                    >
+                      {/* <Text
                     variant="labelMedium"
                     numberOfLines={1}
                     style={{ color: theme.text }}
                   >
                     {tag.label}
                   </Text> */}
-                  <TagBadge tagId={tag.id} holeColor={theme.background} />
-                  <MaterialCommunityIcons
-                    name="close"
-                    size={12}
-                    color={theme.text}
-                  />
-                </Pressable>
-              ))}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Save current filters as a scope"
-                onPress={() => setShowSavedScopesModal(true)}
-                style={styles.clearFiltersButton}
-              >
-                <Text style={{ color: theme.taskBase, fontWeight: "600" }}>
-                  Save scope
-                </Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                onPress={controller.clearAllFilters}
-                style={styles.clearFiltersButton}
-              >
-                <Text style={{ color: theme.taskBase, fontWeight: "600" }}>
-                  Clear all
-                </Text>
-              </Pressable>
-            </View>
-          )}
-
-          {/* Grouped results */}
-          <SectionList<GlobalSearchResult, SearchSection>
-            sections={sections}
-            keyExtractor={(item, index) =>
-              `${String(item.document.key ?? index)}`
-            }
-            ListHeaderComponent={
-              isQueryEmpty && !controller.hasActiveFilters ? (
-                <GlobalSearchConveniencePanel
-                  savedScopes={controller.savedScopes}
-                  recentSearches={controller.recentSearches}
-                  recentItems={controller.recentItems}
-                  shortcuts={controller.documents.filter(
-                    (document) => document.kind === "action",
-                  )}
-                  isLoaded={controller.isConvenienceStoreLoaded}
-                  onApplyScope={handleApplySavedScope}
-                  onManageScopes={() => setShowSavedScopesModal(true)}
-                  onRestoreSearch={controller.restoreRecentSearch}
-                  onRemoveSearch={controller.removeRecentSearch}
-                  onClearSearches={controller.clearRecentSearches}
-                  onOpenShortcuts={() => setShowShortcutsModal(true)}
-                  onOpenRecentItem={(recent: RecentGlobalSearchItem) => {
-                    const document = controller.documents.find(
-                      (candidate) => candidate.key === recent.key,
-                    );
-
-                    if (!document) {
-                      void controller.removeRecentItem(recent.key);
-                      return;
-                    }
-
-                    controller.recordSelectedResult(document);
-
-                    onItemPress(
-                      createGlobalSearchSelectionRequest(document.target),
-                    );
-                  }}
-                  onRemoveRecentItem={controller.removeRecentItem}
-                  onClearRecentItems={controller.clearRecentItems}
-                  onActivateShortcut={(document) => {
-                    controller.recordSelectedResult(document);
-
-                    onItemPress(
-                      createGlobalSearchSelectionRequest(document.target),
-                    );
-                  }}
-                />
-              ) : null
-            }
-            renderSectionHeader={({ section }) => (
-              <View
-                style={[
-                  styles.sectionHeader,
-                  {
-                    backgroundColor: theme.background,
-                    borderBottomColor: withAlpha(theme.text, "12"),
-                  },
-                ]}
-              >
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                  {section.title}
-                </Text>
-
-                <Text
-                  style={{
-                    color: withAlpha(
-                      section.type === "easterEgg"
-                        ? "#ed62ff"
-                        : getAccentColor(section.type),
-                      "FF",
-                    ),
-                    fontWeight: "500",
-                    fontSize: 16,
-                  }}
-                >
-                  {section.data.length}
-                </Text>
-              </View>
-            )}
-            renderItem={({ item }) => {
-              if (item.document.kind === "easterEgg") {
-                const eggId = item.document.target.eggId;
-                const activationEnabled = eggId === "rickroll";
-
-                return (
-                  <GlobalSearchEasterEggRow
-                    result={item}
-                    activationEnabled={activationEnabled}
-                    onPress={() => {
-                      void handleEasterEggPress(eggId);
-                    }}
-                  />
-                );
-              }
-              return (
-                <SearchResultRow
-                  result={item}
-                  query={query}
-                  onPress={() => {
-                    controller.recordSelectedResult(item.document);
-                    onItemPress(
-                      createGlobalSearchSelectionRequest(item.document.target),
-                    );
-                  }}
-                />
-              );
-            }}
-            ItemSeparatorComponent={() => <View style={styles.rowSeparator} />}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <View
-                  style={[
-                    styles.emptyIconContainer,
-                    {
-                      backgroundColor: withAlpha(theme.taskBase, "18"),
-                    },
-                  ]}
-                >
-                  <MaterialCommunityIcons
-                    name={isQueryEmpty ? "magnify" : "text-search"}
-                    size={34}
-                    color={theme.taskBase}
-                  />
-                </View>
-
-                <Text style={[styles.emptyTitle, { color: theme.text }]}>
-                  {emptyTitle}
-                </Text>
-
-                <Text
-                  style={[
-                    styles.emptyDescription,
-                    { color: withAlpha(theme.text, "A8") },
-                  ]}
-                >
-                  {emptyDescription}
-                </Text>
-
-                {(!isQueryEmpty || controller.hasActiveFilters) && (
-                  <Button
-                    mode="text"
-                    textColor={theme.taskBase}
-                    onPress={handleEmptyAction}
-                    style={styles.emptyAction}
+                      <TagBadge tagId={tag.id} holeColor={theme.background} />
+                      <MaterialCommunityIcons
+                        name="close"
+                        size={12}
+                        color={theme.text}
+                      />
+                    </Pressable>
+                  ))}
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Save current filters as a scope"
+                    onPress={() => setShowSavedScopesModal(true)}
+                    style={styles.clearFiltersButton}
                   >
-                    {isQueryEmpty ? "Clear filters" : "Clear search"}
-                  </Button>
-                )}
-              </View>
-            }
-            contentContainerStyle={styles.resultsContent}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode={
-              Platform.OS === "ios" ? "interactive" : "on-drag"
-            }
-            stickySectionHeadersEnabled={false}
-            showsVerticalScrollIndicator={false}
-          />
-          <GlobalSearchFilterModal
-            visible={showFilterModal}
-            categories={categories}
-            tags={tags}
-            draftFilters={controller.draftFilters ?? controller.filters}
-            onToggleCategory={controller.toggleDraftCategory}
-            onToggleTag={controller.toggleDraftTag}
-            onTagMatchModeChange={controller.setDraftTagMatchMode}
-            onClearFacets={controller.clearDraftFacets}
-            onApply={() => {
-              controller.applyFilterEditing();
-              setShowFilterModal(false);
-            }}
-            onCancel={() => {
-              controller.cancelFilterEditing();
-              setShowFilterModal(false);
-            }}
-            palette={{
-              background: theme.background,
-              surface: theme.background,
-              text: theme.text,
-              secondaryText: theme.greyBasePrimary,
-              border: theme.greyBaseTertiary,
-              accent: theme.taskBase,
-              selectedSurface: withAlpha(theme.taskBase, "08"),
-            }}
-          />
-          <GlobalSearchSavedScopesModal
-            visible={showSavedScopesModal}
-            scopes={controller.savedScopes}
-            currentFilters={controller.filters}
-            canSaveCurrentFilters={controller.hasActiveFilters}
-            onClose={() => setShowSavedScopesModal(false)}
-            onSaveScope={handleSaveScope}
-            onApplyScope={handleApplySavedScope}
-            onRenameScope={handleRenameScope}
-            onUpdateScopeFilters={handleUpdateScopeFilters}
-            onDeleteScope={controller.deleteScope}
-            onClearScopes={controller.clearScopes}
-          />
-          <GlobalSearchShortcutsModal
-            visible={showShortcutsModal}
-            shortcuts={controller.documents.filter(
-              (document) => document.kind === "action",
-            )}
-            savedScopes={controller.savedScopes}
-            isLoaded={controller.isConvenienceStoreLoaded}
-            onClose={() => setShowShortcutsModal(false)}
-            onManageScopes={() => setShowSavedScopesModal(true)}
-            onApplyScope={(scope) => {
-              controller.applySavedScope(scope);
-            }}
-            onActivateShortcut={(document) => {
-              controller.recordSelectedResult(document);
+                    <Text style={{ color: theme.taskBase, fontWeight: "600" }}>
+                      Save scope
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={controller.clearAllFilters}
+                    style={styles.clearFiltersButton}
+                  >
+                    <Text style={{ color: theme.taskBase, fontWeight: "600" }}>
+                      Clear all
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
 
-              onItemPress(createGlobalSearchSelectionRequest(document.target));
-            }}
-          />
+              {/* Grouped results */}
+              <SectionList<GlobalSearchResult, SearchSection>
+                sections={sections}
+                keyExtractor={(item, index) =>
+                  `${String(item.document.key ?? index)}`
+                }
+                ListHeaderComponent={
+                  isQueryEmpty && !controller.hasActiveFilters ? (
+                    <GlobalSearchConveniencePanel
+                      savedScopes={controller.savedScopes}
+                      recentSearches={controller.recentSearches}
+                      recentItems={controller.recentItems}
+                      shortcuts={controller.documents.filter(
+                        (document) => document.kind === "action",
+                      )}
+                      isLoaded={controller.isConvenienceStoreLoaded}
+                      onApplyScope={handleApplySavedScope}
+                      onManageScopes={() => setShowSavedScopesModal(true)}
+                      onRestoreSearch={controller.restoreRecentSearch}
+                      onRemoveSearch={controller.removeRecentSearch}
+                      onClearSearches={controller.clearRecentSearches}
+                      onOpenShortcuts={() => setShowShortcutsModal(true)}
+                      onOpenRecentItem={(recent: RecentGlobalSearchItem) => {
+                        const document = controller.documents.find(
+                          (candidate) => candidate.key === recent.key,
+                        );
+
+                        if (!document) {
+                          void controller.removeRecentItem(recent.key);
+                          return;
+                        }
+
+                        controller.recordSelectedResult(document);
+
+                        onItemPress(
+                          createGlobalSearchSelectionRequest(document.target),
+                        );
+                      }}
+                      onRemoveRecentItem={controller.removeRecentItem}
+                      onClearRecentItems={controller.clearRecentItems}
+                      onActivateShortcut={(document) => {
+                        controller.recordSelectedResult(document);
+
+                        onItemPress(
+                          createGlobalSearchSelectionRequest(document.target),
+                        );
+                      }}
+                    />
+                  ) : null
+                }
+                renderSectionHeader={({ section }) => (
+                  <View
+                    style={[
+                      styles.sectionHeader,
+                      {
+                        backgroundColor: theme.background,
+                        borderBottomColor: withAlpha(theme.text, "12"),
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                      {section.title}
+                    </Text>
+
+                    <Text
+                      style={{
+                        color: withAlpha(
+                          section.type === "easterEgg"
+                            ? "#ed62ff"
+                            : getAccentColor(section.type),
+                          "FF",
+                        ),
+                        fontWeight: "500",
+                        fontSize: 16,
+                      }}
+                    >
+                      {section.data.length}
+                    </Text>
+                  </View>
+                )}
+                renderItem={({ item }) => {
+                  if (item.document.kind === "easterEgg") {
+                    const eggId = item.document.target.eggId;
+                    const activationEnabled =
+                      eggId === "rickroll" || eggId === "hello_there";
+
+                    return (
+                      <GlobalSearchEasterEggRow
+                        result={item}
+                        activationEnabled={activationEnabled}
+                        onPress={(rowRef) => {
+                          void handleEasterEggPress(eggId, rowRef);
+                        }}
+                      />
+                    );
+                  }
+                  return (
+                    <SearchResultRow
+                      result={item}
+                      query={query}
+                      onPress={() => {
+                        controller.recordSelectedResult(item.document);
+                        onItemPress(
+                          createGlobalSearchSelectionRequest(
+                            item.document.target,
+                          ),
+                        );
+                      }}
+                    />
+                  );
+                }}
+                ItemSeparatorComponent={() => (
+                  <View style={styles.rowSeparator} />
+                )}
+                ListEmptyComponent={
+                  <View style={styles.emptyState}>
+                    <View
+                      style={[
+                        styles.emptyIconContainer,
+                        {
+                          backgroundColor: withAlpha(theme.taskBase, "18"),
+                        },
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name={isQueryEmpty ? "magnify" : "text-search"}
+                        size={34}
+                        color={theme.taskBase}
+                      />
+                    </View>
+
+                    <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                      {emptyTitle}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.emptyDescription,
+                        { color: withAlpha(theme.text, "A8") },
+                      ]}
+                    >
+                      {emptyDescription}
+                    </Text>
+
+                    {(!isQueryEmpty || controller.hasActiveFilters) && (
+                      <Button
+                        mode="text"
+                        textColor={theme.taskBase}
+                        onPress={handleEmptyAction}
+                        style={styles.emptyAction}
+                      >
+                        {isQueryEmpty ? "Clear filters" : "Clear search"}
+                      </Button>
+                    )}
+                  </View>
+                }
+                contentContainerStyle={styles.resultsContent}
+                keyboardShouldPersistTaps="handled"
+                scrollEnabled={!helloThereAnimation.active &&
+                  !noNoNo.active &&
+                  !sleepingZ.active &&
+                  !sequence.isRunning}
+                keyboardDismissMode={
+                  Platform.OS === "ios" ? "interactive" : "on-drag"
+                }
+                stickySectionHeadersEnabled={false}
+                showsVerticalScrollIndicator={false}
+              />
+              <GlobalSearchFilterModal
+                visible={showFilterModal}
+                categories={categories}
+                tags={tags}
+                draftFilters={controller.draftFilters ?? controller.filters}
+                onToggleCategory={controller.toggleDraftCategory}
+                onToggleTag={controller.toggleDraftTag}
+                onTagMatchModeChange={controller.setDraftTagMatchMode}
+                onClearFacets={controller.clearDraftFacets}
+                onApply={() => {
+                  controller.applyFilterEditing();
+                  setShowFilterModal(false);
+                }}
+                onCancel={() => {
+                  controller.cancelFilterEditing();
+                  setShowFilterModal(false);
+                }}
+                palette={{
+                  background: theme.background,
+                  surface: theme.background,
+                  text: theme.text,
+                  secondaryText: theme.greyBasePrimary,
+                  border: theme.greyBaseTertiary,
+                  accent: theme.taskBase,
+                  selectedSurface: withAlpha(theme.taskBase, "08"),
+                }}
+              />
+              <GlobalSearchSavedScopesModal
+                visible={showSavedScopesModal}
+                scopes={controller.savedScopes}
+                currentFilters={controller.filters}
+                canSaveCurrentFilters={controller.hasActiveFilters}
+                onClose={() => setShowSavedScopesModal(false)}
+                onSaveScope={handleSaveScope}
+                onApplyScope={handleApplySavedScope}
+                onRenameScope={handleRenameScope}
+                onUpdateScopeFilters={handleUpdateScopeFilters}
+                onDeleteScope={controller.deleteScope}
+                onClearScopes={controller.clearScopes}
+              />
+              <GlobalSearchShortcutsModal
+                visible={showShortcutsModal}
+                shortcuts={controller.documents.filter(
+                  (document) => document.kind === "action",
+                )}
+                savedScopes={controller.savedScopes}
+                isLoaded={controller.isConvenienceStoreLoaded}
+                onClose={() => setShowShortcutsModal(false)}
+                onManageScopes={() => setShowSavedScopesModal(true)}
+                onApplyScope={(scope) => {
+                  controller.applySavedScope(scope);
+                }}
+                onActivateShortcut={(document) => {
+                  controller.recordSelectedResult(document);
+
+                  onItemPress(
+                    createGlobalSearchSelectionRequest(document.target),
+                  );
+                }}
+              />
+            </View>
+
+
+            {helloThereAnimation.behindLayer}
+{noNoNo.behindLayer}
+{sleepingZ.behindLayer}
+{helloThereAnimation.foregroundLayer}
+{noNoNo.foregroundLayer}
+
+
+          </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
@@ -887,6 +1043,17 @@ const styles = StyleSheet.create({
   keyboardContainer: {
     flex: 1,
   },
+  animationCanvas: {
+    flex: 1,
+    overflow: "visible",
+  },
+  searchContentLayer: {
+    flex: 1,
+    zIndex: 1,
+    elevation: 1,
+    backgroundColor: "transparent",
+  },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -970,6 +1137,7 @@ const styles = StyleSheet.create({
   resultsContent: {
     flexGrow: 1,
     paddingBottom: 28,
+    //zIndex: 1000,
   },
   emptyState: {
     flex: 1,
@@ -1051,6 +1219,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 8,
     gap: 8,
+    //zIndex: 100,
   },
 
   filterButton: {
@@ -1070,6 +1239,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     alignItems: "center",
     gap: 4,
+    //zIndex: 100,
   },
 
   filterChip: {
