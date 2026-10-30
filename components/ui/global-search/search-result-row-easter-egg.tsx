@@ -6,16 +6,21 @@ import { Text } from "react-native-paper";
 import { ThemeContext } from "@/context/ThemeContext";
 import { withAlpha } from "@/utils/common-utils";
 import type { GlobalSearchResult } from "@/types/global-search";
+import { HelloThereEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-easter-egg-animation";
 
 interface Props {
   result: GlobalSearchResult;
   activationEnabled: boolean;
+  animationActive?: boolean;
+  onAnimationFinished?: () => void;
   onPress: () => void;
 }
 
 export function GlobalSearchEasterEggRow({
   result,
   activationEnabled,
+  animationActive = false,
+  onAnimationFinished,
   onPress,
 }: Props) {
   const { theme } = useContext(ThemeContext);
@@ -41,6 +46,12 @@ export function GlobalSearchEasterEggRow({
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
+        animationActive && {
+          position: "relative",
+          zIndex: 1000,
+          elevation: 20,
+          overflow: "visible",
+        },
         {
           backgroundColor: withAlpha(accentColor, "0D"),
           borderColor: withAlpha(accentColor, "55"),
@@ -115,6 +126,12 @@ export function GlobalSearchEasterEggRow({
         size={20}
         color={withAlpha(accentColor, activationEnabled ? "FF" : "A8")}
       />
+      {animationActive && (
+        <HelloThereEasterEggAnimation
+          active
+          onFinished={onAnimationFinished ?? (() => {})}
+        />
+      )}
     </Pressable>
   );
 }
