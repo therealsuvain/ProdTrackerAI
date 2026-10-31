@@ -1,4 +1,4 @@
-import React, { useContext, useRef } from "react";
+import React, { useContext } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Text } from "react-native-paper";
@@ -6,30 +6,36 @@ import { Text } from "react-native-paper";
 import { ThemeContext } from "@/context/ThemeContext";
 import { withAlpha } from "@/utils/common-utils";
 import type { GlobalSearchResult } from "@/types/global-search";
-
-type RowMeasureRef = React.RefObject<View | null>;
+import { HelloThereEasterEggAnimation } from "@/hooks/animations/easter-eggs/(OLD-v1) hello-there-easter-egg-animation";
 
 interface Props {
   result: GlobalSearchResult;
   activationEnabled: boolean;
-  // Pass the Pressable ref to the screen so the root-level animation controller
-  // can measure this exact row relative to the shared animation canvas.
-  onPress: (rowRef: RowMeasureRef) => void;
+  animationActive?: boolean;
+  onAnimationFinished?: () => void;
+  onPress: () => void;
 }
 
-export function GlobalSearchEasterEggRow({ result, activationEnabled, onPress }: Props) {
+export function GlobalSearchEasterEggRow({
+  result,
+  activationEnabled,
+  animationActive = false,
+  onAnimationFinished,
+  onPress,
+}: Props) {
   const { theme } = useContext(ThemeContext);
-  const rowRef = useRef<View | null>(null);
 
   const { document } = result;
   if (document.kind !== "easterEgg") return null;
 
-  const accentColor = document.display.presentation?.accentColor ?? theme.taskBase;
-  const iconName = document.display.presentation?.icon?.name ?? "star-four-points-outline";
+  const accentColor =
+    document.display.presentation?.accentColor ?? theme.taskBase;
+
+  const iconName =
+    document.display.presentation?.icon?.name ?? "star-four-points-outline";
 
   return (
     <Pressable
-      ref={rowRef}
       accessibilityRole="button"
       accessibilityLabel={`${document.display.title}, Easter egg`}
       accessibilityHint={
@@ -37,9 +43,15 @@ export function GlobalSearchEasterEggRow({ result, activationEnabled, onPress }:
           ? "Activate this hidden search surprise"
           : "This surprise's effect is not enabled yet"
       }
-      onPress={() => onPress(rowRef)}
+      onPress={onPress}
       style={({ pressed }) => [
         styles.row,
+        animationActive && {
+          position: "relative",
+          zIndex: 1000,
+          elevation: 20,
+          overflow: "visible",
+        },
         {
           backgroundColor: withAlpha(accentColor, "0D"),
           borderColor: withAlpha(accentColor, "55"),
@@ -47,9 +59,18 @@ export function GlobalSearchEasterEggRow({ result, activationEnabled, onPress }:
         },
       ]}
     >
-      <View style={[styles.iconContainer, { backgroundColor: withAlpha(accentColor, "20") }]}>
+      <View
+        style={[
+          styles.iconContainer,
+          { backgroundColor: withAlpha(accentColor, "20") },
+        ]}
+      >
         <MaterialCommunityIcons
-          name={iconName as React.ComponentProps<typeof MaterialCommunityIcons>["name"]}
+          name={
+            iconName as React.ComponentProps<
+              typeof MaterialCommunityIcons
+            >["name"]
+          }
           size={24}
           color={accentColor}
         />
@@ -57,24 +78,44 @@ export function GlobalSearchEasterEggRow({ result, activationEnabled, onPress }:
 
       <View style={styles.copy}>
         <View style={styles.titleRow}>
-          <Text variant="titleSmall" numberOfLines={1} style={{ color: theme.text, fontWeight: "700", flexShrink: 1 }}>
+          <Text
+            variant="titleSmall"
+            numberOfLines={1}
+            style={{ color: theme.text, fontWeight: "700", flexShrink: 1 }}
+          >
             {document.display.title}
           </Text>
-          <View style={[styles.secretBadge, { backgroundColor: withAlpha(accentColor, "20") }]}>
-            <Text variant="labelSmall" style={{ color: accentColor, fontWeight: "700" }}>
+
+          <View
+            style={[
+              styles.secretBadge,
+              { backgroundColor: withAlpha(accentColor, "20") },
+            ]}
+          >
+            <Text
+              variant="labelSmall"
+              style={{ color: accentColor, fontWeight: "700" }}
+            >
               SECRET
             </Text>
           </View>
         </View>
 
         {!!document.display.subtitle && (
-          <Text variant="bodySmall" numberOfLines={2} style={{ color: withAlpha(theme.text, "B5"), lineHeight: 19 }}>
+          <Text
+            variant="bodySmall"
+            numberOfLines={2}
+            style={{ color: withAlpha(theme.text, "B5"), lineHeight: 19 }}
+          >
             {document.display.subtitle}
           </Text>
         )}
 
         {!activationEnabled && (
-          <Text variant="labelSmall" style={{ color: withAlpha(theme.text, "75"), marginTop: 3 }}>
+          <Text
+            variant="labelSmall"
+            style={{ color: withAlpha(theme.text, "75"), marginTop: 3 }}
+          >
             Effect design pending
           </Text>
         )}
@@ -85,6 +126,12 @@ export function GlobalSearchEasterEggRow({ result, activationEnabled, onPress }:
         size={20}
         color={withAlpha(accentColor, activationEnabled ? "FF" : "A8")}
       />
+      {animationActive && (
+        <HelloThereEasterEggAnimation
+          active
+          onFinished={onAnimationFinished ?? (() => {})}
+        />
+      )}
     </Pressable>
   );
 }

@@ -51,7 +51,7 @@ import type {
 } from "@/types/global-search-convenience";
 import { Alert, Linking } from "react-native";
 
-import { GlobalSearchEasterEggRow } from "@/components/ui/global-search/search-result-row-easter-egg-v2";
+import { GlobalSearchEasterEggRow } from "@/components/ui/global-search/search-result-row-easter-egg";
 import { matchGlobalSearchEasterEggs } from "@/utils/Search-utils/easter-egg-matcher";
 import { GLOBAL_SEARCH_EASTER_EGGS_BY_ID } from "@/utils/Search-utils/easter-egg-registry";
 import { recordGlobalSearchEasterEggDiscovery } from "@/utils/Search-utils/easter-egg-discovery";
@@ -59,9 +59,9 @@ import { recordGlobalSearchEasterEggDiscovery } from "@/utils/Search-utils/easte
 import { createGlobalSearchSelectionRequest } from "@/utils/Search-utils/selection-dispatcher";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { TagBadge } from "../shared/tags/tag-badge";
-import { useHelloThereEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-easter-egg-phase-1-animation";
-import { useNoNoNoEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-phase-2-animation-v2";
-import { useSleepingZEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-phase-3-animation-v2";
+import { useHelloThereEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-phase-1-animation";
+import { useNoNoNoEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-phase-2-animation";
+import { useSleepingZEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-phase-3-animation";
 import { useEasterEggAnimationSequence } from "@/hooks/animations/easter-eggs/use-hello-there-animation-sequence";
 
 type SearchFilter = "all" | GlobalSearchFilterKind;

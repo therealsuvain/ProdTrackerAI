@@ -46,12 +46,6 @@ const INDEX_PIVOT = {
   y: ART_ALPHA.index.bottom,
 };
 
-// The palm rotates around the wrist seam while the robe/sleeve stays still.
-const HAND_SWAY_PIVOT = {
-  x: (ART_ALPHA.hand.left + ART_ALPHA.hand.right) / 2,
-  y: ART_ALPHA.hand.bottom,
-};
-
 // ---------------------------------------------------------------------------
 // TUNING — positions are dp; durations are milliseconds; angles are degrees.
 // Every image uses one common 1600 × 1600 coordinate frame.
@@ -66,12 +60,12 @@ const TUNING = {
   // Act 2A.1 — VISIBLE HAND SCALE:
   // This is the VISIBLE palm/finger width as a fraction of the row width.
   // The actual PNG canvas is scaled up to compensate for its transparent margins.
-  // At a 400 dp row width, 0.1 targets a visible hand about 40 dp wide.
+  // At a 400 dp row width, 0.075 gives a visible hand about 30 dp wide.
   handVisibleWidthRatio: 0.1,
 
   // Act 2A.1 — VERTICAL PLACEMENT:
   // How much of the sleeve/hand composition sits above the row before clipping.
-  armVisibleHeight: 112,
+  armVisibleHeight: 120,
   armRiseDistance: 132,
   armRiseMs: 430,
   armRetreatMs: 360,
@@ -89,30 +83,17 @@ const TUNING = {
   fingerLeftAngle: -23,
   fingerRightAngle: 23,
   fingerJitterDegrees: 2.5,
-  fingerMainMoveMs: 250, // Slightly slower than the previous 210 ms.
-  fingerJitterMs: 65,
-
-  // Act 2A.3 — PALM / HAND FOLLOW-THROUGH:
-  // The whole hand follows the finger's wag, but with a much smaller angle.
-  // The sleeve/arm stump stays still; only the palm + finger group rotates.
-  handLeftAngle: -5,
-  handRightAngle: 5,
-  handJitterDegrees: 0.8,
-  handMainMoveMs: 250,
-  handJitterMs: 65,
-  // Act 2A.3 — HAND PIVOT POSITION:
-  // Fine-tune the wrist rotation origin without moving the artwork at rest.
-  handPivotOffsetX: 0,
-  handPivotOffsetY: 0,
+  fingerMainMoveMs: 210,
+  fingerJitterMs: 55,
   fingerSettleMs: 130,
   fingerSwayCycles: 3,
 
   // Act 2A.4 — SPEECH BUBBLE:
   // The bubble sits to the right of the visible sleeve, near the row's top edge.
-  bubbleWidth: 158,
-  bubbleHeight: 54,
+  bubbleWidth: 120,
+  bubbleHeight: 40,
   bubbleRightGap: 10,
-  bubbleTopGap: 8,
+  bubbleTopGap: 30,
   bubbleRightInset: 8,
   bubbleEnterMs: 190,
   bubbleExitMs: 160,
@@ -215,7 +196,6 @@ export function useNoNoNoEasterEggAnimation(): NoNoNoAnimationController {
 
   const armY = useRef(new Animated.Value(TUNING.armRiseDistance)).current;
   const fingerRotation = useRef(new Animated.Value(0)).current;
-  const handRotation = useRef(new Animated.Value(0)).current;
   const bubbleProgress = useRef(new Animated.Value(0)).current;
 
   const resetVisualState = useCallback(() => {
@@ -322,7 +302,6 @@ export function useNoNoNoEasterEggAnimation(): NoNoNoAnimationController {
       // Initialize values before revealing the root overlay.
       armY.setValue(TUNING.armRiseDistance);
       fingerRotation.setValue(0);
-      handRotation.setValue(0);
       bubbleProgress.setValue(0);
       setAnchor(localRow);
       setCanvas(localCanvas);
@@ -350,19 +329,13 @@ export function useNoNoNoEasterEggAnimation(): NoNoNoAnimationController {
         return animateTiming(work, id, bubbleProgress, 1, TUNING.bubbleEnterMs, Easing.out(Easing.cubic));
       })();
 
-      // Act 2A.3 — Finger + subtle palm sway. The sleeve/arm stump stays still.
-      const fingerSwaySteps: Animated.CompositeAnimation[] = [];
-      const handSwaySteps: Animated.CompositeAnimation[] = [];
+      // Act 2A.3 — Finger-only sway. The sleeve and palm remain still.
+      const swaySteps: Animated.CompositeAnimation[] = [];
       const left = TUNING.fingerLeftAngle;
       const right = TUNING.fingerRightAngle;
-      const fingerJitter = TUNING.fingerJitterDegrees;
-      const handLeft = TUNING.handLeftAngle;
-      const handRight = TUNING.handRightAngle;
-      const handJitter = TUNING.handJitterDegrees;
-
+      const jitter = TUNING.fingerJitterDegrees;
       for (let cycle = 0; cycle < TUNING.fingerSwayCycles; cycle += 1) {
-        // Finger: strong, deliberate left/right "No No No" gesture.
-        fingerSwaySteps.push(
+        swaySteps.push(
           Animated.timing(fingerRotation, {
             toValue: left,
             duration: TUNING.fingerMainMoveMs,
@@ -370,7 +343,7 @@ export function useNoNoNoEasterEggAnimation(): NoNoNoAnimationController {
             useNativeDriver: true,
           }),
           Animated.timing(fingerRotation, {
-            toValue: left - fingerJitter,
+            toValue: left - jitter,
             duration: TUNING.fingerJitterMs,
             easing: Easing.linear,
             useNativeDriver: true,
@@ -382,75 +355,27 @@ export function useNoNoNoEasterEggAnimation(): NoNoNoAnimationController {
             useNativeDriver: true,
           }),
           Animated.timing(fingerRotation, {
-            toValue: right + fingerJitter,
+            toValue: right + jitter,
             duration: TUNING.fingerJitterMs,
             easing: Easing.linear,
             useNativeDriver: true,
           }),
           Animated.timing(fingerRotation, {
-            toValue: left + fingerJitter * 0.5,
+            toValue: left + jitter * 0.5,
             duration: TUNING.fingerMainMoveMs,
             easing: Easing.inOut(Easing.cubic),
             useNativeDriver: true,
           }),
         );
-
-        // Palm: follows the same beat at a much smaller angle. Small offsets
-        // at the ends add a restrained secondary jitter. The sleeve remains still.
-        handSwaySteps.push(
-          Animated.timing(handRotation, {
-            toValue: handLeft,
-            duration: TUNING.handMainMoveMs,
-            easing: Easing.inOut(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.timing(handRotation, {
-            toValue: handLeft - handJitter,
-            duration: TUNING.handJitterMs,
-            easing: Easing.linear,
-            useNativeDriver: true,
-          }),
-          Animated.timing(handRotation, {
-            toValue: handRight,
-            duration: TUNING.handMainMoveMs + 25,
-            easing: Easing.inOut(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.timing(handRotation, {
-            toValue: handRight + handJitter,
-            duration: TUNING.handJitterMs,
-            easing: Easing.linear,
-            useNativeDriver: true,
-          }),
-          Animated.timing(handRotation, {
-            toValue: handLeft + handJitter * 0.5,
-            duration: TUNING.handMainMoveMs,
-            easing: Easing.inOut(Easing.cubic),
-            useNativeDriver: true,
-          }),
-        );
       }
-
-      fingerSwaySteps.push(Animated.timing(fingerRotation, {
-        toValue: 0,
-        duration: TUNING.fingerSettleMs,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }));
-      handSwaySteps.push(Animated.timing(handRotation, {
+      swaySteps.push(Animated.timing(fingerRotation, {
         toValue: 0,
         duration: TUNING.fingerSettleMs,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }));
 
-      // Both articulated motions run together; the palm follows the finger
-      // without adding another delay to the overall gesture.
-      if (!(await animateComposite(work, id, Animated.parallel([
-        Animated.sequence(fingerSwaySteps),
-        Animated.sequence(handSwaySteps),
-      ])))) return false;
-
+      if (!(await animateComposite(work, id, Animated.sequence(swaySteps)))) return false;
       if (!(await bubbleEnter)) return false;
       if (!(await animateTiming(work, id, bubbleProgress, 0, TUNING.bubbleExitMs, Easing.in(Easing.cubic)))) return false;
       setBubbleVisible(false);
@@ -491,25 +416,10 @@ export function useNoNoNoEasterEggAnimation(): NoNoNoAnimationController {
     extrapolate: "clamp",
   });
 
-  const handRotate = handRotation.interpolate({
-    inputRange: [-12, 12],
-    outputRange: ["-12deg", "12deg"],
-    extrapolate: "clamp",
-  });
-
-  // Rotate the palm + index around the wrist seam, not around the PNG centre.
-  const handPivotX =
-    HAND_SWAY_PIVOT.x * pixelsPerDp + TUNING.handPivotOffsetX;
-  const handPivotY =
-    HAND_SWAY_PIVOT.y * pixelsPerDp + TUNING.handPivotOffsetY;
-  const handPivotLeft = handPivotX - 0.5;
-  const handPivotTop = handPivotY  + 2.25;
-
   const pivotX = INDEX_PIVOT.x * pixelsPerDp + TUNING.indexPivotOffsetX;
   const pivotY = INDEX_PIVOT.y * pixelsPerDp + TUNING.indexPivotOffsetY;
-  const indexPivotLeft = pivotX - handPivotX ;
-  // Preserve the user's tuned +1.333 dp vertical pivot correction.
-  const indexPivotTop = pivotY - handPivotY + 2;
+  const indexPivotLeft = pivotX - 0.5;
+  const indexPivotTop = pivotY  + 1.333;
   const bubbleLeft = anchor && canvas
     ? Math.min(
         artLeft + ART_ALPHA.arm.right * pixelsPerDp + TUNING.bubbleRightGap,
@@ -551,59 +461,39 @@ export function useNoNoNoEasterEggAnimation(): NoNoNoAnimationController {
               fadeDuration={0}
               style={{ position: "absolute", left: 0, top: 0, width: artSize, height: artSize }}
             />
+            <Image
+              source={handWithoutIndex}
+              resizeMode="stretch"
+              fadeDuration={0}
+              style={{ position: "absolute", left: 0, top: 0, width: artSize, height: artSize }}
+            />
             {/*
-              PALM + INDEX FOLLOW-THROUGH:
-              Rotate both hand layers around the wrist seam. The sleeve above
-              remains still, so this reads as a small hand sway, not a waving arm.
+              Rotate only the isolated index around its measured base joint.
+              The wrapper's centre is placed exactly on the source-space pivot.
             */}
             <Animated.View
               pointerEvents="none"
               style={{
                 position: "absolute",
-                left: handPivotLeft,
-                top: handPivotTop,
+                left: indexPivotLeft,
+                top: indexPivotTop,
                 width: 1,
                 height: 1,
-                transform: [{ rotate: handRotate }],
+                transform: [{ rotate: fingerRotate }],
               }}
             >
               <Image
-                source={handWithoutIndex}
+                source={indexFinger}
                 resizeMode="stretch"
                 fadeDuration={0}
                 style={{
                   position: "absolute",
-                  left: -handPivotX,
-                  top: -handPivotY,
+                  left: -pivotX,
+                  top: -pivotY,
                   width: artSize,
                   height: artSize,
                 }}
               />
-              {/* The index gets its stronger, independent rotation around its base. */}
-              <Animated.View
-                pointerEvents="none"
-                style={{
-                  position: "absolute",
-                  left: indexPivotLeft,
-                  top: indexPivotTop,
-                  width: 1,
-                  height: 1,
-                  transform: [{ rotate: fingerRotate }],
-                }}
-              >
-                <Image
-                  source={indexFinger}
-                  resizeMode="stretch"
-                  fadeDuration={0}
-                  style={{
-                    position: "absolute",
-                    left: -pivotX,
-                    top: -pivotY,
-                    width: artSize,
-                    height: artSize,
-                  }}
-                />
-              </Animated.View>
             </Animated.View>
           </Animated.View>
         </View>

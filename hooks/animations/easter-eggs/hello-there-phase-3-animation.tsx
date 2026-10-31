@@ -94,37 +94,61 @@ const Z_SPRITES: Record<ZAssetKind, ZSpriteMeta> = {
 // Mirrored layouts and varied offsets prevent every run from looking identical.
 const Z_GROUP_TEMPLATES: readonly ZGroupTemplate[] = [
   { id: "triple-centre", nodes: [
-    { asset: "triple", xRatio: 0, yRatio: 0, widthRatio: 0.165 },
+    { asset: "triple", xRatio: 0, yRatio: 0, widthRatio: 0.1025//0.165 
+
+    },
   ] },
   { id: "double-centre", nodes: [
-    { asset: "double", xRatio: 0, yRatio: 0, widthRatio: 0.145 },
+    { asset: "double", xRatio: 0, yRatio: 0, widthRatio: 0.0905// 0.145 
+
+    },
   ] },
   { id: "double-pair", nodes: [
-    { asset: "double", xRatio: -0.070, yRatio: 0, widthRatio: 0.125 },
-    { asset: "double", xRatio: 0.070, yRatio: 0.035, widthRatio: 0.125, mirror: true },
+    { asset: "double", xRatio: -0.070, yRatio: 0, widthRatio: 0.0750//0.125 
+
+    },
+    { asset: "double", xRatio: 0.070, yRatio: 0.035, widthRatio: 0.0875,//0.125, 
+      mirror: true },
   ] },
   { id: "double-single-offset", nodes: [
-    { asset: "double", xRatio: -0.035, yRatio: 0.025, widthRatio: 0.135 },
-    { asset: "single", xRatio: 0.105, yRatio: 0, widthRatio: 0.065 },
+    { asset: "double", xRatio: -0.035, yRatio: 0.025, widthRatio: 0.0905//0.135
+
+     },
+    { asset: "single", xRatio: 0.105, yRatio: 0, widthRatio: 0.0375//0.065
+
+     },
   ] },
   { id: "double-single", nodes: [
-    { asset: "double", xRatio: -0.045, yRatio: 0.015, widthRatio: 0.13 },
-    { asset: "single", xRatio: 0.095, yRatio: 0.055, widthRatio: 0.065 },
+    { asset: "double", xRatio: -0.045, yRatio: 0.015, widthRatio: 0.0650//0.13
+       },
+    { asset: "single", xRatio: 0.095, yRatio: 0.055, widthRatio: 0.0375//0.065
+
+     },
   ] },
   { id: "single-pair", nodes: [
-    { asset: "single", xRatio: -0.045, yRatio: 0, widthRatio: 0.070 },
-    { asset: "single", xRatio: 0.045, yRatio: 0.040, widthRatio: 0.070, mirror: true },
+    { asset: "single", xRatio: -0.045, yRatio: 0, widthRatio: 0.04//0.070 
+
+    },
+    { asset: "single", xRatio: 0.045, yRatio: 0.040, widthRatio: 0.04,//0.070, 
+      mirror: true },
   ] },
   { id: "single-trio", nodes: [
-    { asset: "single", xRatio: -0.080, yRatio: 0.035, widthRatio: 0.060 },
-    { asset: "single", xRatio: 0, yRatio: 0, widthRatio: 0.072 },
-    { asset: "single", xRatio: 0.080, yRatio: 0.050, widthRatio: 0.060, mirror: true },
+    { asset: "single", xRatio: -0.080, yRatio: 0.035, widthRatio: 0.0325//0.060
+
+     },
+    { asset: "single", xRatio: 0, yRatio: 0, widthRatio: 0.0405//0.072 
+
+    },
+    { asset: "single", xRatio: 0.080, yRatio: 0.050, widthRatio: 0.0325,//0.060, 
+      mirror: true },
   ] },
   { id: "triple-mirrored", nodes: [
-    { asset: "triple", xRatio: 0, yRatio: 0, widthRatio: 0.165, mirror: true },
+    { asset: "triple", xRatio: 0, yRatio: 0, widthRatio: 0.12,//0.165, 
+      mirror: true },
   ] },
   { id: "double-mirrored", nodes: [
-    { asset: "double", xRatio: 0, yRatio: 0, widthRatio: 0.145, mirror: true },
+    { asset: "double", xRatio: 0, yRatio: 0, widthRatio: 0.115//0.145
+      , mirror: true },
   ] },
   { id: "double-pair-mirrored", nodes: [
     { asset: "double", xRatio: -0.070, yRatio: 0.035, widthRatio: 0.125, mirror: true },
@@ -132,7 +156,7 @@ const Z_GROUP_TEMPLATES: readonly ZGroupTemplate[] = [
   ] },
   { id: "double-single-left-mirrored", nodes: [
     { asset: "single", xRatio: -0.105, yRatio: 0.055, widthRatio: 0.065, mirror: true },
-    { asset: "double", xRatio: 0.020, yRatio: 0, widthRatio: 0.135, mirror: true },
+    { asset: "double", xRatio: 0.020, yRatio: 0, widthRatio: 0.095, mirror: true },
   ] },
   { id: "double-single-right-mirrored", nodes: [
     { asset: "single", xRatio: -0.105, yRatio: 0.045, widthRatio: 0.065 },
@@ -148,7 +172,7 @@ const Z_GROUP_TEMPLATES: readonly ZGroupTemplate[] = [
     { asset: "single", xRatio: 0.080, yRatio: 0, widthRatio: 0.070 },
   ] },
   { id: "double-diagonal", nodes: [
-    { asset: "double", xRatio: 0, yRatio: 0.035, widthRatio: 0.135 },
+    { asset: "double", xRatio: 0, yRatio: 0.035, widthRatio: 0.085 },
   ] },
 ];
 
@@ -166,7 +190,7 @@ const TUNING = {
   centerXOffset: 0,
   // First visible artwork pixels start 2–3 dp ABOVE the row edge immediately.
   // Set to 0 to make the first alpha pixel exactly tangent to the row border.
-  firstVisiblePixels: 2.5,
+  firstVisiblePixels: 0,
   // Start window is narrow; exit window is much wider, creating the requested \ / funnel.
   startWindowWidthRatio: 0.075,
   exitWindowWidthRatio: 0.34,
@@ -181,13 +205,22 @@ const TUNING = {
   doubleWidthRatio: 0.135,
   tripleWidthRatio: 0.16,
 
-  // Act 3Z.3 — STAGGER / TOTAL DURATION:
-  // Ten groups launch in staggered intervals. The last group finishes at roughly
-  // 13.5–14.5 seconds depending on the randomized delay and duration.
-  groupStaggerMs: 145,
-  groupStaggerJitterMs: 70,
-  groupDurationBaseMs: 11_900,
-  groupDurationVariationMs: 700,
+  // Act 3Z.3 — GROUP RELEASE / TOTAL DURATION:
+  // Each new group is released 100–150 ms after the previous group.
+  // Delays are cumulative, so the gaps stay within this range (unlike adding
+  // independent random offsets to index * a fixed interval).
+  groupReleaseGapMinMs: 1250,
+  groupReleaseGapMaxMs: 1500,
+
+  // Act 3Z.4 — INDIVIDUAL GROUP SPEED:
+  // The previous groups all travelled for almost the same 12 seconds, so they
+  // stayed at nearly the same height and visually merged into one cloud.
+  // Give each group its own travel duration. Faster groups rise ahead while
+  // slower groups remain lower, creating distinct upward streaks. With ten
+  // groups and the 100–150 ms release gaps, the overall run remains about
+  // 12–15 seconds because it ends only after the slowest group exits.
+  groupDurationMinMs: 10_000,
+  groupDurationMaxMs: 12_500,
 
   // Act 3Z.4 — FLOAT:
   // Smooth upward travel; easing is deliberately gentle and continuous.
@@ -281,7 +314,18 @@ function buildGroupInstances(row: Rect, canvas: Rect): ZGroupInstance[] {
   const centerX = row.x + row.width * TUNING.centerXRatio + TUNING.centerXOffset;
   const chosen = pickRandomGroups(GROUPS_PER_RUN);
 
+  // Accumulate a fresh 100–150 ms interval between consecutive group releases.
+  // This is intentionally cumulative so there is no overlap or negative gap
+  // caused by independently randomizing each group's absolute delay.
+  let nextGroupDelayMs = 0;
+
   return chosen.map((template, groupIndex) => {
+    const delayMs = nextGroupDelayMs;
+    nextGroupDelayMs += Math.round(randomBetween(
+      TUNING.groupReleaseGapMinMs,
+      TUNING.groupReleaseGapMaxMs,
+    ));
+
     // Normalize each template so its uppermost Z begins at the row edge.
     // This guarantees that the first selected group always shows a few pixels
     // immediately, even when every source node in the raw template had a y offset.
@@ -344,8 +388,13 @@ function buildGroupInstances(row: Rect, canvas: Rect): ZGroupInstance[] {
       endX: endCenterX - centerX,
       startRotation: randomBetween(TUNING.startRotationMin, TUNING.startRotationMax),
       endRotation: randomBetween(TUNING.exitRotationMin, TUNING.exitRotationMax),
-      delayMs: groupIndex * TUNING.groupStaggerMs + Math.round(randomBetween(0, TUNING.groupStaggerJitterMs)),
-      durationMs: TUNING.groupDurationBaseMs + Math.round(randomBetween(0, TUNING.groupDurationVariationMs)),
+      delayMs,
+      // Each group follows a unique vertical speed while preserving the
+      // same smooth easing and the same row-to-top travel distance.
+      durationMs: Math.round(randomBetween(
+        TUNING.groupDurationMinMs,
+        TUNING.groupDurationMaxMs,
+      )),
       // Move until the lowest visible alpha pixel in this entire group has exited.
       exitY: -maxAlphaBottom - TUNING.topExitOvershootPx,
     };
