@@ -6,7 +6,7 @@ import { Text } from "react-native-paper";
 import { ThemeContext } from "@/context/ThemeContext";
 import { withAlpha } from "@/utils/common-utils";
 import type { GlobalSearchResult } from "@/types/global-search";
-import { HelloThereEasterEggAnimation } from "@/hooks/animations/easter-eggs/(OLD-v1) hello-there-easter-egg-animation";
+import { HelloThereEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there/(OLD-v1) hello-there-easter-egg-animation";
 
 interface Props {
   result: GlobalSearchResult;

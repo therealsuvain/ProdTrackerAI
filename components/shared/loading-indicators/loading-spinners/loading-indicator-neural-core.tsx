@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   ringBase: {
     position: "absolute",
     borderRadius: 100, // Perfect circle
-    borderWidth: 2,
+    borderWidth: 10,
     borderColor: "transparent", // Hide the main border
   },
   innerRing: {

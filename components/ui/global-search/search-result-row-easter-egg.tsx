@@ -15,17 +15,25 @@ interface Props {
   // Pass the Pressable ref to the screen so the root-level animation controller
   // can measure this exact row relative to the shared animation canvas.
   onPress: (rowRef: RowMeasureRef) => void;
+  hintText?: string;
 }
 
-export function GlobalSearchEasterEggRow({ result, activationEnabled, onPress }: Props) {
+export function GlobalSearchEasterEggRow({
+  result,
+  activationEnabled,
+  onPress,
+  hintText,
+}: Props) {
   const { theme } = useContext(ThemeContext);
   const rowRef = useRef<View | null>(null);
 
   const { document } = result;
   if (document.kind !== "easterEgg") return null;
 
-  const accentColor = document.display.presentation?.accentColor ?? theme.taskBase;
-  const iconName = document.display.presentation?.icon?.name ?? "star-four-points-outline";
+  const accentColor =
+    document.display.presentation?.accentColor ?? theme.taskBase;
+  const iconName =
+    document.display.presentation?.icon?.name ?? "star-four-points-outline";
 
   return (
     <Pressable
@@ -33,9 +41,10 @@ export function GlobalSearchEasterEggRow({ result, activationEnabled, onPress }:
       accessibilityRole="button"
       accessibilityLabel={`${document.display.title}, Easter egg`}
       accessibilityHint={
-        activationEnabled
+        hintText ??
+        (activationEnabled
           ? "Activate this hidden search surprise"
-          : "This surprise's effect is not enabled yet"
+          : "This surprise's effect is not enabled yet")
       }
       onPress={() => onPress(rowRef)}
       style={({ pressed }) => [
@@ -47,9 +56,18 @@ export function GlobalSearchEasterEggRow({ result, activationEnabled, onPress }:
         },
       ]}
     >
-      <View style={[styles.iconContainer, { backgroundColor: withAlpha(accentColor, "20") }]}>
+      <View
+        style={[
+          styles.iconContainer,
+          { backgroundColor: withAlpha(accentColor, "20") },
+        ]}
+      >
         <MaterialCommunityIcons
-          name={iconName as React.ComponentProps<typeof MaterialCommunityIcons>["name"]}
+          name={
+            iconName as React.ComponentProps<
+              typeof MaterialCommunityIcons
+            >["name"]
+          }
           size={24}
           color={accentColor}
         />
@@ -57,24 +75,47 @@ export function GlobalSearchEasterEggRow({ result, activationEnabled, onPress }:
 
       <View style={styles.copy}>
         <View style={styles.titleRow}>
-          <Text variant="titleSmall" numberOfLines={1} style={{ color: theme.text, fontWeight: "700", flexShrink: 1 }}>
+          <Text
+            variant="titleSmall"
+            numberOfLines={1}
+            style={{ color: theme.text, fontWeight: "700", flexShrink: 1 }}
+          >
             {document.display.title}
           </Text>
-          <View style={[styles.secretBadge, { backgroundColor: withAlpha(accentColor, "20") }]}>
-            <Text variant="labelSmall" style={{ color: accentColor, fontWeight: "700" }}>
+          <View
+            style={[
+              styles.secretBadge,
+              { backgroundColor: withAlpha(accentColor, "20") },
+            ]}
+          >
+            <Text
+              variant="labelSmall"
+              style={{ color: accentColor, fontWeight: "700" }}
+            >
               SECRET
             </Text>
           </View>
         </View>
 
-        {!!document.display.subtitle && (
-          <Text variant="bodySmall" numberOfLines={2} style={{ color: withAlpha(theme.text, "B5"), lineHeight: 19 }}>
-            {document.display.subtitle}
+        {!!(hintText ?? document.display.subtitle) && (
+          <Text
+            variant={hintText ? "bodyLarge" : "bodySmall"}
+            numberOfLines={2}
+            style={{
+              color: hintText ? accentColor : withAlpha(theme.text, "B5"),
+              lineHeight: 19,
+              fontWeight: hintText ? "600" : "400",
+            }}
+          >
+            {hintText ?? document.display.subtitle}
           </Text>
         )}
 
         {!activationEnabled && (
-          <Text variant="labelSmall" style={{ color: withAlpha(theme.text, "75"), marginTop: 3 }}>
+          <Text
+            variant="labelSmall"
+            style={{ color: withAlpha(theme.text, "75"), marginTop: 3 }}
+          >
             Effect design pending
           </Text>
         )}

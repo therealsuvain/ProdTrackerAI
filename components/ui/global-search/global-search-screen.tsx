@@ -11,7 +11,7 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
+  Keyboard,
   SectionList,
   StyleSheet,
   TextInput,
@@ -59,10 +59,11 @@ import { recordGlobalSearchEasterEggDiscovery } from "@/utils/Search-utils/easte
 import { createGlobalSearchSelectionRequest } from "@/utils/Search-utils/selection-dispatcher";
 import { CategoryBadge } from "../shared/categories/category-badge";
 import { TagBadge } from "../shared/tags/tag-badge";
-import { useHelloThereEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-phase-1-animation";
-import { useNoNoNoEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-phase-2-animation";
-import { useSleepingZEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there-phase-3-animation";
-import { useEasterEggAnimationSequence } from "@/hooks/animations/easter-eggs/use-hello-there-animation-sequence";
+import { useHelloThereEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there/hello-there-phase-1-animation";
+import { useNoNoNoEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there/hello-there-phase-2-animation";
+import { useSleepingZEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there/hello-there-phase-3-animation";
+import { useEasterEggAnimationSequence } from "@/hooks/animations/easter-eggs/hello-there/use-hello-there-animation-sequence";
+import { useNukeMyBacklogAnimation } from "@/hooks/animations/easter-eggs/nuke-my-backlog/nuke-my-backlog-animation-v6";
 
 type SearchFilter = "all" | GlobalSearchFilterKind;
 
@@ -139,10 +140,15 @@ export function GlobalSearchScreen({
     null,
   );
   const animationCanvasRef = useRef<View | null>(null);
+  const keyboardVisibleRef = useRef(false);
+  const nukeKeyboardDismissPendingRef = useRef(false);
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
   const helloThereAnimation = useHelloThereEasterEggAnimation(theme.background);
   const noNoNo = useNoNoNoEasterEggAnimation();
   const sleepingZ = useSleepingZEasterEggAnimation();
   const sequence = useEasterEggAnimationSequence();
+  const nukeMyBacklog = useNukeMyBacklogAnimation();
 
   // Resolve the ranked document targets back to their live source records.
   // This compatibility adapter lets the current SearchResultRow and
@@ -269,6 +275,42 @@ export function GlobalSearchScreen({
   };
 
   useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+      keyboardVisibleRef.current = true;
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      keyboardVisibleRef.current = false;
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const waitForKeyboardDismissal = useCallback(
+    () =>
+      new Promise<void>((resolve) => {
+        let settled = false;
+        let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+        let hideSubscription: { remove: () => void } | null = null;
+
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          hideSubscription?.remove();
+          if (fallbackTimer) clearTimeout(fallbackTimer);
+          // Give KeyboardAvoidingView one more layout pass before measurement.
+          setTimeout(resolve, 90);
+        };
+
+        hideSubscription = Keyboard.addListener("keyboardDidHide", finish);
+        fallbackTimer = setTimeout(finish, Platform.OS === "ios" ? 650 : 450);
+        Keyboard.dismiss();
+      }),
+    [],
+  );
+  useEffect(() => {
     if (!visible) return;
 
     const delay = Platform.OS === "android" ? 250 : 100;
@@ -282,13 +324,69 @@ export function GlobalSearchScreen({
 
   const handleEasterEggPress = useCallback(
     async (eggId: string, rowRef: React.RefObject<View | null>) => {
-      // Ignore concurrent taps while an activation is being handed off.
-      if (activeEggActivationRef.current) return;
-
       const egg = GLOBAL_SEARCH_EASTER_EGGS_BY_ID.get(eggId);
       if (!egg) return;
 
-      // These four effects remain intentionally disabled until their designs
+      // Nuke My Backlog is intentionally different from the one-shot eggs:
+      // every tap during Act 0 is part of the manual pumping interaction.
+      // Its own controller owns the repeated-tap lock; do not block it with
+      // activeEggActivationRef after the first press.
+      if (eggId === "launch_sequence" && egg.activation.kind === "animation") {
+        // Prevent duplicate presses from racing the asynchronous keyboard close.
+        if (nukeKeyboardDismissPendingRef.current) return;
+        if (
+          activeEggActivationRef.current &&
+          activeEggActivationRef.current !== eggId
+        ) {
+          return;
+        }
+        // Dismiss the keyboard only before the first press of this pumping session.
+        // The same tap is forwarded once the row/canvas have finished reflowing.
+        if (
+          activeEggActivationRef.current !== eggId &&
+          keyboardVisibleRef.current
+        ) {
+          nukeKeyboardDismissPendingRef.current = true;
+          activeEggActivationRef.current = eggId;
+          try {
+            await waitForKeyboardDismissal();
+          } finally {
+            nukeKeyboardDismissPendingRef.current = false;
+          }
+          if (!visibleRef.current) {
+            if (activeEggActivationRef.current === eggId) {
+              activeEggActivationRef.current = null;
+            }
+            return;
+          }
+        }
+
+        nukeMyBacklog.press(rowRef, animationCanvasRef, {
+          onFirstPress: () => {
+            activeEggActivationRef.current = eggId;
+            controller.recordSubmittedSearch();
+            void recordGlobalSearchEasterEggDiscovery(eggId).catch(
+              (storageError) => {
+                console.warn(
+                  "[Global Search] Couldn't persist Easter egg discovery.",
+                  storageError,
+                );
+              },
+            );
+          },
+          onFinished: () => {
+            if (activeEggActivationRef.current === eggId) {
+              activeEggActivationRef.current = null;
+            }
+          },
+        });
+        return;
+      }
+
+      // Other one-shot activations remain protected by the screen-level lock.
+      if (activeEggActivationRef.current) return;
+
+      // These effects remain intentionally disabled until their designs
       // are approved. Do not mark them discovered during this staging period.
 
       if (egg.activation.kind === "animation") {
@@ -424,6 +522,9 @@ export function GlobalSearchScreen({
       noNoNo.start,
       sequence.activate,
       sleepingZ.start,
+      nukeMyBacklog.press,
+      waitForKeyboardDismissal,
+      visible,
     ],
   );
 
@@ -432,10 +533,19 @@ export function GlobalSearchScreen({
   useEffect(() => {
     if (visible) return;
 
+    activeEggActivationRef.current = null;
+    nukeKeyboardDismissPendingRef.current = false;
     helloThereAnimation.cancel();
     noNoNo.cancel();
     sleepingZ.cancel();
-  }, [visible, helloThereAnimation.cancel, noNoNo.cancel, sleepingZ.cancel]);
+    nukeMyBacklog.cancel();
+  }, [
+    visible,
+    helloThereAnimation.cancel,
+    noNoNo.cancel,
+    sleepingZ.cancel,
+    nukeMyBacklog.cancel,
+  ]);
 
   return (
     <Modal
@@ -870,7 +980,13 @@ export function GlobalSearchScreen({
                   if (item.document.kind === "easterEgg") {
                     const eggId = item.document.target.eggId;
                     const activationEnabled =
-                      eggId === "rickroll" || eggId === "hello_there";
+                      eggId === "rickroll" ||
+                      eggId === "hello_there" ||
+                      eggId === "launch_sequence";
+                    const nukeMyBackLogHint =
+                      eggId === "launch_sequence" && nukeMyBacklog.hintVisible
+                        ? nukeMyBacklog.hintText
+                        : undefined;
 
                     return (
                       <GlobalSearchEasterEggRow
@@ -879,6 +995,7 @@ export function GlobalSearchScreen({
                         onPress={(rowRef) => {
                           void handleEasterEggPress(eggId, rowRef);
                         }}
+                        hintText={nukeMyBackLogHint}
                       />
                     );
                   }
@@ -948,6 +1065,7 @@ export function GlobalSearchScreen({
                   !helloThereAnimation.active &&
                   !noNoNo.active &&
                   !sleepingZ.active &&
+                  !nukeMyBacklog.active &&
                   !sequence.isRunning
                 }
                 keyboardDismissMode={
@@ -1021,6 +1139,7 @@ export function GlobalSearchScreen({
             {helloThereAnimation.behindLayer}
             {noNoNo.behindLayer}
             {sleepingZ.behindLayer}
+            {nukeMyBacklog.behindLayer}
             {helloThereAnimation.foregroundLayer}
             {noNoNo.foregroundLayer}
           </View>
