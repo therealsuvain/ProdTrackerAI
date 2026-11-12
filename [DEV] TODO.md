@@ -15,12 +15,8 @@
 
 # Fixes Severity : High
 
-- TODO : Toggling Match System Theme crashes app due to hook changes
-- TODO : Analytics - if filter leads to no data for that filter, empty tiles are displaed, isntead display soem message or hide tiles or something
 - TODO : If due date of task is changed, the notification should be updated, or user should be told to reschedule the notification or something, same with events, probably not habit
-- TODO : tag names unique issue, maybe can be psued and pulled that causes error, either ignore duplciate or silently
 - TODO : duplicate adds for habitAutoFrozen metric
-- TODO : certain charts when rendered in chart-details-modal, need some barWidth, fontSzie, viewPort, domainPadding etc. changes
 - TODO : date field managment for multi timezone users CHECK
 - TODO : What in case when a user wants to schedule an overnight event, when the start time is later than the end time but of previous date, current logic breaks in case
 - TODO : If task is marked complete then notification is cancelled in the AI handler, but not in the task item logic, also if task is then marked incomplete, then a new notificaiton is not scheduled, R&D how it should be ideally
@@ -34,7 +30,6 @@
 - TODO : Infitely recurring evnets currently are only replicated for 60 days, after that their UI card is not shown in the calendar
 - TODO : notification badge for items with notifcation, pressing on the badge should allow to disable notifications for that item
 - TODO : habits checkins missed recording duplicates, some id checker is needed for those habits form whom the metric is incremented alrteady and prevent duplicate increments
-- TODO : Timer Screen Flip Animation state issues- FIX'em
 
 # Fixes Severity : Low
 
@@ -48,7 +43,6 @@
 - TODO : Habit auto freeze should be optional and toggleable
 - TODO : Codebase updation for iOS
 - TODO : Testing on bigger/smaller screens. Test on different devices
-- TODO : home page search enhancment or removal. R&D
 - TODO : Hnadle hidden achievements
 - TODO : cloud data delteion otion in settings
 - TODO : local data deltetion option in settings without deleting cloud data
@@ -99,7 +93,6 @@
 # NEW
 
 - TOOD : Check error handling for AI handlers so that AI can asnwer what wnet wrong
-- TODO : Sync loading should have a mention that its syncing
 - TODO : This error still happens : [sync] Failed to push categories: {"code": "PGRST303", "details": null, "hint": null, "message": "JWT issued at future"}
 - TODO : UI indicator taht item has a notificaiton setup
 - TODO : Check how are tombstones pruned eventually or do they stay forever
@@ -111,7 +104,9 @@
 - TODO : in edit modals, when no category is assigned, 'None Selected' which rendered earlier doesnt show up
 - TODO : Additonal confirmation after successfull deletion of big deletes, like reset achievements currently after reset is pressed , shows no confirmation that the "Achievements Reset Successfully" , I think that is a must and good to have
   -TODO : Notificaiton rescheduler , check once . On app reload when all data is pulled in then too the rescheduler modal is shown, even tho there not be any new notificaitions
-- TOOD : Chart Details Modal doesnt fit into one plus phone, the dimesion calculation worked for motorola phone but didnt work for the older one plus with a smaller resolution, this is just one case where dimensions of modals and components dont scale properly across different screens. There probably a numberous more cases where current dimensions are only working for my 2 test devices and will not be properly scaled on different screens and resolutions other than this.
+- TOOD : Check for dimensions of modals and components where they dont scale properly across different screens. There probably a numberous more cases where current dimensions are only working for my 2 test devices and will not be properly scaled on different screens and resolutions other than this.
+- TODO : Sync runs even when sync is off , on app reloads, check if this only limited to dev mode where I can manually reload, and this wont propogate to production
+- TODO : If the sidebar tab is pressed on the same page it is currently on, then it should still close
 
 # Big Overhaul #1 (BO1): Upgrade Sync Engine to Event-Driven, Selective Sync
 

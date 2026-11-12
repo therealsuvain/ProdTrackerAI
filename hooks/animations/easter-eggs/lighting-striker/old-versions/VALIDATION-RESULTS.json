@@ -1,0 +1,39 @@
+{
+  "canvas": "393x852",
+  "seeds": 1000,
+  "qualitySelection": {
+    "enabledDefault": true,
+    "minimumScore": 0.8,
+    "maxRetries": 2,
+    "thresholdMet": 832,
+    "thresholdMetPercent": 83.2,
+    "averageAttempts": 1.71,
+    "averageScore": 0.847,
+    "minimumScoreObserved": 0.662
+  },
+  "geometry": {
+    "averageSegments": 166.88,
+    "maxSegments": 234,
+    "averageBranches": 8.02,
+    "segmentCountsByDepth": [
+      64000,
+      85745,
+      14238,
+      2898
+    ]
+  },
+  "desktopMicrobenchmarkMs": {
+    "qualityEnabledAverage": 0.659,
+    "qualityDisabledAverage": 0.075,
+    "relativeRatio": 8.83
+  },
+  "checks": {
+    "coordinatesFinite": true,
+    "parentReferencesValid": true,
+    "segmentCeilingRespected": true,
+    "revealValuesValid": true,
+    "deterministicWithSelection": true,
+    "deterministicWithoutSelection": true,
+    "disabledModeScoresZeroCandidates": true
+  }
+}

@@ -1,0 +1,627 @@
+--- a/nuke-my-backlog-act3-v2.tsx
++++ b/nuke-my-backlog-act3-v2.tsx
+@@ -1,18 +1,25 @@
+-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
++import React, { useEffect, useMemo, useRef, useState } from "react";
++import { Image as ExpoImage, type ImageRef } from "expo-image";
+ import {
+   Animated,
+   Easing,
+-  ImageSourcePropType,
++  PixelRatio,
+   StyleSheet,
+   View,
+ } from "react-native";
+ 
++// Keep each animated sprite to one native image view; Animated drives the
++// Expo Image component directly rather than wrapping every image in a View.
++const AnimatedExpoImage = Animated.createAnimatedComponent(ExpoImage);
++
+ /**
+  * NUKE MY BACKLOG — ACT 3
+  * ============================================================================
+  * Camera approach / nose-facing perspective transition.
+  *
+  * Act 2 hands this component a centred side-view rocket at its final scale.
++ * Its local assets are decoded into native ImageRefs before the scene is
++ * committed invisibly and reported ready to the sequence orchestrator.
+  * Act 3 then:
+  *   3.1  Pitches the rocket through twelve authored views from 0° to 90°.
+  *   3.2  Introduces the matching smoke wisps and the four-frame 90° smoke ring.
+@@ -83,30 +90,13 @@
+   "js-index";
+ 
+ // ---------------------------------------------------------------------------
+-// IMAGE PREPARATION — hidden staged scene before the Act 2 → Act 3 handoff
++// IMAGE PREPARATION — native image references, not invisible Image views
+ // ---------------------------------------------------------------------------
+-// The 24 image views are mounted in six groups of four. These are the same
+-// views used by the final scene, not duplicate thumbnail/preloader views.
+-const ACT3_PRELOAD_BATCH_COUNTS = [4, 4, 4, 4, 4, 4] as const;
+-const ACT3_PRELOAD_BATCH_GAP_MS = 90;
+-
+-function getAct3PreloadBatch(
+-  kind: "rocket" | "transition-smoke" | "smoke-ring" | "flame",
+-  index: number,
+-): number {
+-  if (kind === "rocket") return Math.floor(index / 4);
+-  if (kind === "transition-smoke") return 3;
+-  if (kind === "smoke-ring") return index === 0 ? 3 : 4;
+-  return index === 0 ? 4 : 5;
+-}
+-
+-function isAct3AssetMounted(
+-  preloadStage: number,
+-  kind: "rocket" | "transition-smoke" | "smoke-ring" | "flame",
+-  index: number,
+-): boolean {
+-  return getAct3PreloadBatch(kind, index) <= preloadStage;
+-}
++// All assets are decoded through expo-image before the scene is mounted.
++// Every authored frame remains available to the renderer; no rocket views are
++// removed or skipped. A modest oversampling allowance protects transformed
++// edges while allowing small smoke/exhaust assets to decode below source size.
++const ACT3_IMAGE_DECODE_OVERSAMPLE = 1.35;
+ 
+ // ---------------------------------------------------------------------------
+ // TUNING — CHANGE THESE VALUES FIRST
+@@ -233,7 +223,7 @@
+ // transparent canvas margins are intentionally included in the layout math.
+ // This aligns the *visible artwork*, not merely the PNG canvas centres.
+ type SpriteFrame = {
+-  source: ImageSourcePropType;
++  source: number;
+   sourceWidth: number;
+   sourceHeight: number;
+   alphaLeft: number;
+@@ -441,7 +431,7 @@
+ ];
+ 
+ type FlameFrame = {
+-  source: ImageSourcePropType;
++  source: number;
+   sourceWidth: number;
+   sourceHeight: number;
+   alphaLeft: number;
+@@ -450,6 +440,55 @@
+   alphaBottom: number;
+ };
+ 
++type Act3FrameDimensions = Pick<
++  SpriteFrame,
++  "sourceWidth" | "sourceHeight" | "alphaLeft" | "alphaRight"
++>;
++
++type Act3ImageLoadEntry = {
++  source: number;
++  options: { maxWidth: number; maxHeight: number };
++};
++
++type LoadedAct3Images = {
++  rocket: Array<ImageRef | null>;
++  transitionSmoke: Array<ImageRef | null>;
++  smokeRing: Array<ImageRef | null>;
++  flame: Array<ImageRef | null>;
++};
++
++/**
++ * Calculate the maximum physical-pixel dimensions an asset reaches during
++ * Act 3. expo-image applies these limits during decode, not as a visual crop.
++ * Dimensions are capped at the source, so this never upscales or discards
++ * source detail that the on-screen animation can actually display.
++ */
++function getAct3ImageLoadOptions(
++  frame: Act3FrameDimensions,
++  targetVisibleWidthDp: number,
++  maximumVisualScale: number,
++) {
++  const alphaWidth = Math.max(1, frame.alphaRight - frame.alphaLeft);
++  const sourceToDp = targetVisibleWidthDp / alphaWidth;
++  const physicalPixelScale =
++    sourceToDp *
++    maximumVisualScale *
++    PixelRatio.get() *
++    ACT3_IMAGE_DECODE_OVERSAMPLE;
++
++  return {
++    maxWidth: Math.max(
++      1,
++      Math.min(frame.sourceWidth, Math.ceil(frame.sourceWidth * physicalPixelScale)),
++    ),
++    maxHeight: Math.max(
++      1,
++      Math.min(frame.sourceHeight, Math.ceil(frame.sourceHeight * physicalPixelScale)),
++    ),
++  };
++}
++
++
+ // These are the same calibrated flame frames already used in Act 1.
+ const FLAME_FRAMES: FlameFrame[] = [
+   {
+@@ -552,7 +591,7 @@
+ }
+ 
+ type Props = {
+-  /** Mounts and progressively prepares the hidden Act 3 scene during Act 2. */
++  /** Decodes the Act 3 assets and prepares the hidden scene before handoff. */
+   preparing: boolean;
+   /** Reveals the prepared scene and starts its animation sequence. */
+   active: boolean;
+@@ -596,14 +635,11 @@
+   ).current;
+   const [flameFrameIndex, setFlameFrameIndex] = useState(0);
+   const [pitchFlameVisible, setPitchFlameVisible] = useState(true);
+-  const [preloadStage, setPreloadStage] = useState(0);
+-  const loadedPreloadAssetsRef = useRef(new Set<string>());
+-  const loadedPerBatchRef = useRef<number[]>([0, 0, 0, 0, 0, 0]);
+-  const preloadAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+-    null,
+-  );
++  const [loadedImages, setLoadedImages] = useState<LoadedAct3Images | null>(null);
+   const preparedRef = useRef(false);
+   const onPreparedRef = useRef(onPrepared);
++  const imageLoadStartedAtRef = useRef<number | null>(null);
++  const imageLoadFinishedAtRef = useRef<number | null>(null);
+   const cameraScale = useRef(new Animated.Value(1)).current;
+   const rollDegrees = useRef(new Animated.Value(0)).current;
+   // Independent secondary rotation.
+@@ -646,47 +682,6 @@
+     onPreparedRef.current = onPrepared;
+   }, [onComplete, onFlightVolumeTo, onPrepared]);
+ 
+-  const handlePreloadAssetSettled = useCallback(
+-    (assetKey: string, batchIndex: number) => {
+-      if (loadedPreloadAssetsRef.current.has(assetKey)) return;
+-      loadedPreloadAssetsRef.current.add(assetKey);
+-      loadedPerBatchRef.current[batchIndex] += 1;
+-
+-      if (
+-        loadedPerBatchRef.current[batchIndex] !==
+-        ACT3_PRELOAD_BATCH_COUNTS[batchIndex]
+-      ) {
+-        return;
+-      }
+-
+-      if (batchIndex === ACT3_PRELOAD_BATCH_COUNTS.length - 1) {
+-        if (!preparedRef.current) {
+-          preparedRef.current = true;
+-          onPreparedRef.current?.();
+-        }
+-        return;
+-      }
+-
+-      if (preloadAdvanceTimerRef.current) {
+-        clearTimeout(preloadAdvanceTimerRef.current);
+-      }
+-      preloadAdvanceTimerRef.current = setTimeout(() => {
+-        setPreloadStage((current) => Math.max(current, batchIndex + 1));
+-        preloadAdvanceTimerRef.current = null;
+-      }, ACT3_PRELOAD_BATCH_GAP_MS);
+-    },
+-    [],
+-  );
+-
+-  useEffect(
+-    () => () => {
+-      if (preloadAdvanceTimerRef.current) {
+-        clearTimeout(preloadAdvanceTimerRef.current);
+-      }
+-    },
+-    [],
+-  );
+-
+   // The existing side-view image's visible width is the calibration reference.
+   // Every perspective view is calibrated to the same projected cross-section
+   // width using its own visible alpha bounds. The increasingly head-on artwork
+@@ -1055,6 +1050,168 @@
+     [centreX, centreY, smokeRingBaseWidth],
+   );
+ 
++  // Decode limits account for each sprite's largest on-screen scale.
++  // All 12 rocket frames stay in the sequence. Frames 0–10 are only visible
++  // during the small 1.25s pitch, so they decode to that display size (plus
++  // oversampling). Only the final 90° frame is used during the large zoom and
++  // therefore retains the resolution required by the camera approach.
++  const imageLoadPlan = useMemo(() => ({
++    rocket: ROCKET_FRAMES.map((frame, index) => ({
++      source: frame.source,
++      options: getAct3ImageLoadOptions(
++        frame,
++        projectedRocketWidth,
++        (index === ROCKET_FRAMES.length - 1
++          ? finalCameraScale
++          : 1) * NUKE_MY_BACKLOG_ACT3_TUNING.pitchForwardScale,
++      ),
++    })),
++    transitionSmoke: TRANSITION_SMOKE.map((frame, index) => ({
++      source: frame.source,
++      options: getAct3ImageLoadOptions(
++        frame,
++        projectedRocketWidth * [
++          NUKE_MY_BACKLOG_ACT3_TUNING.smoke30VisibleWidthMultiplier,
++          NUKE_MY_BACKLOG_ACT3_TUNING.smoke60VisibleWidthMultiplier,
++          NUKE_MY_BACKLOG_ACT3_TUNING.smoke75VisibleWidthMultiplier,
++        ][index],
++        NUKE_MY_BACKLOG_ACT3_TUNING.pitchForwardScale,
++      ),
++    })),
++    smokeRing: SMOKE_RING_FRAMES.map((frame) => ({
++      source: frame.source,
++      options: getAct3ImageLoadOptions(
++        frame,
++        smokeRingBaseWidth,
++        finalSmokeScale * NUKE_MY_BACKLOG_ACT3_TUNING.pitchForwardScale,
++      ),
++    })),
++    flame: FLAME_FRAMES.map((frame) => ({
++      source: frame.source,
++      options: getAct3ImageLoadOptions(
++        frame,
++        flameVisibleWidth,
++        NUKE_MY_BACKLOG_ACT3_TUNING.pitchForwardScale,
++      ),
++    })),
++  }), [
++    finalCameraScale,
++    finalSmokeScale,
++    flameVisibleWidth,
++    projectedRocketWidth,
++    smokeRingBaseWidth,
++  ]);
++
++  // Submit all 24 local assets to expo-image's native decoder together.
++  // This replaces six serial batches of invisible RN Image views. The exact
++  // ImageRef objects returned here become the sources used by the renderer.
++  useEffect(() => {
++    if (!preparing || loadedImages) return;
++
++    let cancelled = false;
++    imageLoadStartedAtRef.current = Date.now();
++
++    const loadEntry = async (
++      entry: Act3ImageLoadEntry,
++      assetKey: string,
++    ): Promise<ImageRef | null> => {
++      try {
++        return await ExpoImage.loadAsync(entry.source, entry.options);
++      } catch (error) {
++        // A failed native preload falls back to the original bundled source;
++        // one failed optional effect must not strand the rocket at handoff.
++        console.warn(
++          `[Nuke My Backlog] Act 3 native preload failed for ${assetKey}.`,
++          error,
++        );
++        return null;
++      }
++    };
++
++    // Each map starts all requests immediately; all four groups are awaited
++    // concurrently. There are no artificial inter-batch sleeps or onLoad gates.
++    void Promise.all([
++      Promise.all(
++        imageLoadPlan.rocket.map((entry, index) =>
++          loadEntry(entry, `rocket-${index}`),
++        ),
++      ),
++      Promise.all(
++        imageLoadPlan.transitionSmoke.map((entry, index) =>
++          loadEntry(entry, `transition-smoke-${index}`),
++        ),
++      ),
++      Promise.all(
++        imageLoadPlan.smokeRing.map((entry, index) =>
++          loadEntry(entry, `smoke-ring-${index}`),
++        ),
++      ),
++      Promise.all(
++        imageLoadPlan.flame.map((entry, index) =>
++          loadEntry(entry, `flame-${index}`),
++        ),
++      ),
++    ]).then(([rocket, transitionSmoke, smokeRing, flame]) => {
++      if (cancelled) return;
++
++      const loaded: LoadedAct3Images = {
++        rocket,
++        transitionSmoke,
++        smokeRing,
++        flame,
++      };
++      setLoadedImages(loaded);
++      imageLoadFinishedAtRef.current = Date.now();
++
++      const refs = [...rocket, ...transitionSmoke, ...smokeRing, ...flame].filter(
++        (value): value is ImageRef => value !== null,
++      );
++      const decodedBytesEstimate = refs.reduce((total, imageRef) => {
++        const widthPx = imageRef.width * imageRef.scale;
++        const heightPx = imageRef.height * imageRef.scale;
++        return total + widthPx * heightPx * 4;
++      }, 0);
++      const elapsedMs =
++        imageLoadFinishedAtRef.current -
++        (imageLoadStartedAtRef.current ?? imageLoadFinishedAtRef.current);
++
++      console.info(
++        `[Nuke My Backlog] Act 3 native image decode: ${refs.length}/24 refs in ${elapsedMs}ms; estimated decoded memory ${(decodedBytesEstimate / (1024 * 1024)).toFixed(1)} MiB.`,
++      );
++    });
++
++    return () => {
++      cancelled = true;
++    };
++  }, [imageLoadPlan, loadedImages, preparing]);
++
++  // Mount the final scene with already-decoded refs while it is still hidden.
++  // Two frames let React commit the native image views before the orchestrator
++  // is told that Act 3 is ready to reveal and animate.
++  useEffect(() => {
++    if (!preparing || !loadedImages || preparedRef.current) return;
++
++    let secondFrame = 0;
++    const firstFrame = requestAnimationFrame(() => {
++      secondFrame = requestAnimationFrame(() => {
++        if (preparedRef.current) return;
++        preparedRef.current = true;
++        const committedAt = Date.now();
++        const decodedAt = imageLoadFinishedAtRef.current ?? committedAt;
++        console.info(
++          `[Nuke My Backlog] Act 3 hidden scene commit: ${committedAt - decodedAt}ms after decode.`,
++        );
++        onPreparedRef.current?.();
++      });
++    });
++
++    return () => {
++      cancelAnimationFrame(firstFrame);
++      if (secondFrame) cancelAnimationFrame(secondFrame);
++    };
++  }, [loadedImages, preparing]);
++
++
+   const smokeRingOffsetX =
+     canvasWidth * NUKE_MY_BACKLOG_ACT3_TUNING.smokeRingOffsetXRatio;
+ 
+@@ -1435,6 +1592,7 @@
+   const rayLength = Math.hypot(canvasWidth, canvasHeight) * 1.12;
+ 
+   if (!preparing && !active) return null;
++  if (!loadedImages) return null;
+ 
+   return (
+     <View
+@@ -1444,8 +1602,8 @@
+       importantForAccessibility="no-hide-descendants"
+       style={[
+         StyleSheet.absoluteFillObject,
+-        // This is the final scene itself, already mounted but invisible while
+-        // the image batches are prepared during Act 2.
++        // This is the final scene itself, mounted invisibly after native image
++        // decoding and before the orchestrator starts the Act 3 animation.
+         { opacity: active ? 1 : 0 },
+       ]}
+     >
+@@ -1464,47 +1622,30 @@
+           },
+         ]}
+       >
+-        {TRANSITION_SMOKE.map((frame, index) => {
+-          const batchIndex = getAct3PreloadBatch("transition-smoke", index);
+-          if (!isAct3AssetMounted(preloadStage, "transition-smoke", index)) {
+-            return null;
+-          }
+-          const assetKey = `transition-smoke-${index}`;
+-
+-          return (
+-            <Animated.Image
+-              key={`act3-transition-smoke-${index}`}
+-              source={frame.source}
+-              resizeMode="stretch"
+-              fadeDuration={0}
+-              onLoad={() => handlePreloadAssetSettled(assetKey, batchIndex)}
+-              onError={() => {
+-                console.warn(
+-                  `[Nuke My Backlog] Act 3 image failed: ${assetKey}`,
+-                );
+-                handlePreloadAssetSettled(assetKey, batchIndex);
+-              }}
+-              style={[
+-                transitionSmokeLayouts[index],
+-                {
+-                  opacity: transitionSmokeOpacities[index],
+-                  transform: [
+-                    { perspective: 1200 },
+-                    {
+-                      rotateX: `${NUKE_MY_BACKLOG_ACT3_TUNING.transitionSmokePitchAnglesDeg[index]}deg`,
+-                    },
+-                    {
+-                      scaleY:
+-                        NUKE_MY_BACKLOG_ACT3_TUNING.transitionSmokePlaneScaleY[
+-                          index
+-                        ],
+-                    },
+-                  ],
+-                },
+-              ]}
+-            />
+-          );
+-        })}
++        {TRANSITION_SMOKE.map((frame, index) => (
++          <AnimatedExpoImage
++            key={`act3-transition-smoke-${index}`}
++            source={loadedImages.transitionSmoke[index] ?? frame.source}
++            contentFit="fill"
++            transition={0}
++            style={[
++              transitionSmokeLayouts[index],
++              {
++                opacity: transitionSmokeOpacities[index],
++                transform: [
++                  { perspective: 1200 },
++                  {
++                    rotateX: `${NUKE_MY_BACKLOG_ACT3_TUNING.transitionSmokePitchAnglesDeg[index]}deg`,
++                  },
++                  {
++                    scaleY:
++                      NUKE_MY_BACKLOG_ACT3_TUNING.transitionSmokePlaneScaleY[index],
++                  },
++                ],
++              },
++            ]}
++          />
++        ))}
+       </Animated.View>
+ 
+       {/* CHAPTER 3.3 — Animated 90° cloud ring. It is rendered BEFORE the rocket. */}
+@@ -1552,33 +1693,18 @@
+             },
+           ]}
+         >
+-          {SMOKE_RING_FRAMES.map((frame, index) => {
+-            const batchIndex = getAct3PreloadBatch("smoke-ring", index);
+-            if (!isAct3AssetMounted(preloadStage, "smoke-ring", index)) {
+-              return null;
+-            }
+-            const assetKey = `smoke-ring-${index}`;
+-
+-            return (
+-              <Animated.Image
+-                key={`act3-smoke-ring-${index}`}
+-                source={frame.source}
+-                resizeMode="stretch"
+-                fadeDuration={0}
+-                onLoad={() => handlePreloadAssetSettled(assetKey, batchIndex)}
+-                onError={() => {
+-                  console.warn(
+-                    `[Nuke My Backlog] Act 3 image failed: ${assetKey}`,
+-                  );
+-                  handlePreloadAssetSettled(assetKey, batchIndex);
+-                }}
+-                style={[
+-                  smokeRingLayouts[index],
+-                  { opacity: smokeFrameOpacities[index] },
+-                ]}
+-              />
+-            );
+-          })}
++          {SMOKE_RING_FRAMES.map((frame, index) => (
++            <AnimatedExpoImage
++              key={`act3-smoke-ring-${index}`}
++              source={loadedImages.smokeRing[index] ?? frame.source}
++              contentFit="fill"
++              transition={0}
++              style={[
++                smokeRingLayouts[index],
++                { opacity: smokeFrameOpacities[index] },
++              ]}
++            />
++          ))}
+         </Animated.View>
+       </Animated.View>
+ 
+@@ -1644,11 +1770,6 @@
+             ]}
+           >
+             {FLAME_FRAMES.map((frame, index) => {
+-              const batchIndex = getAct3PreloadBatch("flame", index);
+-              if (!isAct3AssetMounted(preloadStage, "flame", index)) {
+-                return null;
+-              }
+-              const assetKey = `flame-${index}`;
+               const imageHeight = flameLayouts[index].height;
+               const flameBaseCompensation = flamePerspectiveScaleY.interpolate({
+                 inputRange: [
+@@ -1665,26 +1786,17 @@
+               });
+ 
+               return (
+-                <Animated.Image
++                <AnimatedExpoImage
+                   key={`act3-exhaust-frame-${index}`}
+-                  source={frame.source}
+-                  resizeMode="stretch"
+-                  fadeDuration={0}
+-                  onLoad={() => handlePreloadAssetSettled(assetKey, batchIndex)}
+-                  onError={() => {
+-                    console.warn(
+-                      `[Nuke My Backlog] Act 3 image failed: ${assetKey}`,
+-                    );
+-                    handlePreloadAssetSettled(assetKey, batchIndex);
+-                  }}
++                  source={loadedImages.flame[index] ?? frame.source}
++                  contentFit="fill"
++                  transition={0}
+                   style={[
+                     flameLayouts[index],
+                     {
+                       opacity: flameFrameIndex === index ? flameOpacity : 0,
+                       zIndex: 0,
+                       transform: [
+-                        // Match Act 1's exhaust orientation first, then rotate its
+-                        // image plane towards depth as the rocket pitches at camera.
+                         { perspective: 900 },
+                         { rotateX: flamePitchRotateX },
+                         { scaleY: -1 },
+@@ -1699,41 +1811,26 @@
+           </Animated.View>
+         )}
+         {/* CHAPTER 3.5B — Twelve authored rocket views, evenly cross-faded. */}
+-        {ROCKET_FRAMES.map((frame, index) => {
+-          const batchIndex = getAct3PreloadBatch("rocket", index);
+-          if (!isAct3AssetMounted(preloadStage, "rocket", index)) {
+-            return null;
+-          }
+-          const assetKey = `rocket-${index}`;
+-
+-          return (
+-            <Animated.Image
+-              key={`act3-rocket-view-${index}`}
+-              source={frame.source}
+-              resizeMode="stretch"
+-              fadeDuration={0}
+-              onLoad={() => handlePreloadAssetSettled(assetKey, batchIndex)}
+-              onError={() => {
+-                console.warn(
+-                  `[Nuke My Backlog] Act 3 image failed: ${assetKey}`,
+-                );
+-                handlePreloadAssetSettled(assetKey, batchIndex);
+-              }}
+-              style={[
+-                rocketLayouts[index],
+-                {
+-                  opacity:
+-                    NUKE_MY_BACKLOG_ACT3_FRAME_MODE === "native-opacity"
+-                      ? rocketFrameOpacities[index]
+-                      : rocketFrameIndex === index
+-                        ? 1
+-                        : 0,
+-                  zIndex: 2,
+-                },
+-              ]}
+-            />
+-          );
+-        })}
++        {ROCKET_FRAMES.map((frame, index) => (
++          <AnimatedExpoImage
++            key={`act3-rocket-view-${index}`}
++            source={loadedImages.rocket[index] ?? frame.source}
++            contentFit="fill"
++            transition={0}
++            style={[
++              rocketLayouts[index],
++              {
++                opacity:
++                  NUKE_MY_BACKLOG_ACT3_FRAME_MODE === "native-opacity"
++                    ? rocketFrameOpacities[index]
++                    : rocketFrameIndex === index
++                      ? 1
++                      : 0,
++                zIndex: 2,
++              },
++            ]}
++          />
++        ))}
+       </Animated.View>
+ 
+       {/* CHAPTER 3.6 — Soft atmospheric veil / final bloom. */}

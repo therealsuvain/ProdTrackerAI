@@ -62,8 +62,18 @@ import { TagBadge } from "../shared/tags/tag-badge";
 import { useHelloThereEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there/hello-there-phase-1-animation";
 import { useNoNoNoEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there/hello-there-phase-2-animation";
 import { useSleepingZEasterEggAnimation } from "@/hooks/animations/easter-eggs/hello-there/hello-there-phase-3-animation";
-import { useEasterEggAnimationSequence } from "@/hooks/animations/easter-eggs/hello-there/use-hello-there-animation-sequence";
-import { useNukeMyBacklogAnimation } from "@/hooks/animations/easter-eggs/nuke-my-backlog/nuke-my-backlog-animation-v6";
+import {
+  EasterEggAnimationSequence,
+  useEasterEggAnimationSequence,
+} from "@/hooks/animations/easter-eggs/hello-there/use-hello-there-animation-sequence";
+import { useNukeMyBacklogAnimation } from "@/hooks/animations/easter-eggs/nuke-my-backlog/nuke-my-backlog-animation-v14";
+import {
+  LightningStrikerOverlayHost,
+  type LightningStrikerOverlayHostHandle,
+} from "@/hooks/animations/easter-eggs/lighting-striker/lightning-striker-overlay-host";
+import { useSpaceInvadersEasterEgg } from "@/hooks/animations/easter-eggs/space-invaders-v3/use-space-invaders-easter-egg";
+import { usePacManEasterEgg } from "@/hooks/animations/easter-eggs/pacman-v2/use-pacman-easter-egg";
+import { useSnakeEasterEgg } from "@/hooks/animations/easter-eggs/snake-game/use-snake-easter-egg";
 
 type SearchFilter = "all" | GlobalSearchFilterKind;
 
@@ -141,6 +151,7 @@ export function GlobalSearchScreen({
   );
   const animationCanvasRef = useRef<View | null>(null);
   const keyboardVisibleRef = useRef(false);
+  const easterEggKeyboardDismissPendingRef = useRef(false);
   const nukeKeyboardDismissPendingRef = useRef(false);
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
@@ -149,6 +160,22 @@ export function GlobalSearchScreen({
   const sleepingZ = useSleepingZEasterEggAnimation();
   const sequence = useEasterEggAnimationSequence();
   const nukeMyBacklog = useNukeMyBacklogAnimation();
+  /* const lightningStriker = useLightningStrikerAnimation({
+    strike: require("@/assets/easter-eggs/lighting-strike/thunder-clap-512544.mp3"),
+    thunder: require("@/assets/easter-eggs/lighting-strike/thunder-rumble-321631.mp3"),
+  }); */
+  const lightningStrikerRef = useRef<LightningStrikerOverlayHostHandle>(null);
+  const spaceInvaders = useSpaceInvadersEasterEgg({ onSound: (name, n) => {} });
+  const pacman = usePacManEasterEgg({
+    onSound: (event, pts) => {
+      // Optional hook-in for sound effects:
+      // "chomp" | "powerPellet" | "eatGhost" | "eatFruit" | "playerDie" | "extraLife" | "stageClear" | "gameOver" | "victory"
+    },
+  });
+  const snake = useSnakeEasterEgg({ onSound: (name, n) => {} });
+  // handlers: spaceInvaders: () => spaceInvaders.start(rowRef, animationCanvasRef)  (rowRef is already passed to your handlers)
+  // render {spaceInvaders.overlayLayer} last inside animationCanvas
+  // cancel it in your !visible effect, and add spaceInvaders.active to scrollEnabled
 
   // Resolve the ranked document targets back to their live source records.
   // This compatibility adapter lets the current SearchResultRow and
@@ -322,7 +349,47 @@ export function GlobalSearchScreen({
     return () => clearTimeout(timeout);
   }, [visible]);
 
-  const handleEasterEggPress = useCallback(
+  type AnimationActivationHandler = (
+    rowRef: React.RefObject<View | null>,
+  ) => Promise<any>;
+
+  const animationActivationHandlers = useMemo<
+    Record<string, AnimationActivationHandler>
+  >(
+    () => ({
+      // Hello There is a multi-part animation sequence. Its internal
+      // hello-there / no-no-no / sleeping-z keys are sequence steps, not
+      // separate Global Search Easter egg activations.
+      helloThere: (rowRef) =>
+        sequence.activate({
+          "hello-there": () =>
+            helloThereAnimation.start(rowRef, animationCanvasRef),
+          "no-no-no": () => noNoNo.start(rowRef, animationCanvasRef),
+          "sleeping-z": () => sleepingZ.start(rowRef, animationCanvasRef),
+        }),
+
+      // Lightning is a standalone one-shot animation. Do not also call
+      // sequence.activate() for this effect.
+      lightningStrike: () =>
+        lightningStrikerRef.current?.start() ??
+        Promise.resolve(
+          false,
+        ) /* lightningStriker.start(animationCanvasRef), */,
+      spaceInvaders: (rowRef) =>
+        spaceInvaders.start(rowRef, animationCanvasRef),
+      pacman: (rowRef) => pacman.start(rowRef, animationCanvasRef),
+      snake: (rowRef) => snake.start(rowRef, animationCanvasRef),
+    }),
+    [
+      sequence.activate,
+      helloThereAnimation.start,
+      noNoNo.start,
+      sleepingZ.start,
+      /* lightningStriker.start, */
+    ],
+  );
+
+  /*  const handleEasterEggPress = useCallback(
     async (eggId: string, rowRef: React.RefObject<View | null>) => {
       const egg = GLOBAL_SEARCH_EASTER_EGGS_BY_ID.get(eggId);
       if (!egg) return;
@@ -393,56 +460,14 @@ export function GlobalSearchScreen({
         // Hello There is the first enabled animation.
         // Keep the other animation effects disabled for now.
         console.log(eggId, "activation enabled:", egg.activation);
-        if (eggId !== "hello_there") {
+        if (eggId !== "hello_there" && eggId !== "lighting_strike") {
           Alert.alert(
             "Surprise still in development",
             "This Easter egg's effect is being designed. It isn't activated yet.",
           );
           return;
         }
-        /*  if (activeEggActivationRef.current) return;
-        // Acquire the lock synchronously before starting the animation.
-        activeEggActivationRef.current = eggId;
 
-        // Preserve the submitted query and start the effect.
-        controller.recordSubmittedSearch();
-        //setActiveAnimatedEggId(eggId);
-
-        // Record discovery on the explicit tap, without waiting for the animation.
-        void recordGlobalSearchEasterEggDiscovery(eggId).catch(
-          (storageError) => {
-            console.warn(
-              "[Global Search] Couldn't persist Easter egg discovery.",
-              storageError,
-            );
-          },
-        ); */
-
-        /* void helloThereAnimation.start(rowRef, animationCanvasRef, () => {
-          if (activeEggActivationRef.current === eggId) {
-            activeEggActivationRef.current = null;
-          }
-        });
- */
-
-        /* void noNoNo.start(rowRef, animationCanvasRef, () => {
-          if (activeEggActivationRef.current === eggId) {
-            activeEggActivationRef.current = null;
-          }
-        });
- */
-
-        /*   void sleepingZ.start(rowRef, animationCanvasRef, () => {
-          if (activeEggActivationRef.current === eggId) {
-            activeEggActivationRef.current = null;
-          }
-        }); */
-
-        /* const result = await sequence.activate({
-  "hello-there": () => helloThereAnimation.start(rowRef, animationCanvasRef),
-  "no-no-no": () => noNoNo.start(rowRef, animationCanvasRef),
-  "sleeping-z": () => sleepingZ.start(rowRef, animationCanvasRef),
-}); */
         // This outer lock protects the whole handoff and remains held until the
         // selected animation Promise settles. sequence.activate has its own
         // synchronous lock as a second guard against overlapping effects.
@@ -461,7 +486,13 @@ export function GlobalSearchScreen({
               );
             },
           );
-
+          void lightningStriker.start(animationCanvasRef, {
+            onFinished: () => {
+              if (activeEggActivationRef.current === eggId) {
+                activeEggActivationRef.current = null;
+              }
+            },
+          });
           const completedAnimation = await sequence.activate({
             "hello-there": () =>
               helloThereAnimation.start(rowRef, animationCanvasRef),
@@ -523,6 +554,158 @@ export function GlobalSearchScreen({
       sequence.activate,
       sleepingZ.start,
       nukeMyBacklog.press,
+      lightningStriker.start,
+      waitForKeyboardDismissal,
+      visible,
+    ],
+  ); */
+
+  const handleEasterEggPress = useCallback(
+    async (eggId: string, rowRef: React.RefObject<View | null>) => {
+      const egg = GLOBAL_SEARCH_EASTER_EGGS_BY_ID.get(eggId);
+      if (!egg) return;
+
+      const isNukePump =
+        egg.activation.kind === "animation" &&
+        egg.activation.effect === "launchSequence";
+
+      // Nuke's repeated taps are part of its active interaction. Forward them
+      // before the general one-shot lock and keyboard preflight.
+      if (isNukePump && activeEggActivationRef.current === eggId) {
+        nukeMyBacklog.press(rowRef, animationCanvasRef);
+        return;
+      }
+
+      // Ordinary one-shot activations cannot overlap another active Easter egg.
+      if (activeEggActivationRef.current) return;
+
+      // Shared keyboard preflight: dismiss before measuring/starting any first
+      // activation, not only Nuke My Backlog. The pending ref prevents two taps
+      // from racing the asynchronous keyboard close/reflow.
+      if (keyboardVisibleRef.current) {
+        if (easterEggKeyboardDismissPendingRef.current) return;
+        easterEggKeyboardDismissPendingRef.current = true;
+
+        try {
+          await waitForKeyboardDismissal();
+        } finally {
+          easterEggKeyboardDismissPendingRef.current = false;
+        }
+
+        if (!visibleRef.current) return;
+      }
+
+      // Re-check after the await in case another activation acquired the lock.
+      if (activeEggActivationRef.current) return;
+
+      // Nuke remains the only multi-tap activation. Its first accepted press
+      // acquires the screen-level lock synchronously through onFirstPress.
+      if (isNukePump) {
+        nukeMyBacklog.press(rowRef, animationCanvasRef, {
+          onFirstPress: () => {
+            activeEggActivationRef.current = eggId;
+            controller.recordSubmittedSearch();
+            void recordGlobalSearchEasterEggDiscovery(eggId).catch(
+              (storageError) => {
+                console.warn(
+                  "[Global Search] Couldn't persist Easter egg discovery.",
+                  storageError,
+                );
+              },
+            );
+          },
+          onFinished: () => {
+            if (activeEggActivationRef.current === eggId) {
+              activeEggActivationRef.current = null;
+            }
+          },
+        });
+        return;
+      }
+
+      if (egg.activation.kind === "animation") {
+        const runAnimation = animationActivationHandlers[egg.activation.effect];
+
+        // An animation kind alone does not mean the effect is implemented.
+        // Unknown effects remain discoverable in the registry but show the
+        // existing staging alert and are not recorded as discovered.
+        if (!runAnimation) {
+          Alert.alert(
+            "Surprise still in development",
+            "This Easter egg's effect is being designed. It isn't activated yet.",
+          );
+          return;
+        }
+
+        // Acquire synchronously before invoking an animation. The selected
+        // handler is the ONLY animation launched for this row press.
+        activeEggActivationRef.current = eggId;
+
+        try {
+          controller.recordSubmittedSearch();
+
+          void recordGlobalSearchEasterEggDiscovery(eggId).catch(
+            (storageError) => {
+              console.warn(
+                "[Global Search] Couldn't persist Easter egg discovery.",
+                storageError,
+              );
+            },
+          );
+
+          const completedAnimation = await runAnimation(rowRef);
+
+          if (!completedAnimation) {
+            console.warn(
+              `[Global Search] Animation for "${eggId}" did not complete.`,
+            );
+          }
+        } catch (error) {
+          console.warn(
+            `[Global Search] Animation for "${eggId}" failed.`,
+            error,
+          );
+        } finally {
+          if (activeEggActivationRef.current === eggId) {
+            activeEggActivationRef.current = null;
+          }
+        }
+        return;
+      }
+      activeEggActivationRef.current = eggId;
+
+      // If the user submits or activates an egg, retain their current query.
+      controller.recordSubmittedSearch();
+
+      try {
+        // Discovery is recorded on tap, before trying to open the URL.
+        // A failed external URL still counts as an explicit activation tap.
+        try {
+          await recordGlobalSearchEasterEggDiscovery(eggId);
+        } catch (storageError) {
+          console.warn(
+            "[Global Search] Couldn't persist Easter egg discovery.",
+            storageError,
+          );
+        }
+
+        try {
+          // Rickroll only: external navigation happens after the explicit tap.
+          await Linking.openURL(egg.activation.url);
+        } catch {
+          Alert.alert(
+            "Couldn't open YouTube",
+            "The surprise was activated, but the external link couldn't be opened.",
+          );
+        }
+      } finally {
+        activeEggActivationRef.current = null;
+      }
+    },
+    [
+      animationActivationHandlers,
+      controller.recordSubmittedSearch,
+      nukeMyBacklog.press,
       waitForKeyboardDismissal,
       visible,
     ],
@@ -539,12 +722,21 @@ export function GlobalSearchScreen({
     noNoNo.cancel();
     sleepingZ.cancel();
     nukeMyBacklog.cancel();
+    /* lightningStriker.cancel(); */
+    lightningStrikerRef.current?.cancel();
+    snake.cancel();
+    pacman.cancel();
+    spaceInvaders.cancel();
   }, [
     visible,
     helloThereAnimation.cancel,
     noNoNo.cancel,
     sleepingZ.cancel,
     nukeMyBacklog.cancel,
+    pacman.cancel,
+    snake.cancel,
+    spaceInvaders.cancel,
+    /* lightningStriker.cancel, */
   ]);
 
   return (
@@ -982,7 +1174,11 @@ export function GlobalSearchScreen({
                     const activationEnabled =
                       eggId === "rickroll" ||
                       eggId === "hello_there" ||
-                      eggId === "launch_sequence";
+                      eggId === "launch_sequence" ||
+                      eggId === "lightning_strike" ||
+                      eggId === "space_invaders" ||
+                      eggId === "pacman" ||
+                      eggId === "snake";
                     const nukeMyBackLogHint =
                       eggId === "launch_sequence" && nukeMyBacklog.hintVisible
                         ? nukeMyBacklog.hintText
@@ -995,6 +1191,16 @@ export function GlobalSearchScreen({
                         onPress={(rowRef) => {
                           void handleEasterEggPress(eggId, rowRef);
                         }}
+                        onLayout={
+                          visible && eggId === "launch_sequence"
+                            ? (rowRef) => {
+                                nukeMyBacklog.prewarmAct3(
+                                  rowRef,
+                                  animationCanvasRef,
+                                );
+                              }
+                            : undefined
+                        }
                         hintText={nukeMyBackLogHint}
                       />
                     );
@@ -1142,6 +1348,14 @@ export function GlobalSearchScreen({
             {nukeMyBacklog.behindLayer}
             {helloThereAnimation.foregroundLayer}
             {noNoNo.foregroundLayer}
+            {/* {lightningStriker.overlayLayer} */}
+            <LightningStrikerOverlayHost
+              ref={lightningStrikerRef}
+              canvasRef={animationCanvasRef}
+            />
+            {spaceInvaders.overlayLayer}
+            {pacman.overlayLayer}
+            {snake.overlayLayer}
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

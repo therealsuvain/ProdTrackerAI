@@ -13,10 +13,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import {
-  useNukeMyBacklogAudio,
-  NUKE_AUDIO_TUNING,
-} from "./use-nuke-my-backlog-audio";
+import { useNukeMyBacklogAudio } from "./use-nuke-my-backlog-audio";
 import NukeFlightEnvironment from "./nuke-flight-environment";
 import NukeLaunchSpeedStreaks from "./nuke-launch-speed-streaks";
 
@@ -67,6 +64,9 @@ type PressCallbacks = {
  *   @/assets/easter-eggs/nuke-backlog-assets/flight-scene/*
  */
 const rocketAsset = require("@/assets/easter-eggs/nuke-backlog-assets/rocket.png");
+const rocketBlur02Asset = require("@/assets/easter-eggs/nuke-backlog-assets/rocket_blur_02.png");
+const rocketBlur05Asset = require("@/assets/easter-eggs/nuke-backlog-assets/rocket_blur_05.png");
+const rocketBlur08Asset = require("@/assets/easter-eggs/nuke-backlog-assets/rocket_blur_08.png");
 
 const ROCKET_SOURCE_WIDTH = 654;
 const ROCKET_SOURCE_HEIGHT = 1912;
@@ -201,53 +201,64 @@ export const NUKE_MY_BACKLOG_TUNING = {
   flameBaseOverlapDp: 4,
   flameFrameIntervalMs: 92,
 
-  // Act 1.2 — Pre-launch acceleration spectacle.
-  // The rocket settles into the visual middle of the expanded screen while
-  // procedural speed streaks accelerate around it.
+  // Act 1.2 — Launch audio / bottom-to-centre ascent.
+  // launch.mp3 is ~4.4s; the rocket travels from below the viewport to centre
+  // for the duration of that sound, with a restrained high-frequency vibration.
   boostCenterYRatio: 0.48,
-  boostCenterMoveMs: 520,
-  boostAccelerationMs: 2600,
-  boostHoldAfterAccelerationMs: 850,
-  boostVibrationX: 1.2,
-  boostVibrationY: 0.9,
-  boostVibrationRotationDeg: 0.22,
-  cloudRevealDurationMs: 1900,
+  boostCenterMoveMs: 4500,
+  boostLaunchVibrationX: 0.3,
+  boostLaunchVibrationY: 0.24,
+  boostLaunchVibrationRotation: 0.48,
 
-  // Act 1.3 — Initial vertical launch. Larger duration = slower, heavier liftoff.
-  launchVerticalDurationMs: 1180,
-  launchOffscreenMarginDp: 72,
+  // Act 1.3 — Stationary high-speed acceleration spectacle.
+  // The streak component uses the same acceleration duration (7.245s).
+  boostAccelerationMs: 7245,
+  boostHoldAfterAccelerationMs: 650,
+  boostVibrationX: 0.54,
+  boostVibrationY: 0.43,
+  boostVibrationRotation: 0.82,
+  rocketBlurMaximumPercent: 8,
+  cloudRevealDurationMs: 2100,
 
-  // Act 2.1 — Off-screen first pass and audio distance cue.
+  // Act 1.4 — Final vertical departure after the speed build-up.
+  launchExitDurationMs: 950,
+  launchOffscreenMarginDp: 96,
+
+  // Act 2.1 — Off-screen interval before the high-speed return passes.
   firstOffscreenHoldMs: 4500,
-  distantFlightScale: 0.66,
+  distantFlightScale: 0.46,
 
-  // Act 2.2 — One complete visible loop, followed by a continuous exit arc.
-  upperFlightPathDurationMs: 5600,
-  flightLoopCenterXRatio: 0.51,
-  flightLoopCenterYRatio: 0.3,
-  flightLoopRadiusXRatio: 0.3,
-  flightLoopRadiusYRatio: 0.17,
-  flightLoopEndRadiusScale: 0.96,
-  flightLoopEntryYRatio: 0.16,
-  flightLoopExitXRatio: 0.92,
-  flightLoopExitOffscreenMarginDp: 80,
+  // Act 2.2 — Reuse the v5 inward spiral twice, without resetting between passes.
+  // Pass one enters from the right and ends off-screen left. Pass two begins at
+  // that exact left-side endpoint, expands from a different angle, and exits right.
+  upperFlightPathDurationMs: 4200,
+  flightSpiralTurns: 1.5,
+  flightSpiralCenterXRatio: 0.42,
+  flightSpiralCenterYRatio: 0.28,
+  flightSpiralStartRadiusXRatio: 0.78,
+  flightSpiralEndRadiusXRatio: 0.62,
+  flightSpiralStartRadiusYRatio: 0.21,
+  flightSpiralEndRadiusYRatio: 0.16,
+  flightSpiralSecondEndRadiusXRatio: 0.8,
+  flightSpiralSecondEndRadiusYRatio: 0.22,
   projectedShadowOffsetX: -20,
   projectedShadowOffsetY: 26,
   projectedShadowOpacity: 0.22,
   projectedShadowBlurRadius: 5,
 
-  // Change to "left" to mirror the loop and enter from the opposite edge.
+  // Change to "left" to mirror both continuous spiral passes.
   upperReturnFromSide: "right" as "left" | "right",
 
   // Act 2.3 — Short hidden transition before the lower re-entry.
-  secondOffscreenPauseMs: 420,
+  secondOffscreenPauseMs: 300,
 
   // Act 2.4 — Final bottom-to-middle pass. This stops at the pre-3D pose;
   // Act 3 will take over from this exact point for the Z-depth/camera approach.
   bottomEntryXRatio: 0.5,
   bottomEntryStartMarginDp: 90,
   bottomEntryEndCenterYRatio: 0.5,
-  bottomEntryDurationMs: 2250,
+  bottomEntryDurationMs: 1450,
+  bottomEntryEndScale: 0.72,
   bottomEntryRotationDegrees: 0,
 
   // Accessibility fallback. Reduced motion keeps the interaction but removes springs.
@@ -339,12 +350,10 @@ type ContinuousFlightPath = {
 };
 
 /**
- * Builds a continuous entry, one complete visible orbit, and a tangential
- * downward exit. There are no waypoints or intermediate stops.
- *
- * The raw curve is resampled by travelled distance so one linear Animated.Value
- * produces near-constant world-space speed. Body rotation comes from the local
- * path tangent, so the whole rocket rig steers through the loop.
+ * Reuses the v5 expanding/inward spiral geometry twice in one uninterrupted
+ * path. The second spiral begins at the first spiral's exact endpoint, but
+ * expands outward from the opposite side so the rocket performs two distinct
+ * high-speed passes and exits beyond the far edge without a teleport.
  */
 function buildContinuousFlightPath(
   screenWidth: number,
@@ -355,90 +364,76 @@ function buildContinuousFlightPath(
   baseTop: number,
   fromSide: "left" | "right",
 ): ContinuousFlightPath {
-  const centerX = screenWidth * NUKE_MY_BACKLOG_TUNING.flightLoopCenterXRatio;
-  const centerY = screenHeight * NUKE_MY_BACKLOG_TUNING.flightLoopCenterYRatio;
-  const radiusX = screenWidth * NUKE_MY_BACKLOG_TUNING.flightLoopRadiusXRatio;
-  const radiusY = screenHeight * NUKE_MY_BACKLOG_TUNING.flightLoopRadiusYRatio;
-  const endRadiusScale = NUKE_MY_BACKLOG_TUNING.flightLoopEndRadiusScale;
+  const centerX = screenWidth * NUKE_MY_BACKLOG_TUNING.flightSpiralCenterXRatio;
+  const centerY =
+    screenHeight * NUKE_MY_BACKLOG_TUNING.flightSpiralCenterYRatio;
+  const turns = NUKE_MY_BACKLOG_TUNING.flightSpiralTurns;
+  const totalAngle = Math.PI * 2 * turns;
+  const startRadiusX =
+    screenWidth * NUKE_MY_BACKLOG_TUNING.flightSpiralStartRadiusXRatio;
+  const firstEndRadiusX =
+    screenWidth * NUKE_MY_BACKLOG_TUNING.flightSpiralEndRadiusXRatio;
+  const startRadiusY =
+    screenHeight * NUKE_MY_BACKLOG_TUNING.flightSpiralStartRadiusYRatio;
+  const firstEndRadiusY =
+    screenHeight * NUKE_MY_BACKLOG_TUNING.flightSpiralEndRadiusYRatio;
+  const secondEndRadiusX =
+    screenWidth * NUKE_MY_BACKLOG_TUNING.flightSpiralSecondEndRadiusXRatio;
+  const secondEndRadiusY =
+    screenHeight * NUKE_MY_BACKLOG_TUNING.flightSpiralSecondEndRadiusYRatio;
 
-  // Start beyond the entry edge, curve into the loop, complete exactly one
-  // full orbit, then follow a tangential exit arc beyond the opposite edge.
-  const loopStart = { x: centerX + radiusX, y: centerY };
-  const entryStart = {
-    x: screenWidth + rocketWidth * 1.15,
-    y: screenHeight * NUKE_MY_BACKLOG_TUNING.flightLoopEntryYRatio,
-  };
-  const entryControl1 = {
-    x: screenWidth + rocketWidth * 0.22,
-    y: entryStart.y,
-  };
-  const entryControl2 = {
-    x: loopStart.x,
-    y: centerY - radiusY * 0.48,
-  };
-
-  const loopPoints: Point[] = [];
-  const loopSampleCount = 340;
-  for (let index = 0; index < loopSampleCount; index += 1) {
-    const t = index / (loopSampleCount - 1);
-    const angle = Math.PI * 2 * t;
-    const radiusScale = 1 + (endRadiusScale - 1) * t;
-    loopPoints.push({
-      x: centerX + radiusX * radiusScale * Math.cos(angle),
-      y: centerY + radiusY * radiusScale * Math.sin(angle),
-    });
-  }
-
-  const loopEnd = loopPoints[loopPoints.length - 1];
-  // Leave on a smooth downward-right tangent after the completed orbit. This
-  // keeps the exit outside the loop instead of cutting back through its centre.
-  const exitEnd = {
-    x: screenWidth * NUKE_MY_BACKLOG_TUNING.flightLoopExitXRatio,
-    y:
-      screenHeight +
-      rocketHeight * 0.42 +
-      NUKE_MY_BACKLOG_TUNING.flightLoopExitOffscreenMarginDp,
-  };
-  const exitControl1 = {
-    x: loopEnd.x - screenWidth * 0.012,
-    y: loopEnd.y + radiusY * 0.34,
-  };
-  const exitControl2 = {
-    x: screenWidth * 0.99,
-    y: screenHeight * 0.86,
+  const raw: Point[] = [];
+  const samplesPerPass = 560;
+  const appendSpiral = (
+    startAngle: number,
+    radiusXFrom: number,
+    radiusXTo: number,
+    radiusYFrom: number,
+    radiusYTo: number,
+    skipFirst: boolean,
+  ) => {
+    for (let index = skipFirst ? 1 : 0; index < samplesPerPass; index += 1) {
+      const t = index / (samplesPerPass - 1);
+      // Smoothstep has zero radial velocity at both ends, so the inward first
+      // pass blends into the outward second pass without a direction snap.
+      const radiusT = t * t * (3 - 2 * t);
+      const angle = startAngle + totalAngle * t;
+      const radiusX = radiusXFrom + (radiusXTo - radiusXFrom) * radiusT;
+      const radiusY = radiusYFrom + (radiusYTo - radiusYFrom) * radiusT;
+      raw.push({
+        x: centerX + radiusX * Math.cos(angle),
+        y: centerY + radiusY * Math.sin(angle),
+      });
+    }
   };
 
-  const cubic = (
-    p0: Point,
-    p1: Point,
-    p2: Point,
-    p3: Point,
-    t: number,
-  ): Point => {
-    const u = 1 - t;
-    const uu = u * u;
-    const tt = t * t;
-    return {
-      x: uu * u * p0.x + 3 * uu * t * p1.x + 3 * u * tt * p2.x + tt * t * p3.x,
-      y: uu * u * p0.y + 3 * uu * t * p1.y + 3 * u * tt * p2.y + tt * t * p3.y,
-    };
-  };
-
-  const entryPoints = Array.from({ length: 72 }, (_, index) =>
-    cubic(entryStart, entryControl1, entryControl2, loopStart, index / 71),
+  // First pass: broad inward spiral, right edge to left edge.
+  appendSpiral(
+    0,
+    startRadiusX,
+    firstEndRadiusX,
+    startRadiusY,
+    firstEndRadiusY,
+    false,
   );
-  const exitPoints = Array.from({ length: 116 }, (_, index) =>
-    cubic(loopEnd, exitControl1, exitControl2, exitEnd, index / 115),
+  // At 1.5 turns the first pass ends at angle 3π (the left side). Continue from
+  // that exact point and expand the second pass to exit on the right.
+  appendSpiral(
+    totalAngle,
+    firstEndRadiusX,
+    secondEndRadiusX,
+    firstEndRadiusY,
+    secondEndRadiusY,
+    true,
   );
 
-  const raw = [...entryPoints, ...loopPoints.slice(1), ...exitPoints.slice(1)];
   const directed = raw.map((point) => ({
     x: fromSide === "right" ? point.x : screenWidth - point.x,
     y: point.y,
   }));
 
-  // Resample by arc length: the single linear progress value now produces
-  // approximately constant travel speed through entry, loop and exit.
+  // Arc-length resampling keeps travel speed stable even as the spiral radius
+  // changes between its inward and outward passes.
   const cumulative: number[] = [0];
   for (let index = 1; index < directed.length; index += 1) {
     const dx = directed[index].x - directed[index - 1].x;
@@ -447,7 +442,7 @@ function buildContinuousFlightPath(
   }
 
   const totalLength = cumulative[cumulative.length - 1] || 1;
-  const sampleCount = 260;
+  const sampleCount = 440;
   const even: Point[] = [];
   let segmentIndex = 1;
   for (let index = 0; index < sampleCount; index += 1) {
@@ -555,6 +550,7 @@ export function useNukeMyBacklogAnimation(): AnimationController {
   const rocketRotation = useRef(new Animated.Value(0)).current;
   const rocketScale = useRef(new Animated.Value(1)).current;
   const flightPathProgress = useRef(new Animated.Value(0)).current;
+  const rocketBlurProgress = useRef(new Animated.Value(0)).current;
   const ignitionGlowOpacity = useRef(new Animated.Value(0)).current;
   const ignitionGlowScale = useRef(new Animated.Value(0.72)).current;
 
@@ -580,65 +576,55 @@ export function useNukeMyBacklogAnimation(): AnimationController {
     ]).start();
   }, [rocketShakeRotation, rocketShakeX, rocketShakeY]);
 
-  const startRocketVibration = useCallback(() => {
-    rocketVibrationLoopRef.current?.stop();
-    rocketShakeX.setValue(0);
-    rocketShakeY.setValue(0);
-    rocketShakeRotation.setValue(0);
+  const startRocketVibration = useCallback(
+    (amplitudeX: number, amplitudeY: number, rotationAmplitude: number) => {
+      rocketVibrationLoopRef.current?.stop();
+      rocketShakeX.setValue(0);
+      rocketShakeY.setValue(0);
+      rocketShakeRotation.setValue(0);
 
-    const pulse = (
-      x: number,
-      y: number,
-      rotation: number,
-      durationMs: number,
-    ) =>
-      Animated.parallel([
-        Animated.timing(rocketShakeX, {
-          toValue: x,
-          duration: durationMs,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-        Animated.timing(rocketShakeY, {
-          toValue: y,
-          duration: durationMs,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-        Animated.timing(rocketShakeRotation, {
-          toValue: rotation,
-          duration: durationMs,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-      ]);
+      const pulse = (x: number, y: number, rotation: number) =>
+        Animated.parallel([
+          Animated.timing(rocketShakeX, {
+            toValue: x,
+            duration: 12,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          }),
+          Animated.timing(rocketShakeY, {
+            toValue: y,
+            duration: 12,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          }),
+          Animated.timing(rocketShakeRotation, {
+            toValue: rotation,
+            duration: 12,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          }),
+        ]);
 
-    const loop = Animated.loop(
-      Animated.sequence([
-        pulse(
-          NUKE_MY_BACKLOG_TUNING.boostVibrationX,
-          -NUKE_MY_BACKLOG_TUNING.boostVibrationY,
-          1,
-          42,
-        ),
-        pulse(
-          -NUKE_MY_BACKLOG_TUNING.boostVibrationX,
-          NUKE_MY_BACKLOG_TUNING.boostVibrationY,
-          -1,
-          38,
-        ),
-        pulse(
-          NUKE_MY_BACKLOG_TUNING.boostVibrationX * 0.45,
-          NUKE_MY_BACKLOG_TUNING.boostVibrationY * 0.55,
-          0.45,
-          31,
-        ),
-        pulse(0, 0, 0, 36),
-      ]),
-    );
-    rocketVibrationLoopRef.current = loop;
-    loop.start();
-  }, [rocketShakeRotation, rocketShakeX, rocketShakeY]);
+      // Four tiny, asymmetric impulses form a ~48ms jitter cycle (~21Hz).
+      // The launch uses a restrained amplitude; the stationary boost uses a
+      // stronger amplitude while keeping total displacement below the old rig.
+      const loop = Animated.loop(
+        Animated.sequence([
+          pulse(amplitudeX, -amplitudeY, rotationAmplitude),
+          pulse(-amplitudeX, amplitudeY * 0.72, -rotationAmplitude),
+          pulse(-amplitudeX * 0.62, -amplitudeY, rotationAmplitude * 0.55),
+          pulse(
+            amplitudeX * 0.32,
+            amplitudeY * 0.48,
+            -rotationAmplitude * 0.42,
+          ),
+        ]),
+      );
+      rocketVibrationLoopRef.current = loop;
+      loop.start();
+    },
+    [rocketShakeRotation, rocketShakeX, rocketShakeY],
+  );
 
   const clearTimers = useCallback(() => {
     if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
@@ -668,6 +654,8 @@ export function useNukeMyBacklogAnimation(): AnimationController {
       rocketRotation.stopAnimation();
       rocketScale.stopAnimation();
       flightPathProgress.stopAnimation();
+      rocketBlurProgress.stopAnimation();
+      rocketBlurProgress.setValue(0);
       setFlightPathActive(false);
       ignitionGlowLoopRef.current?.stop();
       ignitionGlowLoopRef.current = null;
@@ -706,6 +694,7 @@ export function useNukeMyBacklogAnimation(): AnimationController {
       rocketX,
       rocketY,
       flightPathProgress,
+      rocketBlurProgress,
       stopRocketVibration,
       rocketShakeX,
       rocketShakeY,
@@ -773,13 +762,14 @@ export function useNukeMyBacklogAnimation(): AnimationController {
       const side = NUKE_MY_BACKLOG_TUNING.upperReturnFromSide;
       const distantScale = NUKE_MY_BACKLOG_TUNING.distantFlightScale;
 
-      // Act 1.2 — Move the rocket into a stable central hold and build the
-      // sensation of acceleration around it. The cloud scene stays hidden here.
+      // ACT 1.2 — The launch sound and bottom-to-centre movement begin together.
+      // The row reveal/pumping mechanic remains untouched; at this handoff the
+      // rocket is placed entirely below the screen, then rises into the scene.
       phaseRef.current = "boosting";
       setFlightStage("boosting");
       setFlightMode(true);
       setCloudSceneVisible(false);
-      setLaunchStreaksActive(true);
+      setLaunchStreaksActive(false);
       setLaunchStreaksFadeOut(false);
       setFlightPathActive(false);
       setFlameActive(true);
@@ -787,95 +777,108 @@ export function useNukeMyBacklogAnimation(): AnimationController {
       setIgnitionVisible(false);
       ignitionGlowLoopRef.current?.stop();
       ignitionGlowLoopRef.current = null;
-      startRocketVibration();
 
+      const centreLeft = screenWidth / 2 - rocketWidth / 2;
+      const offscreenBottomTop = screenHeight + rocketHeight * 0.9;
       const boostTop =
         screenHeight * NUKE_MY_BACKLOG_TUNING.boostCenterYRatio -
         rocketHeight / 2;
+      const boostX = centreLeft - baseLeft;
       const boostY = boostTop - baseTop;
-      const settledAtBoostPosition = await runFlightValues(id, runIdRef, [
+      const bottomStartY = offscreenBottomTop - baseTop;
+
+      rocketX.setValue(boostX);
+      rocketY.setValue(bottomStartY);
+      rocketRotation.setValue(0);
+      rocketScale.setValue(1);
+      rocketBlurProgress.setValue(0);
+      startRocketVibration(
+        NUKE_MY_BACKLOG_TUNING.boostLaunchVibrationX,
+        NUKE_MY_BACKLOG_TUNING.boostLaunchVibrationY,
+        NUKE_MY_BACKLOG_TUNING.boostLaunchVibrationRotation,
+      );
+
+      // playLaunch is called at the start of the 4.5s ascent, not after the
+      // acceleration spectacle. The file's ~4.4s duration aligns to this travel.
+      void audio.playLaunch();
+      const enteredFromBottom = await runFlightValues(id, runIdRef, [
         {
           value: rocketY,
           toValue: boostY,
           duration: NUKE_MY_BACKLOG_TUNING.boostCenterMoveMs,
-          easing: Easing.out(Easing.cubic),
+          easing: Easing.out(Easing.quad),
         },
         {
           value: rocketX,
-          toValue: 0,
+          toValue: boostX,
           duration: NUKE_MY_BACKLOG_TUNING.boostCenterMoveMs,
-          easing: Easing.out(Easing.cubic),
+          easing: Easing.linear,
         },
         {
           value: rocketRotation,
           toValue: 0,
           duration: NUKE_MY_BACKLOG_TUNING.boostCenterMoveMs,
         },
-        {
-          value: rocketScale,
-          toValue: 1,
-          duration: NUKE_MY_BACKLOG_TUNING.boostCenterMoveMs,
-        },
       ]);
-      if (!settledAtBoostPosition || id !== runIdRef.current) return;
+      if (!enteredFromBottom || id !== runIdRef.current) return;
 
-      // The streak component accelerates from slow to fast over this interval.
-      // The additional hold lets the user register the high-speed effect.
-      const boostHoldOk = await waitForFlightStage(
+      // ACT 1.3 — Hold at centre. Start the thrust loop and intensify the jitter
+      // as 210 white streaks lengthen and accelerate over roughly eight seconds.
+      await audio.startFlightLoop();
+      if (id !== runIdRef.current) return;
+      startRocketVibration(
+        NUKE_MY_BACKLOG_TUNING.boostVibrationX,
+        NUKE_MY_BACKLOG_TUNING.boostVibrationY,
+        NUKE_MY_BACKLOG_TUNING.boostVibrationRotation,
+      );
+      setLaunchStreaksActive(true);
+      setLaunchStreaksFadeOut(false);
+
+      Animated.timing(rocketBlurProgress, {
+        toValue: 1,
+        duration: NUKE_MY_BACKLOG_TUNING.boostAccelerationMs,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }).start();
+
+      const boostCompleted = await waitForFlightStage(
         id,
         NUKE_MY_BACKLOG_TUNING.boostAccelerationMs +
           NUKE_MY_BACKLOG_TUNING.boostHoldAfterAccelerationMs,
       );
-      if (!boostHoldOk || id !== runIdRef.current) return;
+      if (!boostCompleted || id !== runIdRef.current) return;
 
-      // Act 1.3 — Lift off. Reveal the cloud deck while the streak field fades.
+      // ACT 1.4 — The rocket leaves the streak field. Reveal the cloud deck while
+      // the streaks and white wash fade behind it.
       phaseRef.current = "launching";
       setFlightStage("launching");
       setCloudSceneVisible(true);
       setLaunchStreaksFadeOut(true);
       stopRocketVibration();
 
-      // Start the launch cue exactly when the rocket begins its vertical ascent.
-      await audio.playLaunch();
-      if (id !== runIdRef.current) return;
-
       const fullyOffscreenTop =
         -rocketHeight - NUKE_MY_BACKLOG_TUNING.launchOffscreenMarginDp;
       const launchOffscreenY = fullyOffscreenTop - baseTop;
-      const launchOk = await runFlightValues(id, runIdRef, [
+      const leavingBoost = await runFlightValues(id, runIdRef, [
         {
           value: rocketY,
           toValue: launchOffscreenY,
-          duration: NUKE_MY_BACKLOG_TUNING.launchVerticalDurationMs,
+          duration: NUKE_MY_BACKLOG_TUNING.launchExitDurationMs,
           easing: Easing.in(Easing.cubic),
-        },
-        {
-          value: rocketX,
-          toValue: 0,
-          duration: NUKE_MY_BACKLOG_TUNING.launchVerticalDurationMs,
-          easing: Easing.in(Easing.cubic),
-        },
-        {
-          value: rocketRotation,
-          toValue: 0,
-          duration: NUKE_MY_BACKLOG_TUNING.launchVerticalDurationMs,
         },
         {
           value: rocketScale,
           toValue: distantScale,
-          duration: NUKE_MY_BACKLOG_TUNING.launchVerticalDurationMs,
-          easing: Easing.out(Easing.quad),
+          duration: NUKE_MY_BACKLOG_TUNING.launchExitDurationMs,
+          easing: Easing.inOut(Easing.quad),
         },
       ]);
-      if (!launchOk || id !== runIdRef.current) return;
+      if (!leavingBoost || id !== runIdRef.current) return;
 
-      // Keep the procedural white wash mounted until the cloud-deck reveal has
-      // completed. The speed lines finish fading sooner, but the wash needs its
-      // full transition window so the search UI never flashes through beneath it.
       const remainingRevealMs = Math.max(
         0,
         NUKE_MY_BACKLOG_TUNING.cloudRevealDurationMs -
-          NUKE_MY_BACKLOG_TUNING.launchVerticalDurationMs,
+          NUKE_MY_BACKLOG_TUNING.launchExitDurationMs,
       );
       if (remainingRevealMs > 0) {
         const revealCompleted = await waitForFlightStage(id, remainingRevealMs);
@@ -884,11 +887,10 @@ export function useNukeMyBacklogAnimation(): AnimationController {
       setLaunchStreaksActive(false);
       setLaunchStreaksFadeOut(false);
 
-      // Off-screen flight and distance cue.
+      // The thrust loop is already running. Keep it running for the entire
+      // remaining flight instead of restarting it or fading it out here.
       phaseRef.current = "firstOffscreen";
       setFlightStage("firstOffscreen");
-      await audio.startFlightLoop();
-      if (id !== runIdRef.current) return;
       if (
         !(await waitForFlightStage(
           id,
@@ -897,15 +899,10 @@ export function useNukeMyBacklogAnimation(): AnimationController {
       ) {
         return;
       }
-      audio.fadeFlightTo(
-        NUKE_AUDIO_TUNING.flightAwayVolume,
-        NUKE_AUDIO_TUNING.flightAwayFadeMs,
-      );
-      if (!(await waitForFlightStage(id, NUKE_AUDIO_TUNING.flightAwayFadeMs)))
-        return;
 
-      // Re-enter and complete one broad, controlled loop in a single animation.
-      // Arc-length resampling keeps speed nearly constant around the entire curve.
+      // ACT 2 — Two consecutive v5-style spiral passes. The second starts exactly
+      // where the first ends, from the opposite edge and a new spiral angle.
+      // Smaller scale + a 4.2s total duration makes both passes substantially faster.
       const path = buildContinuousFlightPath(
         screenWidth,
         screenHeight,
@@ -917,13 +914,10 @@ export function useNukeMyBacklogAnimation(): AnimationController {
       );
       flightPathProgress.stopAnimation();
       flightPathProgress.setValue(0);
+      rocketBlurProgress.setValue(0.42);
       phaseRef.current = "upperReturn";
       setFlightStage("upperReturn");
       setFlightPathActive(true);
-      audio.fadeFlightTo(
-        NUKE_AUDIO_TUNING.flightApproachVolume,
-        NUKE_AUDIO_TUNING.flightApproachFadeMs,
-      );
 
       const pathOk = await runFlightValues(id, runIdRef, [
         {
@@ -942,7 +936,6 @@ export function useNukeMyBacklogAnimation(): AnimationController {
       rocketScale.setValue(distantScale);
       setFlightPathActive(false);
 
-      // The rocket has fully exited the opposite edge. Pause before its lower pass.
       phaseRef.current = "secondExit";
       setFlightStage("secondExit");
       if (
@@ -954,9 +947,8 @@ export function useNukeMyBacklogAnimation(): AnimationController {
         return;
       }
 
-      const bottomEntryLeft =
-        screenWidth * NUKE_MY_BACKLOG_TUNING.bottomEntryXRatio -
-        rocketWidth / 2;
+      // Bottom re-entry is kept as the Act 2 -> camera-approach handoff.
+      const bottomEntryLeft = screenWidth / 2 - rocketWidth / 2;
       const bottomEntryTop =
         screenHeight + NUKE_MY_BACKLOG_TUNING.bottomEntryStartMarginDp;
       rocketX.setValue(bottomEntryLeft - baseLeft);
@@ -965,10 +957,10 @@ export function useNukeMyBacklogAnimation(): AnimationController {
         NUKE_MY_BACKLOG_TUNING.bottomEntryRotationDegrees,
       );
       rocketScale.setValue(distantScale);
+      rocketBlurProgress.setValue(0);
 
       phaseRef.current = "bottomEntry";
       setFlightStage("bottomEntry");
-      audio.fadeFlightTo(NUKE_AUDIO_TUNING.flightApproachVolume, 1100);
       const finalTop =
         screenHeight * NUKE_MY_BACKLOG_TUNING.bottomEntryEndCenterYRatio -
         rocketHeight / 2;
@@ -977,6 +969,7 @@ export function useNukeMyBacklogAnimation(): AnimationController {
           value: rocketX,
           toValue: bottomEntryLeft - baseLeft,
           duration: NUKE_MY_BACKLOG_TUNING.bottomEntryDurationMs,
+          easing: Easing.linear,
         },
         {
           value: rocketY,
@@ -991,14 +984,13 @@ export function useNukeMyBacklogAnimation(): AnimationController {
         },
         {
           value: rocketScale,
-          toValue: 1,
+          toValue: NUKE_MY_BACKLOG_TUNING.bottomEntryEndScale,
           duration: NUKE_MY_BACKLOG_TUNING.bottomEntryDurationMs,
           easing: Easing.out(Easing.quad),
         },
       ]);
       if (!bottomEntryOk || id !== runIdRef.current) return;
 
-      // Keep the rocket, cloud scene and flight loop alive for the next act.
       phaseRef.current = "approachReady";
       setFlightStage("approachReady");
       try {
@@ -1013,6 +1005,7 @@ export function useNukeMyBacklogAnimation(): AnimationController {
     [
       audio,
       flightPathProgress,
+      rocketBlurProgress,
       rocketRotation,
       rocketScale,
       rocketX,
@@ -1306,6 +1299,7 @@ export function useNukeMyBacklogAnimation(): AnimationController {
         rocketShakeY.setValue(0);
         rocketShakeRotation.setValue(0);
         flightPathProgress.setValue(0);
+        rocketBlurProgress.setValue(0);
         setFlightPathActive(false);
         ignitionGlowOpacity.setValue(0);
         ignitionGlowScale.setValue(0.72);
@@ -1329,6 +1323,7 @@ export function useNukeMyBacklogAnimation(): AnimationController {
       applyPumpTap,
       finishSession,
       flightPathProgress,
+      rocketBlurProgress,
       ignitionGlowOpacity,
       ignitionGlowScale,
       rocketRotation,
@@ -1409,6 +1404,8 @@ export function useNukeMyBacklogAnimation(): AnimationController {
     rocketRotation.stopAnimation();
     rocketScale.stopAnimation();
     flightPathProgress.stopAnimation();
+    rocketBlurProgress.stopAnimation();
+    rocketBlurProgress.setValue(0);
     setFlightPathActive(false);
     ignitionGlowOpacity.stopAnimation();
     ignitionGlowScale.stopAnimation();
@@ -1444,6 +1441,7 @@ export function useNukeMyBacklogAnimation(): AnimationController {
     rocketRotation,
     rocketScale,
     flightPathProgress,
+    rocketBlurProgress,
     rocketX,
     rocketY,
     stopRocketVibration,
@@ -1462,6 +1460,7 @@ export function useNukeMyBacklogAnimation(): AnimationController {
       rocketRotation.stopAnimation();
       rocketScale.stopAnimation();
       flightPathProgress.stopAnimation();
+      rocketBlurProgress.stopAnimation();
       ignitionGlowOpacity.stopAnimation();
       ignitionGlowScale.stopAnimation();
       ignitionGlowLoopRef.current?.stop();
@@ -1485,6 +1484,7 @@ export function useNukeMyBacklogAnimation(): AnimationController {
     rocketRotation,
     rocketScale,
     flightPathProgress,
+    rocketBlurProgress,
     rocketX,
     rocketY,
     stopRocketVibration,
@@ -1577,12 +1577,32 @@ export function useNukeMyBacklogAnimation(): AnimationController {
     : 0;
 
   const rotation = displayRocketRotation.interpolate({
-    inputRange: [-1080, 1080],
-    outputRange: ["-1080deg", "1080deg"],
+    inputRange: [-1080, 1440],
+    outputRange: ["-1080deg", "1440deg"],
     extrapolate: "clamp",
   });
 
   const activeFlameFrame = FLAME_FRAME_SEQUENCE[flameFrameStep] ?? 0;
+  const rocketSharpOpacity = rocketBlurProgress.interpolate({
+    inputRange: [0, 0.22, 0.4, 1],
+    outputRange: [1, 1, 0.9, 0.68],
+    extrapolate: "clamp",
+  });
+  const rocketBlur02Opacity = rocketBlurProgress.interpolate({
+    inputRange: [0, 0.16, 0.28, 0.42],
+    outputRange: [0, 0, 0.22, 0],
+    extrapolate: "clamp",
+  });
+  const rocketBlur05Opacity = rocketBlurProgress.interpolate({
+    inputRange: [0.28, 0.46, 0.62, 0.78],
+    outputRange: [0, 0.22, 0.22, 0],
+    extrapolate: "clamp",
+  });
+  const rocketBlur08Opacity = rocketBlurProgress.interpolate({
+    inputRange: [0.62, 0.82, 1],
+    outputRange: [0, 0.3, 0.32],
+    extrapolate: "clamp",
+  });
   const rocketScaleFactor = rocketWidth / ROCKET_SOURCE_WIDTH;
   const exhaustX =
     NUKE_MY_BACKLOG_TUNING.rocketExhaustAnchorX * rocketScaleFactor;
@@ -1745,6 +1765,50 @@ export function useNukeMyBacklogAnimation(): AnimationController {
             })}
 
             {/* Draw the rocket after the flame so the engine base naturally occludes it. */}
+            {/* Cross-fade between pre-rendered 0%, 2%, 5% and 8% blur assets.
+                This avoids trying to animate Image.blurRadius on the native driver. */}
+            <Animated.Image
+              source={rocketBlur02Asset as ImageSourcePropType}
+              resizeMode="stretch"
+              fadeDuration={0}
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: rocketWidth,
+                height: rocketHeight,
+                opacity: rocketBlur02Opacity,
+                zIndex: 1,
+              }}
+            />
+            <Animated.Image
+              source={rocketBlur05Asset as ImageSourcePropType}
+              resizeMode="stretch"
+              fadeDuration={0}
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: rocketWidth,
+                height: rocketHeight,
+                opacity: rocketBlur05Opacity,
+                zIndex: 1,
+              }}
+            />
+            <Animated.Image
+              source={rocketBlur08Asset as ImageSourcePropType}
+              resizeMode="stretch"
+              fadeDuration={0}
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: rocketWidth,
+                height: rocketHeight,
+                opacity: rocketBlur08Opacity,
+                zIndex: 1,
+              }}
+            />
             <Animated.Image
               source={rocketAsset as ImageSourcePropType}
               resizeMode="stretch"
@@ -1755,7 +1819,8 @@ export function useNukeMyBacklogAnimation(): AnimationController {
                 top: 0,
                 width: rocketWidth,
                 height: rocketHeight,
-                zIndex: 1,
+                opacity: rocketSharpOpacity,
+                zIndex: 2,
               }}
             />
           </Animated.View>

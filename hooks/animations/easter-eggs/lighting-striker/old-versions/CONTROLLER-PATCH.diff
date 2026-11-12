@@ -1,0 +1,164 @@
+--- use-lightning-striker-animation.tsx (uploaded)
++++ use-lightning-striker-animation.tsx (rain integrated)
+@@ -22,8 +22,9 @@
+ import { LightningCanvas } from "./lightning-canvas-v3";
+ import type { LightningStrike } from "./lightning-types-v4";
+ import { useLightningStrikerAudio } from "./use-lightning-striker-audio";
+ import { useLightningPowerCut } from "./use-lightning-power-cut";
++import { useLightningRain } from "./use-lightning-rain";
+ 
+ export type LightningStrikerCanvasRef = RefObject<View | null>;
+ type Rect = { x: number; y: number; width: number; height: number };
+ 
+@@ -31,9 +32,9 @@
+   onFinished?: () => void;
+   seed?: number;
+   coverage?: "full" | "partial" | "random";
+   generatorConfig?: Partial<LightningGeneratorConfig>;
+-  specialEvent?: "random" | "none" | "powerCut";
++  specialEvent?: "random" | "none" | "powerCut" | "rain";
+ };
+ 
+ export type LightningStrikerAudioOptions = {
+   strike?: AudioSource | null;
+@@ -84,8 +85,12 @@
+       blackout: require("@/assets/easter-eggs/lighting-strike/blackout.mp3"),
+       lightFlicker: require("@/assets/easter-eggs/lighting-strike/light-flicker.mp3"),
+     },
+     LIGHTNING_STRIKER_TUNING.specialEvents.powerCut,
++  );
++  const rain = useLightningRain(
++    require("@/assets/easter-eggs/lighting-strike/rain-thunder.mp3"),
++    LIGHTNING_STRIKER_TUNING.specialEvents.rain,
+   );
+ 
+   const leaderProgress = useSharedValue(0);
+   const returnProgress = useSharedValue(0);
+@@ -166,13 +171,14 @@
+     activeRef.current = false;
+     setActive(false);
+     setStrike(null);
+     powerCut.cancel();
++    rain.cancel();
+ 
+     const callback = finishedCallbackRef.current;
+     finishedCallbackRef.current = undefined;
+     callback?.();
+-  }, [clearTimers, stopAnimations]);
++  }, [clearTimers, stopAnimations, powerCut.cancel, rain.cancel]);
+ 
+   const start = useCallback(
+     async (
+       canvasRef: LightningStrikerCanvasRef,
+@@ -183,13 +189,33 @@
+       activeRef.current = true;
+       const runId = ++runIdRef.current;
+       finishedCallbackRef.current = options.onFinished;
+       const powerCutConfig = LIGHTNING_STRIKER_TUNING.specialEvents.powerCut;
+-      const shouldRunPowerCut =
+-        options.specialEvent === "powerCut" ||
+-        (options.specialEvent !== "none" &&
+-          powerCutConfig.enabled &&
+-          Math.random() < powerCutConfig.chance);
++      const rainConfig = LIGHTNING_STRIKER_TUNING.specialEvents.rain;
++
++      // Exactly one special outcome can be selected for an activation.
++      // Explicit options are useful for deterministic device testing; "random"
++      // uses the configured per-event chances.
++      let selectedSpecialEvent: "powerCut" | "rain" | null = null;
++      if (options.specialEvent === "powerCut") {
++        selectedSpecialEvent = "powerCut";
++      } else if (options.specialEvent === "rain") {
++        selectedSpecialEvent = "rain";
++      } else if (options.specialEvent !== "none") {
++        const powerCutChance = powerCutConfig.enabled
++          ? Math.max(0, Math.min(1, powerCutConfig.chance))
++          : 0;
++        const rainChance = rainConfig.enabled
++          ? Math.max(0, Math.min(1 - powerCutChance, rainConfig.chance))
++          : 0;
++        const eventRoll = Math.random();
++
++        if (eventRoll < powerCutChance) {
++          selectedSpecialEvent = "powerCut";
++        } else if (eventRoll < powerCutChance + rainChance) {
++          selectedSpecialEvent = "rain";
++        }
++      }
+ 
+       let powerCutPromise: Promise<boolean> | null = null;
+ 
+       try {
+@@ -262,9 +288,9 @@
+         audio.playStrike(timing.strikeSoundDelayMs);
+         audio.playThunder(timing.thunderSoundDelayMs);
+         // The short-circuit sound begins at the return-stroke boundary. The blackout
+         // sound is scheduled by the power-cut controller near the end of that clip.
+-        if (shouldRunPowerCut) {
++        if (selectedSpecialEvent === "powerCut") {
+           powerCutPromise = powerCut.run();
+         }
+         const returnFinished = await waitFor(
+           reduceMotion ? 65 : timing.returnStrokeDurationMs,
+@@ -304,9 +330,25 @@
+         const fadeFinished = await waitFor(timing.fadeOutDurationMs, runId);
+         if (!fadeFinished || runId !== runIdRef.current) return false;
+         if (powerCutPromise) {
+           const powerCutCompleted = await powerCutPromise;
+-          if (!powerCutCompleted || runId !== runIdRef.current) return false;
++          if (!powerCutCompleted) {
++            if (runId === runIdRef.current) finish(runId);
++            return false;
++          }
++          if (runId !== runIdRef.current) return false;
++        }
++
++        // Rain starts after the electrical channels have faded, then owns the
++        // remaining event lifetime. Its particle emitters taper gradually and
++        // existing droplets are allowed to drain before the activation finishes.
++        if (selectedSpecialEvent === "rain") {
++          const rainCompleted = await rain.run(canvas.width, canvas.height);
++          if (!rainCompleted) {
++            if (runId === runIdRef.current) finish(runId);
++            return false;
++          }
++          if (runId !== runIdRef.current) return false;
+         }
+ 
+         stopAnimations();
+         finish(runId);
+@@ -336,8 +378,10 @@
+       audio.playThunder,
+       stopAnimations,
+       clearTimers,
+       finish,
++      powerCut.run,
++      rain.run,
+     ],
+   );
+ 
+   useEffect(
+@@ -348,11 +392,12 @@
+       activeRef.current = false;
+       const callback = finishedCallbackRef.current;
+       finishedCallbackRef.current = undefined;
+       powerCut.cancel();
++      rain.cancel();
+       callback?.();
+     },
+-    [clearTimers, stopAnimations],
++    [clearTimers, stopAnimations, powerCut.cancel, rain.cancel],
+   );
+ 
+   const overlayLayer =
+     active && strike ? (
+@@ -389,8 +434,9 @@
+             flashStyle,
+           ]}
+         />
+         {powerCut.overlayLayer}
++        {rain.overlayLayer}
+       </View>
+     ) : null;
+ 
+   return {

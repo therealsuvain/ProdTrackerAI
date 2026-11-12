@@ -44,86 +44,94 @@ export const MomentumDeltaChart = ({
     <View
       style={[
         styles.chartContainer,
-        isDetail && { height: BASE_CHART_HEIGHT * heightScale },
+        isDetail && {
+          height: "100%",
+          width: "100%" /* height: BASE_CHART_HEIGHT * heightScale */,
+        },
       ]}
     >
       <Text style={[styles.chartTitle, { color: theme.text }]}>
         Momentum Delta
       </Text>
-      <CartesianChart
-        chartPressState={state}
-        data={data}
-        xKey="date"
-        yKeys={["rollingAverage"]}
-        xAxis={{
-          font,
-          lineWidth: 1,
-          lineColor: theme.text,
-          labelColor: theme.text,
-          formatXLabel: (label) => {
-            const date = new Date(label);
-            return date.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            });
-          },
-          enableRescaling: true,
-          tickCount,
-        }}
-        yAxis={[
-          {
+      <View style={{ flex: 1 }}>
+        <CartesianChart
+          chartPressState={state}
+          data={data}
+          xKey="date"
+          yKeys={["rollingAverage"]}
+          xAxis={{
             font,
-            title: { text: "Overall App Activity", font, color: theme.text },
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,
+            formatXLabel: (label) => {
+              const date = new Date(label);
+              return date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              });
+            },
             enableRescaling: true,
             tickCount,
-          },
-        ]}
-        transformState={transformState}
-      >
-        {({ points, chartBounds }) => (
-          <>
-            <Area
-              points={points.rollingAverage}
-              y0={chartBounds.bottom}
-              animate={{ type: "timing", duration: 250 }}
-            >
-              <LinearGradient
-                start={vec(0, chartBounds.top)}
-                end={vec(0, chartBounds.bottom)}
-                colors={["rgba(33, 150, 243, 0.5)", "rgba(33, 150, 243, 0.0)"]}
+          }}
+          yAxis={[
+            {
+              font,
+              title: { text: "Overall App Activity", font, color: theme.text },
+              lineWidth: 1,
+              lineColor: theme.text,
+              labelColor: theme.text,
+              enableRescaling: true,
+              tickCount,
+            },
+          ]}
+          transformState={transformState}
+        >
+          {({ points, chartBounds }) => (
+            <>
+              <Area
+                points={points.rollingAverage}
+                y0={chartBounds.bottom}
+                animate={{ type: "timing", duration: 250 }}
+              >
+                <LinearGradient
+                  start={vec(0, chartBounds.top)}
+                  end={vec(0, chartBounds.bottom)}
+                  colors={[
+                    "rgba(33, 150, 243, 0.5)",
+                    "rgba(33, 150, 243, 0.0)",
+                  ]}
+                />
+              </Area>
+              <Line
+                points={points.rollingAverage}
+                color="#2196F3"
+                strokeWidth={2}
+                animate={{ type: "timing", duration: 300 }}
               />
-            </Area>
-            <Line
-              points={points.rollingAverage}
-              color="#2196F3"
-              strokeWidth={2}
-              animate={{ type: "timing", duration: 300 }}
-            />
-            {isActive && (
-              <TooltipShell
-                x={state.x.position}
-                y={state.y.rollingAverage.position}
-                chartBounds={chartBounds}
-                theme={theme}
-                renderContent={(cardX, cardY) => (
-                  <SingleSeriesTooltipContent
-                    cardX={cardX}
-                    cardY={cardY}
-                    value={state.y.rollingAverage.value}
-                    dateLabel={state.x.value}
-                    theme={theme}
-                    valueFont={tooltipFont}
-                    labelFont={tooltipLabelFont}
-                  />
-                )}
-              ></TooltipShell>
-            )}
-          </>
-        )}
-      </CartesianChart>
+              {isActive && (
+                <TooltipShell
+                  x={state.x.position}
+                  y={state.y.rollingAverage.position}
+                  chartBounds={chartBounds}
+                  theme={theme}
+                  renderContent={(cardX, cardY) => (
+                    <SingleSeriesTooltipContent
+                      cardX={cardX}
+                      cardY={cardY}
+                      value={state.y.rollingAverage.value}
+                      dateLabel={state.x.value}
+                      theme={theme}
+                      valueFont={tooltipFont}
+                      labelFont={tooltipLabelFont}
+                    />
+                  )}
+                ></TooltipShell>
+              )}
+            </>
+          )}
+        </CartesianChart>
+      </View>
     </View>
   );
 };

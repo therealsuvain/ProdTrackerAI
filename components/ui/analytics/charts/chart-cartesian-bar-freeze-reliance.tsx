@@ -40,7 +40,10 @@ export const FreezeRelianceChart = ({
         style={[
           styles.chartContainer,
           ,
-          isDetail && { height: BASE_CHART_HEIGHT * heightScale },
+          isDetail && {
+            height: "100%",
+            width: "100%" /* height: BASE_CHART_HEIGHT * heightScale */,
+          },
         ]}
       >
         <Text style={[styles.chartTitle, { color: theme.text }]}>
@@ -67,90 +70,92 @@ export const FreezeRelianceChart = ({
             <Text style={{ color: theme.text }}>Auto-Frozen</Text>
           </View>
         </View>
-        <CartesianChart
-          data={data}
-          xKey="date"
-          yKeys={["manualFreezes", "autoFreezes"]}
-          xAxis={{
-            font,
-            lineWidth: 1,
-            lineColor: theme.text,
-            labelColor: theme.text,
-            formatXLabel: (label) => {
-              const date = new Date(label);
-              return date.toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-              });
-            },
-            enableRescaling: true,
-            tickCount,
-          }}
-          yAxis={[
-            {
+        <View style={{ flex: 1 }}>
+          <CartesianChart
+            data={data}
+            xKey="date"
+            yKeys={["manualFreezes", "autoFreezes"]}
+            xAxis={{
               font,
               lineWidth: 1,
               lineColor: theme.text,
               labelColor: theme.text,
+              formatXLabel: (label) => {
+                const date = new Date(label);
+                return date.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                });
+              },
               enableRescaling: true,
               tickCount,
-            },
-          ]}
-          domainPadding={{ left: 10, right: 5 }}
-          //viewport={{ x: [0, 10] }}
-          transformState={transformState}
-        >
-          {({ points, chartBounds }) => (
-            <>
-              <BarGroup
-                chartBounds={chartBounds}
-                //barWidth={15}
-                barCount={2}
-                //withinGroupPadding={0.99}
-              >
-                <BarGroup.Bar
-                  points={points.manualFreezes}
-                  color={theme.blueLightPrimary}
-                  animate={{ type: "timing", duration: 250 }}
-                />
-                <BarGroup.Bar
-                  points={points.autoFreezes}
-                  color={theme.blueDarkPrimary}
-                  animate={{ type: "timing", duration: 250 }}
-                />
-              </BarGroup>
-              {data.map((_, i) => {
-                const stubs: { key: string; x: number; color: string }[] = [];
-
-                if (data[i].manualFreezes === 0 && points.manualFreezes[i]) {
-                  stubs.push({
-                    key: `manualFreezes-stub-${i}`,
-                    x: points.manualFreezes[i].x ?? 0,
-                    color: theme.blueLightPrimary,
-                  });
-                }
-                if (data[i].autoFreezes === 0 && points.autoFreezes[i]) {
-                  stubs.push({
-                    key: `autoFreezes-stub-${i}`,
-                    x: points.autoFreezes[i].x ?? 0,
-                    color: theme.blueDarkPrimary,
-                  });
-                }
-
-                return stubs.map((s) => (
-                  <Line
-                    key={s.key}
-                    p1={vec(s.x, chartBounds.bottom - 5)}
-                    p2={vec(s.x, chartBounds.bottom)}
-                    color={s.color}
-                    style="stroke"
-                    strokeWidth={isDetail ? 2 : 1}
+            }}
+            yAxis={[
+              {
+                font,
+                lineWidth: 1,
+                lineColor: theme.text,
+                labelColor: theme.text,
+                enableRescaling: true,
+                tickCount,
+              },
+            ]}
+            domainPadding={{ left: 10, right: 5 }}
+            //viewport={{ x: [0, 10] }}
+            transformState={transformState}
+          >
+            {({ points, chartBounds }) => (
+              <>
+                <BarGroup
+                  chartBounds={chartBounds}
+                  //barWidth={15}
+                  barCount={2}
+                  //withinGroupPadding={0.99}
+                >
+                  <BarGroup.Bar
+                    points={points.manualFreezes}
+                    color={theme.blueLightPrimary}
+                    animate={{ type: "timing", duration: 250 }}
                   />
-                ));
-              })}
-            </>
-          )}
-        </CartesianChart>
+                  <BarGroup.Bar
+                    points={points.autoFreezes}
+                    color={theme.blueDarkPrimary}
+                    animate={{ type: "timing", duration: 250 }}
+                  />
+                </BarGroup>
+                {data.map((_, i) => {
+                  const stubs: { key: string; x: number; color: string }[] = [];
+
+                  if (data[i].manualFreezes === 0 && points.manualFreezes[i]) {
+                    stubs.push({
+                      key: `manualFreezes-stub-${i}`,
+                      x: points.manualFreezes[i].x ?? 0,
+                      color: theme.blueLightPrimary,
+                    });
+                  }
+                  if (data[i].autoFreezes === 0 && points.autoFreezes[i]) {
+                    stubs.push({
+                      key: `autoFreezes-stub-${i}`,
+                      x: points.autoFreezes[i].x ?? 0,
+                      color: theme.blueDarkPrimary,
+                    });
+                  }
+
+                  return stubs.map((s) => (
+                    <Line
+                      key={s.key}
+                      p1={vec(s.x, chartBounds.bottom - 5)}
+                      p2={vec(s.x, chartBounds.bottom)}
+                      color={s.color}
+                      style="stroke"
+                      strokeWidth={isDetail ? 2 : 1}
+                    />
+                  ));
+                })}
+              </>
+            )}
+          </CartesianChart>
+        </View>
       </View>
     </>
   );

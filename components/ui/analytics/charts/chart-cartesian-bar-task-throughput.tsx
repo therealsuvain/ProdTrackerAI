@@ -37,7 +37,10 @@ export const TaskThroughputChart = ({
       style={[
         styles.chartContainer,
         ,
-        isDetail && { height: BASE_CHART_HEIGHT * heightScale },
+        isDetail && {
+          height: "100%",
+          width: "100%" /* height: BASE_CHART_HEIGHT * heightScale  */,
+        },
       ]}
     >
       <Text style={[styles.chartTitle, { color: theme.text }]}>
@@ -54,79 +57,81 @@ export const TaskThroughputChart = ({
           <Text style={{ color: theme.text }}>Completed</Text>
         </View>
       </View>
-      <CartesianChart
-        data={data}
-        xKey="date"
-        yKeys={["onTime", "late"]}
-        xAxis={{
-          font,
-          lineWidth: 1,
-          lineColor: theme.text,
-          labelColor: theme.text,
-          labelRotate: -45,
-          formatXLabel: (label) => {
-            const date = new Date(label);
-            return date.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            });
-          },
-          enableRescaling: true,
-          tickCount,
-        }}
-        yAxis={[
-          {
+      <View style={{ flex: 1 }}>
+        <CartesianChart
+          data={data}
+          xKey="date"
+          yKeys={["onTime", "late"]}
+          xAxis={{
             font,
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,
+            labelRotate: -45,
+            formatXLabel: (label) => {
+              const date = new Date(label);
+              return date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              });
+            },
             enableRescaling: true,
             tickCount,
-          },
-        ]}
-        domain={{ y: [0, yDomainMax] }}
-        domainPadding={{ left: 10, right: 10 }}
-        //viewport={{ x: [0, 10] }}
-        transformState={transformState}
-      >
-        {({ points, chartBounds }) => (
-          <>
-            <StackedBar
-              animate={{ type: "spring" }}
-              //innerPadding={innerPadding}
-              chartBounds={chartBounds}
-              points={[points.onTime, points.late]} // 👈 the order here must match the order above
-              colors={["#11e21b", "#ff5100"]}
-              barWidth={10}
-              barOptions={({ isBottom, isTop }) => {
-                return {
-                  roundedCorners: isTop
-                    ? {
-                        topLeft: 10,
-                        topRight: 10,
-                      }
-                    : undefined,
-                };
-              }}
-            />
-            {data.map((d, i) => {
-              if (d.onTime !== 0 || d.late !== 0) return null; // only draw stub for fully-zero days
-              const point = points.onTime[i]; // reuse the already-computed point for x-position
-              if (!point) return null;
-              return (
-                <Line
-                  p1={vec(point.x, chartBounds.bottom - 5)}
-                  p2={vec(point.x, chartBounds.bottom)}
-                  key={d.date}
-                  color={theme.text}
-                  style="stroke"
-                  strokeWidth={isDetail ? 2 : 1}
-                />
-              );
-            })}
-          </>
-        )}
-      </CartesianChart>
+          }}
+          yAxis={[
+            {
+              font,
+              lineWidth: 1,
+              lineColor: theme.text,
+              labelColor: theme.text,
+              enableRescaling: true,
+              tickCount,
+            },
+          ]}
+          domain={{ y: [0, yDomainMax] }}
+          domainPadding={{ left: 10, right: 10 }}
+          //viewport={{ x: [0, 10] }}
+          transformState={transformState}
+        >
+          {({ points, chartBounds }) => (
+            <>
+              <StackedBar
+                animate={{ type: "spring" }}
+                //innerPadding={innerPadding}
+                chartBounds={chartBounds}
+                points={[points.onTime, points.late]} // 👈 the order here must match the order above
+                colors={["#11e21b", "#ff5100"]}
+                barWidth={10}
+                barOptions={({ isBottom, isTop }) => {
+                  return {
+                    roundedCorners: isTop
+                      ? {
+                          topLeft: 10,
+                          topRight: 10,
+                        }
+                      : undefined,
+                  };
+                }}
+              />
+              {data.map((d, i) => {
+                if (d.onTime !== 0 || d.late !== 0) return null; // only draw stub for fully-zero days
+                const point = points.onTime[i]; // reuse the already-computed point for x-position
+                if (!point) return null;
+                return (
+                  <Line
+                    p1={vec(point.x, chartBounds.bottom - 5)}
+                    p2={vec(point.x, chartBounds.bottom)}
+                    key={d.date}
+                    color={theme.text}
+                    style="stroke"
+                    strokeWidth={isDetail ? 2 : 1}
+                  />
+                );
+              })}
+            </>
+          )}
+        </CartesianChart>
+      </View>
     </View>
   );
 };

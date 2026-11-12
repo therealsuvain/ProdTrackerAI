@@ -13,7 +13,18 @@ export default function LoadingIndicator() {
   const dot1 = useRef(new Animated.Value(0.3)).current;
   const dot2 = useRef(new Animated.Value(0.3)).current;
   const dot3 = useRef(new Animated.Value(0.3)).current;
-
+  const getDotColor = (index: number) => {
+    switch (index) {
+      case 0:
+        return "#ff3223";
+      case 1:
+        return "#ffde25";
+      case 2:
+        return "#7c09ff";
+      default:
+        return "#888";
+    }
+  };
   useEffect(() => {
     const animate = (dot: Animated.Value, delay: number) => {
       return Animated.loop(
@@ -63,11 +74,25 @@ export default function LoadingIndicator() {
           alignItems: "center",
         }}
       >
-        <Text style={{ color: "#ffffff", fontSize: 28, marginRight: 30 }}>
+        <Text
+          style={{
+            color: "#eeeeee",
+            fontSize: 28,
+            marginRight: 18,
+            fontWeight: "100",
+          }}
+        >
           Loading
         </Text>
         {[dot1, dot2, dot3].map((anim, i) => (
-          <Animated.View key={i} style={[styles.dot, { opacity: anim }]} />
+          <Animated.View
+            key={i}
+            style={[
+              styles.dot,
+              { backgroundColor: getDotColor(i) },
+              { opacity: anim },
+            ]}
+          />
         ))}
       </View>
     </View>
@@ -88,7 +113,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: "#888",
+
     marginHorizontal: 3,
   },
 });

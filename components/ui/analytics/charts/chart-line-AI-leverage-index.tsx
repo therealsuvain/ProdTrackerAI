@@ -45,94 +45,99 @@ export const AILeverageChart = ({
       style={[
         styles.chartContainer,
         ,
-        isDetail && { height: BASE_CHART_HEIGHT * heightScale },
+        isDetail && {
+          height: "100%",
+          width: "100%" /* height: BASE_CHART_HEIGHT * heightScale */,
+        },
       ]}
     >
       <Text style={[styles.chartTitle, { color: theme.text }]}>
         AI Leverage
       </Text>
-      <CartesianChart
-        chartPressState={state}
-        data={data}
-        xKey="date"
-        yKeys={["manualActions", "aiActions"]}
-        xAxis={{
-          font,
-          lineWidth: 1,
-          lineColor: theme.text,
-          labelColor: theme.text,
-          labelRotate: -45,
-          formatXLabel: (label) => {
-            const date = new Date(label);
-            return date.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            });
-          },
-          enableRescaling: true,
-          tickCount,
-        }}
-        yAxis={[
-          {
+      <View style={{ flex: 1 }}>
+        <CartesianChart
+          chartPressState={state}
+          data={data}
+          xKey="date"
+          yKeys={["manualActions", "aiActions"]}
+          xAxis={{
             font,
-            title: { text: "Time and AI Actions", font, color: theme.text },
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,
+            labelRotate: -45,
+            formatXLabel: (label) => {
+              const date = new Date(label);
+              return date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              });
+            },
             enableRescaling: true,
             tickCount,
-          },
-        ]}
-        transformState={transformState}
-      >
-        {({ points, chartBounds }) => (
-          <>
-            <Line
-              points={points.manualActions}
-              color="#2196F3"
-              strokeWidth={3}
-              animate={{ type: "timing", duration: 250 }}
-            />
-            <Line
-              points={points.aiActions}
-              color="#9C27B0"
-              strokeWidth={3}
-              animate={{ type: "timing", duration: 250 }}
-            />
-            {isActive && (
-              <TooltipShell
-                x={state.x.position}
-                y={state.y.manualActions.position}
-                chartBounds={chartBounds}
-                theme={theme}
-                cardHeight={50}
-                renderContent={(cardX, cardY) => (
-                  <MultiSeriesTooltipContent
-                    cardX={cardX}
-                    cardY={cardY}
-                    dateLabel={state.x.value}
-                    series={[
-                      {
-                        value: state.y.manualActions.value,
-                        label: "Manual",
-                        color: "#2196F3",
-                      },
-                      {
-                        value: state.y.aiActions.value,
-                        label: "AI Actions",
-                        color: "#A78BFA",
-                      },
-                    ]}
-                    valueFont={tooltipFont}
-                    labelFont={tooltipLabelFont}
-                    theme={theme}
-                  />
-                )}
+          }}
+          yAxis={[
+            {
+              font,
+              title: { text: "Time and AI Actions", font, color: theme.text },
+              lineWidth: 1,
+              lineColor: theme.text,
+              labelColor: theme.text,
+              enableRescaling: true,
+              tickCount,
+            },
+          ]}
+          transformState={transformState}
+        >
+          {({ points, chartBounds }) => (
+            <>
+              <Line
+                points={points.manualActions}
+                color="#2196F3"
+                strokeWidth={3}
+                animate={{ type: "timing", duration: 250 }}
               />
-            )}
-          </>
-        )}
-      </CartesianChart>
+              <Line
+                points={points.aiActions}
+                color="#9C27B0"
+                strokeWidth={3}
+                animate={{ type: "timing", duration: 250 }}
+              />
+              {isActive && (
+                <TooltipShell
+                  x={state.x.position}
+                  y={state.y.manualActions.position}
+                  chartBounds={chartBounds}
+                  theme={theme}
+                  cardHeight={50}
+                  renderContent={(cardX, cardY) => (
+                    <MultiSeriesTooltipContent
+                      cardX={cardX}
+                      cardY={cardY}
+                      dateLabel={state.x.value}
+                      series={[
+                        {
+                          value: state.y.manualActions.value,
+                          label: "Manual",
+                          color: "#2196F3",
+                        },
+                        {
+                          value: state.y.aiActions.value,
+                          label: "AI Actions",
+                          color: "#A78BFA",
+                        },
+                      ]}
+                      valueFont={tooltipFont}
+                      labelFont={tooltipLabelFont}
+                      theme={theme}
+                    />
+                  )}
+                />
+              )}
+            </>
+          )}
+        </CartesianChart>
+      </View>
     </View>
   );
 };

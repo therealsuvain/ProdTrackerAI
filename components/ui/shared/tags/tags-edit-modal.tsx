@@ -48,7 +48,12 @@ export const TagsEditModal = ({
     onClose();
   };
   return (
-    <Modal visible={!!tagToEdit} animationType="fade" transparent={true}>
+    <Modal
+      visible={!!tagToEdit}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={onClose}
+    >
       <View style={styles.modalOverlay}>
         <View
           style={[

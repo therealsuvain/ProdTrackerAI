@@ -31,6 +31,22 @@ const EASTER_EGG_PRESENTATION: Record<
         icon: "magic-staff",
         accentColor: "#C16DCE",
     },
+    lighting_strike: {
+        icon: "flash-outline",
+        accentColor: "#1fadff",
+    },
+    space_invaders: {
+        icon: "alien-outline",
+        accentColor: "#4CAF50",
+    },
+    pacman: {
+        icon: "emoticon-excited-outline",
+        accentColor: "#FFEB3B",
+    },
+    snake: {
+        icon: "snake",
+        accentColor: "#4CAF50",
+    },
 };
 
 /**

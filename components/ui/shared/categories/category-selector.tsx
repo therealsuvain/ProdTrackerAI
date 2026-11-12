@@ -89,7 +89,12 @@ export const CategorySelector = ({
       </Pressable>
 
       {/* The Selection Modal */}
-      <Modal visible={modalVisible} animationType="slide" transparent={true}>
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
         <View style={styles.modalOverlay}>
           <View
             style={[styles.modalContent, { backgroundColor: theme.background }]}

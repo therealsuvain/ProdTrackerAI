@@ -537,9 +537,54 @@ export async function pushHabits(userId: string): Promise<void> {
   if (dirty.length === 0) return;
   const dirtyIds = dirty.map((h) => h.id);
   const childrenRow = await habitChildRowsMulti(dirtyIds);
+  const { data: remoteRows } = await supabase
+    .from("habits")
+    .select("id, history, freeze_history, goal_completions")
+    .eq("user_id", userId)
+    .in("id", dirtyIds);
+
+  const remoteMap = new Map(
+    (remoteRows ?? []).map((r) => [r.id, r])
+  );
+
   const payload = dirty.map((h) => {
     const habitId = h.id;
     const { checkIns, freezes, goalCompletionRows } = childrenRow.get(habitId) ?? { checkIns: [], freezes: [], goalCompletionRows: [] };
+
+    const remote = remoteMap.get(habitId);
+
+    // Union local + remote check-in dates
+    const mergedHistory = Array.from(
+      new Set([
+        ...(remote?.history ?? []).map((d: string) => d.split("T")[0]),
+        ...checkIns.map((r) => r.date.split("T")[0]),
+      ])
+    ).sort();
+
+    // Union local + remote freeze dates
+    const mergedFreezes = Array.from(
+      new Set([
+        ...(remote?.freeze_history ?? []).map((d: string) => d.split("T")[0]),
+        ...freezes.map((r) => r.date.split("T")[0]),
+      ])
+    ).sort();
+
+    // Union local + remote goal completions
+    const seenGc = new Set<string>();
+    const mergedGoalCompletions = [
+      ...(remote?.goal_completions ?? []),
+      ...goalCompletionRows.map((r) => ({
+        completedAt: r.completedAt,
+        goal: r.goal,
+      })),
+    ].filter((gc) => {
+      const key = `${gc.completedAt}_${gc.goal}`;
+      if (seenGc.has(key)) return false;
+      seenGc.add(key);
+      return true;
+    });
+
+
     return {
       id: h.id,
       user_id: userId,
@@ -550,12 +595,15 @@ export async function pushHabits(userId: string): Promise<void> {
       reminder_date: h.reminderDate ?? null,
       target_days: h.targetDays ? JSON.parse(h.targetDays) : null,
       streak: h.streak,
-      history: checkIns.map((r) => r.date),
-      freeze_history: freezes.length > 0 ? freezes.map((r) => r.date) : undefined,
-      goal_completions: goalCompletionRows.map((r) => ({
-        completedAt: r.completedAt,
-        goal: r.goal,
-      })),
+      /*  history: checkIns.map((r) => r.date),
+       freeze_history: freezes.length > 0 ? freezes.map((r) => r.date) : undefined,
+       goal_completions: goalCompletionRows.map((r) => ({
+         completedAt: r.completedAt,
+         goal: r.goal,
+       })), */
+      history: mergedHistory,
+      freeze_history: mergedFreezes,
+      goal_completions: mergedGoalCompletions,
       streak_freezes: h.streakFreezes,
       longest_streak: h.longestStreak,
       goal: h.goal,
@@ -597,13 +645,28 @@ export async function pullHabits(userId: string, since: string, until: string): 
 
   for (const remote of data) {
     const [local] = await db.select().from(habits).where(eq(habits.id, remote.id));
-    if (local && new Date(local.updatedAt) >= new Date(remote.updated_at)) continue;
+    const localCheckIns = await db
+      .select({ date: habitCheckIns.date })
+      .from(habitCheckIns)
+      .where(eq(habitCheckIns.habitId, remote.id));
+
+    const mergedHistory = Array.from(
+      new Set([
+        ...localCheckIns.map((r) => r.date.split("T")[0]),
+        ...(remote.history ?? []).map((d: string) => d.split("T")[0]),
+      ])
+    ).sort();
+
+    if (local && new Date(local.updatedAt) >= new Date(remote.updated_at) &&
+      mergedHistory.length === localCheckIns.length) continue;
 
     const contentChanged = !local || local.title !== remote.title
 
     const embedding = contentChanged
       ? JSON.stringify(await generateEmbedding(remote.title, false))
       : local?.embedding ?? null; // reuse existing embedding — content didn't change
+
+    // Merge local check-ins/freezes with remote so offline check-ins on either device aren't lost:
 
     const mapped: Habit = {
       id: remote.id,
@@ -614,7 +677,7 @@ export async function pullHabits(userId: string, since: string, until: string): 
       reminderDate: remote.reminder_date ?? undefined,
       targetDays: remote.target_days ?? undefined,
       streak: remote.streak,
-      history: remote.history ?? [],
+      history: mergedHistory,
       streakFreezes: remote.streak_freezes,
       longestStreak: remote.longest_streak,
       freezeHistory: remote.freeze_history ?? [],
@@ -627,20 +690,37 @@ export async function pullHabits(userId: string, since: string, until: string): 
       updatedAt: remote.updated_at,
 
     };
-    const checkInRows = buildCheckInRows(remote);
-    const freezeRows = buildFreezeRows(remote);
-    const goalCompletionRows = buildGoalCompletionRows(remote);
+    const checkInRows = buildCheckInRows(mapped);
+    const freezeRows = buildFreezeRows(mapped);
+    const goalCompletionRows = buildGoalCompletionRows(mapped);
 
     await db.transaction(async (tx) => {
+      // Inside db.transaction, right before tx.insert(habits):
+      let safeCategoryId = mapped.category ?? null;
+      if (safeCategoryId) {
+        const [existingCat] = await tx
+          .select({ id: categories.id })
+          .from(categories)
+          .where(eq(categories.id, safeCategoryId));
+        if (!existingCat) {
+          safeCategoryId = null; // Fallback to null if category hasn't synced yet
+        }
+      }
       await tx.delete(habitTags).where(eq(habitTags.habitId, mapped.id));
+
+      await tx.delete(habitCheckIns).where(eq(habitCheckIns.habitId, mapped.id));
+      await tx.delete(habitFreezeHistory).where(eq(habitFreezeHistory.habitId, mapped.id));
+      await tx.delete(habitGoalCompletions).where(eq(habitGoalCompletions.habitId, mapped.id));
       await tx.insert(habits)
         .values({
           ...mapped,
           targetDays: JSON.stringify(mapped.targetDays),
           tags: JSON.stringify(mapped.tags),
+          category: safeCategoryId,
           embedding,
           syncedAt: remote.updated_at,
-          deletedAt: remote.deleted_at
+          deletedAt: remote.deleted_at,
+
         })
         .onConflictDoUpdate({
           target: habits.id,
@@ -648,20 +728,22 @@ export async function pullHabits(userId: string, since: string, until: string): 
             ...mapped,
             targetDays: JSON.stringify(mapped.targetDays),
             tags: JSON.stringify(mapped.tags),
+            category: safeCategoryId,
             embedding,
             syncedAt: remote.updated_at,
-            deletedAt: remote.deleted_at
+            deletedAt: remote.deleted_at,
+
           },
         });
 
       if (checkInRows.length > 0) {
-        await tx.insert(habitCheckIns).values(checkInRows);
+        await tx.insert(habitCheckIns).values(checkInRows).onConflictDoNothing();
       }
       if (freezeRows.length > 0) {
-        await tx.insert(habitFreezeHistory).values(freezeRows);
+        await tx.insert(habitFreezeHistory).values(freezeRows).onConflictDoNothing();
       }
       if (goalCompletionRows.length > 0) {
-        await tx.insert(habitGoalCompletions).values(goalCompletionRows);
+        await tx.insert(habitGoalCompletions).values(goalCompletionRows).onConflictDoNothing();
       }
       if (mapped.tags && mapped.tags.length > 0) {
         const junctionData = mapped.tags.map((tagId: string) => ({
@@ -671,6 +753,21 @@ export async function pullHabits(userId: string, since: string, until: string): 
 
         await tx.insert(habitTags).values(junctionData);
       }
+      /*  if (mapped.tags && mapped.tags.length > 0) {
+         const uniqueTagIds = Array.from(new Set(mapped.tags));
+         for (const tagId of uniqueTagIds) {
+           const [existingTag] = await tx
+             .select({ id: tags.id })
+             .from(tags)
+             .where(eq(tags.id, tagId));
+           if (existingTag) {
+             await tx
+               .insert(habitTags)
+               .values({ habitId: mapped.id, tagId })
+               .onConflictDoNothing();
+           }
+         }
+       } */
     });
 
 
@@ -689,8 +786,28 @@ export async function pushEvents(userId: string): Promise<void> {
   if (dirty.length === 0) return;
   const eventIds = dirty.map((e) => e.id);
   const childrenRow = await eventChildRowsMulti(eventIds);
+  // Fetch existing cloud deleted_occurrences so pushing first doesn't wipe out
+  // occurrences skipped on another device
+  const { data: remoteRows } = await supabase
+    .from("calendar_events")
+    .select("id, deleted_occurrences")
+    .eq("user_id", userId)
+    .in("id", eventIds);
+
+  const remoteMap = new Map((remoteRows ?? []).map((r) => [r.id, r]));
+
   const payload = dirty.map((e) => {
     const { deletedOccurrences, notificationIds } = childrenRow.get(e.id) ?? { deletedOccurrences: [], notificationIds: [] };
+
+    const remote = remoteMap.get(e.id);
+
+    const mergedDeletedOccurrences = Array.from(
+      new Set([
+        ...(remote?.deleted_occurrences ?? []).map((d: string) => d.split("T")[0]),
+        ...deletedOccurrences.map((r) => r.date.split("T")[0]),
+      ])
+    ).sort();
+
     return {
       id: e.id,
       user_id: userId,
@@ -706,7 +823,8 @@ export async function pushEvents(userId: string): Promise<void> {
       reminder: e.reminder ?? false,
       created_at: e.createdAt,
       updated_at: e.updatedAt,
-      deleted_occurrences: deletedOccurrences.length > 0 ? deletedOccurrences.map((r) => r.date) : undefined,
+      /* deleted_occurrences: deletedOccurrences.length > 0 ? deletedOccurrences.map((r) => r.date) : undefined, */
+      deleted_occurrences: mergedDeletedOccurrences,
       deleted_at: e.deletedAt,
       synced_at: e.syncedAt,
       // notification_ids intentionally omitted
@@ -746,13 +864,27 @@ export async function pullEvents(userId: string, since: string, until: string): 
       .select()
       .from(calendarEvents)
       .where(eq(calendarEvents.id, remote.id));
-    if (local && new Date(local.updatedAt) >= new Date(remote.updated_at)) continue;
+
+    const localDeletedOccs = await db
+      .select({ date: eventDeletedOccurrences.date })
+      .from(eventDeletedOccurrences)
+      .where(eq(eventDeletedOccurrences.eventId, remote.id));
+
+    const mergedDeletedOccurrences = Array.from(
+      new Set([
+        ...localDeletedOccs.map((r) => r.date.split("T")[0]),
+        ...(remote.deleted_occurrences ?? []).map((d: string) => d.split("T")[0]),
+      ])
+    ).sort();
+
+    if (local && new Date(local.updatedAt) >= new Date(remote.updated_at) &&
+      mergedDeletedOccurrences.length === localDeletedOccs.length) continue;
     const contentChanged = !local || local.title !== remote.title
 
     const embedding = contentChanged
       ? JSON.stringify(await generateEmbedding(remote.title, false))
       : local?.embedding ?? null; // reuse existing embedding — content didn't change
-    const deletedOccurrencesRows = buildEventDeletedOccurrenceRows(remote);
+
     const mapped: CalendarEvent = {
       id: remote.id,
       title: remote.title,
@@ -764,18 +896,37 @@ export async function pullEvents(userId: string, since: string, until: string): 
       endDate: remote.end_date ?? undefined,
       category: remote.category ?? undefined,
       tags: remote.tags ?? [],
+      deletedOccurrences: mergedDeletedOccurrences,//remote.deleted_occurrences ?? [],
       reminder: remote.reminder,
       createdAt: remote.created_at,
       updatedAt: remote.updated_at,
 
     };
+    const deletedOccurrencesRows = buildEventDeletedOccurrenceRows(mapped);
 
-    const now = new Date().toISOString();
-    withRowContext("calendarEvents", mapped.id, async () => db.transaction(async (tx) => {
+    await withRowContext("calendarEvents", mapped.id, async () => db.transaction(async (tx) => {
+
+      let safeCategoryId = mapped.category ?? null;
+      if (safeCategoryId) {
+        const [existingCat] = await tx
+          .select({ id: categories.id })
+          .from(categories)
+          .where(eq(categories.id, safeCategoryId));
+        if (!existingCat) {
+          safeCategoryId = null;
+        }
+      }
+
+
       await tx.delete(eventTags).where(eq(eventTags.eventId, mapped.id));
+      await tx
+        .delete(eventDeletedOccurrences)
+        .where(eq(eventDeletedOccurrences.eventId, mapped.id));
+
       await tx.insert(calendarEvents)
         .values({
           ...mapped,
+          category: safeCategoryId,
           tags: JSON.stringify(mapped.tags),
           embedding,
           syncedAt: remote.updated_at,
@@ -785,6 +936,7 @@ export async function pullEvents(userId: string, since: string, until: string): 
           target: calendarEvents.id,
           set: {
             ...mapped,
+            category: safeCategoryId,
             tags: JSON.stringify(mapped.tags),
             embedding,
             syncedAt: remote.updated_at,
@@ -793,7 +945,7 @@ export async function pullEvents(userId: string, since: string, until: string): 
         });
 
       if (deletedOccurrencesRows.length > 0) {
-        await tx.insert(eventDeletedOccurrences).values(deletedOccurrencesRows);
+        await tx.insert(eventDeletedOccurrences).values(deletedOccurrencesRows).onConflictDoNothing();
       }
 
       if (remote.tags && remote.tags.length > 0) {
@@ -803,6 +955,21 @@ export async function pullEvents(userId: string, since: string, until: string): 
         }));
         await tx.insert(eventTags).values(junctionData);
       }
+      /* if (mapped.tags && mapped.tags.length > 0) {
+          const uniqueTagIds = Array.from(new Set(mapped.tags));
+          for (const tagId of uniqueTagIds) {
+            const [existingTag] = await tx
+              .select({ id: tags.id })
+              .from(tags)
+              .where(eq(tags.id, tagId));
+            if (existingTag) {
+              await tx
+                .insert(eventTags)
+                .values({ eventId: mapped.id, tagId })
+                .onConflictDoNothing();
+            }
+          }
+        } */
     }));
 
     pulledEvents.push(mapped);

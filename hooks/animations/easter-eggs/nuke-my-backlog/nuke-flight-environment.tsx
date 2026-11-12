@@ -199,7 +199,7 @@ function DriftImage({
 
   return (
     <Animated.Image
-      /*  pointerEvents="none" */
+      /* pointerEvents="none" */
       source={source}
       resizeMode="contain"
       fadeDuration={0}

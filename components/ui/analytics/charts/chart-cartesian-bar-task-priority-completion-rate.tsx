@@ -33,72 +33,74 @@ export const PriorityCompletionChart = ({
         style={[
           styles.chartContainer,
           ,
-          isDetail && { height: BASE_CHART_HEIGHT * heightScale },
+          isDetail && { height: "100%", width: "100%" },
         ]}
       >
         <Text style={[styles.chartTitle, { color: theme.text }]}>
           Priority Completion
         </Text>
-        <CartesianChart
-          data={data}
-          xKey="priority"
-          yKeys={["rate"]}
-          xAxis={{
-            font,
-            lineWidth: 1,
-            lineColor: theme.text,
-            labelColor: theme.text,
-          }}
-          yAxis={[
-            {
+        <View style={{ flex: 1 }}>
+          <CartesianChart
+            data={data}
+            xKey="priority"
+            yKeys={["rate"]}
+            xAxis={{
               font,
-
               lineWidth: 1,
               lineColor: theme.text,
               labelColor: theme.text,
-              enableRescaling: true,
-            },
-          ]}
-          domainPadding={{
-            left: isDetail ? 100 : 50,
-            right: isDetail ? 100 : 50,
-          }}
-          transformState={transformState}
-        >
-          {({ points, chartBounds }) => {
-            //const barColor = points.rate.xValue === "high" ? theme.habitBase : theme.habitSecondary;
-            const highPoints = points.rate.filter((p) => p.xValue === "high");
-            const mediumPoints = points.rate.filter(
-              (p) => p.xValue === "medium",
-            );
-            const lowPoints = points.rate.filter((p) => p.xValue === "low");
+            }}
+            yAxis={[
+              {
+                font,
 
-            return (
-              <>
-                <Bar
-                  points={highPoints}
-                  chartBounds={chartBounds}
-                  color={theme.eventBase}
-                  barWidth={isDetail ? 100 : 50}
-                />
+                lineWidth: 1,
+                lineColor: theme.text,
+                labelColor: theme.text,
+                enableRescaling: true,
+              },
+            ]}
+            domainPadding={{
+              left: isDetail ? 100 : 50,
+              right: isDetail ? 100 : 50,
+            }}
+            transformState={transformState}
+          >
+            {({ points, chartBounds }) => {
+              //const barColor = points.rate.xValue === "high" ? theme.habitBase : theme.habitSecondary;
+              const highPoints = points.rate.filter((p) => p.xValue === "high");
+              const mediumPoints = points.rate.filter(
+                (p) => p.xValue === "medium",
+              );
+              const lowPoints = points.rate.filter((p) => p.xValue === "low");
 
-                <Bar
-                  points={mediumPoints}
-                  chartBounds={chartBounds}
-                  color={theme.habitBase}
-                  barWidth={isDetail ? 100 : 50}
-                />
+              return (
+                <>
+                  <Bar
+                    points={highPoints}
+                    chartBounds={chartBounds}
+                    color={theme.eventBase}
+                    barWidth={isDetail ? 100 : 50}
+                  />
 
-                <Bar
-                  points={lowPoints}
-                  chartBounds={chartBounds}
-                  color={theme.success}
-                  barWidth={isDetail ? 100 : 50}
-                />
-              </>
-            );
-          }}
-        </CartesianChart>
+                  <Bar
+                    points={mediumPoints}
+                    chartBounds={chartBounds}
+                    color={theme.habitBase}
+                    barWidth={isDetail ? 100 : 50}
+                  />
+
+                  <Bar
+                    points={lowPoints}
+                    chartBounds={chartBounds}
+                    color={theme.success}
+                    barWidth={isDetail ? 100 : 50}
+                  />
+                </>
+              );
+            }}
+          </CartesianChart>
+        </View>
       </View>
     </>
   );

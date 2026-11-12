@@ -53,6 +53,46 @@ const easterEggs = [
             effect: "abracadabra",
         },
     },
+    {
+        id: "lighting_strike",
+        triggers: ["lighting strike", "zap me", "electrify me", "shock me", "lightning bolt", "thunderbolt"],
+        title: "Lightning Strike",
+        subtitle: "A powerful electrical display",
+        activation: {
+            kind: "animation",
+            effect: "lightningStrike",
+        },
+    },
+    {
+        id: "space_invaders",
+        triggers: ["space invaders", "invade space", "alien invasion", "defend earth", "shoot aliens"],
+        title: "Space Invaders",
+        subtitle: "Defend Earth from alien invaders",
+        activation: {
+            kind: "animation",
+            effect: "spaceInvaders",
+        },
+    },
+    {
+        id: "pacman",
+        triggers: ["pacman", "eat dots", "chomp chomp", "ghosts"],
+        title: "Pac-Man",
+        subtitle: "Classic arcade fun",
+        activation: {
+            kind: "animation",
+            effect: "pacman",
+        },
+    },
+    {
+        id: "snake",
+        triggers: ["snake", "slither", "eat apples", "grow longer"],
+        title: "Snake Game",
+        subtitle: "Classic arcade fun",
+        activation: {
+            kind: "animation",
+            effect: "snake",
+        },
+    }
 ] satisfies readonly GlobalSearchEasterEggDefinition[];
 
 export const GLOBAL_SEARCH_EASTER_EGGS =

@@ -30,25 +30,30 @@ export const DeepWorkChart = ({
       style={[
         styles.chartContainer,
         ,
-        isDetail && { height: BASE_CHART_HEIGHT * heightScale },
+        isDetail && {
+          height: "100%",
+          width: "100%" /* height: BASE_CHART_HEIGHT * heightScale */,
+        },
       ]}
     >
       <Text style={[styles.chartTitle, { color: theme.text }]}>Deep Work</Text>
-      <PolarChart
-        data={data}
-        colorKey="color"
-        valueKey="duration"
-        labelKey="label"
-        transformState={transformState}
-      >
-        <Pie.Chart innerRadius={50}>
-          {() => (
-            <Pie.Slice animate={{ type: "timing", duration: 250 }}>
-              <Pie.Label font={font} color={theme.text} radiusOffset={0.75} />
-            </Pie.Slice>
-          )}
-        </Pie.Chart>
-      </PolarChart>
+      <View style={{ flex: 1 }}>
+        <PolarChart
+          data={data}
+          colorKey="color"
+          valueKey="duration"
+          labelKey="label"
+          transformState={transformState}
+        >
+          <Pie.Chart innerRadius={50}>
+            {() => (
+              <Pie.Slice animate={{ type: "timing", duration: 250 }}>
+                <Pie.Label font={font} color={theme.text} radiusOffset={0.75} />
+              </Pie.Slice>
+            )}
+          </Pie.Chart>
+        </PolarChart>
+      </View>
     </View>
   );
 };

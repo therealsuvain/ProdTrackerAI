@@ -28,48 +28,57 @@ export const ChatFollowThroughChart = ({
       style={[
         styles.chartContainer,
         ,
-        isDetail && { height: BASE_CHART_HEIGHT * heightScale },
+        isDetail && {
+          height: "100%",
+          width: "100%" /* height: BASE_CHART_HEIGHT * heightScale  */,
+        },
       ]}
     >
       <Text style={[styles.chartTitle, { color: theme.text }]}>
         Chat Follow Through
       </Text>
-      <PolarChart
-        data={data}
-        colorKey="color"
-        valueKey="value"
-        labelKey={"label"}
-        transformState={transformState}
-      >
-        <Pie.Chart innerRadius={0}>
-          {({ slice }) => {
-            const { startX, startY, endX, endY } = calculateGradientPoints(
-              slice.radius,
-              slice.startAngle,
-              slice.endAngle,
-              slice.center.x,
-              slice.center.y,
-            );
-            const gradientColor =
-              slice.color === "green"
-                ? "lightgreen"
-                : slice.color === "red"
-                  ? "#ff6055"
-                  : "#ffd107";
-            return (
-              <Pie.Slice animate={{ type: "timing", duration: 250 }}>
-                <Pie.Label font={font} color={theme.text} radiusOffset={0.6} />
-                <LinearGradient
-                  start={vec(startX, startY)}
-                  end={vec(endX, endY)}
-                  colors={[slice.color, gradientColor]}
-                  positions={[0, 2]}
-                />
-              </Pie.Slice>
-            );
-          }}
-        </Pie.Chart>
-      </PolarChart>
+      <View style={{ flex: 1 }}>
+        <PolarChart
+          data={data}
+          colorKey="color"
+          valueKey="value"
+          labelKey={"label"}
+          transformState={transformState}
+        >
+          <Pie.Chart innerRadius={0}>
+            {({ slice }) => {
+              const { startX, startY, endX, endY } = calculateGradientPoints(
+                slice.radius,
+                slice.startAngle,
+                slice.endAngle,
+                slice.center.x,
+                slice.center.y,
+              );
+              const gradientColor =
+                slice.color === "green"
+                  ? "lightgreen"
+                  : slice.color === "red"
+                    ? "#ff6055"
+                    : "#ffd107";
+              return (
+                <Pie.Slice animate={{ type: "timing", duration: 250 }}>
+                  <Pie.Label
+                    font={font}
+                    color={theme.text}
+                    radiusOffset={0.6}
+                  />
+                  <LinearGradient
+                    start={vec(startX, startY)}
+                    end={vec(endX, endY)}
+                    colors={[slice.color, gradientColor]}
+                    positions={[0, 2]}
+                  />
+                </Pie.Slice>
+              );
+            }}
+          </Pie.Chart>
+        </PolarChart>
+      </View>
     </View>
   );
 };

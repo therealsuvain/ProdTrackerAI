@@ -37,94 +37,96 @@ export const SessionDistributionChart = ({
         style={[
           styles.chartContainer,
           ,
-          isDetail && { height: BASE_CHART_HEIGHT * heightScale },
+          isDetail && { height: "100%", width: "100%" },
         ]}
       >
         <Text style={[styles.chartTitle, { color: theme.text }]}>
           Log Session's Distribution
         </Text>
-        <CartesianChart
-          data={data}
-          xKey="label"
-          yKeys={["count"]}
-          xAxis={{
-            font,
-            lineWidth: 1,
-            lineColor: theme.text,
-            labelColor: theme.text,
-            labelRotate: isDetail ? 0 : -45,
-            enableRescaling: true,
-          }}
-          yAxis={[
-            {
+        <View style={{ flex: 1 }}>
+          <CartesianChart
+            data={data}
+            xKey="label"
+            yKeys={["count"]}
+            xAxis={{
               font,
-
               lineWidth: 1,
               lineColor: theme.text,
               labelColor: theme.text,
+              labelRotate: isDetail ? 0 : -45,
               enableRescaling: true,
-            },
-          ]}
-          domainPadding={{
-            left: isDetail ? 60 : 25,
-            right: isDetail ? 60 : 25,
-          }}
-          transformState={transformState}
-        >
-          {({ points, chartBounds }) => {
-            const lessThan15Points = points.count.filter(
-              (p) => p.xValue === "<15min>",
-            );
-            const btw15and30Points = points.count.filter(
-              (p) => p.xValue === "15-30min",
-            );
-            const btw30and60Points = points.count.filter(
-              (p) => p.xValue === "30-60min",
-            );
-            const btw30and120Points = points.count.filter(
-              (p) => p.xValue === "60-120min",
-            );
-            const moreThan120Points = points.count.filter(
-              (p) => p.xValue === ">120min",
-            );
-            return (
-              <>
-                <Bar
-                  points={lessThan15Points}
-                  chartBounds={chartBounds}
-                  color={barColors["<15min"]}
-                  barWidth={isDetail ? 60 : 25}
-                />
+            }}
+            yAxis={[
+              {
+                font,
 
-                <Bar
-                  points={btw15and30Points}
-                  chartBounds={chartBounds}
-                  color={barColors["15-30min"]}
-                  barWidth={isDetail ? 60 : 25}
-                />
+                lineWidth: 1,
+                lineColor: theme.text,
+                labelColor: theme.text,
+                enableRescaling: true,
+              },
+            ]}
+            domainPadding={{
+              left: isDetail ? 60 : 25,
+              right: isDetail ? 60 : 25,
+            }}
+            transformState={transformState}
+          >
+            {({ points, chartBounds }) => {
+              const lessThan15Points = points.count.filter(
+                (p) => p.xValue === "<15min>",
+              );
+              const btw15and30Points = points.count.filter(
+                (p) => p.xValue === "15-30min",
+              );
+              const btw30and60Points = points.count.filter(
+                (p) => p.xValue === "30-60min",
+              );
+              const btw30and120Points = points.count.filter(
+                (p) => p.xValue === "60-120min",
+              );
+              const moreThan120Points = points.count.filter(
+                (p) => p.xValue === ">120min",
+              );
+              return (
+                <>
+                  <Bar
+                    points={lessThan15Points}
+                    chartBounds={chartBounds}
+                    color={barColors["<15min"]}
+                    barWidth={isDetail ? 60 : 25}
+                  />
 
-                <Bar
-                  points={btw30and60Points}
-                  chartBounds={chartBounds}
-                  color={barColors["30-60min"]}
-                  barWidth={isDetail ? 60 : 25}
-                />
-                <Bar
-                  points={btw30and120Points}
-                  chartBounds={chartBounds}
-                  color={barColors["60-120min"]}
-                  barWidth={isDetail ? 60 : 25}
-                />
-                <Bar
-                  points={moreThan120Points}
-                  chartBounds={chartBounds}
-                  color={barColors[">120min"]}
-                  barWidth={isDetail ? 60 : 25}
-                />
-              </>
-            );
-          }}
-        </CartesianChart>
+                  <Bar
+                    points={btw15and30Points}
+                    chartBounds={chartBounds}
+                    color={barColors["15-30min"]}
+                    barWidth={isDetail ? 60 : 25}
+                  />
+
+                  <Bar
+                    points={btw30and60Points}
+                    chartBounds={chartBounds}
+                    color={barColors["30-60min"]}
+                    barWidth={isDetail ? 60 : 25}
+                  />
+                  <Bar
+                    points={btw30and120Points}
+                    chartBounds={chartBounds}
+                    color={barColors["60-120min"]}
+                    barWidth={isDetail ? 60 : 25}
+                  />
+                  <Bar
+                    points={moreThan120Points}
+                    chartBounds={chartBounds}
+                    color={barColors[">120min"]}
+                    barWidth={isDetail ? 60 : 25}
+                  />
+                </>
+              );
+            }}
+          </CartesianChart>
+        </View>
       </View>
     </>
   );

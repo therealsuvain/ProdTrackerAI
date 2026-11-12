@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#2C3E50", // Dark core
+    backgroundColor: "#ecdbff", // Dark core
     position: "absolute",
   },
   ringBase: {
@@ -116,13 +116,13 @@ const styles = StyleSheet.create({
     /* width: 14,
     height: 14, */
     // Creating the "segments" by only coloring two sides of the border
-    borderTopColor: "#7F8C8D",
-    borderBottomColor: "#7F8C8D",
+    borderTopColor: "#c69ef3",
+    borderBottomColor: "#c69ef3", //"#7F8C8D",
   },
   outerRing: {
     /* width: 20,
     height: 20, */
-    borderLeftColor: "#2C3E50",
-    borderRightColor: "#2C3E50",
+    borderLeftColor: "#5e437c",
+    borderRightColor: "#5e437c", //"#2C3E50",
   },
 });

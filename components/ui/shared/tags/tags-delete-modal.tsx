@@ -24,7 +24,12 @@ export const TagsDeleteModal = ({
 }: TagsDeleteModalProps) => {
   const { theme } = useTheme();
   return (
-    <Modal visible={!!tagToDelete} animationType="fade" transparent={true}>
+    <Modal
+      visible={!!tagToDelete}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={onClose}
+    >
       <View style={styles.modalOverlay}>
         <View
           style={[

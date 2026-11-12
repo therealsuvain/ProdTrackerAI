@@ -26,7 +26,12 @@ export const CategoryDeleteModal = ({
   const { theme } = useTheme();
 
   return (
-    <Modal visible={!!categoryToDelete} animationType="fade" transparent={true}>
+    <Modal
+      visible={!!categoryToDelete}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={onClose}
+    >
       <View style={styles.modalOverlay}>
         <View
           style={[

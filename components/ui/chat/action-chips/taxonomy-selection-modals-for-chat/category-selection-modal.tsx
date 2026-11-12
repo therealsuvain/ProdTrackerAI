@@ -27,7 +27,12 @@ export const CategorySelectionModal = ({
   const { theme } = useTheme();
 
   return (
-    <Modal visible={visible} animationType="fade" transparent={true}>
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={onClose}
+    >
       <View style={styles.modalOverlay}>
         <View
           style={[styles.modalContent, { backgroundColor: theme.background }]}

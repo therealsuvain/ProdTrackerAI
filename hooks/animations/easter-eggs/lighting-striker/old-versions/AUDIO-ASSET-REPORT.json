@@ -1,0 +1,32 @@
+{
+  "blackout.mp3": {
+    "duration_s": 3.228,
+    "sample_rate": 44100,
+    "channels": 2,
+    "bytes": 52799
+  },
+  "flickering-flames.mp3": {
+    "duration_s": 33.199,
+    "sample_rate": 44100,
+    "channels": 2,
+    "bytes": 795713
+  },
+  "light-flicker.mp3": {
+    "duration_s": 4.852,
+    "sample_rate": 44100,
+    "channels": 2,
+    "bytes": 89329
+  },
+  "rain-thunder.mp3": {
+    "duration_s": 48.024,
+    "sample_rate": 48000,
+    "channels": 2,
+    "bytes": 1536768
+  },
+  "short-circuit.mp3": {
+    "duration_s": 4.899,
+    "sample_rate": 44100,
+    "channels": 2,
+    "bytes": 119255
+  }
+}

@@ -47,7 +47,12 @@ export const TagSelectionModal = ({
   const unselectedTags = tags.filter((t) => !selectedIds.includes(t.id));
 
   return (
-    <Modal visible={visible} animationType="fade" transparent={true}>
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={onClose}
+    >
       <View style={styles.modalOverlay}>
         <View
           style={[styles.modalContent, { backgroundColor: theme.background }]}

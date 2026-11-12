@@ -295,7 +295,12 @@ export type GlobalSearchEasterEggActivation =
         | "launchSequence"
         | "answer42"
         | "helloThere"
-        | "abracadabra";
+        | "abracadabra"
+        | "lightningStrike"
+        | "spaceInvaders"
+        | "pacman"
+        | "snake";
+
     };
 
 export interface GlobalSearchEasterEggDefinition {

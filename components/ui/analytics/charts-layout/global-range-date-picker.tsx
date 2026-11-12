@@ -31,7 +31,7 @@ export const GlobalDateRangePicker = ({
   );
 
   const selectPreset = (preset: DateRangePreset) => setDraft({ preset });
-  console.log("draft", draft);
+  //console.log("draft", draft);
   const openCustom = () =>
     setDraft({
       preset: "custom",

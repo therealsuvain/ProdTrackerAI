@@ -42,11 +42,23 @@ function rowToCalendarEvent(
 
 // ─── private: child row builders ─────────────────────────────────────────────
 
-export function buildEventDeletedOccurrenceRows(
+/* export function buildEventDeletedOccurrenceRows(
     event: CalendarEvent,
 ): Omit<EventDeletedOccurrenceRow, never>[] {
     return (event.deletedOccurrences ?? []).map((date) => ({
         id: `${event.id}_ci_${date}`,   // deterministic id — safe to re-insert
+        eventId: event.id,
+        date,
+    }));
+} */
+export function buildEventDeletedOccurrenceRows(
+    event: CalendarEvent,
+): Omit<EventDeletedOccurrenceRow, never>[] {
+    const uniqueDates = Array.from(
+        new Set((event.deletedOccurrences ?? []).map((d) => d.split("T")[0]))
+    );
+    return uniqueDates.map((date) => ({
+        id: `${event.id}_ci_${date}`, // Kept `_ci_` to match your existing local IDs
         eventId: event.id,
         date,
     }));

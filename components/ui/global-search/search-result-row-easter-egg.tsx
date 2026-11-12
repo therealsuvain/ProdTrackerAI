@@ -15,6 +15,7 @@ interface Props {
   // Pass the Pressable ref to the screen so the root-level animation controller
   // can measure this exact row relative to the shared animation canvas.
   onPress: (rowRef: RowMeasureRef) => void;
+  onLayout?: (rowRef: RowMeasureRef) => void;
   hintText?: string;
 }
 
@@ -22,6 +23,7 @@ export function GlobalSearchEasterEggRow({
   result,
   activationEnabled,
   onPress,
+  onLayout,
   hintText,
 }: Props) {
   const { theme } = useContext(ThemeContext);
@@ -38,6 +40,7 @@ export function GlobalSearchEasterEggRow({
   return (
     <Pressable
       ref={rowRef}
+      onLayout={() => onLayout?.(rowRef)}
       accessibilityRole="button"
       accessibilityLabel={`${document.display.title}, Easter egg`}
       accessibilityHint={

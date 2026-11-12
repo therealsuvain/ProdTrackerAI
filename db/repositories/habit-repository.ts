@@ -78,7 +78,7 @@ function rowToHabit(
 
 // ─── private: child row builders ─────────────────────────────────────────────
 
-export function buildCheckInRows(
+/* export function buildCheckInRows(
     habit: Habit,
 ): Omit<HabitCheckInRow, never>[] {
     //console.log('buildCheckInRows', habit.history);
@@ -104,6 +104,40 @@ export function buildGoalCompletionRows(
 ): Omit<HabitGoalCompletionRow, never>[] {
     return (habit.goalCompletions ?? []).map((gc, idx) => ({
         id: `${habit.id}_gc_${idx}_${gc.completedAt}`,
+        habitId: habit.id,
+        completedAt: gc.completedAt,
+        goal: gc.goal,
+    }));
+} */
+
+//! Normalized Child Tables: check-ins, freezes, goal completions
+export function buildCheckInRows(habit: Habit) {
+    const uniqueDates = Array.from(new Set((habit.history ?? []).map(d => d.split("T")[0])));
+    return uniqueDates.map((date) => ({
+        id: `${habit.id}_ci_${date}`,
+        habitId: habit.id,
+        date,
+    }));
+}
+
+export function buildFreezeRows(habit: Habit) {
+    const uniqueDates = Array.from(new Set((habit.freezeHistory ?? []).map(d => d.split("T")[0])));
+    return uniqueDates.map((date) => ({
+        id: `${habit.id}_fr_${date}`,
+        habitId: habit.id,
+        date,
+    }));
+}
+
+export function buildGoalCompletionRows(habit: Habit) {
+    const seen = new Set<string>();
+    return (habit.goalCompletions ?? []).filter((gc, idx) => {
+        const key = `${gc.completedAt}_${gc.goal}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    }).map((gc, idx) => ({
+        id: `${habit.id}_gc_${idx}_${gc.completedAt.split("T")[0]}`,
         habitId: habit.id,
         completedAt: gc.completedAt,
         goal: gc.goal,
@@ -159,7 +193,7 @@ export async function fetchChildRowsForMany(
 
 export function habitToInsert(habit: Habit): HabitInsert {
     const now = new Date().toISOString();
-    console.log("habit repo", habit.reminderDate ?? null);
+    /* console.log("habit repo", habit.reminderDate ?? null); */
     return {
         id: habit.id,
         title: habit.title,
@@ -231,7 +265,7 @@ export async function insertHabit(habit: Habit): Promise<Habit> {
     const checkInRows = buildCheckInRows(habit);
     const freezeRows = buildFreezeRows(habit);
     const goalCompletionRows = buildGoalCompletionRows(habit);
-    console.log("HABIT REPO:", habitToInsert(habit).reminderDate)
+    /* console.log("HABIT REPO:", habitToInsert(habit).reminderDate) */
     await db.transaction(async (tx) => {
         await tx.insert(habits).values(habitToInsert(habit));
 
@@ -319,14 +353,14 @@ export async function updateHabit(habit: Habit): Promise<Habit> {
 export async function deleteHabit(id: string): Promise<void> {
     //await db.delete(habits).where(eq(habits.id, id));
     const now = new Date().toISOString();
-     await db
-    .update(habits)
-    .set({
-      deletedAt: now,
-      updatedAt: now,
-      syncedAt: null,
-    })
-    .where(eq(habits.id, id));
+    await db
+        .update(habits)
+        .set({
+            deletedAt: now,
+            updatedAt: now,
+            syncedAt: null,
+        })
+        .where(eq(habits.id, id));
 }
 
 // ─── bulk operations ──────────────────────────────────────────────────────────
@@ -464,11 +498,11 @@ export async function deleteAllHabits(): Promise<number> {
 
     //await db.delete(habits);
     await db.update(habits).
-    set({ 
-        deletedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        syncedAt: null, 
-    });
+        set({
+            deletedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            syncedAt: null,
+        });
 
     return count;
 }

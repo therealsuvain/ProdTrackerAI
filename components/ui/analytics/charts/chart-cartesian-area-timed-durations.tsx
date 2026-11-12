@@ -48,99 +48,101 @@ export const TimedDurationsChart = ({
       style={[
         styles.chartContainer,
         ,
-        isDetail && { height: BASE_CHART_HEIGHT * heightScale },
+        isDetail && { height: "100%", width: "100%" },
       ]}
     >
       <Text style={[styles.chartTitle, { color: theme.text }]}>
         Time Logged
       </Text>
-      <CartesianChart
-        chartPressState={state}
-        data={data}
-        xKey="date"
-        yKeys={["duration"]}
-        xAxis={{
-          font,
-          lineWidth: 1,
-          lineColor: theme.text,
-          labelColor: theme.text,
-          formatXLabel: (label) => {
-            const date = new Date(label);
-            return date.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            });
-          },
-          labelRotate: -45,
-          tickCount,
-        }}
-        yAxis={[
-          {
+      <View style={{ flex: 1 }}>
+        <CartesianChart
+          chartPressState={state}
+          data={data}
+          xKey="date"
+          yKeys={["duration"]}
+          xAxis={{
             font,
-            title: { text: "Seconds Logged", font, color: theme.text },
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,
-            formatYLabel: (label) => {
-              const value = Number(label);
-
-              if (value >= 1_000_000) {
-                return `${(value / 1_000_000).toFixed(value % 1_000_000 === 0 ? 0 : 1)}M`;
-              }
-
-              if (value >= 1_000) {
-                return `${(value / 1_000).toFixed(value % 1_000 === 0 ? 0 : 1)}k`;
-              }
-
-              return value.toString();
+            formatXLabel: (label) => {
+              const date = new Date(label);
+              return date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              });
             },
+            labelRotate: -45,
             tickCount,
-          },
-        ]}
-        transformState={transformState}
-      >
-        {({ points, chartBounds }) => (
-          <>
-            <Area
-              points={points.duration}
-              y0={chartBounds.bottom}
-              animate={{ type: "timing", duration: 250 }}
-            >
-              <LinearGradient
-                start={vec(0, chartBounds.top)}
-                end={vec(0, chartBounds.bottom)}
-                colors={["rgba(0, 195, 255, 0.75)", "transparent"]}
+          }}
+          yAxis={[
+            {
+              font,
+              title: { text: "Seconds Logged", font, color: theme.text },
+              lineWidth: 1,
+              lineColor: theme.text,
+              labelColor: theme.text,
+              formatYLabel: (label) => {
+                const value = Number(label);
+
+                if (value >= 1_000_000) {
+                  return `${(value / 1_000_000).toFixed(value % 1_000_000 === 0 ? 0 : 1)}M`;
+                }
+
+                if (value >= 1_000) {
+                  return `${(value / 1_000).toFixed(value % 1_000 === 0 ? 0 : 1)}k`;
+                }
+
+                return value.toString();
+              },
+              tickCount,
+            },
+          ]}
+          transformState={transformState}
+        >
+          {({ points, chartBounds }) => (
+            <>
+              <Area
+                points={points.duration}
+                y0={chartBounds.bottom}
+                animate={{ type: "timing", duration: 250 }}
+              >
+                <LinearGradient
+                  start={vec(0, chartBounds.top)}
+                  end={vec(0, chartBounds.bottom)}
+                  colors={["rgba(0, 195, 255, 0.75)", "transparent"]}
+                />
+              </Area>
+              <Line
+                points={points.duration}
+                color="#ffffff"
+                strokeWidth={3}
+                curveType="natural"
+                animate={{ type: "timing", duration: 250 }}
               />
-            </Area>
-            <Line
-              points={points.duration}
-              color="#ffffff"
-              strokeWidth={3}
-              curveType="natural"
-              animate={{ type: "timing", duration: 250 }}
-            />
-            {isActive && (
-              <TooltipShell
-                x={state.x.position}
-                y={state.y.duration.position}
-                chartBounds={chartBounds}
-                theme={theme}
-                renderContent={(cardX, cardY) => (
-                  <SingleSeriesTooltipContent
-                    cardX={cardX}
-                    cardY={cardY}
-                    value={state.y.duration.value}
-                    dateLabel={state.x.value}
-                    theme={theme}
-                    valueFont={tooltipFont}
-                    labelFont={tooltipLabelFont}
-                  />
-                )}
-              ></TooltipShell>
-            )}
-          </>
-        )}
-      </CartesianChart>
+              {isActive && (
+                <TooltipShell
+                  x={state.x.position}
+                  y={state.y.duration.position}
+                  chartBounds={chartBounds}
+                  theme={theme}
+                  renderContent={(cardX, cardY) => (
+                    <SingleSeriesTooltipContent
+                      cardX={cardX}
+                      cardY={cardY}
+                      value={state.y.duration.value}
+                      dateLabel={state.x.value}
+                      theme={theme}
+                      valueFont={tooltipFont}
+                      labelFont={tooltipLabelFont}
+                    />
+                  )}
+                ></TooltipShell>
+              )}
+            </>
+          )}
+        </CartesianChart>
+      </View>
     </View>
   );
 };

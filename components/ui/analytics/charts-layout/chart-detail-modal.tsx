@@ -8,6 +8,8 @@ import {
   Text,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/hooks/context-hooks/use-theme-colors";
 import {
@@ -42,7 +44,35 @@ interface Props {
   categories?: Category[];
 }
 
+/**
+ * 
+ * export const BASE_CHART_HEIGHT = 400;
+export const MODAL_BASE_WIDTH = 640;
+
+
+ * export const CHART_DETAIL_SCALE: Record<string, DetailScale> = {
+  execution_funnel: { heightScale: 2, widthScale: 1 },
+  momentum_delta: { heightScale: 2, widthScale: 1 },
+  time_durations: { heightScale: 2, widthScale: 1 },
+  task_velocity: { heightScale: 2, widthScale: 1 },
+  habit_consistency: { heightScale: 2, widthScale: 1 },
+  task_throughput: { heightScale: 2, widthScale: 1 },
+  ai_leverage: { heightScale: 2, widthScale: 1 },
+  circadian_friction: { heightScale: 1.8, widthScale: 1.3 },
+  deep_work: { heightScale: 1.6, widthScale: 1.6 },
+  task_procrastination: { heightScale: 2, widthScale: 1 },
+  priority_completion : { heightScale: 2, widthScale: 1 },
+  freeze_reliance : { heightScale: 2, widthScale: 1 },
+  chat_follow_through: { heightScale: 2, widthScale: 1 },
+  session_distribution: { heightScale: 2, widthScale: 1 },
+};
+
+export function getDetailScale(id: string): DetailScale {
+  return CHART_DETAIL_SCALE[id] ?? DEFAULT_DETAIL_SCALE;
+}
+ */
 const MAX_WRAPPER_WIDTH = Dimensions.get("window").width - 48;
+const MAX_WRAPPER_HEIGHT = Dimensions.get("window").height - 120;
 
 export const ChartDetailModal = ({
   visible,
@@ -52,6 +82,8 @@ export const ChartDetailModal = ({
   tags = [],
   categories = [],
 }: Props) => {
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const { theme, isDarkMode } = useTheme();
   const { heightScale, widthScale } = getDetailScale(chartId ?? "");
   const [chartInfoModal, setChartInfoModal] = useState(false);
@@ -63,12 +95,43 @@ export const ChartDetailModal = ({
     (s) => s.setChartAdvancedFilter,
   );
   const { dateRange, advanced } = useResolvedChartFilters(chartId ?? "");
+  // 1. Calculate safe available screen bounds dynamically
+  const maxCardWidth = windowWidth - 24; // 12px margin on each side
+  const maxCardHeight = windowHeight - insets.top - insets.bottom - 32;
+
+  // 2. Reserve ~116px for the Header row (40px) + Bottom Button row (56px) + paddings (20px)
+  const CHROME_HEIGHT = 116;
+  const desiredChartHeight = BASE_CHART_HEIGHT * heightScale;
+  const chartHeight = Math.min(
+    desiredChartHeight,
+    maxCardHeight - CHROME_HEIGHT,
+  );
+  const cardWidth = Math.min(MODAL_BASE_WIDTH * widthScale, maxCardWidth);
+  const chartWidth = cardWidth - 16; // 12px padding on each side
+
+  // 3. Dynamically size buttons so 7 buttons + 6 gaps ALWAYS fit inside cardWidth
+  const horizontalPadding = 24; // 12px left + 12px right
+  const buttonGap = 8;
+  const maxButtonSize = Math.floor(
+    (cardWidth - horizontalPadding - buttonGap * 6) / 7,
+  );
+  const buttonSize = Math.min(44, maxButtonSize); // Caps at 44px on big phones, shrinks to ~38px on small phones
+  const iconSize = Math.round(buttonSize * 0.65);
+
   const wrapperWidth = Math.min(
     MODAL_BASE_WIDTH * widthScale,
     MAX_WRAPPER_WIDTH,
   );
-  const wrapperHeight = BASE_CHART_HEIGHT * heightScale;
-
+  const wrapperHeight = Math.min(
+    BASE_CHART_HEIGHT * heightScale,
+    MAX_WRAPPER_HEIGHT,
+  );
+  /*   console.log(
+    "wrapperWidth",
+    wrapperWidth,
+    "wrapperHeight",
+    MAX_WRAPPER_HEIGHT,
+  ); */
   const detailsChartButtonSize = 32;
   const { state: transformState } = useChartTransformState({
     scaleX: 1.0,
@@ -163,9 +226,12 @@ export const ChartDetailModal = ({
       <GestureHandlerRootView>
         <Pressable style={styles.backdrop} onPress={onChartClose}>
           <Pressable
+            onPress={(e) => e.stopPropagation()}
             style={[
               styles.card,
               {
+                width: cardWidth,
+                maxHeight: maxCardHeight,
                 backgroundColor: isDarkMode
                   ? theme.taskDarkPrimary
                   : theme.greyTimeline,
@@ -173,14 +239,47 @@ export const ChartDetailModal = ({
                   theme.taskDarkSecondary ?? "rgba(255,255,255,0.08)",
               },
             ]}
-            onPress={() => {}}
+            /* onPress={() => {}} */
           >
-            <View
+            <View style={styles.headerBar}>
+              <Pressable
+                onPress={() => setFilterModalVisible(true)}
+                style={styles.headerIconButton}
+              >
+                <Ionicons
+                  name="filter-outline"
+                  size={24}
+                  color={theme.whiteBase}
+                />
+              </Pressable>
+              <Pressable
+                onPress={() => setChartInfoModal(true)}
+                style={styles.headerIconButton}
+              >
+                <Ionicons
+                  name="help-outline"
+                  size={24}
+                  color={theme.whiteBase}
+                />
+              </Pressable>
+              <Pressable onPress={onChartClose} style={styles.headerIconButton}>
+                <Ionicons name="close" size={24} color={theme.text} />
+              </Pressable>
+            </View>
+            {/*  <View
               style={{
                 width: wrapperWidth,
                 height: wrapperHeight,
                 alignItems: "center",
                 justifyContent: "center",
+              }}
+            > */}
+            <View
+              style={{
+                width: chartWidth,
+                height: chartHeight,
+                overflow: "hidden",
+                alignItems: "center",
               }}
             >
               {React.isValidElement(children)
@@ -188,29 +287,17 @@ export const ChartDetailModal = ({
                 : children}
             </View>
             {/*  </View> */}
-            <Pressable
-              onPress={() => setFilterModalVisible(true)}
-              style={[styles.closeButton, { right: 78 }]}
-            >
-              <Ionicons
-                name="filter-outline"
-                size={24}
-                color={theme.whiteBase}
-              />
-            </Pressable>
-            <Pressable
-              onPress={() => setChartInfoModal(true)}
-              style={styles.helpButton}
-            >
-              <Ionicons name="help-outline" size={24} color={theme.whiteBase} />
-            </Pressable>
-            <Pressable onPress={onChartClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={theme.text} />
-            </Pressable>
-            <View style={{ flexDirection: "row", gap: 12, marginTop: 20 }}>
+
+            {/* <View style={{ flexDirection: "row", gap: 12, marginTop: 20 }}> */}
+            <View style={[styles.controlsRow, { gap: buttonGap }]}>
               <Pressable
                 style={({ pressed }) => [
                   styles.detailsChartButtons,
+                  {
+                    width: buttonSize,
+                    height: buttonSize,
+                    borderRadius: buttonSize / 2,
+                  },
                   {
                     backgroundColor: theme.error,
                     borderBottomColor: "rgb(172, 0, 0)",
@@ -232,6 +319,11 @@ export const ChartDetailModal = ({
               <Pressable
                 style={({ pressed }) => [
                   styles.detailsChartButtons,
+                  {
+                    width: buttonSize,
+                    height: buttonSize,
+                    borderRadius: buttonSize / 2,
+                  },
                   pressed && {
                     borderBottomWidth: 0,
                     borderRightWidth: 0,
@@ -248,6 +340,11 @@ export const ChartDetailModal = ({
               <Pressable
                 style={({ pressed }) => [
                   styles.detailsChartButtons,
+                  {
+                    width: buttonSize,
+                    height: buttonSize,
+                    borderRadius: buttonSize / 2,
+                  },
                   pressed && {
                     borderBottomWidth: 0,
                     borderRightWidth: 0,
@@ -264,6 +361,11 @@ export const ChartDetailModal = ({
               <Pressable
                 style={({ pressed }) => [
                   styles.detailsChartButtons,
+                  {
+                    width: buttonSize,
+                    height: buttonSize,
+                    borderRadius: buttonSize / 2,
+                  },
                   pressed && {
                     borderBottomWidth: 0,
                     borderRightWidth: 0,
@@ -280,6 +382,11 @@ export const ChartDetailModal = ({
               <Pressable
                 style={({ pressed }) => [
                   styles.detailsChartButtons,
+                  {
+                    width: buttonSize,
+                    height: buttonSize,
+                    borderRadius: buttonSize / 2,
+                  },
                   pressed && {
                     borderBottomWidth: 0,
                     borderRightWidth: 0,
@@ -296,6 +403,11 @@ export const ChartDetailModal = ({
               <Pressable
                 style={({ pressed }) => [
                   styles.detailsChartButtons,
+                  {
+                    width: buttonSize,
+                    height: buttonSize,
+                    borderRadius: buttonSize / 2,
+                  },
                   pressed && {
                     borderBottomWidth: 0,
                     borderRightWidth: 0,
@@ -312,6 +424,11 @@ export const ChartDetailModal = ({
               <Pressable
                 style={({ pressed }) => [
                   styles.detailsChartButtons,
+                  {
+                    width: buttonSize,
+                    height: buttonSize,
+                    borderRadius: buttonSize / 2,
+                  },
                   pressed && {
                     borderBottomWidth: 0,
                     borderRightWidth: 0,
@@ -370,47 +487,53 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 20,
     borderWidth: 1,
-    paddingTop: 32,
+    /* paddingTop: 32,
     paddingBottom: 16,
-    paddingHorizontal: 12,
-    alignItems: "center",
+    paddingHorizontal: 12, */
+    /* marginVertical: 24,
+    marginHorizontal: 120, */
+    //alignItems: "center",
     shadowColor: "#000",
     shadowOpacity: 0.4,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
     elevation: 10,
     zIndex: 2,
+    flexDirection: "column",
   },
-  closeButton: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  headerBar: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: 8,
+    marginVertical: 4,
+  },
+  headerIconButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: "#ffffff1a",
     alignItems: "center",
     justifyContent: "center",
   },
-  helpButton: {
-    position: "absolute",
-    top: 8,
-    right: 44,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#ffffff1a",
-    alignItems: "center",
+
+  controlsRow: {
+    flexDirection: "row",
     justifyContent: "center",
+    alignItems: "center",
+    marginTop: 12,
+    marginBottom: 4,
   },
+
   closeButtonText: {
     color: "white",
     fontWeight: "600",
     textAlign: "center",
   },
   detailsChartButtons: {
-    height: 44,
-    width: 44,
+    /* height: 44,
+    width: 44, */
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#7c7a7a",
@@ -419,6 +542,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 4,
     borderRightWidth: 4,
     borderBottomRightRadius: 22,
-    borderRadius: 22,
+    /* borderRadius: 22, */
   },
 });

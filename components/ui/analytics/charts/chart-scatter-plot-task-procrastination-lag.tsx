@@ -37,64 +37,68 @@ export const TaskProcrastinationLagChart = ({
         styles.chartContainer,
         ,
         isDetail && {
-          height: BASE_CHART_HEIGHT * heightScale,
+          height: "100%",
+          width: "100%",
+          /*  height: BASE_CHART_HEIGHT * heightScale, */
         },
       ]}
     >
       <Text style={[styles.chartTitle, { color: theme.text }]}>
         Task Procrastination
       </Text>
-      <CartesianChart
-        chartPressState={state}
-        data={data}
-        xKey="date"
-        yKeys={["lagDays"]}
-        xAxis={{
-          font,
-          lineWidth: 1,
-          lineColor: theme.text,
-          labelColor: theme.text,
-          formatXLabel: (label) => {
-            const date = new Date(label);
-            return date.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            });
-          },
-          labelRotate: -45,
-        }}
-        yAxis={[
-          {
+      <View style={{ flex: 1 }}>
+        <CartesianChart
+          chartPressState={state}
+          data={data}
+          xKey="date"
+          yKeys={["lagDays"]}
+          xAxis={{
             font,
-            title: { text: "Completions", font, color: theme.text },
             lineWidth: 1,
             lineColor: theme.text,
             labelColor: theme.text,
-          },
-        ]}
-        transformState={transformState}
-      >
-        {({ points }) => (
-          <>
-            <Scatter
-              points={points.lagDays}
-              shape={"square"}
-              color={"#ff9100"}
-              animate={{ type: "spring" }}
-            />
-            {points.lagDays.map((p, i) => (
-              <SkiaText
-                key={i}
-                x={p.x - 10}
-                y={p.y ? p.y - 12 : 0}
-                text={String(data[i].lagDays.toFixed(1))}
-                font={tooltipLabelFont}
-                color={theme.text}
+            formatXLabel: (label) => {
+              const date = new Date(label);
+              return date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              });
+            },
+            labelRotate: -45,
+          }}
+          yAxis={[
+            {
+              font,
+              title: { text: "Completions", font, color: theme.text },
+              lineWidth: 1,
+              lineColor: theme.text,
+              labelColor: theme.text,
+            },
+          ]}
+          transformState={transformState}
+        >
+          {({ points }) => (
+            <>
+              <Scatter
+                points={points.lagDays}
+                shape={"square"}
+                color={"#ff9100"}
+                animate={{ type: "spring" }}
               />
-            ))}
-          </>
-        )}
-      </CartesianChart>
+              {points.lagDays.map((p, i) => (
+                <SkiaText
+                  key={i}
+                  x={p.x - 10}
+                  y={p.y ? p.y - 12 : 0}
+                  text={String(data[i].lagDays.toFixed(1))}
+                  font={tooltipLabelFont}
+                  color={theme.text}
+                />
+              ))}
+            </>
+          )}
+        </CartesianChart>
+      </View>
     </View>
   );
 };

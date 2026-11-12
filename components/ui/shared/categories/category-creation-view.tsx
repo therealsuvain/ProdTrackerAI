@@ -149,7 +149,12 @@ export const CategoryCreator = ({
 
   return (
     <>
-      <Modal visible={isCreating} animationType="slide" transparent={true}>
+      <Modal
+        visible={isCreating}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={onClose}
+      >
         <View style={styles.modalOverlay}>
           <View
             style={[

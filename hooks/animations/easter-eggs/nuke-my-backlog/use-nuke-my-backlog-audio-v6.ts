@@ -33,6 +33,7 @@ export function useNukeMyBacklogAudio() {
   const explosionPlayer = useAudioPlayer(AUDIO_ASSETS.explosion);
   const crashPlayer = useAudioPlayer(AUDIO_ASSETS.crash);
   const screenCrackPlayer = useAudioPlayer(AUDIO_ASSETS.screenCrack);
+  const mountedRef = useRef(true);
   const fadeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioModeReadyRef = useRef(false);
 
@@ -54,12 +55,26 @@ export function useNukeMyBacklogAudio() {
     fadeTimerRef.current = null;
   }, []);
 
+  // useAudioPlayer owns native player disposal.
+  // This ref prevents pending async playback/fade operations from
+  // accessing a player after its component has unmounted.
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      clearFade();
+    };
+  }, [clearFade]);
+
   const playOneShot = useCallback(
     async (player: Player, volume = 1) => {
       await prepareAudioMode();
+      if (!mountedRef.current) return;
       try {
         player.pause();
         await player.seekTo(0);
+        if (!mountedRef.current) return;
         player.loop = false;
         player.volume = volume;
         player.play();
@@ -76,10 +91,12 @@ export function useNukeMyBacklogAudio() {
 
   const startFlightLoop = useCallback(async () => {
     await prepareAudioMode();
+    if (!mountedRef.current) return;
     try {
       clearFade();
       flightPlayer.pause();
       await flightPlayer.seekTo(0);
+      if (!mountedRef.current) return;
       flightPlayer.loop = true;
       flightPlayer.volume = NUKE_AUDIO_TUNING.flightStartVolume;
       flightPlayer.play();
@@ -90,12 +107,14 @@ export function useNukeMyBacklogAudio() {
 
   const fadeFlightTo = useCallback(
     (targetVolume: number, durationMs: number) => {
+      if (!mountedRef.current) return;
       clearFade();
       const from = flightPlayer.volume;
       const to = Math.max(0, Math.min(1, targetVolume));
       const startedAt = Date.now();
       const duration = Math.max(1, durationMs);
       fadeTimerRef.current = setInterval(() => {
+        if (!mountedRef.current) return;
         const progress = Math.min(1, (Date.now() - startedAt) / duration);
         const eased = progress * progress * (3 - 2 * progress);
         flightPlayer.volume = from + (to - from) * eased;
@@ -115,16 +134,53 @@ export function useNukeMyBacklogAudio() {
     if (AUDIO_ASSETS.screenCrack) void playOneShot(screenCrackPlayer, 1);
   }, [screenCrackPlayer, playOneShot]);
 
-  const stopAll = useCallback(() => {
+  /* const stopAll = useCallback(() => {
     clearFade();
     [launchPlayer, flightPlayer, explosionPlayer, crashPlayer, screenCrackPlayer].forEach((player) => {
       player.pause();
       player.volume = 1;
       void player.seekTo(0).catch(() => undefined);
     });
-  }, [clearFade, launchPlayer, flightPlayer, explosionPlayer, crashPlayer, screenCrackPlayer]);
+  }, [clearFade, launchPlayer, flightPlayer, explosionPlayer, crashPlayer, screenCrackPlayer]); */
+  const stopAll = useCallback(() => {
+    clearFade();
 
-  useEffect(() => stopAll, [stopAll]);
+    // Expo releases these players automatically on unmount.
+    // Never call native methods after that point.
+    if (!mountedRef.current) return;
+
+    [
+      launchPlayer,
+      flightPlayer,
+      explosionPlayer,
+      crashPlayer,
+      screenCrackPlayer,
+    ].forEach((player) => {
+      try {
+        player.pause();
+        player.volume = 1;
+        void player.seekTo(0).catch(() => undefined);
+      } catch (error) {
+        console.warn(
+          "[Nuke My Backlog] Could not stop an audio player.",
+          error,
+        );
+      }
+    });
+  }, [
+    clearFade,
+    launchPlayer,
+    flightPlayer,
+    explosionPlayer,
+    crashPlayer,
+    screenCrackPlayer,
+  ]);
+
+  useEffect(() => {
+    void prepareAudioMode();
+  }, [prepareAudioMode]);
+
+  /* useEffect(() => stopAll, [stopAll]); */
 
   // The animation hook depends on this object in cleanup/callback effects.
   // Keep its identity stable so ordinary React state updates cannot trigger
