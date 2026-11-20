@@ -299,7 +299,9 @@ export type GlobalSearchEasterEggActivation =
         | "lightningStrike"
         | "spaceInvaders"
         | "pacman"
-        | "snake";
+        | "snake"
+        | "copyPaste"
+        | "breakingPoint";
 
     };
 

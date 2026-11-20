@@ -1,12 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Image as ExpoImage, type ImageRef } from "expo-image";
-import {
-  Animated,
-  Easing,
-  PixelRatio,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Animated, Easing, PixelRatio, StyleSheet, View } from "react-native";
 
 // Keep each animated sprite to one native image view; Animated drives the
 // Expo Image component directly rather than wrapping every image in a View.
@@ -135,8 +129,8 @@ export const NUKE_MY_BACKLOG_ACT3_TUNING = {
   smokeRingPerspectiveDp: 1100,
 
   // ACT 3.2 — Transition smoke.
-  smoke30VisibleWidthMultiplier: 1.5, //2.10,
-  smoke60VisibleWidthMultiplier: 1.5, //4.15,
+  smoke30VisibleWidthMultiplier: 1, //2.10,
+  smoke60VisibleWidthMultiplier: 1, //4.15,
   smoke75VisibleWidthMultiplier: 0.5, //3.20,
   transitionSmokePeakOpacity: 0.82,
   // The transitional plume sprites are shallow 3D planes, not flat overlays.
@@ -480,15 +474,20 @@ function getAct3ImageLoadOptions(
   return {
     maxWidth: Math.max(
       1,
-      Math.min(frame.sourceWidth, Math.ceil(frame.sourceWidth * physicalPixelScale)),
+      Math.min(
+        frame.sourceWidth,
+        Math.ceil(frame.sourceWidth * physicalPixelScale),
+      ),
     ),
     maxHeight: Math.max(
       1,
-      Math.min(frame.sourceHeight, Math.ceil(frame.sourceHeight * physicalPixelScale)),
+      Math.min(
+        frame.sourceHeight,
+        Math.ceil(frame.sourceHeight * physicalPixelScale),
+      ),
     ),
   };
 }
-
 
 // These are the same calibrated flame frames already used in Act 1.
 const FLAME_FRAMES: FlameFrame[] = [
@@ -539,7 +538,6 @@ const FLAME_FRAMES: FlameFrame[] = [
   },
 ];
 
-
 export type Act3ImagePreloadGeometry = {
   canvasWidth: number;
   canvasHeight: number;
@@ -555,7 +553,8 @@ export type Act3ImagePreloadGeometry = {
 export async function preloadNukeMyBacklogAct3Images(
   geometry: Act3ImagePreloadGeometry,
 ): Promise<LoadedAct3Images> {
-  const { canvasWidth, canvasHeight, rocketWidth, initialRocketScale } = geometry;
+  const { canvasWidth, canvasHeight, rocketWidth, initialRocketScale } =
+    geometry;
   const sideFrame = ROCKET_FRAMES[0];
   const sideVisibleWidthRatio =
     (sideFrame.alphaRight - sideFrame.alphaLeft) / sideFrame.sourceWidth;
@@ -597,20 +596,20 @@ export async function preloadNukeMyBacklogAct3Images(
       options: getAct3ImageLoadOptions(
         frame,
         projectedRocketWidth,
-        (index === ROCKET_FRAMES.length - 1
-          ? finalCameraScale
-          : 1) * NUKE_MY_BACKLOG_ACT3_TUNING.pitchForwardScale,
+        (index === ROCKET_FRAMES.length - 1 ? finalCameraScale : 1) *
+          NUKE_MY_BACKLOG_ACT3_TUNING.pitchForwardScale,
       ),
     })),
     transitionSmoke: TRANSITION_SMOKE.map((frame, index) => ({
       source: frame.source as number,
       options: getAct3ImageLoadOptions(
         frame,
-        projectedRocketWidth * [
-          NUKE_MY_BACKLOG_ACT3_TUNING.smoke30VisibleWidthMultiplier,
-          NUKE_MY_BACKLOG_ACT3_TUNING.smoke60VisibleWidthMultiplier,
-          NUKE_MY_BACKLOG_ACT3_TUNING.smoke75VisibleWidthMultiplier,
-        ][index],
+        projectedRocketWidth *
+          [
+            NUKE_MY_BACKLOG_ACT3_TUNING.smoke30VisibleWidthMultiplier,
+            NUKE_MY_BACKLOG_ACT3_TUNING.smoke60VisibleWidthMultiplier,
+            NUKE_MY_BACKLOG_ACT3_TUNING.smoke75VisibleWidthMultiplier,
+          ][index],
         NUKE_MY_BACKLOG_ACT3_TUNING.pitchForwardScale,
       ),
     })),
@@ -827,7 +826,9 @@ export default function NukeMyBacklogAct3({
   const initialRocketFrameDisplayedRef = useRef(false);
   const onCompleteRef = useRef(onComplete);
   const onFlightVolumeToRef = useRef(onFlightVolumeTo);
-  const onInitialRocketFrameDisplayedRef = useRef(onInitialRocketFrameDisplayed);
+  const onInitialRocketFrameDisplayedRef = useRef(
+    onInitialRocketFrameDisplayed,
+  );
 
   // Callbacks are read from refs so a parent re-render cannot restart the act.
   useEffect(() => {
@@ -1265,7 +1266,11 @@ export default function NukeMyBacklogAct3({
         const currentAngle = value * 90;
         let nextIndex = 0;
 
-        for (let index = 1; index < ROCKET_FRAME_ANGLES_DEG.length; index += 1) {
+        for (
+          let index = 1;
+          index < ROCKET_FRAME_ANGLES_DEG.length;
+          index += 1
+        ) {
           const switchAngle =
             (ROCKET_FRAME_ANGLES_DEG[index - 1] +
               ROCKET_FRAME_ANGLES_DEG[index]) /
@@ -1610,92 +1615,94 @@ export default function NukeMyBacklogAct3({
           ]}
         >
           {TRANSITION_SMOKE.map((frame, index) => (
-          <AnimatedExpoImage
-            key={`act3-transition-smoke-${index}`}
-            source={loadedImages.transitionSmoke[index] ?? frame.source}
-            contentFit="fill"
-            transition={0}
-            style={[
-              transitionSmokeLayouts[index],
-              {
-                opacity: transitionSmokeOpacities[index],
-                transform: [
-                  { perspective: 1200 },
-                  {
-                    rotateX: `${NUKE_MY_BACKLOG_ACT3_TUNING.transitionSmokePitchAnglesDeg[index]}deg`,
-                  },
-                  {
-                    scaleY:
-                      NUKE_MY_BACKLOG_ACT3_TUNING.transitionSmokePlaneScaleY[index],
-                  },
-                ],
-              },
-            ]}
-          />
+            <AnimatedExpoImage
+              key={`act3-transition-smoke-${index}`}
+              source={loadedImages.transitionSmoke[index] ?? frame.source}
+              contentFit="fill"
+              transition={0}
+              style={[
+                transitionSmokeLayouts[index],
+                {
+                  opacity: transitionSmokeOpacities[index],
+                  transform: [
+                    { perspective: 1200 },
+                    {
+                      rotateX: `${NUKE_MY_BACKLOG_ACT3_TUNING.transitionSmokePitchAnglesDeg[index]}deg`,
+                    },
+                    {
+                      scaleY:
+                        NUKE_MY_BACKLOG_ACT3_TUNING.transitionSmokePlaneScaleY[
+                          index
+                        ],
+                    },
+                  ],
+                },
+              ]}
+            />
           ))}
         </Animated.View>
       )}
 
       {/* CHAPTER 3.3 — Animated 90° cloud ring. It is rendered BEFORE the rocket. */}
       {start && (
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          StyleSheet.absoluteFillObject,
-          {
-            /* transform: [
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFillObject,
+            {
+              /* transform: [
               { translateX: pitchTravelX },
               { translateY: pitchTravelY },
               { translateX: smokeRingOffsetX },
               { translateY: smokeRingOffsetY },
             ], */
-            transform: [
-              { translateX: pitchTravelX },
-              { translateY: pitchTravelY },
-
-              // Existing manual ring alignment.
-              { translateX: smokeRingOffsetX },
-              { translateY: smokeRingOffsetY },
-
-              // Follow the rocket's visual movement around the same pivot.
-              { translateX: smokeFollowOffsetX },
-              { translateY: smokeFollowOffsetY },
-            ],
-          },
-        ]}
-      >
-        <Animated.View
-          style={[
-            StyleSheet.absoluteFillObject,
-            {
-              opacity: smokeRingOpacity,
               transform: [
-                {
-                  perspective:
-                    NUKE_MY_BACKLOG_ACT3_TUNING.smokeRingPerspectiveDp,
-                },
-                { rotateX: smokeRingPitchXString },
-                { scale: pitchForwardScale },
-                { scale: smokeRingScale },
-                { rotate: smokeRotationString },
+                { translateX: pitchTravelX },
+                { translateY: pitchTravelY },
+
+                // Existing manual ring alignment.
+                { translateX: smokeRingOffsetX },
+                { translateY: smokeRingOffsetY },
+
+                // Follow the rocket's visual movement around the same pivot.
+                { translateX: smokeFollowOffsetX },
+                { translateY: smokeFollowOffsetY },
               ],
             },
           ]}
         >
-          {SMOKE_RING_FRAMES.map((frame, index) => (
-            <AnimatedExpoImage
-              key={`act3-smoke-ring-${index}`}
-              source={loadedImages.smokeRing[index] ?? frame.source}
-              contentFit="fill"
-              transition={0}
-              style={[
-                smokeRingLayouts[index],
-                { opacity: smokeFrameOpacities[index] },
-              ]}
-            />
-          ))}
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFillObject,
+              {
+                opacity: smokeRingOpacity,
+                transform: [
+                  {
+                    perspective:
+                      NUKE_MY_BACKLOG_ACT3_TUNING.smokeRingPerspectiveDp,
+                  },
+                  { rotateX: smokeRingPitchXString },
+                  { scale: pitchForwardScale },
+                  { scale: smokeRingScale },
+                  { rotate: smokeRotationString },
+                ],
+              },
+            ]}
+          >
+            {SMOKE_RING_FRAMES.map((frame, index) => (
+              <AnimatedExpoImage
+                key={`act3-smoke-ring-${index}`}
+                source={loadedImages.smokeRing[index] ?? frame.source}
+                contentFit="fill"
+                transition={0}
+                style={[
+                  smokeRingLayouts[index],
+                  { opacity: smokeFrameOpacities[index] },
+                ]}
+              />
+            ))}
+          </Animated.View>
         </Animated.View>
-      </Animated.View>
       )}
 
       {/* CHAPTER 3.4 — Radial streaks. These are few, lightweight code shapes;

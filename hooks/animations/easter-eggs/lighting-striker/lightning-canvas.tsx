@@ -3,12 +3,12 @@ import { StyleSheet } from "react-native";
 import { BlurMask, Canvas, Path, Skia } from "@shopify/react-native-skia";
 import { useDerivedValue, type SharedValue } from "react-native-reanimated";
 
-import { LIGHTNING_STRIKER_TUNING } from "./lightning-config-v3";
+import { LIGHTNING_STRIKER_TUNING } from "./lightning-config";
 import type {
   LightningDepth,
   LightningSegment,
   LightningStrike,
-} from "./lightning-types-v3";
+} from "./lightning-types";
 
 function clamp01(value: number): number {
   "worklet";

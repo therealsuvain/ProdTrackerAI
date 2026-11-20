@@ -1,5 +1,5 @@
-import { LIGHTNING_STRIKER_V4_TUNING } from "./lightning-config-v4";
-import type { LightningGeneratorConfig } from "./lightning-config-v4";
+import { LIGHTNING_STRIKER_TUNING } from "./lightning-config";
+import type { LightningGeneratorConfig } from "./lightning-config";
 import type {
   LightningCoverage,
   LightningDepth,
@@ -7,7 +7,7 @@ import type {
   LightningRange,
   LightningSegment,
   LightningStrike,
-} from "./lightning-types-v4";
+} from "./lightning-types";
 
 type GeneratorOptions = {
   seed?: number;
@@ -685,7 +685,7 @@ export function generateLightningStrike(
     throw new Error("Lightning canvas width and height must be positive finite numbers.");
   }
 
-  const defaults = LIGHTNING_STRIKER_V4_TUNING.generator;
+  const defaults = LIGHTNING_STRIKER_TUNING.generator;
   const config: LightningGeneratorConfig = {
     ...defaults,
     ...options.config,

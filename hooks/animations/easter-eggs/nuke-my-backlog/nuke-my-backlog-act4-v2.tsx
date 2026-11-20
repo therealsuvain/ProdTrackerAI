@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
+import { useVideoPlayer, VideoView } from "expo-video";
 
 /**
  * NUKE MY BACKLOG — ACT 4
@@ -42,11 +43,18 @@ const ACT4_AUDIO = {
   error03: require("@/assets/easter-eggs/nuke-backlog-assets/audio/act4-error-03.mp3"),
 };
 
+const ACT4_EXPLOSION_VIDEO = require("@/assets/easter-eggs/nuke-backlog-assets/act4-explosion.mp4");
 export const NUKE_MY_BACKLOG_ACT4_TUNING = {
   // ACT 4.1 — Temporary visual while the manually prepared explosion video is pending.
-  explosionFlashFadeMs: 1050,
+  /*   explosionFlashFadeMs: 1050,
   explosionShockwaveMs: 1150,
-  explosionCoreFadeMs: 720,
+  explosionCoreFadeMs: 720, */
+  // ACT 4.1 — Explosion video.
+  explosionVideoDurationMs: 2967, // Actual exported clip duration.
+  explosionVideoScale: 1.08, // Slight zoom into the explosion.
+
+  // ACT 4.4 — How much of the explosion plays before error takeover.
+  errorScreenRevealFraction: 0.5, // 0.5 = halfway through the video.
 
   // ACT 4.2 — Screen fracture. All timings are relative to Act 4 start.
   glassCrackStartMs: 260,
@@ -60,7 +68,7 @@ export const NUKE_MY_BACKLOG_ACT4_TUNING = {
   errorSound03StartMs: 1460,
 
   // ACT 4.4 — Error UI takeover.
-  errorScreenStartMs: 1080,
+  /*  errorScreenStartMs: 1080, */
   finalErrorSettleMs: 2460,
   dismissButtonRevealMs: 3050,
 
@@ -104,6 +112,11 @@ const clampPoint = (point: Point, width: number, height: number): Point => ({
   y: Math.max(0, Math.min(height, point.y)),
 });
 
+const explosionVideoPlayer = useVideoPlayer(ACT4_EXPLOSION_VIDEO, (player) => {
+  player.loop = false;
+  player.muted = true;
+  player.volume = 0;
+});
 /**
  * Builds a full-screen glass fracture network.
  *
@@ -388,7 +401,7 @@ function ErrorCodeBackground() {
   );
 }
 
-function ExplosionEffectPlaceholder({
+/* function ExplosionEffectPlaceholder({
   flashOpacity,
   coreOpacity,
   shockwaveOpacity,
@@ -409,7 +422,6 @@ function ExplosionEffectPlaceholder({
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
-      {/* Replace this component's contents with the prepared explosion VideoView. */}
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
@@ -466,7 +478,7 @@ function ExplosionEffectPlaceholder({
       </Animated.View>
     </View>
   );
-}
+} */
 
 /* function GlassCrackOverlay({
   width,
@@ -651,12 +663,15 @@ export default function NukeMyBacklogAct4({ width, height, onDismiss }: Props) {
   useEffect(() => {
     mountedRef.current = true;
 
-    // ACT 4.1 — Explosion impact placeholder and explosion sound.
+    // ACT 4.1 — Start video and independent explosion sound together.
+    explosionVideoPlayer.currentTime = 0;
+    explosionVideoPlayer.play();
+
     void playOneShot(
       explosionPlayer,
       NUKE_MY_BACKLOG_ACT4_TUNING.explosionVolume,
     );
-    flashOpacity.setValue(1);
+    /* flashOpacity.setValue(1);
     coreOpacity.setValue(0.92);
     shockwaveOpacity.setValue(0.88);
     shockwaveScale.setValue(0.18);
@@ -688,12 +703,17 @@ export default function NukeMyBacklogAct4({ width, height, onDismiss }: Props) {
           useNativeDriver: true,
         }),
       ]),
-    ]).start();
+    ]).start(); */
 
     const schedule = (delayMs: number, callback: () => void) => {
       const timer = setTimeout(callback, delayMs);
       timersRef.current.push(timer);
     };
+
+    const errorScreenStartMs = Math.round(
+      NUKE_MY_BACKLOG_ACT4_TUNING.explosionVideoDurationMs *
+        NUKE_MY_BACKLOG_ACT4_TUNING.errorScreenRevealFraction,
+    );
 
     // ACT 4.2 — Glass fracture begins while the explosion is still fading.
     schedule(NUKE_MY_BACKLOG_ACT4_TUNING.glassCrackStartMs, () => {
@@ -801,13 +821,27 @@ export default function NukeMyBacklogAct4({ width, height, onDismiss }: Props) {
     });
 
     // ACT 4.4 — Full-screen critical-error takeover.
-    schedule(NUKE_MY_BACKLOG_ACT4_TUNING.errorScreenStartMs, () => {
+    /* schedule(NUKE_MY_BACKLOG_ACT4_TUNING.errorScreenStartMs, () => {
       Animated.timing(errorPanelOpacity, {
         toValue: NUKE_MY_BACKLOG_ACT4_TUNING.errorPanelOpacity,
         duration: 230,
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }).start();
+    }); */
+    schedule(errorScreenStartMs, () => {
+      Animated.timing(errorPanelOpacity, {
+        toValue: NUKE_MY_BACKLOG_ACT4_TUNING.errorPanelOpacity,
+        duration: 230,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        // Once the opaque error takeover has completed, stop decoding
+        // video frames that are no longer visible.
+        if (finished && mountedRef.current) {
+          explosionVideoPlayer.pause();
+        }
+      });
     });
 
     schedule(NUKE_MY_BACKLOG_ACT4_TUNING.finalErrorSettleMs, () => {
@@ -837,10 +871,10 @@ export default function NukeMyBacklogAct4({ width, height, onDismiss }: Props) {
       shakeAnimationRef.current?.stop();
       shakeAnimationRef.current = null;
       [
-        flashOpacity,
+        /*  flashOpacity,
         coreOpacity,
         shockwaveOpacity,
-        shockwaveScale,
+        shockwaveScale, */
         crackProgress,
         errorPanelOpacity,
         glitchOpacity,
@@ -855,20 +889,21 @@ export default function NukeMyBacklogAct4({ width, height, onDismiss }: Props) {
     };
   }, [
     crackProgress,
-    coreOpacity,
+    /*  coreOpacity, */
     errorPanelOpacity,
     error01Player,
     error02Player,
     error03Player,
     explosionPlayer,
-    flashOpacity,
+    /*  flashOpacity, */
     glassBreakPlayer,
     glitchOffset,
     glitchOpacity,
     playOneShot,
     sceneShake,
-    shockwaveOpacity,
-    shockwaveScale,
+    /* shockwaveOpacity,
+    shockwaveScale, */
+    explosionVideoPlayer,
   ]);
 
   const shakeX = sceneShake.interpolate({
@@ -896,15 +931,41 @@ export default function NukeMyBacklogAct4({ width, height, onDismiss }: Props) {
       >
         <View style={[StyleSheet.absoluteFillObject, styles.baseBackdrop]} />
 
-        {/* PLACEHOLDER SLOT: replace only this component with the prepared video layer. */}
-        <ExplosionEffectPlaceholder
+        {/* ACT 4.1 — Full-screen, pre-rendered explosion video. */}
+        <View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFillObject, styles.explosionVideoViewport]}
+        >
+          <View
+            style={[
+              StyleSheet.absoluteFillObject,
+              {
+                transform: [
+                  {
+                    scale: NUKE_MY_BACKLOG_ACT4_TUNING.explosionVideoScale,
+                  },
+                ],
+              },
+            ]}
+          >
+            <VideoView
+              player={explosionVideoPlayer}
+              style={StyleSheet.absoluteFillObject}
+              contentFit="cover"
+              nativeControls={false}
+              allowsPictureInPicture={false}
+              surfaceType="textureView"
+            />
+          </View>
+        </View>
+        {/*  <ExplosionEffectPlaceholder
           flashOpacity={flashOpacity}
           coreOpacity={coreOpacity}
           shockwaveOpacity={shockwaveOpacity}
           shockwaveScale={shockwaveScale}
           width={width}
           height={height}
-        />
+        /> */}
 
         {/* Glitch bars are native views; no image assets or per-frame JS updates. */}
         <Animated.View
@@ -1179,5 +1240,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 11,
     letterSpacing: 1.7,
+  },
+
+  explosionVideoViewport: {
+    overflow: "hidden",
+    backgroundColor: "#000000",
   },
 });

@@ -12,7 +12,8 @@ import {
   buildRainSplashSpecs,
   RainSplashLayer,
   type RainSplashSpec,
-} from "./rain-splash-layer-v3";
+} from "./rain-splash-layer-v4";
+import type { RainSplashSurface } from "./rain-splash-surface-registry";
 import { useAudioPlayer, type AudioSource } from "expo-audio";
 import Animated, {
   cancelAnimation,
@@ -93,11 +94,17 @@ export type LightningRainConfig = {
 };
 
 export type LightningRainController = {
-  run: (width: number, height: number) => Promise<boolean>;
+  run: (
+    width: number,
+    height: number,
+    surfaces?: readonly RainSplashSurface[],
+  ) => Promise<boolean>;
   cancel: () => void;
   isRunning: () => boolean;
   /** Briefly brightens existing drops to connect the rain with a lightning flash. */
   triggerLightningFlash: () => void;
+  /** Delay until all rain cohorts have completed their extra-height entry. */
+  getEntryDelayMs: () => number;
   overlayLayer: React.ReactNode;
 };
 
@@ -123,6 +130,8 @@ type RainScene = {
   splashes: RainSplashSpec[];
   totalDurationMs: number;
   heavyDurationMs: number;
+  /** Time until the slowest cohort has completed its extra screen-height entry. */
+  entryDelayMs: number;
   windEnabled: boolean;
   windGustMaxAngleRadians: number;
   windGustDepthMultipliers: readonly [number, number, number];
@@ -233,6 +242,7 @@ function buildRainScene(
   drainDurationMs: number,
   config: LightningRainConfig,
   windEnabled: boolean,
+  splashSurfaces: readonly RainSplashSurface[] = [],
 ): RainScene {
   const cohortCount = Math.max(3, Math.floor(config.fadeCohortsPerDepth ?? 6));
   const cohortDrops: Array<
@@ -360,24 +370,48 @@ function buildRainScene(
     }
   });
 
-  const totalDurationMs = heavyDurationMs + totalTaperMs;
-  // Build a deliberately small, simple splash set alongside the existing rain
-  // geometry. Nothing is generated from inside the Canvas/React render path.
-  const splashes =
+  // The new initial offset adds one complete canvas-height of invisible
+  // travel before each cohort enters its repeating rain position. Use the
+  // slowest cohort so the full active/fade/drain timeline remains available
+  // after every cohort has completed that entry.
+  const safeHeight = Math.max(1, height);
+  const entryDelayMs = Math.ceil(
+    Math.max(
+      ...cohorts.map(
+        (cohort) => (safeHeight / Math.max(1, cohort.speedDpPerSecond)) * 1000,
+      ),
+    ),
+  );
+
+  for (const cohort of cohorts) {
+    cohort.retireAtMs += entryDelayMs;
+  }
+
+  const baseTotalDurationMs = heavyDurationMs + totalTaperMs;
+  const totalDurationMs = entryDelayMs + baseTotalDurationMs;
+
+  // Splash timing is relative to the visible rain phase, not the hidden
+  // entry window. Geometry is still prepared once before the Canvas mounts.
+  const baseSplashes =
     config.splashEnabled === false
       ? []
       : buildRainSplashSpecs({
           width,
           height,
           heavyDurationMs,
-          totalDurationMs,
+          totalDurationMs: baseTotalDurationMs,
           ratePerSecond: config.splashRatePerSecond ?? 1.15,
           maxCount: config.splashMaxCount ?? 18,
           sizeRangeDp: config.splashSizeRangeDp ?? [7, 10],
           durationRangeMs: config.splashDurationRangeMs ?? [320, 470],
           opacity: config.splashOpacity ?? 0.82,
           bottomInsetDp: config.splashBottomInsetDp ?? 2,
+          surfaces: splashSurfaces,
         });
+  const splashes = baseSplashes.map((splash) => ({
+    ...splash,
+    startMs: splash.startMs + entryDelayMs,
+  }));
 
   return {
     width,
@@ -386,6 +420,7 @@ function buildRainScene(
     splashes,
     totalDurationMs,
     heavyDurationMs,
+    entryDelayMs,
     windEnabled,
     windGustMaxAngleRadians:
       (Math.max(0, config.windGustMaxAngleDegrees ?? 6.5) * Math.PI) / 180,
@@ -458,11 +493,12 @@ const RainCohortGroup = memo(function RainCohortGroup({
     const travelled = (elapsedMs.value * cohort.speedDpPerSecond) / 1000;
     const canvasHeight = Math.max(1, scene.height);
 
-    // Initial entry: start one screen-height above the viewport.
-    // Move downward until the cohort reaches its normal position.
+    // Keep the cohort an extra screen-height above the viewport during the
+    // startup window. Once it has travelled one canvas-height, switch into the
+    // repeating two-tile path; the duplicated tiles make this wrap seamless.
     const verticalOffset =
       travelled < canvasHeight
-        ? travelled - canvasHeight
+        ? travelled - 2 * canvasHeight
         : travelled % canvasHeight;
 
     const horizontalOffset = verticalOffset * cohort.windSlope;
@@ -576,6 +612,7 @@ export function useLightningRain(
   const [scene, setScene] = useState<RainScene | null>(null);
 
   const activeRef = useRef(false);
+  const entryDelayMsRef = useRef(0);
   const runIdRef = useRef(0);
   const completionResolverRef = useRef<((completed: boolean) => void) | null>(
     null,
@@ -743,14 +780,19 @@ export function useLightningRain(
   ]);
 
   const run = useCallback(
-    (width: number, height: number): Promise<boolean> => {
+    (
+      width: number,
+      height: number,
+      splashSurfaces: readonly RainSplashSurface[] = [],
+    ): Promise<boolean> => {
       if (activeRef.current || width <= 0 || height <= 0) {
         return Promise.resolve(false);
       }
 
       activeRef.current = true;
       const runId = ++runIdRef.current;
-      const startedAtMs = Date.now();
+      entryDelayMsRef.current = 0;
+      let visualClockStartedAtMs = Date.now();
 
       try {
         const heavyDurationMs = Math.round(
@@ -767,9 +809,9 @@ export function useLightningRain(
         );
         const drainDurationMs = Math.max(0, config.drainDurationMs);
         const totalTaperMs = fadeDurationMs + drainDurationMs;
-        const totalDurationMs = heavyDurationMs + totalTaperMs;
 
-        // Build immutable path geometry on JS once per activation.
+        // Build immutable path geometry on JS once per activation. The scene
+        // duration includes the extra-height entry period.
         const nextScene = buildRainScene(
           width,
           height,
@@ -778,7 +820,11 @@ export function useLightningRain(
           drainDurationMs,
           config,
           Boolean(windSource) && config.windEnabled !== false,
+          splashSurfaces,
         );
+        const entryDelayMs = nextScene.entryDelayMs;
+        const totalDurationMs = nextScene.totalDurationMs;
+        entryDelayMsRef.current = entryDelayMs;
 
         elapsedMs.value = 0;
         windElapsedMs.value = 0;
@@ -821,6 +867,7 @@ export function useLightningRain(
 
         // No separate setTimeout is used for visual completion. This callback
         // fires when the UI-thread animation reaches its final frame.
+        visualClockStartedAtMs = Date.now();
         elapsedMs.value = withTiming(
           totalDurationMs,
           {
@@ -843,10 +890,10 @@ export function useLightningRain(
             if (runId !== runIdRef.current || !activeRef.current) return;
             rainPlayer.play();
 
-            const elapsedBeforePlaybackMs = Date.now() - startedAtMs;
+            const elapsedBeforePlaybackMs = Date.now() - visualClockStartedAtMs;
             const remainingHeavyMs = Math.max(
               0,
-              heavyDurationMs - elapsedBeforePlaybackMs,
+              entryDelayMs + heavyDurationMs - elapsedBeforePlaybackMs,
             );
             scheduleAudioFade(remainingHeavyMs, totalTaperMs, runId);
           } catch (error) {
@@ -875,7 +922,8 @@ export function useLightningRain(
               });
               windPlayer.play();
 
-              const elapsedBeforeWindStartMs = Date.now() - startedAtMs;
+              const elapsedBeforeWindStartMs =
+                Date.now() - visualClockStartedAtMs;
               const remainingUntilEventEndMs = Math.max(
                 0,
                 totalDurationMs - elapsedBeforeWindStartMs,
@@ -963,6 +1011,8 @@ export function useLightningRain(
     ],
   );
 
+  const getEntryDelayMs = useCallback(() => entryDelayMsRef.current, []);
+
   const overlayLayer =
     visible && scene ? (
       <View
@@ -993,9 +1043,10 @@ export function useLightningRain(
       cancel,
       isRunning: () => activeRef.current,
       triggerLightningFlash,
+      getEntryDelayMs,
       overlayLayer,
     }),
-    [run, cancel, triggerLightningFlash, overlayLayer],
+    [run, cancel, triggerLightningFlash, getEntryDelayMs, overlayLayer],
   );
 }
 

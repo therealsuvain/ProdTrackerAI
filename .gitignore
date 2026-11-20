@@ -180,3 +180,7 @@ app-example
 # generated native folders
 /ios
 /android
+
+# modules generated native folders
+modules/**/android/build/
+modules/**/android/.cxx/

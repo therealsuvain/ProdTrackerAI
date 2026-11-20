@@ -67,7 +67,7 @@ const SPLASH_RAYS = [
   [-0.29, -0.29, -0.57, -0.76],
   [-0.04, -0.39, 0.04, -0.98],
   [0.29, -0.29, 0.58, -0.75],
-  [0.59, -0.18, 1.10, -0.41],
+  [0.59, -0.18, 1.1, -0.41],
 ] as const;
 
 function randomBetween(min: number, max: number): number {
@@ -109,8 +109,14 @@ export function buildRainSplashSpecs({
     return [];
   }
 
-  const minLifeMs = Math.max(1, Math.min(durationRangeMs[0], durationRangeMs[1]));
-  const maxLifeMs = Math.max(minLifeMs, Math.max(durationRangeMs[0], durationRangeMs[1]));
+  const minLifeMs = Math.max(
+    1,
+    Math.min(durationRangeMs[0], durationRangeMs[1]),
+  );
+  const maxLifeMs = Math.max(
+    minLifeMs,
+    Math.max(durationRangeMs[0], durationRangeMs[1]),
+  );
   const lastSpawnMs = Math.max(0, totalDurationMs - maxLifeMs - 24);
   const taperMs = Math.max(1, totalDurationMs - heavyDurationMs);
   const impactY = Math.max(0, height - Math.max(0, bottomInsetDp));
@@ -211,7 +217,7 @@ const SplashPathBatch = memo(function SplashPathBatch({
 
       // The five flicks expand rapidly out of the impact point, then drift up
       // by a fraction of their size while their shared alpha band fades them.
-      const expansion = 0.16 + 0.84 * smoothStep01(progress / 0.40);
+      const expansion = 0.16 + 0.84 * smoothStep01(progress / 0.4);
       const rise = splash.size * 0.045 * smoothStep01(progress / 0.55);
       const scaleX = splash.size * splash.spreadX * expansion;
       const scaleY = splash.size * splash.spreadY * expansion;

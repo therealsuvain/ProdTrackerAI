@@ -31,7 +31,7 @@ const EASTER_EGG_PRESENTATION: Record<
         icon: "magic-staff",
         accentColor: "#C16DCE",
     },
-    lighting_strike: {
+    lightning_strike: {
         icon: "flash-outline",
         accentColor: "#1fadff",
     },
@@ -47,6 +47,14 @@ const EASTER_EGG_PRESENTATION: Record<
         icon: "snake",
         accentColor: "#4CAF50",
     },
+    copy_paste: {
+        icon: "content-copy",
+        accentColor: "#ffffff",
+    },
+    breaking_point: {
+        icon: "glass-fragile",
+        accentColor: "#025dc5",
+    }
 };
 
 /**

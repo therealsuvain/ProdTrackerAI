@@ -1,8 +1,4 @@
-import React, {
-  forwardRef,
-  memo,
-  useImperativeHandle,
-} from "react";
+import React, { forwardRef, memo, useImperativeHandle } from "react";
 
 import {
   useLightningStrikerAnimation,

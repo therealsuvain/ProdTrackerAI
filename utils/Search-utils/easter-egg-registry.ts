@@ -54,7 +54,7 @@ const easterEggs = [
         },
     },
     {
-        id: "lighting_strike",
+        id: "lightning_strike",
         triggers: ["lighting strike", "zap me", "electrify me", "shock me", "lightning bolt", "thunderbolt"],
         title: "Lightning Strike",
         subtitle: "A powerful electrical display",
@@ -92,7 +92,28 @@ const easterEggs = [
             kind: "animation",
             effect: "snake",
         },
-    }
+    },
+    {
+        id: "copy_paste",
+        triggers: ["copy machine", "copy paste"],
+        title: "The Copy Machine",
+        subtitle: "One copy is never enough",
+        activation: {
+            kind: "animation",
+            effect: "copyPaste",
+        },
+    },
+    {
+        id: "breaking_point",
+        triggers: ["crack it", "breaking point"],
+        title: "Breaking Point",
+        subtitle: "Crack your screen",
+        activation: {
+            kind: "animation",
+            effect: "breakingPoint",
+        },
+    },
+
 ] satisfies readonly GlobalSearchEasterEggDefinition[];
 
 export const GLOBAL_SEARCH_EASTER_EGGS =

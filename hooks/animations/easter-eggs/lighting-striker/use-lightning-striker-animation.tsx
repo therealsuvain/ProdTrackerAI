@@ -16,14 +16,17 @@ import Animated, {
 } from "react-native-reanimated";
 import type { AudioSource } from "expo-audio";
 
-import { LIGHTNING_STRIKER_TUNING } from "./lightning-config-v3";
-import { generateLightningStrike } from "./lightning-generator-v4";
-import type { LightningGeneratorConfig } from "./lightning-config-v3";
-import { LightningCanvas } from "./lightning-canvas-v3";
-import type { LightningStrike } from "./lightning-types-v4";
+import {
+  LIGHTNING_STRIKER_TUNING,
+  LightningGeneratorConfig,
+} from "./lightning-config";
+import { generateLightningStrike } from "./lightning-generator";
+import { LightningCanvas } from "./lightning-canvas";
+import type { LightningStrike } from "./lightning-types";
 import { useLightningStrikerAudio } from "./use-lightning-striker-audio-v2";
 import { useLightningPowerCut } from "./use-lightning-power-cut";
-import { useLightningRain } from "./use-lightning-rain-v5-with-splashes";
+import { useLightningRain } from "./use-lightning-rain-v7";
+import { measureRainSplashSurfaces } from "./rain-splash-surface-registry";
 
 export type LightningStrikerCanvasRef = RefObject<View | null>;
 type Rect = { x: number; y: number; width: number; height: number };
@@ -33,7 +36,8 @@ export type LightningStrikerStartOptions = {
   seed?: number;
   coverage?: "full" | "partial" | "random";
   generatorConfig?: Partial<LightningGeneratorConfig>;
-  specialEvent?: "random" | "none" | "powerCut" | "rain";
+  specialEvent?: "random" | "none" | "powerCut" | "rain" | "rowFire";
+  onRowFire?: () => Promise<boolean>;
 };
 
 export type LightningStrikerAudioOptions = {
@@ -102,6 +106,7 @@ export function useLightningStrikerAnimation(
   const atmosphereOpacity = useSharedValue(0);
   const screenFlashOpacity = useSharedValue(0);
 
+  console.log("LIGHTING HOOK");
   const { appearance, timing } = LIGHTNING_STRIKER_TUNING;
 
   const atmosphereStyle = useAnimatedStyle(() => ({
@@ -319,6 +324,7 @@ export function useLightningStrikerAnimation(
       let powerCutPromise: Promise<boolean> | null = null;
 
       const rainConfig = LIGHTNING_STRIKER_TUNING.specialEvents.rain;
+      const fireConfig = LIGHTNING_STRIKER_TUNING.specialEvents.rowFire;
       /*  const shouldRunrain =
         options.specialEvent === "rain" ||
         (options.specialEvent !== "none" &&
@@ -329,11 +335,16 @@ export function useLightningStrikerAnimation(
       // Exactly one special outcome can be selected for an activation.
       // Explicit options are useful for deterministic device testing; "random"
       // uses the configured per-event chances.
-      let selectedSpecialEvent: "powerCut" | "rain" | null = null;
+      let selectedSpecialEvent: "powerCut" | "rain" | "rowFire" | null = null;
       if (options.specialEvent === "powerCut") {
+        console.log("POWER CUT Selected");
         selectedSpecialEvent = "powerCut";
       } else if (options.specialEvent === "rain") {
         selectedSpecialEvent = "rain";
+        console.log("Rain  Selected");
+      } else if (options.specialEvent === "rowFire" && options.onRowFire) {
+        selectedSpecialEvent = "rowFire";
+        console.log("Fire Selected");
       } else if (options.specialEvent !== "none") {
         const powerCutChance = powerCutConfig.enabled
           ? Math.max(0, Math.min(1, powerCutConfig.chance))
@@ -341,13 +352,23 @@ export function useLightningStrikerAnimation(
         const rainChance = rainConfig.enabled
           ? Math.max(0, Math.min(1 - powerCutChance, rainConfig.chance))
           : 0;
+
+        const fireChance = fireConfig.enabled
+          ? Math.max(
+              0,
+              Math.min(1 - powerCutChance - rainChance, fireConfig.chance),
+            )
+          : 0;
         const eventRoll = Math.random();
 
         if (eventRoll < powerCutChance) {
           selectedSpecialEvent = "powerCut";
         } else if (eventRoll < powerCutChance + rainChance) {
           selectedSpecialEvent = "rain";
-        }
+        } else if (eventRoll < powerCutChance + rainChance + fireChance)
+          selectedSpecialEvent = "rowFire";
+
+        console.log(selectedSpecialEvent);
       }
       try {
         const [canvas, reduceMotion] = await Promise.all([
@@ -436,6 +457,12 @@ export function useLightningStrikerAnimation(
         );
         if (!returnFinished || runId !== runIdRef.current) return false;
 
+        let rowFirePromise: Promise<boolean> | null = null;
+        if (selectedSpecialEvent === "rowFire" && options.onRowFire) {
+          rowFirePromise = options.onRowFire();
+          console.log("Rain Fire Promised");
+        }
+
         await waitFor(timing.secondaryFlashDelayMs, runId);
         if (runId !== runIdRef.current) return false;
 
@@ -465,46 +492,33 @@ export function useLightningStrikerAnimation(
           easing: Easing.out(Easing.quad),
         });
 
-        const fadeFinished = await waitFor(timing.fadeOutDurationMs, runId);
-        if (!fadeFinished || runId !== runIdRef.current) return false;
-        if (powerCutPromise) {
-          const powerCutCompleted = await powerCutPromise;
-          if (!powerCutCompleted || runId !== runIdRef.current) return false;
-        }
+        // Start the JS-side fade wait before preparing the rain scene. The
+        // Reanimated fade itself is already running on the UI thread, so rain
+        // scene preparation can overlap it instead of adding another delay.
+        const fadeFinishedPromise = waitFor(timing.fadeOutDurationMs, runId);
 
-        if (powerCutPromise) {
-          const powerCutCompleted = await powerCutPromise;
-          if (!powerCutCompleted) {
-            if (runId === runIdRef.current) finish(runId);
-            return false;
-          }
-          if (runId !== runIdRef.current) return false;
-        }
-
-        // Rain starts after the electrical channels have faded, then owns the
-        // remaining event lifetime. Its particle emitters taper gradually and
-        // existing droplets are allowed to drain before the activation finishes.
+        let rainPromise: Promise<boolean> | null = null;
         if (selectedSpecialEvent === "rain") {
-          /*  const remainingAudioMs = Math.max(
-            0,
-            lightningAudioEndAtMs - Date.now(),
-          );
-          if (remainingAudioMs > 0) {
-            const audioFinished = await waitFor(remainingAudioMs, runId);
-            if (!audioFinished || runId !== runIdRef.current) return false;
-          } */
-          const rainPromise = rain.run(canvas.width, canvas.height);
+          const splashSurfaces = await measureRainSplashSurfaces(canvasRef);
+          rainPromise = rain.run(canvas.width, canvas.height, splashSurfaces);
+
           if (rainConfig.autoStrikeEnabled !== false) {
             const autoStrikeDelayMs = Math.max(
               0,
               Math.floor(rainConfig.autoStrikeDelayMs ?? 3500),
             );
+            const rainEntryDelayMs = rain.getEntryDelayMs();
             autoRainStrikeTimerRef.current = setTimeout(() => {
               autoRainStrikeTimerRef.current = null;
               void triggerRainAutoStrike(canvas, options, runId, reduceMotion);
-            }, autoStrikeDelayMs);
+            }, rainEntryDelayMs + autoStrikeDelayMs);
           }
+        }
 
+        const fadeFinished = await fadeFinishedPromise;
+        if (!fadeFinished || runId !== runIdRef.current) return false;
+
+        if (rainPromise) {
           const rainCompleted = await rainPromise;
           if (autoRainStrikeTimerRef.current) {
             clearTimeout(autoRainStrikeTimerRef.current);
@@ -517,6 +531,15 @@ export function useLightningStrikerAnimation(
           if (runId !== runIdRef.current) return false;
         }
 
+        if (powerCutPromise) {
+          const powerCutCompleted = await powerCutPromise;
+          if (!powerCutCompleted || runId !== runIdRef.current) return false;
+        }
+
+        if (rowFirePromise) {
+          const rowFireCompleted = await rowFirePromise;
+          if (!rowFireCompleted || runId !== runIdRef.current) return false;
+        }
         stopAnimations();
         finish(runId);
         return true;
@@ -550,6 +573,7 @@ export function useLightningStrikerAnimation(
       finish,
       powerCut.run,
       rain.run,
+      rain.getEntryDelayMs,
       triggerRainAutoStrike,
     ],
   );

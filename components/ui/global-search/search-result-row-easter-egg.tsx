@@ -1,4 +1,4 @@
-import React, { useContext, useRef } from "react";
+import React, { useContext, useRef, useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Text } from "react-native-paper";
@@ -6,6 +6,7 @@ import { Text } from "react-native-paper";
 import { ThemeContext } from "@/context/ThemeContext";
 import { withAlpha } from "@/utils/common-utils";
 import type { GlobalSearchResult } from "@/types/global-search";
+import { setRainSplashSurface } from "@/hooks/animations/easter-eggs/lighting-striker/rain-splash-surface-registry";
 
 type RowMeasureRef = React.RefObject<View | null>;
 
@@ -14,9 +15,10 @@ interface Props {
   activationEnabled: boolean;
   // Pass the Pressable ref to the screen so the root-level animation controller
   // can measure this exact row relative to the shared animation canvas.
-  onPress: (rowRef: RowMeasureRef) => void;
+  onPress: (rowRef: RowMeasureRef, normaLizedX: number) => void;
   onLayout?: (rowRef: RowMeasureRef) => void;
   hintText?: string;
+  hidden?: boolean;
 }
 
 export function GlobalSearchEasterEggRow({
@@ -25,22 +27,38 @@ export function GlobalSearchEasterEggRow({
   onPress,
   onLayout,
   hintText,
+  hidden = false,
 }: Props) {
   const { theme } = useContext(ThemeContext);
   const rowRef = useRef<View | null>(null);
-
+  const rowWidthRef = useRef(0);
   const { document } = result;
+  const eggId = document.kind === "easterEgg" ? document.target.eggId : null;
+
+  useEffect(() => {
+    if (!eggId) return;
+    const surfaceId = `easter-egg:${eggId}`;
+    const node = rowRef.current;
+    if (node) setRainSplashSurface(surfaceId, node, "top");
+    return () => setRainSplashSurface(surfaceId, null);
+  }, [eggId]);
+
   if (document.kind !== "easterEgg") return null;
 
   const accentColor =
     document.display.presentation?.accentColor ?? theme.taskBase;
   const iconName =
     document.display.presentation?.icon?.name ?? "star-four-points-outline";
-
+  //-console.log("easter egg row , hidden prop", hidden);
   return (
     <Pressable
       ref={rowRef}
-      onLayout={() => onLayout?.(rowRef)}
+      /* onLayout={(eve) => onLayout?.(rowRef)} */
+      onLayout={(event) => {
+        rowWidthRef.current = event.nativeEvent.layout.width;
+        onLayout?.(rowRef);
+      }}
+      collapsable={false}
       accessibilityRole="button"
       accessibilityLabel={`${document.display.title}, Easter egg`}
       accessibilityHint={
@@ -49,13 +67,21 @@ export function GlobalSearchEasterEggRow({
           ? "Activate this hidden search surprise"
           : "This surprise's effect is not enabled yet")
       }
-      onPress={() => onPress(rowRef)}
+      /* onPress={() => onPress(rowRef)} */
+      onPress={(event) => {
+        const width = rowWidthRef.current;
+        const normalizedX =
+          width > 0
+            ? Math.max(0, Math.min(1, event.nativeEvent.locationX / width))
+            : 0.5;
+        onPress(rowRef, normalizedX);
+      }}
       style={({ pressed }) => [
         styles.row,
         {
           backgroundColor: withAlpha(accentColor, "0D"),
           borderColor: withAlpha(accentColor, "55"),
-          opacity: pressed ? 0.78 : 1,
+          opacity: hidden ? 0 : pressed ? 0.78 : 1,
         },
       ]}
     >

@@ -20,7 +20,7 @@ import NukeLaunchSpeedStreaks from "./nuke-launch-speed-streaks";
 import NukeMyBacklogAct3, {
   preloadNukeMyBacklogAct3Images,
   type LoadedAct3Images,
-} from "./nuke-my-backlog-act3-v8";
+} from "./nuke-my-backlog-act3-v8.1";
 import NukeMyBacklogAct4 from "./nuke-my-backlog-act4-v2";
 
 type Point = { x: number; y: number };
@@ -264,6 +264,9 @@ export const NUKE_MY_BACKLOG_TUNING = {
   projectedShadowOffsetY: 26,
   projectedShadowOpacity: 0.22,
   projectedShadowBlurRadius: 5,
+  // ACT 3 — Projected shadow handoff.
+  act3ShadowFadeDelayMs: 120,
+  act3ShadowFadeDurationMs: 760,
 
   // Change to "left" to mirror both continuous spiral passes.
   upperReturnFromSide: "right" as "left" | "right",
@@ -1261,6 +1264,7 @@ export function useNukeMyBacklogAnimation(): AnimationController {
   const [launchStreaksActive, setLaunchStreaksActive] = useState(false);
   const [launchStreaksFadeOut, setLaunchStreaksFadeOut] = useState(false);
   const [flightPathActive, setFlightPathActive] = useState(false);
+
   // Act 3 images are decoded during idle time. At handoff, mount the scene
   // first while Act 2's rocket remains visible; start Act 3 only after its
   // initial 0° rocket image confirms that it has been displayed.
@@ -1268,6 +1272,7 @@ export function useNukeMyBacklogAnimation(): AnimationController {
   const [act3Active, setAct3Active] = useState(false);
   // Act 4 is mounted only after Act 3 completes; it owns its own temporary audio players.
   const [act4Active, setAct4Active] = useState(false);
+  const act3ShadowOpacity = useRef(new Animated.Value(1)).current;
   const act3MountedRef = useRef(false);
   const act3StartedRef = useRef(false);
   const act3MountedRunIdRef = useRef(0);
@@ -1801,6 +1806,8 @@ export function useNukeMyBacklogAnimation(): AnimationController {
         -rocketTop -
         rocketHeight -
         NUKE_MY_BACKLOG_TUNING.launchOffscreenMargin;
+      /* const offscreenY =
+        -baseTop - rocketHeight - NUKE_MY_BACKLOG_TUNING.launchOffscreenMargin; */
 
       const ascentDuration = reduced
         ? NUKE_MY_BACKLOG_TUNING.reducedMotionPumpMs
@@ -2394,7 +2401,18 @@ export function useNukeMyBacklogAnimation(): AnimationController {
               ),
               easing: Easing.in(Easing.quad),
               useNativeDriver: true,
-            }).start();
+            }).start(({ finished: sagFinished }) => {
+              // If the user stopped pumping and the rocket sagged all the way
+              // back into hiding, release the session & screen lock cleanly!
+              if (
+                sagFinished &&
+                id === runIdRef.current &&
+                phaseRef.current === "pumping" &&
+                motionId === strokeIdRef.current
+              ) {
+                finishSession(id);
+              }
+            });
           }, NUKE_MY_BACKLOG_TUNING.idleRecoilDelayMs);
         });
       });
@@ -2733,6 +2751,31 @@ export function useNukeMyBacklogAnimation(): AnimationController {
     };
   }, [flameActive]);
 
+  useEffect(() => {
+    act3ShadowOpacity.stopAnimation();
+
+    if (!act3Active) {
+      act3ShadowOpacity.setValue(1);
+      return;
+    }
+
+    const fade = Animated.sequence([
+      Animated.delay(NUKE_MY_BACKLOG_TUNING.act3ShadowFadeDelayMs),
+
+      Animated.timing(act3ShadowOpacity, {
+        toValue: 0,
+        duration: NUKE_MY_BACKLOG_TUNING.act3ShadowFadeDurationMs,
+        easing: Easing.inOut(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]);
+
+    fade.start();
+
+    return () => {
+      fade.stop();
+    };
+  }, [act3Active, act3ShadowOpacity]);
   const rocketWidth = anchor?.rocketWidth ?? 0;
   const rocketHeight = anchor?.rocketHeight ?? 0;
   const rocketLeft = anchor
@@ -2868,41 +2911,47 @@ export function useNukeMyBacklogAnimation(): AnimationController {
           width={anchor.canvasWidth}
           height={anchor.canvasHeight}
           shadowLayer={
-            act3Active ? null : (
-              <Animated.Image
-                /*  pointerEvents="none" */
-                source={rocketAsset as ImageSourcePropType}
-                resizeMode="stretch"
-                fadeDuration={0}
-                blurRadius={NUKE_MY_BACKLOG_TUNING.projectedShadowBlurRadius}
-                style={{
-                  position: "absolute",
-                  left:
-                    rocketLeft + NUKE_MY_BACKLOG_TUNING.projectedShadowOffsetX,
-                  top:
-                    rocketTop + NUKE_MY_BACKLOG_TUNING.projectedShadowOffsetY,
-                  width: rocketWidth,
-                  height: rocketHeight,
-                  tintColor: "#243A50",
-                  opacity: NUKE_MY_BACKLOG_TUNING.projectedShadowOpacity,
-                  zIndex: 10,
-                  transform: [
-                    { translateX: displayRocketX },
-                    { translateY: displayRocketY },
-                    { rotate: rotation },
-                    { scale: displayRocketScale },
-                    { translateX: rocketShakeX },
-                    { translateY: rocketShakeY },
-                    {
-                      rotate: rocketShakeRotation.interpolate({
-                        inputRange: [-1, 1],
-                        outputRange: ["-0.22deg", "0.22deg"],
-                      }),
-                    },
+            /*  act3Active ? null : ( */
+            <Animated.Image
+              /*  pointerEvents="none" */
+              source={rocketAsset as ImageSourcePropType}
+              resizeMode="stretch"
+              fadeDuration={0}
+              blurRadius={NUKE_MY_BACKLOG_TUNING.projectedShadowBlurRadius}
+              style={{
+                position: "absolute",
+                left:
+                  rocketLeft + NUKE_MY_BACKLOG_TUNING.projectedShadowOffsetX,
+                top: rocketTop + NUKE_MY_BACKLOG_TUNING.projectedShadowOffsetY,
+                width: rocketWidth,
+                height: rocketHeight,
+                tintColor: "#243A50",
+                /* opacity: NUKE_MY_BACKLOG_TUNING.projectedShadowOpacity, */
+                opacity: act3ShadowOpacity.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [
+                    0,
+                    NUKE_MY_BACKLOG_TUNING.projectedShadowOpacity,
                   ],
-                }}
-              />
-            )
+                }),
+                zIndex: 10,
+                transform: [
+                  { translateX: displayRocketX },
+                  { translateY: displayRocketY },
+                  { rotate: rotation },
+                  { scale: displayRocketScale },
+                  { translateX: rocketShakeX },
+                  { translateY: rocketShakeY },
+                  {
+                    rotate: rocketShakeRotation.interpolate({
+                      inputRange: [-1, 1],
+                      outputRange: ["-0.22deg", "0.22deg"],
+                    }),
+                  },
+                ],
+              }}
+            />
+            /*  ) */
           }
         />
       )}

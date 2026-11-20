@@ -21,7 +21,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Button, IconButton, Searchbar } from "react-native-paper";
-
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ThemeContext } from "@/context/ThemeContext";
 import { withAlpha } from "@/utils/common-utils";
 import { SearchResult } from "@/utils/search-utils";
@@ -71,9 +71,16 @@ import {
   LightningStrikerOverlayHost,
   type LightningStrikerOverlayHostHandle,
 } from "@/hooks/animations/easter-eggs/lighting-striker/lightning-striker-overlay-host";
+import { setRainSplashSurface } from "@/hooks/animations/easter-eggs/lighting-striker/rain-splash-surface-registry";
 import { useSpaceInvadersEasterEgg } from "@/hooks/animations/easter-eggs/space-invaders-v3/use-space-invaders-easter-egg";
 import { usePacManEasterEgg } from "@/hooks/animations/easter-eggs/pacman-v2/use-pacman-easter-egg";
 import { useSnakeEasterEgg } from "@/hooks/animations/easter-eggs/snake-game/use-snake-easter-egg";
+import { useCopyMachineAnimation } from "@/hooks/animations/easter-eggs/copy-paste/copy-machine-animation-cv3.1";
+import { useBreakingPointEasterEgg } from "@/hooks/animations/easter-eggs/breaking-point/use-breaking-point-easter-egg-v2";
+import {
+  RowFireHandle,
+  RowFireOverlayHost,
+} from "@/hooks/animations/easter-eggs/lighting-striker/row-fire-animation";
 
 type SearchFilter = "all" | GlobalSearchFilterKind;
 
@@ -155,6 +162,7 @@ export function GlobalSearchScreen({
   const nukeKeyboardDismissPendingRef = useRef(false);
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
+
   const helloThereAnimation = useHelloThereEasterEggAnimation(theme.background);
   const noNoNo = useNoNoNoEasterEggAnimation();
   const sleepingZ = useSleepingZEasterEggAnimation();
@@ -165,6 +173,27 @@ export function GlobalSearchScreen({
     thunder: require("@/assets/easter-eggs/lighting-strike/thunder-rumble-321631.mp3"),
   }); */
   const lightningStrikerRef = useRef<LightningStrikerOverlayHostHandle>(null);
+  const splashSurfaceRefCallbacks = useMemo(
+    () => ({
+      searchBar: (node: View | null) =>
+        setRainSplashSurface("search-bar", node, "top"),
+      filterButton: (node: View | null) =>
+        setRainSplashSurface("filter-button", node, "top"),
+      filters: new Map(
+        FILTERS.map((filter) => [
+          filter.value,
+          (node: View | null) =>
+            setRainSplashSurface(`filter:${filter.value}`, node, "top"),
+        ]),
+      ),
+    }),
+    [],
+  );
+  const rowFireRef = useRef<RowFireHandle>(null);
+  const [hiddenLightningRowId, setHiddenLightningRowId] = useState<
+    string | null
+  >(null);
+
   const spaceInvaders = useSpaceInvadersEasterEgg({ onSound: (name, n) => {} });
   const pacman = usePacManEasterEgg({
     onSound: (event, pts) => {
@@ -173,6 +202,8 @@ export function GlobalSearchScreen({
     },
   });
   const snake = useSnakeEasterEgg({ onSound: (name, n) => {} });
+  const copyMachine = useCopyMachineAnimation();
+  const breakingPoint = useBreakingPointEasterEgg();
   // handlers: spaceInvaders: () => spaceInvaders.start(rowRef, animationCanvasRef)  (rowRef is already passed to your handlers)
   // render {spaceInvaders.overlayLayer} last inside animationCanvas
   // cancel it in your !visible effect, and add spaceInvaders.active to scrollEnabled
@@ -301,6 +332,12 @@ export function GlobalSearchScreen({
     controller.clearQuery();
   };
 
+  const onClose = useCallback(() => {
+    rowFireRef.current?.cancel();
+    setHiddenLightningRowId(null);
+    onDismiss();
+  }, [rowFireRef, hiddenLightningRowId, onDismiss]);
+
   useEffect(() => {
     const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
       keyboardVisibleRef.current = true;
@@ -370,11 +407,16 @@ export function GlobalSearchScreen({
 
       // Lightning is a standalone one-shot animation. Do not also call
       // sequence.activate() for this effect.
-      lightningStrike: () =>
-        lightningStrikerRef.current?.start() ??
-        Promise.resolve(
-          false,
-        ) /* lightningStriker.start(animationCanvasRef), */,
+      /*  lightningStrike: () =>
+        lightningStrikerRef.current?.start() ?? Promise.resolve(false), */
+      lightningStrike: (rowRef) =>
+        lightningStrikerRef.current?.start({
+          specialEvent: "random",
+          onRowFire: () =>
+            rowFireRef.current?.start(rowRef, animationCanvasRef, (hidden) =>
+              setHiddenLightningRowId(hidden ? "lightning_strike" : null),
+            ) ?? Promise.resolve(false),
+        }) ?? Promise.resolve(false),
       spaceInvaders: (rowRef) =>
         spaceInvaders.start(rowRef, animationCanvasRef),
       pacman: (rowRef) => pacman.start(rowRef, animationCanvasRef),
@@ -385,50 +427,29 @@ export function GlobalSearchScreen({
       helloThereAnimation.start,
       noNoNo.start,
       sleepingZ.start,
-      /* lightningStriker.start, */
     ],
   );
 
-  /*  const handleEasterEggPress = useCallback(
-    async (eggId: string, rowRef: React.RefObject<View | null>) => {
+  const handleEasterEggPress = useCallback(
+    async (
+      eggId: string,
+      rowRef: React.RefObject<View | null>,
+      pressedResult: GlobalSearchResult,
+      normalizedX = 0.5,
+    ) => {
       const egg = GLOBAL_SEARCH_EASTER_EGGS_BY_ID.get(eggId);
       if (!egg) return;
-
-      // Nuke My Backlog is intentionally different from the one-shot eggs:
-      // every tap during Act 0 is part of the manual pumping interaction.
-      // Its own controller owns the repeated-tap lock; do not block it with
-      // activeEggActivationRef after the first press.
-      if (eggId === "launch_sequence" && egg.activation.kind === "animation") {
-        // Prevent duplicate presses from racing the asynchronous keyboard close.
-        if (nukeKeyboardDismissPendingRef.current) return;
+      // The Copy Machine accepts every press while its pile is active.
+      // The controller creates one physical visual copy per accepted tap.
+      /* if (eggId === "copy_paste" && egg.activation.kind === "animation") {
         if (
           activeEggActivationRef.current &&
           activeEggActivationRef.current !== eggId
         ) {
           return;
         }
-        // Dismiss the keyboard only before the first press of this pumping session.
-        // The same tap is forwarded once the row/canvas have finished reflowing.
-        if (
-          activeEggActivationRef.current !== eggId &&
-          keyboardVisibleRef.current
-        ) {
-          nukeKeyboardDismissPendingRef.current = true;
-          activeEggActivationRef.current = eggId;
-          try {
-            await waitForKeyboardDismissal();
-          } finally {
-            nukeKeyboardDismissPendingRef.current = false;
-          }
-          if (!visibleRef.current) {
-            if (activeEggActivationRef.current === eggId) {
-              activeEggActivationRef.current = null;
-            }
-            return;
-          }
-        }
-
-        nukeMyBacklog.press(rowRef, animationCanvasRef, {
+        console.log("asdsad");
+        copyMachine.press(rowRef, animationCanvasRef, pressedResult, {
           onFirstPress: () => {
             activeEggActivationRef.current = eggId;
             controller.recordSubmittedSearch();
@@ -448,142 +469,97 @@ export function GlobalSearchScreen({
           },
         });
         return;
-      }
-
-      // Other one-shot activations remain protected by the screen-level lock.
-      if (activeEggActivationRef.current) return;
-
-      // These effects remain intentionally disabled until their designs
-      // are approved. Do not mark them discovered during this staging period.
-
-      if (egg.activation.kind === "animation") {
-        // Hello There is the first enabled animation.
-        // Keep the other animation effects disabled for now.
-        console.log(eggId, "activation enabled:", egg.activation);
-        if (eggId !== "hello_there" && eggId !== "lighting_strike") {
-          Alert.alert(
-            "Surprise still in development",
-            "This Easter egg's effect is being designed. It isn't activated yet.",
-          );
-          return;
-        }
-
-        // This outer lock protects the whole handoff and remains held until the
-        // selected animation Promise settles. sequence.activate has its own
-        // synchronous lock as a second guard against overlapping effects.
-        activeEggActivationRef.current = eggId;
-
-        try {
-          controller.recordSubmittedSearch();
-
-          // Discovery is idempotent and is recorded on the explicit row tap,
-          // regardless of which visual animation the sequence selects.
-          void recordGlobalSearchEasterEggDiscovery(eggId).catch(
-            (storageError) => {
-              console.warn(
-                "[Global Search] Couldn't persist Easter egg discovery.",
-                storageError,
-              );
-            },
-          );
-          void lightningStriker.start(animationCanvasRef, {
-            onFinished: () => {
-              if (activeEggActivationRef.current === eggId) {
-                activeEggActivationRef.current = null;
-              }
-            },
-          });
-          const completedAnimation = await sequence.activate({
-            "hello-there": () =>
-              helloThereAnimation.start(rowRef, animationCanvasRef),
-            "no-no-no": () => noNoNo.start(rowRef, animationCanvasRef),
-            "sleeping-z": () => sleepingZ.start(rowRef, animationCanvasRef),
-          });
-
-          if (!completedAnimation) {
-            console.warn(
-              "[Global Search] Easter egg animation did not complete; sequence step was not consumed.",
-            );
-          }
-        } catch (error) {
-          console.warn("[Global Search] Easter egg animation failed.", error);
-        } finally {
-          // CRITICAL: without this release, the first accepted press leaves the
-          // screen-level guard set forever, so presses 2 and 3 are ignored.
-          if (activeEggActivationRef.current === eggId) {
-            activeEggActivationRef.current = null;
-          }
-        }
-        return;
-      }
-
-      activeEggActivationRef.current = eggId;
-
-      // If the user submits or activates an egg, retain their current query.
-      controller.recordSubmittedSearch();
-
-      try {
-        // Discovery is recorded on tap, before trying to open the URL.
-        // A failed external URL still counts as an explicit activation tap.
-        try {
-          await recordGlobalSearchEasterEggDiscovery(eggId);
-        } catch (storageError) {
-          console.warn(
-            "[Global Search] Couldn't persist Easter egg discovery.",
-            storageError,
-          );
-        }
-
-        try {
-          // Rickroll only: external navigation happens after the explicit tap.
-          await Linking.openURL(egg.activation.url);
-        } catch {
-          Alert.alert(
-            "Couldn't open YouTube",
-            "The surprise was activated, but the external link couldn't be opened.",
-          );
-        }
-      } finally {
-        activeEggActivationRef.current = null;
-      }
-    },
-    [
-      controller.recordSubmittedSearch,
-      helloThereAnimation.start,
-      noNoNo.start,
-      sequence.activate,
-      sleepingZ.start,
-      nukeMyBacklog.press,
-      lightningStriker.start,
-      waitForKeyboardDismissal,
-      visible,
-    ],
-  ); */
-
-  const handleEasterEggPress = useCallback(
-    async (eggId: string, rowRef: React.RefObject<View | null>) => {
-      const egg = GLOBAL_SEARCH_EASTER_EGGS_BY_ID.get(eggId);
-      if (!egg) return;
+      } */
+      const isCopyMachine =
+        eggId === "copy_paste" && egg.activation.kind === "animation";
 
       const isNukePump =
         egg.activation.kind === "animation" &&
         egg.activation.effect === "launchSequence";
 
-      // Nuke's repeated taps are part of its active interaction. Forward them
-      // before the general one-shot lock and keyboard preflight.
-      if (isNukePump && activeEggActivationRef.current === eggId) {
-        nukeMyBacklog.press(rowRef, animationCanvasRef);
+      // Reconcile the screen lock with Nuke's actual controller state.
+      // This recovers if the completion callback was missed.
+      const nukeIsRunning = nukeMyBacklog.isRunning();
+      console.log("isCopyMachine active", isCopyMachine);
+      console.log(
+        "isNukePump active",
+        isNukePump,
+        "is it running",
+        nukeIsRunning,
+      );
+      console.log(
+        "is there anyt active easter egg activtion",
+        activeEggActivationRef.current,
+      );
+      if (
+        activeEggActivationRef.current === "launch_sequence" &&
+        !nukeIsRunning
+      ) {
+        activeEggActivationRef.current = null;
+      }
+      // Allow another Easter egg to replace Nuke if the user abandons
+      // it before completing the manual pumping interaction.
+      /*  const nukeCanBeInterrupted =
+        activeEggActivationRef.current === "launch_sequence" &&
+        (nukeMyBacklog.stage === "measuring" ||
+          nukeMyBacklog.stage === "pumping");
+
+      if (nukeCanBeInterrupted && !isNukePump) {
+        nukeMyBacklog.cancel();
+
+        // Defensive cleanup; cancel() also invokes the onFinished callback.
+        if (activeEggActivationRef.current === "launch_sequence") {
+          activeEggActivationRef.current = null;
+        }
+      } */
+
+      // Breaking Point is intentionally progressive: accepted taps extend the
+      // same fracture network while its screen-level interaction lock is held.
+      if (
+        eggId === "breaking_point" &&
+        activeEggActivationRef.current === eggId
+      ) {
+        void breakingPoint.press(rowRef, animationCanvasRef, normalizedX);
+        console.log("BP 1st");
         return;
       }
 
-      // Ordinary one-shot activations cannot overlap another active Easter egg.
-      if (activeEggActivationRef.current) return;
+      if (isCopyMachine && activeEggActivationRef.current === eggId) {
+        copyMachine.press(rowRef, animationCanvasRef, pressedResult);
+        console.log("CM 1st");
+        return;
+      }
 
+      // Nuke's repeated taps are part of its active interaction. Forward them
+      // before the general one-shot lock and keyboard preflight.
+      /* if (isNukePump && activeEggActivationRef.current === eggId) {
+        nukeMyBacklog.press(rowRef, animationCanvasRef);
+        return;
+      } */
+      // Forward repeated taps while Nuke is genuinely active.
+      // Also restore the screen lock if it was unexpectedly out of sync.
+      if (isNukePump && nukeIsRunning) {
+        activeEggActivationRef.current = eggId;
+        nukeMyBacklog.press(rowRef, animationCanvasRef);
+        console.log("NMB 1st");
+        return;
+      }
+
+      // Ordinary one-shot or double tap activations cannot overlap another active Easter egg.
+      if (
+        activeEggActivationRef.current ||
+        easterEggKeyboardDismissPendingRef.current
+      ) {
+        return;
+      }
+      console.log(
+        "Ordinary one-shot or double tap activations cannot overlap another active Easter egg",
+      );
       // Shared keyboard preflight: dismiss before measuring/starting any first
       // activation, not only Nuke My Backlog. The pending ref prevents two taps
       // from racing the asynchronous keyboard close/reflow.
       if (keyboardVisibleRef.current) {
-        if (easterEggKeyboardDismissPendingRef.current) return;
+        /* if (easterEggKeyboardDismissPendingRef.current) return; */
         easterEggKeyboardDismissPendingRef.current = true;
 
         try {
@@ -594,13 +570,22 @@ export function GlobalSearchScreen({
 
         if (!visibleRef.current) return;
       }
-
+      console.log("Keyboard dismissal", activeEggActivationRef.current);
       // Re-check after the await in case another activation acquired the lock.
-      if (activeEggActivationRef.current) return;
-
+      if (
+        activeEggActivationRef.current ||
+        easterEggKeyboardDismissPendingRef.current
+      ) {
+        return;
+      }
+      console.log(
+        "Re-check after the await in case another activation acquired the lock.",
+        activeEggActivationRef.current,
+      );
       // Nuke remains the only multi-tap activation. Its first accepted press
       // acquires the screen-level lock synchronously through onFirstPress.
       if (isNukePump) {
+        console.log("NMB 2nd", activeEggActivationRef.current);
         nukeMyBacklog.press(rowRef, animationCanvasRef, {
           onFirstPress: () => {
             activeEggActivationRef.current = eggId;
@@ -623,9 +608,66 @@ export function GlobalSearchScreen({
         return;
       }
 
+      if (isCopyMachine) {
+        console.log("CM 2nd", activeEggActivationRef.current);
+        copyMachine.press(rowRef, animationCanvasRef, pressedResult, {
+          onFirstPress: () => {
+            activeEggActivationRef.current = eggId;
+            controller.recordSubmittedSearch();
+            void recordGlobalSearchEasterEggDiscovery(eggId).catch(
+              (storageError) => {
+                console.warn(
+                  "[Global Search] Couldn't persist Easter egg discovery.",
+                  storageError,
+                );
+              },
+            );
+          },
+          onFinished: () => {
+            if (activeEggActivationRef.current === eggId) {
+              activeEggActivationRef.current = null;
+            }
+          },
+        });
+        return;
+      }
+      if (eggId === "breaking_point") {
+        // Acquire the screen-level lock before async row measurement so a
+        // different Easter egg cannot start during the measurement window.
+        console.log("BP 2nd", activeEggActivationRef.current);
+        activeEggActivationRef.current = eggId;
+        const accepted = await breakingPoint.press(
+          rowRef,
+          animationCanvasRef,
+          normalizedX,
+          {
+            onFirstAccepted: () => {
+              controller.recordSubmittedSearch();
+              void recordGlobalSearchEasterEggDiscovery(eggId).catch(
+                (storageError) => {
+                  console.warn(
+                    "[Global Search] Couldn't persist Easter egg discovery.",
+                    storageError,
+                  );
+                },
+              );
+            },
+          },
+        );
+        if (
+          !accepted &&
+          breakingPoint.stage === 0 &&
+          activeEggActivationRef.current === eggId
+        ) {
+          activeEggActivationRef.current = null;
+        }
+        return;
+      }
+
+      console.log("NOW only single tap path", activeEggActivationRef.current);
       if (egg.activation.kind === "animation") {
         const runAnimation = animationActivationHandlers[egg.activation.effect];
-
+        console.log(egg.activation.effect, "selected");
         // An animation kind alone does not mean the effect is implemented.
         // Unknown effects remain discoverable in the registry but show the
         // existing staging alert and are not recorded as discovered.
@@ -672,8 +714,9 @@ export function GlobalSearchScreen({
         }
         return;
       }
-      activeEggActivationRef.current = eggId;
 
+      activeEggActivationRef.current = eggId;
+      console.log("RICKROLL ONLY", activeEggActivationRef.current);
       // If the user submits or activates an egg, retain their current query.
       controller.recordSubmittedSearch();
 
@@ -701,15 +744,441 @@ export function GlobalSearchScreen({
       } finally {
         activeEggActivationRef.current = null;
       }
+      console.log("final stage", activeEggActivationRef.current);
     },
+
     [
       animationActivationHandlers,
       controller.recordSubmittedSearch,
       nukeMyBacklog.press,
+      /*  nukeMyBacklog.cancel,
+      nukeMyBacklog.stage, */ // IMPORTANT: refresh callback when Nuke changes phase
       waitForKeyboardDismissal,
       visible,
+      copyMachine.press,
+      breakingPoint.press,
+      breakingPoint.stage,
     ],
   );
+  // const waitForKeyboardDismissal = useCallback(
+  //   () =>
+  //     new Promise<void>((resolve) => {
+  //       if (!keyboardVisibleRef.current) {
+  //         resolve();
+  //         return;
+  //       }
+
+  //       let settled = false;
+  //       let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+  //       let hideSubscription: { remove: () => void } | null = null;
+
+  //       const finish = () => {
+  //         if (settled) return;
+  //         settled = true;
+  //         // CRITICAL: Always clear keyboardVisibleRef so it can never get stuck true!
+  //         keyboardVisibleRef.current = false;
+  //         hideSubscription?.remove();
+  //         if (fallbackTimer) clearTimeout(fallbackTimer);
+  //         // Give KeyboardAvoidingView one more layout pass before measurement.
+  //         setTimeout(resolve, 90);
+  //       };
+
+  //       hideSubscription = Keyboard.addListener("keyboardDidHide", finish);
+  //       fallbackTimer = setTimeout(finish, Platform.OS === "ios" ? 650 : 450);
+  //       Keyboard.dismiss();
+  //     }),
+  //   [],
+  // );
+
+  // useEffect(() => {
+  //   if (!visible) return;
+
+  //   const delay = Platform.OS === "android" ? 250 : 100;
+
+  //   const timeout = setTimeout(() => {
+  //     searchInputRef.current?.focus();
+  //   }, delay);
+
+  //   return () => clearTimeout(timeout);
+  // }, [visible]);
+
+  // type AnimationActivationHandler = (
+  //   rowRef: React.RefObject<View | null>,
+  // ) => Promise<any>;
+
+  // const animationActivationHandlers = useMemo<
+  //   Record<string, AnimationActivationHandler>
+  // >(
+  //   () => ({
+  //     helloThere: (rowRef) =>
+  //       sequence.activate({
+  //         "hello-there": () =>
+  //           helloThereAnimation.start(rowRef, animationCanvasRef),
+  //         "no-no-no": () => noNoNo.start(rowRef, animationCanvasRef),
+  //         "sleeping-z": () => sleepingZ.start(rowRef, animationCanvasRef),
+  //       }),
+  //     lightningStrike: (rowRef) =>
+  //       lightningStrikerRef.current?.start({
+  //         specialEvent: "random",
+  //         onRowFire: () =>
+  //           rowFireRef.current?.start(rowRef, animationCanvasRef, (hidden) =>
+  //             setHiddenLightningRowId(hidden ? "lightning_strike" : null),
+  //           ) ?? Promise.resolve(false),
+  //       }) ?? Promise.resolve(false),
+  //     spaceInvaders: (rowRef) =>
+  //       spaceInvaders.start(rowRef, animationCanvasRef),
+  //     pacman: (rowRef) => pacman.start(rowRef, animationCanvasRef),
+  //     snake: (rowRef) => snake.start(rowRef, animationCanvasRef),
+  //   }),
+  //   [
+  //     sequence.activate,
+  //     helloThereAnimation.start,
+  //     noNoNo.start,
+  //     sleepingZ.start,
+  //     spaceInvaders.start,
+  //     pacman.start,
+  //     snake.start,
+  //   ],
+  // );
+
+  // // Buffer taps made on Nuke while the keyboard is still sliding down on Tap #1
+  // const pendingNukeTapsDuringKeyboardRef = useRef(0);
+
+  // const handleEasterEggPress = useCallback(
+  //   async (
+  //     eggId: string,
+  //     rowRef: React.RefObject<View | null>,
+  //     pressedResult: GlobalSearchResult,
+  //     normalizedX = 0.5,
+  //   ) => {
+  //     const egg = GLOBAL_SEARCH_EASTER_EGGS_BY_ID.get(eggId);
+  //     if (!egg) return;
+
+  //     const isCopyMachine =
+  //       eggId === "copy_paste" && egg.activation.kind === "animation";
+  //     const isNukePump =
+  //       egg.activation.kind === "animation" &&
+  //       egg.activation.effect === "launchSequence";
+  //     const isBreakingPoint = eggId === "breaking_point";
+
+  //     // -------------------------------------------------------------------
+  //     // 1. SELF-HEALING LOCK RECONCILIATION
+  //     // If activeEggActivationRef thinks an egg is running, verify that its
+  //     // underlying hook is actually still active. If not, release the lock!
+  //     // -------------------------------------------------------------------
+  //     const currentLock = activeEggActivationRef.current;
+  //     const nukeIsRunning = nukeMyBacklog.isRunning();
+
+  //     if (currentLock === "launch_sequence" && !nukeIsRunning) {
+  //       activeEggActivationRef.current = null;
+  //     } else if (currentLock === "copy_paste" && !copyMachine.active) {
+  //       activeEggActivationRef.current = null;
+  //     } else if (
+  //       currentLock === "breaking_point" &&
+  //       breakingPoint.stage === 0 /* && !breakingPoint.active */
+  //     ) {
+  //       activeEggActivationRef.current = null;
+  //     } else if (
+  //       currentLock === "hello_there" &&
+  //       !helloThereAnimation.active &&
+  //       !noNoNo.active &&
+  //       !sleepingZ.active &&
+  //       !sequence.isRunning
+  //     ) {
+  //       activeEggActivationRef.current = null;
+  //     } else if (currentLock === "space_invaders" && !spaceInvaders.active) {
+  //       activeEggActivationRef.current = null;
+  //     } else if (currentLock === "pacman" && !pacman.active) {
+  //       activeEggActivationRef.current = null;
+  //     } else if (currentLock === "snake" && !snake.active) {
+  //       activeEggActivationRef.current = null;
+  //     }
+
+  //     // -------------------------------------------------------------------
+  //     // 2. ALLOW INTERRUPTING UNFINISHED MULTI-TAP EGGS
+  //     // If the user started pumping Nuke, stacking Copy Machine, or tapping
+  //     // Breaking Point, and then switches to a DIFFERENT Easter egg, cancel
+  //     // the unfinished multi-tap egg so the new one can run immediately.
+  //     // -------------------------------------------------------------------
+  //     if (
+  //       activeEggActivationRef.current &&
+  //       activeEggActivationRef.current !== eggId
+  //     ) {
+  //       const canInterruptNuke =
+  //         activeEggActivationRef.current === "launch_sequence" &&
+  //         (nukeMyBacklog.stage === "measuring" ||
+  //           nukeMyBacklog.stage === "pumping");
+
+  //       if (canInterruptNuke) {
+  //         nukeMyBacklog.cancel();
+  //         activeEggActivationRef.current = null;
+  //       } else if (activeEggActivationRef.current === "copy_paste") {
+  //         copyMachine.cancel();
+  //         activeEggActivationRef.current = null;
+  //       } else if (activeEggActivationRef.current === "breaking_point") {
+  //         breakingPoint.cancel();
+  //         activeEggActivationRef.current = null;
+  //       }
+  //     }
+
+  //     // -------------------------------------------------------------------
+  //     // 3. FAST-PATH FOR REPEATED TAPS ON ACTIVE MULTI-TAP EGGS
+  //     // Always pass callbacks so a 2nd tap never wipes out `onFinished`!
+  //     // -------------------------------------------------------------------
+  //     if (isBreakingPoint && activeEggActivationRef.current === eggId) {
+  //       void breakingPoint.press(
+  //         rowRef,
+  //         animationCanvasRef,
+  //         normalizedX /* , {
+  //         onFinished: () => {
+  //           if (activeEggActivationRef.current === eggId) {
+  //             activeEggActivationRef.current = null;
+  //           }
+  //         },
+  //       } as any */,
+  //       );
+  //       return;
+  //     }
+
+  //     if (isCopyMachine && activeEggActivationRef.current === eggId) {
+  //       copyMachine.press(rowRef, animationCanvasRef, pressedResult, {
+  //         onFinished: () => {
+  //           if (activeEggActivationRef.current === eggId) {
+  //             activeEggActivationRef.current = null;
+  //           }
+  //         },
+  //       });
+  //       return;
+  //     }
+
+  //     if (isNukePump && nukeIsRunning) {
+  //       activeEggActivationRef.current = eggId;
+  //       nukeMyBacklog.press(rowRef, animationCanvasRef, {
+  //         onFinished: () => {
+  //           if (activeEggActivationRef.current === eggId) {
+  //             activeEggActivationRef.current = null;
+  //           }
+  //         },
+  //       });
+  //       return;
+  //     }
+
+  //     // If Nuke's first tap is currently waiting for the keyboard to close,
+  //     // buffer extra pumping taps instead of dropping them!
+  //     if (isNukePump && easterEggKeyboardDismissPendingRef.current) {
+  //       pendingNukeTapsDuringKeyboardRef.current += 1;
+  //       return;
+  //     }
+
+  //     // Block overlapping activations if another non-interruptible egg is running
+  //     if (
+  //       activeEggActivationRef.current ||
+  //       easterEggKeyboardDismissPendingRef.current
+  //     ) {
+  //       return;
+  //     }
+
+  //     // -------------------------------------------------------------------
+  //     // 4. KEYBOARD PREFLIGHT BEFORE FIRST ACTIVATION
+  //     // -------------------------------------------------------------------
+  //     if (keyboardVisibleRef.current) {
+  //       easterEggKeyboardDismissPendingRef.current = true;
+  //       pendingNukeTapsDuringKeyboardRef.current = 0;
+
+  //       try {
+  //         await waitForKeyboardDismissal();
+  //       } finally {
+  //         easterEggKeyboardDismissPendingRef.current = false;
+  //       }
+
+  //       if (!visibleRef.current) return;
+  //     }
+
+  //     if (
+  //       activeEggActivationRef.current ||
+  //       easterEggKeyboardDismissPendingRef.current
+  //     ) {
+  //       return;
+  //     }
+
+  //     // -------------------------------------------------------------------
+  //     // 5. FIRST ACTIVATION DISPATCH
+  //     // -------------------------------------------------------------------
+  //     if (isNukePump) {
+  //       const extraBufferedTaps = pendingNukeTapsDuringKeyboardRef.current;
+  //       pendingNukeTapsDuringKeyboardRef.current = 0;
+
+  //       nukeMyBacklog.press(rowRef, animationCanvasRef, {
+  //         onFirstPress: () => {
+  //           activeEggActivationRef.current = eggId;
+  //           controller.recordSubmittedSearch();
+  //           void recordGlobalSearchEasterEggDiscovery(eggId).catch(
+  //             (storageError) => {
+  //               console.warn(
+  //                 "[Global Search] Couldn't persist Easter egg discovery.",
+  //                 storageError,
+  //               );
+  //             },
+  //           );
+  //         },
+  //         onFinished: () => {
+  //           if (activeEggActivationRef.current === eggId) {
+  //             activeEggActivationRef.current = null;
+  //           }
+  //         },
+  //       });
+
+  //       // Replay any rapid pump taps the user made while the keyboard was closing
+  //       for (let i = 0; i < extraBufferedTaps; i += 1) {
+  //         nukeMyBacklog.press(rowRef, animationCanvasRef);
+  //       }
+  //       return;
+  //     }
+
+  //     if (isCopyMachine) {
+  //       copyMachine.press(rowRef, animationCanvasRef, pressedResult, {
+  //         onFirstPress: () => {
+  //           activeEggActivationRef.current = eggId;
+  //           controller.recordSubmittedSearch();
+  //           void recordGlobalSearchEasterEggDiscovery(eggId).catch(
+  //             (storageError) => {
+  //               console.warn(
+  //                 "[Global Search] Couldn't persist Easter egg discovery.",
+  //                 storageError,
+  //               );
+  //             },
+  //           );
+  //         },
+  //         onFinished: () => {
+  //           if (activeEggActivationRef.current === eggId) {
+  //             activeEggActivationRef.current = null;
+  //           }
+  //         },
+  //       });
+  //       return;
+  //     }
+
+  //     if (isBreakingPoint) {
+  //       activeEggActivationRef.current = eggId;
+  //       const accepted = await breakingPoint.press(
+  //         rowRef,
+  //         animationCanvasRef,
+  //         normalizedX,
+  //         {
+  //           onFirstAccepted: () => {
+  //             controller.recordSubmittedSearch();
+  //             void recordGlobalSearchEasterEggDiscovery(eggId).catch(
+  //               (storageError) => {
+  //                 console.warn(
+  //                   "[Global Search] Couldn't persist Easter egg discovery.",
+  //                   storageError,
+  //                 );
+  //               },
+  //             );
+  //           } /* ,
+  //           onFinished: () => {
+  //             if (activeEggActivationRef.current === eggId) {
+  //               activeEggActivationRef.current = null;
+  //             }
+  //           }, */,
+  //         } /* as any */,
+  //       );
+  //       if (
+  //         !accepted &&
+  //         breakingPoint.stage === 0 &&
+  //         activeEggActivationRef.current === eggId
+  //       ) {
+  //         activeEggActivationRef.current = null;
+  //       }
+  //       return;
+  //     }
+
+  //     if (egg.activation.kind === "animation") {
+  //       const runAnimation = animationActivationHandlers[egg.activation.effect];
+
+  //       if (!runAnimation) {
+  //         Alert.alert(
+  //           "Surprise still in development",
+  //           "This Easter egg's effect is being designed. It isn't activated yet.",
+  //         );
+  //         return;
+  //       }
+
+  //       activeEggActivationRef.current = eggId;
+
+  //       try {
+  //         controller.recordSubmittedSearch();
+
+  //         void recordGlobalSearchEasterEggDiscovery(eggId).catch(
+  //           (storageError) => {
+  //             console.warn(
+  //               "[Global Search] Couldn't persist Easter egg discovery.",
+  //               storageError,
+  //             );
+  //           },
+  //         );
+
+  //         const completedAnimation = await runAnimation(rowRef);
+
+  //         if (!completedAnimation) {
+  //           console.warn(
+  //             `[Global Search] Animation for "${eggId}" did not complete.`,
+  //           );
+  //         }
+  //       } catch (error) {
+  //         console.warn(
+  //           `[Global Search] Animation for "${eggId}" failed.`,
+  //           error,
+  //         );
+  //       } finally {
+  //         if (activeEggActivationRef.current === eggId) {
+  //           activeEggActivationRef.current = null;
+  //         }
+  //       }
+  //       return;
+  //     }
+
+  //     activeEggActivationRef.current = eggId;
+  //     controller.recordSubmittedSearch();
+
+  //     try {
+  //       try {
+  //         await recordGlobalSearchEasterEggDiscovery(eggId);
+  //       } catch (storageError) {
+  //         console.warn(
+  //           "[Global Search] Couldn't persist Easter egg discovery.",
+  //           storageError,
+  //         );
+  //       }
+
+  //       try {
+  //         await Linking.openURL(egg.activation.url);
+  //       } catch {
+  //         Alert.alert(
+  //           "Couldn't open YouTube",
+  //           "The surprise was activated, but the external link couldn't be opened.",
+  //         );
+  //       }
+  //     } finally {
+  //       activeEggActivationRef.current = null;
+  //     }
+  //   },
+  //   [
+  //     animationActivationHandlers,
+  //     controller.recordSubmittedSearch,
+  //     nukeMyBacklog,
+  //     copyMachine,
+  //     breakingPoint,
+  //     helloThereAnimation.active,
+  //     noNoNo.active,
+  //     sleepingZ.active,
+  //     sequence.isRunning,
+  //     spaceInvaders.active,
+  //     pacman.active,
+  //     snake.active,
+  //     waitForKeyboardDismissal,
+  //   ],
+  // );
 
   const visibleResultCount = filteredResults.length + easterEggResults.length;
 
@@ -727,6 +1196,8 @@ export function GlobalSearchScreen({
     snake.cancel();
     pacman.cancel();
     spaceInvaders.cancel();
+    copyMachine.cancel();
+    breakingPoint.cancel();
   }, [
     visible,
     helloThereAnimation.cancel,
@@ -736,7 +1207,8 @@ export function GlobalSearchScreen({
     pacman.cancel,
     snake.cancel,
     spaceInvaders.cancel,
-    /* lightningStriker.cancel, */
+    copyMachine.cancel,
+    breakingPoint.cancel,
   ]);
 
   return (
@@ -744,621 +1216,535 @@ export function GlobalSearchScreen({
       visible={visible}
       animationType="slide"
       presentationStyle="fullScreen"
-      onRequestClose={onDismiss}
+      onRequestClose={onClose}
     >
-      <SafeAreaView
-        edges={["top", "left", "right", "bottom"]}
-        style={[styles.screen, { backgroundColor: theme.background }]}
-      >
-        <KeyboardAvoidingView
-          style={styles.keyboardContainer}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaView
+          edges={["top", "left", "right", "bottom"]}
+          style={[styles.screen, { backgroundColor: theme.background }]}
         >
-          <View
-            ref={animationCanvasRef}
-            collapsable={false}
-            style={styles.animationCanvas}
+          <KeyboardAvoidingView
+            style={styles.keyboardContainer}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
           >
-            <View style={styles.searchContentLayer}>
-              {/* Header */}
-              <View style={styles.header}>
-                <IconButton
-                  icon="arrow-left"
-                  size={25}
-                  iconColor={theme.text}
-                  onPress={onDismiss}
-                  accessibilityLabel="Close search"
-                />
+            <View
+              ref={animationCanvasRef}
+              collapsable={false}
+              style={styles.animationCanvas}
+            >
+              <View style={styles.searchContentLayer}>
+                {/* Header */}
+                <View style={styles.header}>
+                  <IconButton
+                    icon="arrow-left"
+                    size={25}
+                    iconColor={theme.text}
+                    onPress={onDismiss}
+                    accessibilityLabel="Close search"
+                  />
 
-                <View style={styles.headerCopy}>
-                  <Text style={[styles.headerTitle, { color: theme.text }]}>
-                    Search Everything
-                  </Text>
+                  <View style={styles.headerCopy}>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>
+                      Search Everything
+                    </Text>
 
-                  <Text
-                    numberOfLines={1}
-                    style={{ color: withAlpha(theme.text, "A8") }}
-                  >
-                    {isQueryEmpty && !hasActiveFilters
-                      ? "Search across your app"
-                      : `${visibleResultCount} result${
-                          visibleResultCount === 1 ? "" : "s"
-                        } ${
-                          isQueryEmpty
-                            ? "matching current filters"
-                            : `for "${query.trim()}"`
-                        }`}
-                  </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={{ color: withAlpha(theme.text, "A8") }}
+                    >
+                      {isQueryEmpty && !hasActiveFilters
+                        ? "Search across your app"
+                        : `${visibleResultCount} result${
+                            visibleResultCount === 1 ? "" : "s"
+                          } ${
+                            isQueryEmpty
+                              ? "matching current filters"
+                              : `for "${query.trim()}"`
+                          }`}
+                    </Text>
+                  </View>
                 </View>
-              </View>
 
-              {/* Search input */}
-              <Searchbar
-                placeholder="Search everything"
-                ref={searchInputRef}
-                value={query}
-                onChangeText={controller.setQuery}
-                iconColor={theme.text}
-                placeholderTextColor={withAlpha(theme.text, "80")}
-                inputStyle={{ color: theme.text }}
-                style={[
-                  styles.searchbar,
-                  {
-                    backgroundColor: theme.taskBaseTransToo,
-                    borderColor: withAlpha(theme.text, "12"),
-                  },
-                ]}
-                accessibilityLabel="Search everything"
-                onSubmitEditing={controller.recordSubmittedSearch}
-              />
-
-              {/* Type filters */}
-              <View style={styles.filterControlsWrap}>
-                <View style={styles.filterChipsWrap}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      controller.activeFacetCount > 0
-                        ? `Edit filters, ${controller.activeFacetCount} active`
-                        : "Edit search filters"
-                    }
-                    onPress={openFilterModal}
+                {/* Search input */}
+                <View
+                  ref={splashSurfaceRefCallbacks.searchBar}
+                  collapsable={false}
+                >
+                  <Searchbar
+                    placeholder="Search everything"
+                    ref={searchInputRef}
+                    value={query}
+                    onChangeText={controller.setQuery}
+                    iconColor={theme.text}
+                    placeholderTextColor={withAlpha(theme.text, "80")}
+                    inputStyle={{ color: theme.text }}
                     style={[
-                      styles.filterButton,
+                      styles.searchbar,
                       {
-                        backgroundColor: withAlpha(theme.text, "08"),
-                        borderColor: withAlpha(theme.text, "24"),
+                        backgroundColor: theme.taskBaseTransToo,
+                        borderColor: withAlpha(theme.text, "12"),
                       },
                     ]}
-                  >
-                    <MaterialCommunityIcons
-                      name="tune-variant"
-                      size={16}
-                      color={theme.text}
-                    />
+                    accessibilityLabel="Search everything"
+                    onSubmitEditing={controller.recordSubmittedSearch}
+                  />
+                </View>
+                {/* Type filters */}
+                <View style={styles.filterControlsWrap}>
+                  <View style={styles.filterChipsWrap}>
+                    <Pressable
+                      ref={splashSurfaceRefCallbacks.filterButton}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        controller.activeFacetCount > 0
+                          ? `Edit filters, ${controller.activeFacetCount} active`
+                          : "Edit search filters"
+                      }
+                      onPress={openFilterModal}
+                      style={[
+                        styles.filterButton,
+                        {
+                          backgroundColor: withAlpha(theme.text, "08"),
+                          borderColor: withAlpha(theme.text, "24"),
+                        },
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name="tune-variant"
+                        size={16}
+                        color={theme.text}
+                      />
 
-                    {controller.activeFacetCount > 0 && (
-                      <View
-                        style={[
-                          styles.filterCountBadge,
-                          { backgroundColor: theme.taskBase },
-                        ]}
-                      >
-                        <Text
-                          style={{
-                            color: theme.whiteBase,
-                            fontSize: 10,
-                            fontWeight: "500",
-                          }}
+                      {controller.activeFacetCount > 0 && (
+                        <View
+                          style={[
+                            styles.filterCountBadge,
+                            { backgroundColor: theme.taskBase },
+                          ]}
                         >
-                          {controller.activeFacetCount}
-                        </Text>
-                      </View>
-                    )}
-                  </Pressable>
-                  {FILTERS.map((filter) => {
-                    const selected = controller.filters.type === filter.value;
-                    const accent = getAccentColor(filter.value);
+                          <Text
+                            style={{
+                              color: theme.whiteBase,
+                              fontSize: 10,
+                              fontWeight: "500",
+                            }}
+                          >
+                            {controller.activeFacetCount}
+                          </Text>
+                        </View>
+                      )}
+                    </Pressable>
+                    {FILTERS.map((filter) => {
+                      const selected = controller.filters.type === filter.value;
+                      const accent = getAccentColor(filter.value);
 
-                    return (
+                      return (
+                        <Pressable
+                          key={filter.value}
+                          ref={splashSurfaceRefCallbacks.filters.get(
+                            filter.value,
+                          )}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected }}
+                          onPress={() => controller.setType(filter.value)}
+                          style={[
+                            styles.filterChip,
+                            {
+                              backgroundColor: selected
+                                ? accent
+                                : withAlpha(theme.text, "08"),
+                              borderColor: selected
+                                ? accent
+                                : withAlpha(theme.text, "18"),
+                            },
+                          ]}
+                        >
+                          <Text
+                            numberOfLines={1}
+                            style={{
+                              color: selected ? theme.whiteBase : theme.text,
+                              fontWeight: selected ? "700" : "500",
+                              fontSize: 12,
+                            }}
+                          >
+                            {filter.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+                {controller.hasActiveFilters && (
+                  <View style={styles.activeFiltersWrap}>
+                    {activeCategoryFilters.map((category) => (
                       <Pressable
-                        key={filter.value}
+                        key={`active-category-${category.id}`}
                         accessibilityRole="button"
-                        accessibilityState={{ selected }}
-                        onPress={() => controller.setType(filter.value)}
+                        accessibilityLabel={`Remove category filter ${category.label}`}
+                        onPress={() =>
+                          controller.removeCategoryFilter(category.id)
+                        }
                         style={[
-                          styles.filterChip,
+                          styles.activeFilterChip,
                           {
-                            backgroundColor: selected
-                              ? accent
-                              : withAlpha(theme.text, "08"),
-                            borderColor: selected
-                              ? accent
-                              : withAlpha(theme.text, "18"),
+                            backgroundColor: withAlpha(theme.taskBase, "12"),
+                            borderColor: withAlpha(theme.taskBase, "40"),
                           },
                         ]}
                       >
-                        <Text
-                          numberOfLines={1}
-                          style={{
-                            color: selected ? theme.whiteBase : theme.text,
-                            fontWeight: selected ? "700" : "500",
-                            fontSize: 12,
-                          }}
-                        >
-                          {filter.label}
-                        </Text>
+                        <CategoryBadge
+                          categoryId={category.id}
+                          variant="iconOnly"
+                        />
+                        <MaterialCommunityIcons
+                          name="close"
+                          size={12}
+                          color={theme.text}
+                        />
                       </Pressable>
-                    );
-                  })}
-                </View>
-              </View>
+                    ))}
 
-              {/**
-               * //OLD! SCROLL VIEW VERSION
-               * */}
-              {/*  <View style={styles.typeFilterRow}>
-            <View
-              style={{
-                alignItems: "center",
-                justifyContent: "center",
-                paddingRight: 6,
-                borderRightWidth: 1,
-                borderRadius: 4,
-                borderRightColor: withAlpha(theme.taskBase, "33"),
-              }}
-            >
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  controller.activeFacetCount > 0
-                    ? `Edit filters, ${controller.activeFacetCount} active`
-                    : "Edit search filters"
-                }
-                onPress={openFilterModal}
-                style={[
-                  styles.taxnonomyChip,
-
-                  {
-                    backgroundColor: withAlpha(theme.text, "08"),
-                    borderColor: withAlpha(theme.text, "24"),
-                  },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="tune-variant"
-                  size={17}
-                  color={theme.text}
-                />
-
-                {controller.activeFacetCount > 0 && (
-                  <View
-                    style={[
-                      styles.filterCountBadge,
-                      { backgroundColor: theme.taskBase },
-                    ]}
-                  >
-                    <Text
-                      variant="labelSmall"
-                      style={{ color: theme.whiteBase }}
+                    {activeTagFilters.map((tag) => (
+                      <Pressable
+                        key={`active-tag-${tag.id}`}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove tag filter ${tag.label}`}
+                        onPress={() => controller.removeTagFilter(tag.id)}
+                        style={[
+                          styles.activeFilterChip,
+                          {
+                            backgroundColor: withAlpha(theme.taskBase, "12"),
+                            borderColor: withAlpha(theme.taskBase, "40"),
+                          },
+                        ]}
+                      >
+                        <TagBadge tagId={tag.id} holeColor={theme.background} />
+                        <MaterialCommunityIcons
+                          name="close"
+                          size={12}
+                          color={theme.text}
+                        />
+                      </Pressable>
+                    ))}
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Save current filters as a scope"
+                      onPress={() => setShowSavedScopesModal(true)}
+                      style={styles.clearFiltersButton}
                     >
-                      {controller.activeFacetCount}
-                    </Text>
+                      <Text
+                        style={{ color: theme.taskBase, fontWeight: "600" }}
+                      >
+                        Save scope
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={controller.clearAllFilters}
+                      style={styles.clearFiltersButton}
+                    >
+                      <Text
+                        style={{ color: theme.taskBase, fontWeight: "600" }}
+                      >
+                        Clear all
+                      </Text>
+                    </Pressable>
                   </View>
                 )}
-              </Pressable>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              removeClippedSubviews={false}
-              contentContainerStyle={styles.filtersContent}
-              style={styles.filtersScroll}
-            >
-              {FILTERS.map((filter) => {
-                const selected = selectedType === filter.value;
-                const accent = getAccentColor(filter.value);
 
-                return (
-                  <Pressable
-                    key={filter.value}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    onPress={() => controller.setType(filter.value)}
-                    style={[
-                      styles.filterChip,
-                      {
-                        backgroundColor: selected
-                          ? accent
-                          : withAlpha(theme.text, "08"),
-                        borderColor: selected
-                          ? accent
-                          : withAlpha(theme.text, "16"),
-                      },
-                    ]}
-                  >
-                    <Text
-                      variant="labelLarge"
-                      numberOfLines={1}
-                      style={{
-                        color: selected ? theme.whiteBase : theme.text,
-                        fontWeight: selected ? "600" : "400",
-                      }}
-                    >
-                      {filter.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View> */}
-              {controller.hasActiveFilters && (
-                // <ScrollView
-                //   horizontal
-                //   showsHorizontalScrollIndicator={false}
-                //   keyboardShouldPersistTaps="handled"
-                //   contentContainerStyle={styles.activeFiltersContent}
-                //   style={styles.activeFiltersScroll}
-                // >
-                <View style={styles.activeFiltersWrap}>
-                  {activeCategoryFilters.map((category) => (
-                    <Pressable
-                      key={`active-category-${category.id}`}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Remove category filter ${category.label}`}
-                      onPress={() =>
-                        controller.removeCategoryFilter(category.id)
-                      }
-                      style={[
-                        styles.activeFilterChip,
-                        {
-                          backgroundColor: withAlpha(theme.taskBase, "12"),
-                          borderColor: withAlpha(theme.taskBase, "40"),
-                        },
-                      ]}
-                    >
-                      {/*  <Text
-                    variant="labelMedium"
-                    numberOfLines={1}
-                    style={{ color: theme.text }}
-                  >
-                    {category.label}
-                  </Text> */}
-                      <CategoryBadge
-                        categoryId={category.id}
-                        variant="iconOnly"
-                      />
-                      <MaterialCommunityIcons
-                        name="close"
-                        size={12}
-                        color={theme.text}
-                      />
-                    </Pressable>
-                  ))}
-
-                  {activeTagFilters.map((tag) => (
-                    <Pressable
-                      key={`active-tag-${tag.id}`}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Remove tag filter ${tag.label}`}
-                      onPress={() => controller.removeTagFilter(tag.id)}
-                      style={[
-                        styles.activeFilterChip,
-                        {
-                          backgroundColor: withAlpha(theme.taskBase, "12"),
-                          borderColor: withAlpha(theme.taskBase, "40"),
-                        },
-                      ]}
-                    >
-                      {/* <Text
-                    variant="labelMedium"
-                    numberOfLines={1}
-                    style={{ color: theme.text }}
-                  >
-                    {tag.label}
-                  </Text> */}
-                      <TagBadge tagId={tag.id} holeColor={theme.background} />
-                      <MaterialCommunityIcons
-                        name="close"
-                        size={12}
-                        color={theme.text}
-                      />
-                    </Pressable>
-                  ))}
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Save current filters as a scope"
-                    onPress={() => setShowSavedScopesModal(true)}
-                    style={styles.clearFiltersButton}
-                  >
-                    <Text style={{ color: theme.taskBase, fontWeight: "600" }}>
-                      Save scope
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={controller.clearAllFilters}
-                    style={styles.clearFiltersButton}
-                  >
-                    <Text style={{ color: theme.taskBase, fontWeight: "600" }}>
-                      Clear all
-                    </Text>
-                  </Pressable>
-                </View>
-              )}
-
-              {/* Grouped results */}
-              <SectionList<GlobalSearchResult, SearchSection>
-                sections={sections}
-                keyExtractor={(item, index) =>
-                  `${String(item.document.key ?? index)}`
-                }
-                ListHeaderComponent={
-                  isQueryEmpty && !controller.hasActiveFilters ? (
-                    <GlobalSearchConveniencePanel
-                      savedScopes={controller.savedScopes}
-                      recentSearches={controller.recentSearches}
-                      recentItems={controller.recentItems}
-                      shortcuts={controller.documents.filter(
-                        (document) => document.kind === "action",
-                      )}
-                      isLoaded={controller.isConvenienceStoreLoaded}
-                      onApplyScope={handleApplySavedScope}
-                      onManageScopes={() => setShowSavedScopesModal(true)}
-                      onRestoreSearch={controller.restoreRecentSearch}
-                      onRemoveSearch={controller.removeRecentSearch}
-                      onClearSearches={controller.clearRecentSearches}
-                      onOpenShortcuts={() => setShowShortcutsModal(true)}
-                      onOpenRecentItem={(recent: RecentGlobalSearchItem) => {
-                        const document = controller.documents.find(
-                          (candidate) => candidate.key === recent.key,
-                        );
-
-                        if (!document) {
-                          void controller.removeRecentItem(recent.key);
-                          return;
-                        }
-
-                        controller.recordSelectedResult(document);
-
-                        onItemPress(
-                          createGlobalSearchSelectionRequest(document.target),
-                        );
-                      }}
-                      onRemoveRecentItem={controller.removeRecentItem}
-                      onClearRecentItems={controller.clearRecentItems}
-                      onActivateShortcut={(document) => {
-                        controller.recordSelectedResult(document);
-
-                        onItemPress(
-                          createGlobalSearchSelectionRequest(document.target),
-                        );
-                      }}
-                    />
-                  ) : null
-                }
-                renderSectionHeader={({ section }) => (
-                  <View
-                    style={[
-                      styles.sectionHeader,
-                      {
-                        backgroundColor: theme.background,
-                        borderBottomColor: withAlpha(theme.text, "12"),
-                      },
-                    ]}
-                  >
-                    <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                      {section.title}
-                    </Text>
-
-                    <Text
-                      style={{
-                        color: withAlpha(
-                          section.type === "easterEgg"
-                            ? "#ed62ff"
-                            : getAccentColor(section.type),
-                          "FF",
-                        ),
-                        fontWeight: "500",
-                        fontSize: 16,
-                      }}
-                    >
-                      {section.data.length}
-                    </Text>
-                  </View>
-                )}
-                renderItem={({ item }) => {
-                  if (item.document.kind === "easterEgg") {
-                    const eggId = item.document.target.eggId;
-                    const activationEnabled =
-                      eggId === "rickroll" ||
-                      eggId === "hello_there" ||
-                      eggId === "launch_sequence" ||
-                      eggId === "lightning_strike" ||
-                      eggId === "space_invaders" ||
-                      eggId === "pacman" ||
-                      eggId === "snake";
-                    const nukeMyBackLogHint =
-                      eggId === "launch_sequence" && nukeMyBacklog.hintVisible
-                        ? nukeMyBacklog.hintText
-                        : undefined;
-
-                    return (
-                      <GlobalSearchEasterEggRow
-                        result={item}
-                        activationEnabled={activationEnabled}
-                        onPress={(rowRef) => {
-                          void handleEasterEggPress(eggId, rowRef);
-                        }}
-                        onLayout={
-                          visible && eggId === "launch_sequence"
-                            ? (rowRef) => {
-                                nukeMyBacklog.prewarmAct3(
-                                  rowRef,
-                                  animationCanvasRef,
-                                );
-                              }
-                            : undefined
-                        }
-                        hintText={nukeMyBackLogHint}
-                      />
-                    );
+                {/* Grouped results */}
+                <SectionList<GlobalSearchResult, SearchSection>
+                  sections={sections}
+                  keyExtractor={(item, index) =>
+                    `${String(item.document.key ?? index)}`
                   }
-                  return (
-                    <SearchResultRow
-                      result={item}
-                      query={query}
-                      onPress={() => {
-                        controller.recordSelectedResult(item.document);
-                        onItemPress(
-                          createGlobalSearchSelectionRequest(
-                            item.document.target,
-                          ),
-                        );
-                      }}
-                    />
-                  );
-                }}
-                ItemSeparatorComponent={() => (
-                  <View style={styles.rowSeparator} />
-                )}
-                ListEmptyComponent={
-                  <View style={styles.emptyState}>
+                  ListHeaderComponent={
+                    isQueryEmpty && !controller.hasActiveFilters ? (
+                      <GlobalSearchConveniencePanel
+                        savedScopes={controller.savedScopes}
+                        recentSearches={controller.recentSearches}
+                        recentItems={controller.recentItems}
+                        shortcuts={controller.documents.filter(
+                          (document) => document.kind === "action",
+                        )}
+                        isLoaded={controller.isConvenienceStoreLoaded}
+                        onApplyScope={handleApplySavedScope}
+                        onManageScopes={() => setShowSavedScopesModal(true)}
+                        onRestoreSearch={controller.restoreRecentSearch}
+                        onRemoveSearch={controller.removeRecentSearch}
+                        onClearSearches={controller.clearRecentSearches}
+                        onOpenShortcuts={() => setShowShortcutsModal(true)}
+                        onOpenRecentItem={(recent: RecentGlobalSearchItem) => {
+                          const document = controller.documents.find(
+                            (candidate) => candidate.key === recent.key,
+                          );
+
+                          if (!document) {
+                            void controller.removeRecentItem(recent.key);
+                            return;
+                          }
+
+                          controller.recordSelectedResult(document);
+
+                          onItemPress(
+                            createGlobalSearchSelectionRequest(document.target),
+                          );
+                        }}
+                        onRemoveRecentItem={controller.removeRecentItem}
+                        onClearRecentItems={controller.clearRecentItems}
+                        onActivateShortcut={(document) => {
+                          controller.recordSelectedResult(document);
+
+                          onItemPress(
+                            createGlobalSearchSelectionRequest(document.target),
+                          );
+                        }}
+                      />
+                    ) : null
+                  }
+                  renderSectionHeader={({ section }) => (
                     <View
                       style={[
-                        styles.emptyIconContainer,
+                        styles.sectionHeader,
                         {
-                          backgroundColor: withAlpha(theme.taskBase, "18"),
+                          backgroundColor: theme.background,
+                          borderBottomColor: withAlpha(theme.text, "12"),
                         },
                       ]}
                     >
-                      <MaterialCommunityIcons
-                        name={isQueryEmpty ? "magnify" : "text-search"}
-                        size={34}
-                        color={theme.taskBase}
-                      />
-                    </View>
-
-                    <Text style={[styles.emptyTitle, { color: theme.text }]}>
-                      {emptyTitle}
-                    </Text>
-
-                    <Text
-                      style={[
-                        styles.emptyDescription,
-                        { color: withAlpha(theme.text, "A8") },
-                      ]}
-                    >
-                      {emptyDescription}
-                    </Text>
-
-                    {(!isQueryEmpty || controller.hasActiveFilters) && (
-                      <Button
-                        mode="text"
-                        textColor={theme.taskBase}
-                        onPress={handleEmptyAction}
-                        style={styles.emptyAction}
+                      <Text
+                        style={[styles.sectionTitle, { color: theme.text }]}
                       >
-                        {isQueryEmpty ? "Clear filters" : "Clear search"}
-                      </Button>
-                    )}
-                  </View>
-                }
-                contentContainerStyle={styles.resultsContent}
-                keyboardShouldPersistTaps="handled"
-                scrollEnabled={
-                  !helloThereAnimation.active &&
-                  !noNoNo.active &&
-                  !sleepingZ.active &&
-                  !nukeMyBacklog.active &&
-                  !sequence.isRunning
-                }
-                keyboardDismissMode={
-                  Platform.OS === "ios" ? "interactive" : "on-drag"
-                }
-                stickySectionHeadersEnabled={false}
-                showsVerticalScrollIndicator={false}
-              />
-              <GlobalSearchFilterModal
-                visible={showFilterModal}
-                categories={categories}
-                tags={tags}
-                draftFilters={controller.draftFilters ?? controller.filters}
-                onToggleCategory={controller.toggleDraftCategory}
-                onToggleTag={controller.toggleDraftTag}
-                onTagMatchModeChange={controller.setDraftTagMatchMode}
-                onClearFacets={controller.clearDraftFacets}
-                onApply={() => {
-                  controller.applyFilterEditing();
-                  setShowFilterModal(false);
-                }}
-                onCancel={() => {
-                  controller.cancelFilterEditing();
-                  setShowFilterModal(false);
-                }}
-                palette={{
-                  background: theme.background,
-                  surface: theme.background,
-                  text: theme.text,
-                  secondaryText: theme.greyBasePrimary,
-                  border: theme.greyBaseTertiary,
-                  accent: theme.taskBase,
-                  selectedSurface: withAlpha(theme.taskBase, "08"),
-                }}
-              />
-              <GlobalSearchSavedScopesModal
-                visible={showSavedScopesModal}
-                scopes={controller.savedScopes}
-                currentFilters={controller.filters}
-                canSaveCurrentFilters={controller.hasActiveFilters}
-                onClose={() => setShowSavedScopesModal(false)}
-                onSaveScope={handleSaveScope}
-                onApplyScope={handleApplySavedScope}
-                onRenameScope={handleRenameScope}
-                onUpdateScopeFilters={handleUpdateScopeFilters}
-                onDeleteScope={controller.deleteScope}
-                onClearScopes={controller.clearScopes}
-              />
-              <GlobalSearchShortcutsModal
-                visible={showShortcutsModal}
-                shortcuts={controller.documents.filter(
-                  (document) => document.kind === "action",
-                )}
-                savedScopes={controller.savedScopes}
-                isLoaded={controller.isConvenienceStoreLoaded}
-                onClose={() => setShowShortcutsModal(false)}
-                onManageScopes={() => setShowSavedScopesModal(true)}
-                onApplyScope={(scope) => {
-                  controller.applySavedScope(scope);
-                }}
-                onActivateShortcut={(document) => {
-                  controller.recordSelectedResult(document);
+                        {section.title}
+                      </Text>
 
-                  onItemPress(
-                    createGlobalSearchSelectionRequest(document.target),
-                  );
-                }}
+                      <Text
+                        style={{
+                          color: withAlpha(
+                            section.type === "easterEgg"
+                              ? "#ed62ff"
+                              : getAccentColor(section.type),
+                            "FF",
+                          ),
+                          fontWeight: "500",
+                          fontSize: 16,
+                        }}
+                      >
+                        {section.data.length}
+                      </Text>
+                    </View>
+                  )}
+                  renderItem={({ item }) => {
+                    if (item.document.kind === "easterEgg") {
+                      const eggId = item.document.target.eggId;
+                      //console.log(eggId);
+                      const activationEnabled =
+                        eggId === "rickroll" ||
+                        eggId === "hello_there" ||
+                        eggId === "launch_sequence" ||
+                        eggId === "lightning_strike" ||
+                        eggId === "copy_paste" ||
+                        eggId === "space_invaders" ||
+                        eggId === "pacman" ||
+                        eggId === "snake" ||
+                        eggId === "breaking_point";
+                      const nukeMyBackLogHint =
+                        eggId === "launch_sequence" && nukeMyBacklog.hintVisible
+                          ? nukeMyBacklog.hintText
+                          : undefined;
+
+                      return (
+                        <GlobalSearchEasterEggRow
+                          result={item}
+                          activationEnabled={activationEnabled}
+                          onPress={(rowRef, normalizedX) => {
+                            void handleEasterEggPress(
+                              eggId,
+                              rowRef,
+                              item,
+                              normalizedX,
+                            );
+                          }}
+                          onLayout={
+                            visible && eggId === "launch_sequence"
+                              ? (rowRef) => {
+                                  nukeMyBacklog.prewarmAct3(
+                                    rowRef,
+                                    animationCanvasRef,
+                                  );
+                                }
+                              : undefined
+                          }
+                          hintText={nukeMyBackLogHint}
+                          hidden={eggId === hiddenLightningRowId}
+                        />
+                      );
+                    }
+                    return (
+                      <SearchResultRow
+                        result={item}
+                        query={query}
+                        onPress={() => {
+                          controller.recordSelectedResult(item.document);
+                          onItemPress(
+                            createGlobalSearchSelectionRequest(
+                              item.document.target,
+                            ),
+                          );
+                        }}
+                      />
+                    );
+                  }}
+                  ItemSeparatorComponent={() => (
+                    <View style={styles.rowSeparator} />
+                  )}
+                  ListEmptyComponent={
+                    <View style={styles.emptyState}>
+                      <View
+                        style={[
+                          styles.emptyIconContainer,
+                          {
+                            backgroundColor: withAlpha(theme.taskBase, "18"),
+                          },
+                        ]}
+                      >
+                        <MaterialCommunityIcons
+                          name={isQueryEmpty ? "magnify" : "text-search"}
+                          size={34}
+                          color={theme.taskBase}
+                        />
+                      </View>
+
+                      <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                        {emptyTitle}
+                      </Text>
+
+                      <Text
+                        style={[
+                          styles.emptyDescription,
+                          { color: withAlpha(theme.text, "A8") },
+                        ]}
+                      >
+                        {emptyDescription}
+                      </Text>
+
+                      {(!isQueryEmpty || controller.hasActiveFilters) && (
+                        <Button
+                          mode="text"
+                          textColor={theme.taskBase}
+                          onPress={handleEmptyAction}
+                          style={styles.emptyAction}
+                        >
+                          {isQueryEmpty ? "Clear filters" : "Clear search"}
+                        </Button>
+                      )}
+                    </View>
+                  }
+                  contentContainerStyle={styles.resultsContent}
+                  keyboardShouldPersistTaps="handled"
+                  scrollEnabled={
+                    !helloThereAnimation.active &&
+                    !noNoNo.active &&
+                    !sleepingZ.active &&
+                    !nukeMyBacklog.active &&
+                    !sequence.isRunning &&
+                    !copyMachine.active &&
+                    !snake.active &&
+                    !pacman.active &&
+                    !spaceInvaders.active
+                  }
+                  keyboardDismissMode={
+                    Platform.OS === "ios" ? "interactive" : "on-drag"
+                  }
+                  stickySectionHeadersEnabled={false}
+                  showsVerticalScrollIndicator={false}
+                />
+                <GlobalSearchFilterModal
+                  visible={showFilterModal}
+                  categories={categories}
+                  tags={tags}
+                  draftFilters={controller.draftFilters ?? controller.filters}
+                  onToggleCategory={controller.toggleDraftCategory}
+                  onToggleTag={controller.toggleDraftTag}
+                  onTagMatchModeChange={controller.setDraftTagMatchMode}
+                  onClearFacets={controller.clearDraftFacets}
+                  onApply={() => {
+                    controller.applyFilterEditing();
+                    setShowFilterModal(false);
+                  }}
+                  onCancel={() => {
+                    controller.cancelFilterEditing();
+                    setShowFilterModal(false);
+                  }}
+                  palette={{
+                    background: theme.background,
+                    surface: theme.background,
+                    text: theme.text,
+                    secondaryText: theme.greyBasePrimary,
+                    border: theme.greyBaseTertiary,
+                    accent: theme.taskBase,
+                    selectedSurface: withAlpha(theme.taskBase, "08"),
+                  }}
+                />
+                <GlobalSearchSavedScopesModal
+                  visible={showSavedScopesModal}
+                  scopes={controller.savedScopes}
+                  currentFilters={controller.filters}
+                  canSaveCurrentFilters={controller.hasActiveFilters}
+                  onClose={() => setShowSavedScopesModal(false)}
+                  onSaveScope={handleSaveScope}
+                  onApplyScope={handleApplySavedScope}
+                  onRenameScope={handleRenameScope}
+                  onUpdateScopeFilters={handleUpdateScopeFilters}
+                  onDeleteScope={controller.deleteScope}
+                  onClearScopes={controller.clearScopes}
+                />
+                <GlobalSearchShortcutsModal
+                  visible={showShortcutsModal}
+                  shortcuts={controller.documents.filter(
+                    (document) => document.kind === "action",
+                  )}
+                  savedScopes={controller.savedScopes}
+                  isLoaded={controller.isConvenienceStoreLoaded}
+                  onClose={() => setShowShortcutsModal(false)}
+                  onManageScopes={() => setShowSavedScopesModal(true)}
+                  onApplyScope={(scope) => {
+                    controller.applySavedScope(scope);
+                  }}
+                  onActivateShortcut={(document) => {
+                    controller.recordSelectedResult(document);
+
+                    onItemPress(
+                      createGlobalSearchSelectionRequest(document.target),
+                    );
+                  }}
+                />
+              </View>
+
+              {helloThereAnimation.behindLayer}
+              {noNoNo.behindLayer}
+              {sleepingZ.behindLayer}
+              {nukeMyBacklog.behindLayer}
+              {copyMachine.layer}
+              {helloThereAnimation.foregroundLayer}
+              {noNoNo.foregroundLayer}
+              {/* {lightningStriker.overlayLayer} */}
+              <LightningStrikerOverlayHost
+                ref={lightningStrikerRef}
+                canvasRef={animationCanvasRef}
               />
+              <RowFireOverlayHost
+                ref={rowFireRef}
+                canvasRef={animationCanvasRef}
+              />
+              {spaceInvaders.overlayLayer}
+              {pacman.overlayLayer}
+              {snake.overlayLayer}
+              {breakingPoint.overlayLayer}
             </View>
-
-            {helloThereAnimation.behindLayer}
-            {noNoNo.behindLayer}
-            {sleepingZ.behindLayer}
-            {nukeMyBacklog.behindLayer}
-            {helloThereAnimation.foregroundLayer}
-            {noNoNo.foregroundLayer}
-            {/* {lightningStriker.overlayLayer} */}
-            <LightningStrikerOverlayHost
-              ref={lightningStrikerRef}
-              canvasRef={animationCanvasRef}
-            />
-            {spaceInvaders.overlayLayer}
-            {pacman.overlayLayer}
-            {snake.overlayLayer}
-          </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
